@@ -18,8 +18,22 @@ To obtain the latest development version of ... from the github repository, run
 To update to the latest version after previously installing EVcouplings from the repository, run
 
 
-# External software 
+## External software 
 
+Blast 
+https://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download
+
+
+TOPOLINK 
+http://leandro.iqm.unicamp.br/topolink/download.shtml
+
+
+PyMol 
+https://pymol.org/2/
+
+
+HADDOCK
+https://www.bonvinlab.org/software/haddock2.4/download/ 
 
 # Databases
 
