@@ -1,4 +1,4 @@
-# Restraints3DHandler
+# 3DRestraints
 Python package for restraints structural analysis, mapping, validation, visualization, and modeling.
 
 ## Installation and setup
