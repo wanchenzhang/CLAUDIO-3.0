@@ -23,17 +23,21 @@ To update to the latest version after previously installing EVcouplings from the
 Blast 
 https://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download
 
-
 TOPOLINK 
 http://leandro.iqm.unicamp.br/topolink/download.shtml
-
 
 PyMol 
 https://pymol.org/2/
 
+Alphafold Protein Structrue Database 
+https://alphafold.ebi.ac.uk/
+
+Alphafold
+https://github.com/deepmind/alphafold
 
 HADDOCK
 https://www.bonvinlab.org/software/haddock2.4/download/ 
+
 
 ## Databases
 
@@ -52,7 +56,9 @@ Please refer to ... on how to run jobs ...
 Restraints3DHandler is developed in the Kohlbacher Lab, Max Planck Institute for Developemntal Biology and Tuebingen University 
 
 Hadeer Elhabashy
-
 Eugen Netz
+Alexander Röhl 
+Ben Kästle 
+
 
 
