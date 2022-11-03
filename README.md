@@ -1,4 +1,4 @@
-# 3DRestraints
+# CLAUDIO
 Python package for restraints structural analysis, mapping, validation, visualization, and modeling.
 
 ## Installation and setup
@@ -53,12 +53,13 @@ Please refer to ... on how to run jobs ...
 
 
 ## Contributors
-Restraints3DHandler is developed in the Kohlbacher Lab, Max Planck Institute for Developemntal Biology and Tuebingen University 
+Restraints3DHandler is developed in the Kohlbacher Lab, Tuebingen University 
 
+Alexander Röhl 
 Hadeer Elhabashy
 Eugen Netz
-Alexander Röhl 
-Ben Kästle 
+
+
 
 
 
