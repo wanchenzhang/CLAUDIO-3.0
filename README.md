@@ -53,7 +53,7 @@ Please refer to ... on how to run jobs ...
 
 
 ## Contributors
-Restraints3DHandler is developed in the Kohlbacher Lab, Tuebingen University 
+CLAUDIO is developed in the Kohlbacher Lab, Tuebingen University 
 
 Alexander Röhl 
 Hadeer Elhabashy
