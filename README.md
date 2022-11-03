@@ -6,7 +6,7 @@ Installing the Python package
 
 
 ## Requirements
-Restraints3DHandler requires a Python >=  ... installation. 
+CLAUDIO requires a Python >=  ... installation. 
 
 
 ## Installation
