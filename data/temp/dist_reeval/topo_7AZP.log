@@ -1,0 +1,952 @@
+IN:
+#
+# TOPOLINK input file example
+#
+# L. Martinez - Institute of Chemistry, University of Campinas
+# http://leandro.iqm.unicamp.br
+#
+# Structure file (can be provided in the command line, overwriting this definition); PDB or mmCIF formats
+structure data/temp/dist_reeval/tmp.pdb#endread ENDMDL  # Use this to stop reading atoms if this keyword is found (comment otherwise)
+readatoms backplusCB # Which atoms to consider (all/heavy(no-H)/backbone/backplusCB)
+# Output directory for links (comment if you do not want the PDB files, that may be a lot)
+printlinks no
+#linkdir ./links
+# What cross-links to compute (all/reactive/observed)
+compute observed
+#compute reactive
+#compute all
+# If only inter-domain (inter-chain) links are of interested, uncomment the following line
+#interchain
+# Only consider observed links with score greater than scorecut
+scorecut 0.d0
+# Cross-links observed:
+experiment DSS
+  # Possible types of cross-links and maximum distances
+  #        ResType  Chain  ResNum   AtomType    ResType  Chain  ResNum   AtomType  MaxDist
+  linktype   MET     all      1       N           LYS     all     all       CB        35
+  linktype   LYS     all     all      CB          LYS     all     all       CB        35
+
+  observed LYS A 447 LYS A 107
+  observed LYS A 99 LYS A 107
+  observed LYS A 99 LYS A 447
+  observed LYS A 65 LYS A 107
+  observed LYS A 104 LYS A 443
+  observed LYS A 104 LYS A 447
+  observed LYS A 49 LYS A 266
+  observed LYS A 443 LYS A 447
+  observed LYS A 99 LYS A 70
+  observed LYS A 49 LYS A 63
+  observed LYS A 104 LYS A 455
+  observed LYS A 49 LYS A 490
+  observed LYS A 49 LYS A 70
+  observed LYS A 61 LYS A 70
+  observed LYS A 63 LYS A 70
+  observed LYS A 99 LYS A 455
+  observed LYS A 61 LYS A 99
+  observed LYS A 65 LYS A 99
+  observed LYS A 104 LYS A 436
+  observed LYS A 49 LYS A 107
+  observed LYS A 170 LYS A 165
+  observed LYS A 170 LYS A 361
+  observed LYS A 170 LYS A 363
+  observed LYS A 170 LYS A 370
+  observed LYS A 170 LYS A 497
+  observed LYS A 176 LYS A 210
+  observed LYS A 176 LYS A 333
+  observed LYS A 363 LYS A 176
+  observed LYS A 176 LYS A 370
+  observed LYS A 176 LYS A 392
+  observed LYS A 333 LYS A 179
+  observed LYS A 363 LYS A 179
+  observed LYS A 392 LYS A 179
+  observed LYS A 343 LYS A 207
+  observed LYS A 392 LYS A 207
+  observed LYS A 207 LYS A 46
+  observed LYS A 56 LYS A 207
+  observed LYS A 392 LYS A 210
+  observed LYS A 333 LYS A 223
+  observed LYS A 343 LYS A 266
+  observed LYS A 65 LYS A 266
+  observed LYS A 5 LYS A 49
+  observed LYS A 61 LYS A 5
+  observed LYS A 65 LYS A 5
+  observed LYS A 363 LYS A 326
+  observed LYS A 338 LYS A 333
+  observed LYS A 363 LYS A 370
+  observed LYS A 363 LYS A 392
+  observed LYS A 49 LYS A 391
+  observed LYS A 392 LYS A 46
+  observed LYS A 56 LYS A 46
+  observed LYS A 61 LYS A 46
+  observed LYS A 65 LYS A 56
+  observed LYS A 65 LYS A 61
+  observed LYS A 5 LYS A 107
+  observed LYS A 170 LYS A 207
+  observed LYS A 170 LYS A 338
+  observed LYS A 65 LYS A 46
+  observed LYS A 61 LYS A 49
+  observed LYS A 65 LYS A 49
+  observed LYS A 61 LYS A 61
+
+end experiment DSS
+# Optional parameters
+search_limit relative 2  # Search for topological distances of up to search_range*dmaxlink
+printallfound yes    # Prints, or not, the structure of the links that were found but violate the distances
+printPDBnotfound yes # Prints, or not, PDB files for the links which were not found at all (prints a straight line)
+pgood 0.70 # Probability of observing a link which is within link reach
+pbad  0.05 # Probability of observing a link which is NOT within linker reach
+vdwrad 3.         # Radius to be used for excluded atom volume computation
+print 0           # Extensive or concise printing
+printnotfound yes # Print data for pairs for links which were not found
+quitgood no       # Quit whenever a valid link is found (stop searching for shortest one)
+dbond 1.5         # Bond distance of link atoms
+kbond 10.         # Energy constant for link bonds
+kpath 10.         # Energy constant for the complete path distension, used for computing probability
+kvdw  2.          # Force constant of overlap function
+# Technical parameters for the optimization method
+ntrial 400  # Maximum number of trials for best link search
+nbest 5     # Number of times the same best link is found until satisfied
+maxfunc 50  # Maximum number of function evaluations of CG-Newton
+maxcg 40    # Maximum number of CG iterations
+seed random # Seed for random number generator (random or integer number)
+iguess 2
+exit # You can add anything after this
+
+
+OUT:
+
+  ######################################################## TOPOLINK #######################################################
+                 Institute of Chemistry - University of Campinas. http://m3g.iqm.unicamp.br/topolink
+
+                                                                                                         Version 19.156 
+
+  Structure file: data/temp/dist_reeval/tmp.pdb
+  TopoLink input file: data/temp/dist_reeval/topo.tmp
+  Will stop structure reading when ################## is found.
+  Only backbone plus CB atoms will be considered.
+  
+  Links will not be written as PDB files.
+  
+  Printing option:        0
+  Leave when first valid link is found:  F
+  Link bond distance:    1.5000000
+  Link bond force-constant:   10.0000000
+  VdW radius for volume exclusion:    3.0000000
+  Path energy constant:   10.0000000
+  Cutoff for observed scores:    0.0000000
+  Number of trials for link search:      400
+  Number of repeated best links to find until quit:        5
+  Maximum number of function evaluations of CGNewton:       50
+  Maximum number of CG iterations in CGNewton:       40
+  Seed for random number generator:     8586
+  
+  Number of experiments:        1
+  
+  Number of atoms read from structure file:     2579
+  Number of chains found in structure file:            1
+  
+  WARNING: First atom of link type does not correspond to any atom of the structure.
+  Experiment: DSS
+  Link type:   MET   all   N     LYS   all   CB      35.000
+  
+  -------------------------------------------------------------------------------------------------------------------------
+  Experiment: DSS
+  Observed links:
+  1  LYS   A       447  LYS   A       107
+  2  LYS   A        99  LYS   A       107
+  3  LYS   A        99  LYS   A       447
+  4  LYS   A        65  LYS   A       107
+  5  LYS   A       104  LYS   A       443
+  6  LYS   A       104  LYS   A       447
+  7  LYS   A        49  LYS   A       266
+  8  LYS   A       443  LYS   A       447
+  9  LYS   A        99  LYS   A        70
+  10  LYS   A        49  LYS   A        63
+  11  LYS   A       104  LYS   A       455
+  12  LYS   A        49  LYS   A       490
+  13  LYS   A        49  LYS   A        70
+  14  LYS   A        61  LYS   A        70
+  15  LYS   A        63  LYS   A        70
+  16  LYS   A        99  LYS   A       455
+  17  LYS   A        61  LYS   A        99
+  18  LYS   A        65  LYS   A        99
+  19  LYS   A       104  LYS   A       436
+  20  LYS   A        49  LYS   A       107
+  21  LYS   A       170  LYS   A       165
+  22  LYS   A       170  LYS   A       361
+  23  LYS   A       170  LYS   A       363
+  24  LYS   A       170  LYS   A       370
+  25  LYS   A       170  LYS   A       497
+  26  LYS   A       176  LYS   A       210
+  27  LYS   A       176  LYS   A       333
+  28  LYS   A       363  LYS   A       176
+  29  LYS   A       176  LYS   A       370
+  30  LYS   A       176  LYS   A       392
+  31  LYS   A       333  LYS   A       179
+  32  LYS   A       363  LYS   A       179
+  33  LYS   A       392  LYS   A       179
+  34  LYS   A       343  LYS   A       207
+  35  LYS   A       392  LYS   A       207
+  36  LYS   A       207  LYS   A        46
+  37  LYS   A        56  LYS   A       207
+  38  LYS   A       392  LYS   A       210
+  39  LYS   A       333  LYS   A       223
+  40  LYS   A       343  LYS   A       266
+  41  LYS   A        65  LYS   A       266
+  42  LYS   A         5  LYS   A        49
+  43  LYS   A        61  LYS   A         5
+  44  LYS   A        65  LYS   A         5
+  45  LYS   A       363  LYS   A       326
+  46  LYS   A       338  LYS   A       333
+  47  LYS   A       363  LYS   A       370
+  48  LYS   A       363  LYS   A       392
+  49  LYS   A        49  LYS   A       391
+  50  LYS   A       392  LYS   A        46
+  51  LYS   A        56  LYS   A        46
+  52  LYS   A        61  LYS   A        46
+  53  LYS   A        65  LYS   A        56
+  54  LYS   A        65  LYS   A        61
+  55  LYS   A         5  LYS   A       107
+  56  LYS   A       170  LYS   A       207
+  57  LYS   A       170  LYS   A       338
+  58  LYS   A        65  LYS   A        46
+  59  LYS   A        61  LYS   A        49
+  60  LYS   A        65  LYS   A        49
+  61  LYS   A        61  LYS   A        61
+  
+  -------------------------------------------------------------------------------------------------------------------------
+  -------------------------------------------------------------------------------------------------------------------------
+  
+  Number of atoms that might be involved in reactions, according link types:       51
+  
+  All reactive atoms, according to observations:
+  1   LYS   A         5  CB
+  2   LYS   A        46  CB
+  3   LYS   A        49  CB
+  4   LYS   A        56  CB
+  5   LYS   A        61  CB
+  6   LYS   A        63  CB
+  7   LYS   A        65  CB
+  8   LYS   A        70  CB
+  9   LYS   A        99  CB
+  10   LYS   A       104  CB
+  11   LYS   A       107  CB
+  12   LYS   A       165  CB
+  13   LYS   A       170  CB
+  14   LYS   A       176  CB
+  15   LYS   A       179  CB
+  16   LYS   A       207  CB
+  17   LYS   A       210  CB
+  18   LYS   A       223  CB
+  19   LYS   A       266  CB
+  20   LYS   A       326  CB
+  21   LYS   A       333  CB
+  22   LYS   A       338  CB
+  23   LYS   A       343  CB
+  24   LYS   A       361  CB
+  25   LYS   A       363  CB
+  26   LYS   A       370  CB
+  27   LYS   A       391  CB
+  28   LYS   A       392  CB
+  29   LYS   A       436  CB
+  30   LYS   A       443  CB
+  31   LYS   A       447  CB
+  32   LYS   A       455  CB
+  33   LYS   A       490  CB
+  34   LYS   A       497  CB
+  
+  Number of reactive pairs according to sequence:
+  Experiment DSS:  1275
+  Total number of unique reactive pairs, according to link types:         1275
+  
+  Number of reactive pairs according to observations:
+  Experiment DSS:   561
+  Total number of unique reactive pairs, according to observations:          561
+  
+  List of reactive atom pairs, according to observations:
+  1  LYS   A         5  CB    LYS   A        46  CB   in experiments:DSS
+  2  LYS   A         5  CB    LYS   A        49  CB   in experiments:DSS
+  3  LYS   A         5  CB    LYS   A        56  CB   in experiments:DSS
+  4  LYS   A         5  CB    LYS   A        61  CB   in experiments:DSS
+  5  LYS   A         5  CB    LYS   A        63  CB   in experiments:DSS
+  6  LYS   A         5  CB    LYS   A        65  CB   in experiments:DSS
+  7  LYS   A         5  CB    LYS   A        70  CB   in experiments:DSS
+  8  LYS   A         5  CB    LYS   A        99  CB   in experiments:DSS
+  9  LYS   A         5  CB    LYS   A       104  CB   in experiments:DSS
+  10  LYS   A         5  CB    LYS   A       107  CB   in experiments:DSS
+  11  LYS   A         5  CB    LYS   A       165  CB   in experiments:DSS
+  12  LYS   A         5  CB    LYS   A       170  CB   in experiments:DSS
+  13  LYS   A         5  CB    LYS   A       176  CB   in experiments:DSS
+  14  LYS   A         5  CB    LYS   A       179  CB   in experiments:DSS
+  15  LYS   A         5  CB    LYS   A       207  CB   in experiments:DSS
+  16  LYS   A         5  CB    LYS   A       210  CB   in experiments:DSS
+  17  LYS   A         5  CB    LYS   A       223  CB   in experiments:DSS
+  18  LYS   A         5  CB    LYS   A       266  CB   in experiments:DSS
+  19  LYS   A         5  CB    LYS   A       326  CB   in experiments:DSS
+  20  LYS   A         5  CB    LYS   A       333  CB   in experiments:DSS
+  21  LYS   A         5  CB    LYS   A       338  CB   in experiments:DSS
+  22  LYS   A         5  CB    LYS   A       343  CB   in experiments:DSS
+  23  LYS   A         5  CB    LYS   A       361  CB   in experiments:DSS
+  24  LYS   A         5  CB    LYS   A       363  CB   in experiments:DSS
+  25  LYS   A         5  CB    LYS   A       370  CB   in experiments:DSS
+  26  LYS   A         5  CB    LYS   A       391  CB   in experiments:DSS
+  27  LYS   A         5  CB    LYS   A       392  CB   in experiments:DSS
+  28  LYS   A         5  CB    LYS   A       436  CB   in experiments:DSS
+  29  LYS   A         5  CB    LYS   A       443  CB   in experiments:DSS
+  30  LYS   A         5  CB    LYS   A       447  CB   in experiments:DSS
+  31  LYS   A         5  CB    LYS   A       455  CB   in experiments:DSS
+  32  LYS   A         5  CB    LYS   A       490  CB   in experiments:DSS
+  33  LYS   A         5  CB    LYS   A       497  CB   in experiments:DSS
+  34  LYS   A        46  CB    LYS   A        49  CB   in experiments:DSS
+  35  LYS   A        46  CB    LYS   A        56  CB   in experiments:DSS
+  36  LYS   A        46  CB    LYS   A        61  CB   in experiments:DSS
+  37  LYS   A        46  CB    LYS   A        63  CB   in experiments:DSS
+  38  LYS   A        46  CB    LYS   A        65  CB   in experiments:DSS
+  39  LYS   A        46  CB    LYS   A        70  CB   in experiments:DSS
+  40  LYS   A        46  CB    LYS   A        99  CB   in experiments:DSS
+  41  LYS   A        46  CB    LYS   A       104  CB   in experiments:DSS
+  42  LYS   A        46  CB    LYS   A       107  CB   in experiments:DSS
+  43  LYS   A        46  CB    LYS   A       165  CB   in experiments:DSS
+  44  LYS   A        46  CB    LYS   A       170  CB   in experiments:DSS
+  45  LYS   A        46  CB    LYS   A       176  CB   in experiments:DSS
+  46  LYS   A        46  CB    LYS   A       179  CB   in experiments:DSS
+  47  LYS   A        46  CB    LYS   A       207  CB   in experiments:DSS
+  48  LYS   A        46  CB    LYS   A       210  CB   in experiments:DSS
+  49  LYS   A        46  CB    LYS   A       223  CB   in experiments:DSS
+  50  LYS   A        46  CB    LYS   A       266  CB   in experiments:DSS
+  51  LYS   A        46  CB    LYS   A       326  CB   in experiments:DSS
+  52  LYS   A        46  CB    LYS   A       333  CB   in experiments:DSS
+  53  LYS   A        46  CB    LYS   A       338  CB   in experiments:DSS
+  54  LYS   A        46  CB    LYS   A       343  CB   in experiments:DSS
+  55  LYS   A        46  CB    LYS   A       361  CB   in experiments:DSS
+  56  LYS   A        46  CB    LYS   A       363  CB   in experiments:DSS
+  57  LYS   A        46  CB    LYS   A       370  CB   in experiments:DSS
+  58  LYS   A        46  CB    LYS   A       391  CB   in experiments:DSS
+  59  LYS   A        46  CB    LYS   A       392  CB   in experiments:DSS
+  60  LYS   A        46  CB    LYS   A       436  CB   in experiments:DSS
+  61  LYS   A        46  CB    LYS   A       443  CB   in experiments:DSS
+  62  LYS   A        46  CB    LYS   A       447  CB   in experiments:DSS
+  63  LYS   A        46  CB    LYS   A       455  CB   in experiments:DSS
+  64  LYS   A        46  CB    LYS   A       490  CB   in experiments:DSS
+  65  LYS   A        46  CB    LYS   A       497  CB   in experiments:DSS
+  66  LYS   A        49  CB    LYS   A        56  CB   in experiments:DSS
+  67  LYS   A        49  CB    LYS   A        61  CB   in experiments:DSS
+  68  LYS   A        49  CB    LYS   A        63  CB   in experiments:DSS
+  69  LYS   A        49  CB    LYS   A        65  CB   in experiments:DSS
+  70  LYS   A        49  CB    LYS   A        70  CB   in experiments:DSS
+  71  LYS   A        49  CB    LYS   A        99  CB   in experiments:DSS
+  72  LYS   A        49  CB    LYS   A       104  CB   in experiments:DSS
+  73  LYS   A        49  CB    LYS   A       107  CB   in experiments:DSS
+  74  LYS   A        49  CB    LYS   A       165  CB   in experiments:DSS
+  75  LYS   A        49  CB    LYS   A       170  CB   in experiments:DSS
+  76  LYS   A        49  CB    LYS   A       176  CB   in experiments:DSS
+  77  LYS   A        49  CB    LYS   A       179  CB   in experiments:DSS
+  78  LYS   A        49  CB    LYS   A       207  CB   in experiments:DSS
+  79  LYS   A        49  CB    LYS   A       210  CB   in experiments:DSS
+  80  LYS   A        49  CB    LYS   A       223  CB   in experiments:DSS
+  81  LYS   A        49  CB    LYS   A       266  CB   in experiments:DSS
+  82  LYS   A        49  CB    LYS   A       326  CB   in experiments:DSS
+  83  LYS   A        49  CB    LYS   A       333  CB   in experiments:DSS
+  84  LYS   A        49  CB    LYS   A       338  CB   in experiments:DSS
+  85  LYS   A        49  CB    LYS   A       343  CB   in experiments:DSS
+  86  LYS   A        49  CB    LYS   A       361  CB   in experiments:DSS
+  87  LYS   A        49  CB    LYS   A       363  CB   in experiments:DSS
+  88  LYS   A        49  CB    LYS   A       370  CB   in experiments:DSS
+  89  LYS   A        49  CB    LYS   A       391  CB   in experiments:DSS
+  90  LYS   A        49  CB    LYS   A       392  CB   in experiments:DSS
+  91  LYS   A        49  CB    LYS   A       436  CB   in experiments:DSS
+  92  LYS   A        49  CB    LYS   A       443  CB   in experiments:DSS
+  93  LYS   A        49  CB    LYS   A       447  CB   in experiments:DSS
+  94  LYS   A        49  CB    LYS   A       455  CB   in experiments:DSS
+  95  LYS   A        49  CB    LYS   A       490  CB   in experiments:DSS
+  96  LYS   A        49  CB    LYS   A       497  CB   in experiments:DSS
+  97  LYS   A        56  CB    LYS   A        61  CB   in experiments:DSS
+  98  LYS   A        56  CB    LYS   A        63  CB   in experiments:DSS
+  99  LYS   A        56  CB    LYS   A        65  CB   in experiments:DSS
+  100  LYS   A        56  CB    LYS   A        70  CB   in experiments:DSS
+  101  LYS   A        56  CB    LYS   A        99  CB   in experiments:DSS
+  102  LYS   A        56  CB    LYS   A       104  CB   in experiments:DSS
+  103  LYS   A        56  CB    LYS   A       107  CB   in experiments:DSS
+  104  LYS   A        56  CB    LYS   A       165  CB   in experiments:DSS
+  105  LYS   A        56  CB    LYS   A       170  CB   in experiments:DSS
+  106  LYS   A        56  CB    LYS   A       176  CB   in experiments:DSS
+  107  LYS   A        56  CB    LYS   A       179  CB   in experiments:DSS
+  108  LYS   A        56  CB    LYS   A       207  CB   in experiments:DSS
+  109  LYS   A        56  CB    LYS   A       210  CB   in experiments:DSS
+  110  LYS   A        56  CB    LYS   A       223  CB   in experiments:DSS
+  111  LYS   A        56  CB    LYS   A       266  CB   in experiments:DSS
+  112  LYS   A        56  CB    LYS   A       326  CB   in experiments:DSS
+  113  LYS   A        56  CB    LYS   A       333  CB   in experiments:DSS
+  114  LYS   A        56  CB    LYS   A       338  CB   in experiments:DSS
+  115  LYS   A        56  CB    LYS   A       343  CB   in experiments:DSS
+  116  LYS   A        56  CB    LYS   A       361  CB   in experiments:DSS
+  117  LYS   A        56  CB    LYS   A       363  CB   in experiments:DSS
+  118  LYS   A        56  CB    LYS   A       370  CB   in experiments:DSS
+  119  LYS   A        56  CB    LYS   A       391  CB   in experiments:DSS
+  120  LYS   A        56  CB    LYS   A       392  CB   in experiments:DSS
+  121  LYS   A        56  CB    LYS   A       436  CB   in experiments:DSS
+  122  LYS   A        56  CB    LYS   A       443  CB   in experiments:DSS
+  123  LYS   A        56  CB    LYS   A       447  CB   in experiments:DSS
+  124  LYS   A        56  CB    LYS   A       455  CB   in experiments:DSS
+  125  LYS   A        56  CB    LYS   A       490  CB   in experiments:DSS
+  126  LYS   A        56  CB    LYS   A       497  CB   in experiments:DSS
+  127  LYS   A        61  CB    LYS   A        63  CB   in experiments:DSS
+  128  LYS   A        61  CB    LYS   A        65  CB   in experiments:DSS
+  129  LYS   A        61  CB    LYS   A        70  CB   in experiments:DSS
+  130  LYS   A        61  CB    LYS   A        99  CB   in experiments:DSS
+  131  LYS   A        61  CB    LYS   A       104  CB   in experiments:DSS
+  132  LYS   A        61  CB    LYS   A       107  CB   in experiments:DSS
+  133  LYS   A        61  CB    LYS   A       165  CB   in experiments:DSS
+  134  LYS   A        61  CB    LYS   A       170  CB   in experiments:DSS
+  135  LYS   A        61  CB    LYS   A       176  CB   in experiments:DSS
+  136  LYS   A        61  CB    LYS   A       179  CB   in experiments:DSS
+  137  LYS   A        61  CB    LYS   A       207  CB   in experiments:DSS
+  138  LYS   A        61  CB    LYS   A       210  CB   in experiments:DSS
+  139  LYS   A        61  CB    LYS   A       223  CB   in experiments:DSS
+  140  LYS   A        61  CB    LYS   A       266  CB   in experiments:DSS
+  141  LYS   A        61  CB    LYS   A       326  CB   in experiments:DSS
+  142  LYS   A        61  CB    LYS   A       333  CB   in experiments:DSS
+  143  LYS   A        61  CB    LYS   A       338  CB   in experiments:DSS
+  144  LYS   A        61  CB    LYS   A       343  CB   in experiments:DSS
+  145  LYS   A        61  CB    LYS   A       361  CB   in experiments:DSS
+  146  LYS   A        61  CB    LYS   A       363  CB   in experiments:DSS
+  147  LYS   A        61  CB    LYS   A       370  CB   in experiments:DSS
+  148  LYS   A        61  CB    LYS   A       391  CB   in experiments:DSS
+  149  LYS   A        61  CB    LYS   A       392  CB   in experiments:DSS
+  150  LYS   A        61  CB    LYS   A       436  CB   in experiments:DSS
+  151  LYS   A        61  CB    LYS   A       443  CB   in experiments:DSS
+  152  LYS   A        61  CB    LYS   A       447  CB   in experiments:DSS
+  153  LYS   A        61  CB    LYS   A       455  CB   in experiments:DSS
+  154  LYS   A        61  CB    LYS   A       490  CB   in experiments:DSS
+  155  LYS   A        61  CB    LYS   A       497  CB   in experiments:DSS
+  156  LYS   A        63  CB    LYS   A        65  CB   in experiments:DSS
+  157  LYS   A        63  CB    LYS   A        70  CB   in experiments:DSS
+  158  LYS   A        63  CB    LYS   A        99  CB   in experiments:DSS
+  159  LYS   A        63  CB    LYS   A       104  CB   in experiments:DSS
+  160  LYS   A        63  CB    LYS   A       107  CB   in experiments:DSS
+  161  LYS   A        63  CB    LYS   A       165  CB   in experiments:DSS
+  162  LYS   A        63  CB    LYS   A       170  CB   in experiments:DSS
+  163  LYS   A        63  CB    LYS   A       176  CB   in experiments:DSS
+  164  LYS   A        63  CB    LYS   A       179  CB   in experiments:DSS
+  165  LYS   A        63  CB    LYS   A       207  CB   in experiments:DSS
+  166  LYS   A        63  CB    LYS   A       210  CB   in experiments:DSS
+  167  LYS   A        63  CB    LYS   A       223  CB   in experiments:DSS
+  168  LYS   A        63  CB    LYS   A       266  CB   in experiments:DSS
+  169  LYS   A        63  CB    LYS   A       326  CB   in experiments:DSS
+  170  LYS   A        63  CB    LYS   A       333  CB   in experiments:DSS
+  171  LYS   A        63  CB    LYS   A       338  CB   in experiments:DSS
+  172  LYS   A        63  CB    LYS   A       343  CB   in experiments:DSS
+  173  LYS   A        63  CB    LYS   A       361  CB   in experiments:DSS
+  174  LYS   A        63  CB    LYS   A       363  CB   in experiments:DSS
+  175  LYS   A        63  CB    LYS   A       370  CB   in experiments:DSS
+  176  LYS   A        63  CB    LYS   A       391  CB   in experiments:DSS
+  177  LYS   A        63  CB    LYS   A       392  CB   in experiments:DSS
+  178  LYS   A        63  CB    LYS   A       436  CB   in experiments:DSS
+  179  LYS   A        63  CB    LYS   A       443  CB   in experiments:DSS
+  180  LYS   A        63  CB    LYS   A       447  CB   in experiments:DSS
+  181  LYS   A        63  CB    LYS   A       455  CB   in experiments:DSS
+  182  LYS   A        63  CB    LYS   A       490  CB   in experiments:DSS
+  183  LYS   A        63  CB    LYS   A       497  CB   in experiments:DSS
+  184  LYS   A        65  CB    LYS   A        70  CB   in experiments:DSS
+  185  LYS   A        65  CB    LYS   A        99  CB   in experiments:DSS
+  186  LYS   A        65  CB    LYS   A       104  CB   in experiments:DSS
+  187  LYS   A        65  CB    LYS   A       107  CB   in experiments:DSS
+  188  LYS   A        65  CB    LYS   A       165  CB   in experiments:DSS
+  189  LYS   A        65  CB    LYS   A       170  CB   in experiments:DSS
+  190  LYS   A        65  CB    LYS   A       176  CB   in experiments:DSS
+  191  LYS   A        65  CB    LYS   A       179  CB   in experiments:DSS
+  192  LYS   A        65  CB    LYS   A       207  CB   in experiments:DSS
+  193  LYS   A        65  CB    LYS   A       210  CB   in experiments:DSS
+  194  LYS   A        65  CB    LYS   A       223  CB   in experiments:DSS
+  195  LYS   A        65  CB    LYS   A       266  CB   in experiments:DSS
+  196  LYS   A        65  CB    LYS   A       326  CB   in experiments:DSS
+  197  LYS   A        65  CB    LYS   A       333  CB   in experiments:DSS
+  198  LYS   A        65  CB    LYS   A       338  CB   in experiments:DSS
+  199  LYS   A        65  CB    LYS   A       343  CB   in experiments:DSS
+  200  LYS   A        65  CB    LYS   A       361  CB   in experiments:DSS
+  201  LYS   A        65  CB    LYS   A       363  CB   in experiments:DSS
+  202  LYS   A        65  CB    LYS   A       370  CB   in experiments:DSS
+  203  LYS   A        65  CB    LYS   A       391  CB   in experiments:DSS
+  204  LYS   A        65  CB    LYS   A       392  CB   in experiments:DSS
+  205  LYS   A        65  CB    LYS   A       436  CB   in experiments:DSS
+  206  LYS   A        65  CB    LYS   A       443  CB   in experiments:DSS
+  207  LYS   A        65  CB    LYS   A       447  CB   in experiments:DSS
+  208  LYS   A        65  CB    LYS   A       455  CB   in experiments:DSS
+  209  LYS   A        65  CB    LYS   A       490  CB   in experiments:DSS
+  210  LYS   A        65  CB    LYS   A       497  CB   in experiments:DSS
+  211  LYS   A        70  CB    LYS   A        99  CB   in experiments:DSS
+  212  LYS   A        70  CB    LYS   A       104  CB   in experiments:DSS
+  213  LYS   A        70  CB    LYS   A       107  CB   in experiments:DSS
+  214  LYS   A        70  CB    LYS   A       165  CB   in experiments:DSS
+  215  LYS   A        70  CB    LYS   A       170  CB   in experiments:DSS
+  216  LYS   A        70  CB    LYS   A       176  CB   in experiments:DSS
+  217  LYS   A        70  CB    LYS   A       179  CB   in experiments:DSS
+  218  LYS   A        70  CB    LYS   A       207  CB   in experiments:DSS
+  219  LYS   A        70  CB    LYS   A       210  CB   in experiments:DSS
+  220  LYS   A        70  CB    LYS   A       223  CB   in experiments:DSS
+  221  LYS   A        70  CB    LYS   A       266  CB   in experiments:DSS
+  222  LYS   A        70  CB    LYS   A       326  CB   in experiments:DSS
+  223  LYS   A        70  CB    LYS   A       333  CB   in experiments:DSS
+  224  LYS   A        70  CB    LYS   A       338  CB   in experiments:DSS
+  225  LYS   A        70  CB    LYS   A       343  CB   in experiments:DSS
+  226  LYS   A        70  CB    LYS   A       361  CB   in experiments:DSS
+  227  LYS   A        70  CB    LYS   A       363  CB   in experiments:DSS
+  228  LYS   A        70  CB    LYS   A       370  CB   in experiments:DSS
+  229  LYS   A        70  CB    LYS   A       391  CB   in experiments:DSS
+  230  LYS   A        70  CB    LYS   A       392  CB   in experiments:DSS
+  231  LYS   A        70  CB    LYS   A       436  CB   in experiments:DSS
+  232  LYS   A        70  CB    LYS   A       443  CB   in experiments:DSS
+  233  LYS   A        70  CB    LYS   A       447  CB   in experiments:DSS
+  234  LYS   A        70  CB    LYS   A       455  CB   in experiments:DSS
+  235  LYS   A        70  CB    LYS   A       490  CB   in experiments:DSS
+  236  LYS   A        70  CB    LYS   A       497  CB   in experiments:DSS
+  237  LYS   A        99  CB    LYS   A       104  CB   in experiments:DSS
+  238  LYS   A        99  CB    LYS   A       107  CB   in experiments:DSS
+  239  LYS   A        99  CB    LYS   A       165  CB   in experiments:DSS
+  240  LYS   A        99  CB    LYS   A       170  CB   in experiments:DSS
+  241  LYS   A        99  CB    LYS   A       176  CB   in experiments:DSS
+  242  LYS   A        99  CB    LYS   A       179  CB   in experiments:DSS
+  243  LYS   A        99  CB    LYS   A       207  CB   in experiments:DSS
+  244  LYS   A        99  CB    LYS   A       210  CB   in experiments:DSS
+  245  LYS   A        99  CB    LYS   A       223  CB   in experiments:DSS
+  246  LYS   A        99  CB    LYS   A       266  CB   in experiments:DSS
+  247  LYS   A        99  CB    LYS   A       326  CB   in experiments:DSS
+  248  LYS   A        99  CB    LYS   A       333  CB   in experiments:DSS
+  249  LYS   A        99  CB    LYS   A       338  CB   in experiments:DSS
+  250  LYS   A        99  CB    LYS   A       343  CB   in experiments:DSS
+  251  LYS   A        99  CB    LYS   A       361  CB   in experiments:DSS
+  252  LYS   A        99  CB    LYS   A       363  CB   in experiments:DSS
+  253  LYS   A        99  CB    LYS   A       370  CB   in experiments:DSS
+  254  LYS   A        99  CB    LYS   A       391  CB   in experiments:DSS
+  255  LYS   A        99  CB    LYS   A       392  CB   in experiments:DSS
+  256  LYS   A        99  CB    LYS   A       436  CB   in experiments:DSS
+  257  LYS   A        99  CB    LYS   A       443  CB   in experiments:DSS
+  258  LYS   A        99  CB    LYS   A       447  CB   in experiments:DSS
+  259  LYS   A        99  CB    LYS   A       455  CB   in experiments:DSS
+  260  LYS   A        99  CB    LYS   A       490  CB   in experiments:DSS
+  261  LYS   A        99  CB    LYS   A       497  CB   in experiments:DSS
+  262  LYS   A       104  CB    LYS   A       107  CB   in experiments:DSS
+  263  LYS   A       104  CB    LYS   A       165  CB   in experiments:DSS
+  264  LYS   A       104  CB    LYS   A       170  CB   in experiments:DSS
+  265  LYS   A       104  CB    LYS   A       176  CB   in experiments:DSS
+  266  LYS   A       104  CB    LYS   A       179  CB   in experiments:DSS
+  267  LYS   A       104  CB    LYS   A       207  CB   in experiments:DSS
+  268  LYS   A       104  CB    LYS   A       210  CB   in experiments:DSS
+  269  LYS   A       104  CB    LYS   A       223  CB   in experiments:DSS
+  270  LYS   A       104  CB    LYS   A       266  CB   in experiments:DSS
+  271  LYS   A       104  CB    LYS   A       326  CB   in experiments:DSS
+  272  LYS   A       104  CB    LYS   A       333  CB   in experiments:DSS
+  273  LYS   A       104  CB    LYS   A       338  CB   in experiments:DSS
+  274  LYS   A       104  CB    LYS   A       343  CB   in experiments:DSS
+  275  LYS   A       104  CB    LYS   A       361  CB   in experiments:DSS
+  276  LYS   A       104  CB    LYS   A       363  CB   in experiments:DSS
+  277  LYS   A       104  CB    LYS   A       370  CB   in experiments:DSS
+  278  LYS   A       104  CB    LYS   A       391  CB   in experiments:DSS
+  279  LYS   A       104  CB    LYS   A       392  CB   in experiments:DSS
+  280  LYS   A       104  CB    LYS   A       436  CB   in experiments:DSS
+  281  LYS   A       104  CB    LYS   A       443  CB   in experiments:DSS
+  282  LYS   A       104  CB    LYS   A       447  CB   in experiments:DSS
+  283  LYS   A       104  CB    LYS   A       455  CB   in experiments:DSS
+  284  LYS   A       104  CB    LYS   A       490  CB   in experiments:DSS
+  285  LYS   A       104  CB    LYS   A       497  CB   in experiments:DSS
+  286  LYS   A       107  CB    LYS   A       165  CB   in experiments:DSS
+  287  LYS   A       107  CB    LYS   A       170  CB   in experiments:DSS
+  288  LYS   A       107  CB    LYS   A       176  CB   in experiments:DSS
+  289  LYS   A       107  CB    LYS   A       179  CB   in experiments:DSS
+  290  LYS   A       107  CB    LYS   A       207  CB   in experiments:DSS
+  291  LYS   A       107  CB    LYS   A       210  CB   in experiments:DSS
+  292  LYS   A       107  CB    LYS   A       223  CB   in experiments:DSS
+  293  LYS   A       107  CB    LYS   A       266  CB   in experiments:DSS
+  294  LYS   A       107  CB    LYS   A       326  CB   in experiments:DSS
+  295  LYS   A       107  CB    LYS   A       333  CB   in experiments:DSS
+  296  LYS   A       107  CB    LYS   A       338  CB   in experiments:DSS
+  297  LYS   A       107  CB    LYS   A       343  CB   in experiments:DSS
+  298  LYS   A       107  CB    LYS   A       361  CB   in experiments:DSS
+  299  LYS   A       107  CB    LYS   A       363  CB   in experiments:DSS
+  300  LYS   A       107  CB    LYS   A       370  CB   in experiments:DSS
+  301  LYS   A       107  CB    LYS   A       391  CB   in experiments:DSS
+  302  LYS   A       107  CB    LYS   A       392  CB   in experiments:DSS
+  303  LYS   A       107  CB    LYS   A       436  CB   in experiments:DSS
+  304  LYS   A       107  CB    LYS   A       443  CB   in experiments:DSS
+  305  LYS   A       107  CB    LYS   A       447  CB   in experiments:DSS
+  306  LYS   A       107  CB    LYS   A       455  CB   in experiments:DSS
+  307  LYS   A       107  CB    LYS   A       490  CB   in experiments:DSS
+  308  LYS   A       107  CB    LYS   A       497  CB   in experiments:DSS
+  309  LYS   A       165  CB    LYS   A       170  CB   in experiments:DSS
+  310  LYS   A       165  CB    LYS   A       176  CB   in experiments:DSS
+  311  LYS   A       165  CB    LYS   A       179  CB   in experiments:DSS
+  312  LYS   A       165  CB    LYS   A       207  CB   in experiments:DSS
+  313  LYS   A       165  CB    LYS   A       210  CB   in experiments:DSS
+  314  LYS   A       165  CB    LYS   A       223  CB   in experiments:DSS
+  315  LYS   A       165  CB    LYS   A       266  CB   in experiments:DSS
+  316  LYS   A       165  CB    LYS   A       326  CB   in experiments:DSS
+  317  LYS   A       165  CB    LYS   A       333  CB   in experiments:DSS
+  318  LYS   A       165  CB    LYS   A       338  CB   in experiments:DSS
+  319  LYS   A       165  CB    LYS   A       343  CB   in experiments:DSS
+  320  LYS   A       165  CB    LYS   A       361  CB   in experiments:DSS
+  321  LYS   A       165  CB    LYS   A       363  CB   in experiments:DSS
+  322  LYS   A       165  CB    LYS   A       370  CB   in experiments:DSS
+  323  LYS   A       165  CB    LYS   A       391  CB   in experiments:DSS
+  324  LYS   A       165  CB    LYS   A       392  CB   in experiments:DSS
+  325  LYS   A       165  CB    LYS   A       436  CB   in experiments:DSS
+  326  LYS   A       165  CB    LYS   A       443  CB   in experiments:DSS
+  327  LYS   A       165  CB    LYS   A       447  CB   in experiments:DSS
+  328  LYS   A       165  CB    LYS   A       455  CB   in experiments:DSS
+  329  LYS   A       165  CB    LYS   A       490  CB   in experiments:DSS
+  330  LYS   A       165  CB    LYS   A       497  CB   in experiments:DSS
+  331  LYS   A       170  CB    LYS   A       176  CB   in experiments:DSS
+  332  LYS   A       170  CB    LYS   A       179  CB   in experiments:DSS
+  333  LYS   A       170  CB    LYS   A       207  CB   in experiments:DSS
+  334  LYS   A       170  CB    LYS   A       210  CB   in experiments:DSS
+  335  LYS   A       170  CB    LYS   A       223  CB   in experiments:DSS
+  336  LYS   A       170  CB    LYS   A       266  CB   in experiments:DSS
+  337  LYS   A       170  CB    LYS   A       326  CB   in experiments:DSS
+  338  LYS   A       170  CB    LYS   A       333  CB   in experiments:DSS
+  339  LYS   A       170  CB    LYS   A       338  CB   in experiments:DSS
+  340  LYS   A       170  CB    LYS   A       343  CB   in experiments:DSS
+  341  LYS   A       170  CB    LYS   A       361  CB   in experiments:DSS
+  342  LYS   A       170  CB    LYS   A       363  CB   in experiments:DSS
+  343  LYS   A       170  CB    LYS   A       370  CB   in experiments:DSS
+  344  LYS   A       170  CB    LYS   A       391  CB   in experiments:DSS
+  345  LYS   A       170  CB    LYS   A       392  CB   in experiments:DSS
+  346  LYS   A       170  CB    LYS   A       436  CB   in experiments:DSS
+  347  LYS   A       170  CB    LYS   A       443  CB   in experiments:DSS
+  348  LYS   A       170  CB    LYS   A       447  CB   in experiments:DSS
+  349  LYS   A       170  CB    LYS   A       455  CB   in experiments:DSS
+  350  LYS   A       170  CB    LYS   A       490  CB   in experiments:DSS
+  351  LYS   A       170  CB    LYS   A       497  CB   in experiments:DSS
+  352  LYS   A       176  CB    LYS   A       179  CB   in experiments:DSS
+  353  LYS   A       176  CB    LYS   A       207  CB   in experiments:DSS
+  354  LYS   A       176  CB    LYS   A       210  CB   in experiments:DSS
+  355  LYS   A       176  CB    LYS   A       223  CB   in experiments:DSS
+  356  LYS   A       176  CB    LYS   A       266  CB   in experiments:DSS
+  357  LYS   A       176  CB    LYS   A       326  CB   in experiments:DSS
+  358  LYS   A       176  CB    LYS   A       333  CB   in experiments:DSS
+  359  LYS   A       176  CB    LYS   A       338  CB   in experiments:DSS
+  360  LYS   A       176  CB    LYS   A       343  CB   in experiments:DSS
+  361  LYS   A       176  CB    LYS   A       361  CB   in experiments:DSS
+  362  LYS   A       176  CB    LYS   A       363  CB   in experiments:DSS
+  363  LYS   A       176  CB    LYS   A       370  CB   in experiments:DSS
+  364  LYS   A       176  CB    LYS   A       391  CB   in experiments:DSS
+  365  LYS   A       176  CB    LYS   A       392  CB   in experiments:DSS
+  366  LYS   A       176  CB    LYS   A       436  CB   in experiments:DSS
+  367  LYS   A       176  CB    LYS   A       443  CB   in experiments:DSS
+  368  LYS   A       176  CB    LYS   A       447  CB   in experiments:DSS
+  369  LYS   A       176  CB    LYS   A       455  CB   in experiments:DSS
+  370  LYS   A       176  CB    LYS   A       490  CB   in experiments:DSS
+  371  LYS   A       176  CB    LYS   A       497  CB   in experiments:DSS
+  372  LYS   A       179  CB    LYS   A       207  CB   in experiments:DSS
+  373  LYS   A       179  CB    LYS   A       210  CB   in experiments:DSS
+  374  LYS   A       179  CB    LYS   A       223  CB   in experiments:DSS
+  375  LYS   A       179  CB    LYS   A       266  CB   in experiments:DSS
+  376  LYS   A       179  CB    LYS   A       326  CB   in experiments:DSS
+  377  LYS   A       179  CB    LYS   A       333  CB   in experiments:DSS
+  378  LYS   A       179  CB    LYS   A       338  CB   in experiments:DSS
+  379  LYS   A       179  CB    LYS   A       343  CB   in experiments:DSS
+  380  LYS   A       179  CB    LYS   A       361  CB   in experiments:DSS
+  381  LYS   A       179  CB    LYS   A       363  CB   in experiments:DSS
+  382  LYS   A       179  CB    LYS   A       370  CB   in experiments:DSS
+  383  LYS   A       179  CB    LYS   A       391  CB   in experiments:DSS
+  384  LYS   A       179  CB    LYS   A       392  CB   in experiments:DSS
+  385  LYS   A       179  CB    LYS   A       436  CB   in experiments:DSS
+  386  LYS   A       179  CB    LYS   A       443  CB   in experiments:DSS
+  387  LYS   A       179  CB    LYS   A       447  CB   in experiments:DSS
+  388  LYS   A       179  CB    LYS   A       455  CB   in experiments:DSS
+  389  LYS   A       179  CB    LYS   A       490  CB   in experiments:DSS
+  390  LYS   A       179  CB    LYS   A       497  CB   in experiments:DSS
+  391  LYS   A       207  CB    LYS   A       210  CB   in experiments:DSS
+  392  LYS   A       207  CB    LYS   A       223  CB   in experiments:DSS
+  393  LYS   A       207  CB    LYS   A       266  CB   in experiments:DSS
+  394  LYS   A       207  CB    LYS   A       326  CB   in experiments:DSS
+  395  LYS   A       207  CB    LYS   A       333  CB   in experiments:DSS
+  396  LYS   A       207  CB    LYS   A       338  CB   in experiments:DSS
+  397  LYS   A       207  CB    LYS   A       343  CB   in experiments:DSS
+  398  LYS   A       207  CB    LYS   A       361  CB   in experiments:DSS
+  399  LYS   A       207  CB    LYS   A       363  CB   in experiments:DSS
+  400  LYS   A       207  CB    LYS   A       370  CB   in experiments:DSS
+  401  LYS   A       207  CB    LYS   A       391  CB   in experiments:DSS
+  402  LYS   A       207  CB    LYS   A       392  CB   in experiments:DSS
+  403  LYS   A       207  CB    LYS   A       436  CB   in experiments:DSS
+  404  LYS   A       207  CB    LYS   A       443  CB   in experiments:DSS
+  405  LYS   A       207  CB    LYS   A       447  CB   in experiments:DSS
+  406  LYS   A       207  CB    LYS   A       455  CB   in experiments:DSS
+  407  LYS   A       207  CB    LYS   A       490  CB   in experiments:DSS
+  408  LYS   A       207  CB    LYS   A       497  CB   in experiments:DSS
+  409  LYS   A       210  CB    LYS   A       223  CB   in experiments:DSS
+  410  LYS   A       210  CB    LYS   A       266  CB   in experiments:DSS
+  411  LYS   A       210  CB    LYS   A       326  CB   in experiments:DSS
+  412  LYS   A       210  CB    LYS   A       333  CB   in experiments:DSS
+  413  LYS   A       210  CB    LYS   A       338  CB   in experiments:DSS
+  414  LYS   A       210  CB    LYS   A       343  CB   in experiments:DSS
+  415  LYS   A       210  CB    LYS   A       361  CB   in experiments:DSS
+  416  LYS   A       210  CB    LYS   A       363  CB   in experiments:DSS
+  417  LYS   A       210  CB    LYS   A       370  CB   in experiments:DSS
+  418  LYS   A       210  CB    LYS   A       391  CB   in experiments:DSS
+  419  LYS   A       210  CB    LYS   A       392  CB   in experiments:DSS
+  420  LYS   A       210  CB    LYS   A       436  CB   in experiments:DSS
+  421  LYS   A       210  CB    LYS   A       443  CB   in experiments:DSS
+  422  LYS   A       210  CB    LYS   A       447  CB   in experiments:DSS
+  423  LYS   A       210  CB    LYS   A       455  CB   in experiments:DSS
+  424  LYS   A       210  CB    LYS   A       490  CB   in experiments:DSS
+  425  LYS   A       210  CB    LYS   A       497  CB   in experiments:DSS
+  426  LYS   A       223  CB    LYS   A       266  CB   in experiments:DSS
+  427  LYS   A       223  CB    LYS   A       326  CB   in experiments:DSS
+  428  LYS   A       223  CB    LYS   A       333  CB   in experiments:DSS
+  429  LYS   A       223  CB    LYS   A       338  CB   in experiments:DSS
+  430  LYS   A       223  CB    LYS   A       343  CB   in experiments:DSS
+  431  LYS   A       223  CB    LYS   A       361  CB   in experiments:DSS
+  432  LYS   A       223  CB    LYS   A       363  CB   in experiments:DSS
+  433  LYS   A       223  CB    LYS   A       370  CB   in experiments:DSS
+  434  LYS   A       223  CB    LYS   A       391  CB   in experiments:DSS
+  435  LYS   A       223  CB    LYS   A       392  CB   in experiments:DSS
+  436  LYS   A       223  CB    LYS   A       436  CB   in experiments:DSS
+  437  LYS   A       223  CB    LYS   A       443  CB   in experiments:DSS
+  438  LYS   A       223  CB    LYS   A       447  CB   in experiments:DSS
+  439  LYS   A       223  CB    LYS   A       455  CB   in experiments:DSS
+  440  LYS   A       223  CB    LYS   A       490  CB   in experiments:DSS
+  441  LYS   A       223  CB    LYS   A       497  CB   in experiments:DSS
+  442  LYS   A       266  CB    LYS   A       326  CB   in experiments:DSS
+  443  LYS   A       266  CB    LYS   A       333  CB   in experiments:DSS
+  444  LYS   A       266  CB    LYS   A       338  CB   in experiments:DSS
+  445  LYS   A       266  CB    LYS   A       343  CB   in experiments:DSS
+  446  LYS   A       266  CB    LYS   A       361  CB   in experiments:DSS
+  447  LYS   A       266  CB    LYS   A       363  CB   in experiments:DSS
+  448  LYS   A       266  CB    LYS   A       370  CB   in experiments:DSS
+  449  LYS   A       266  CB    LYS   A       391  CB   in experiments:DSS
+  450  LYS   A       266  CB    LYS   A       392  CB   in experiments:DSS
+  451  LYS   A       266  CB    LYS   A       436  CB   in experiments:DSS
+  452  LYS   A       266  CB    LYS   A       443  CB   in experiments:DSS
+  453  LYS   A       266  CB    LYS   A       447  CB   in experiments:DSS
+  454  LYS   A       266  CB    LYS   A       455  CB   in experiments:DSS
+  455  LYS   A       266  CB    LYS   A       490  CB   in experiments:DSS
+  456  LYS   A       266  CB    LYS   A       497  CB   in experiments:DSS
+  457  LYS   A       326  CB    LYS   A       333  CB   in experiments:DSS
+  458  LYS   A       326  CB    LYS   A       338  CB   in experiments:DSS
+  459  LYS   A       326  CB    LYS   A       343  CB   in experiments:DSS
+  460  LYS   A       326  CB    LYS   A       361  CB   in experiments:DSS
+  461  LYS   A       326  CB    LYS   A       363  CB   in experiments:DSS
+  462  LYS   A       326  CB    LYS   A       370  CB   in experiments:DSS
+  463  LYS   A       326  CB    LYS   A       391  CB   in experiments:DSS
+  464  LYS   A       326  CB    LYS   A       392  CB   in experiments:DSS
+  465  LYS   A       326  CB    LYS   A       436  CB   in experiments:DSS
+  466  LYS   A       326  CB    LYS   A       443  CB   in experiments:DSS
+  467  LYS   A       326  CB    LYS   A       447  CB   in experiments:DSS
+  468  LYS   A       326  CB    LYS   A       455  CB   in experiments:DSS
+  469  LYS   A       326  CB    LYS   A       490  CB   in experiments:DSS
+  470  LYS   A       326  CB    LYS   A       497  CB   in experiments:DSS
+  471  LYS   A       333  CB    LYS   A       338  CB   in experiments:DSS
+  472  LYS   A       333  CB    LYS   A       343  CB   in experiments:DSS
+  473  LYS   A       333  CB    LYS   A       361  CB   in experiments:DSS
+  474  LYS   A       333  CB    LYS   A       363  CB   in experiments:DSS
+  475  LYS   A       333  CB    LYS   A       370  CB   in experiments:DSS
+  476  LYS   A       333  CB    LYS   A       391  CB   in experiments:DSS
+  477  LYS   A       333  CB    LYS   A       392  CB   in experiments:DSS
+  478  LYS   A       333  CB    LYS   A       436  CB   in experiments:DSS
+  479  LYS   A       333  CB    LYS   A       443  CB   in experiments:DSS
+  480  LYS   A       333  CB    LYS   A       447  CB   in experiments:DSS
+  481  LYS   A       333  CB    LYS   A       455  CB   in experiments:DSS
+  482  LYS   A       333  CB    LYS   A       490  CB   in experiments:DSS
+  483  LYS   A       333  CB    LYS   A       497  CB   in experiments:DSS
+  484  LYS   A       338  CB    LYS   A       343  CB   in experiments:DSS
+  485  LYS   A       338  CB    LYS   A       361  CB   in experiments:DSS
+  486  LYS   A       338  CB    LYS   A       363  CB   in experiments:DSS
+  487  LYS   A       338  CB    LYS   A       370  CB   in experiments:DSS
+  488  LYS   A       338  CB    LYS   A       391  CB   in experiments:DSS
+  489  LYS   A       338  CB    LYS   A       392  CB   in experiments:DSS
+  490  LYS   A       338  CB    LYS   A       436  CB   in experiments:DSS
+  491  LYS   A       338  CB    LYS   A       443  CB   in experiments:DSS
+  492  LYS   A       338  CB    LYS   A       447  CB   in experiments:DSS
+  493  LYS   A       338  CB    LYS   A       455  CB   in experiments:DSS
+  494  LYS   A       338  CB    LYS   A       490  CB   in experiments:DSS
+  495  LYS   A       338  CB    LYS   A       497  CB   in experiments:DSS
+  496  LYS   A       343  CB    LYS   A       361  CB   in experiments:DSS
+  497  LYS   A       343  CB    LYS   A       363  CB   in experiments:DSS
+  498  LYS   A       343  CB    LYS   A       370  CB   in experiments:DSS
+  499  LYS   A       343  CB    LYS   A       391  CB   in experiments:DSS
+  500  LYS   A       343  CB    LYS   A       392  CB   in experiments:DSS
+  501  LYS   A       343  CB    LYS   A       436  CB   in experiments:DSS
+  502  LYS   A       343  CB    LYS   A       443  CB   in experiments:DSS
+  503  LYS   A       343  CB    LYS   A       447  CB   in experiments:DSS
+  504  LYS   A       343  CB    LYS   A       455  CB   in experiments:DSS
+  505  LYS   A       343  CB    LYS   A       490  CB   in experiments:DSS
+  506  LYS   A       343  CB    LYS   A       497  CB   in experiments:DSS
+  507  LYS   A       361  CB    LYS   A       363  CB   in experiments:DSS
+  508  LYS   A       361  CB    LYS   A       370  CB   in experiments:DSS
+  509  LYS   A       361  CB    LYS   A       391  CB   in experiments:DSS
+  510  LYS   A       361  CB    LYS   A       392  CB   in experiments:DSS
+  511  LYS   A       361  CB    LYS   A       436  CB   in experiments:DSS
+  512  LYS   A       361  CB    LYS   A       443  CB   in experiments:DSS
+  513  LYS   A       361  CB    LYS   A       447  CB   in experiments:DSS
+  514  LYS   A       361  CB    LYS   A       455  CB   in experiments:DSS
+  515  LYS   A       361  CB    LYS   A       490  CB   in experiments:DSS
+  516  LYS   A       361  CB    LYS   A       497  CB   in experiments:DSS
+  517  LYS   A       363  CB    LYS   A       370  CB   in experiments:DSS
+  518  LYS   A       363  CB    LYS   A       391  CB   in experiments:DSS
+  519  LYS   A       363  CB    LYS   A       392  CB   in experiments:DSS
+  520  LYS   A       363  CB    LYS   A       436  CB   in experiments:DSS
+  521  LYS   A       363  CB    LYS   A       443  CB   in experiments:DSS
+  522  LYS   A       363  CB    LYS   A       447  CB   in experiments:DSS
+  523  LYS   A       363  CB    LYS   A       455  CB   in experiments:DSS
+  524  LYS   A       363  CB    LYS   A       490  CB   in experiments:DSS
+  525  LYS   A       363  CB    LYS   A       497  CB   in experiments:DSS
+  526  LYS   A       370  CB    LYS   A       391  CB   in experiments:DSS
+  527  LYS   A       370  CB    LYS   A       392  CB   in experiments:DSS
+  528  LYS   A       370  CB    LYS   A       436  CB   in experiments:DSS
+  529  LYS   A       370  CB    LYS   A       443  CB   in experiments:DSS
+  530  LYS   A       370  CB    LYS   A       447  CB   in experiments:DSS
+  531  LYS   A       370  CB    LYS   A       455  CB   in experiments:DSS
+  532  LYS   A       370  CB    LYS   A       490  CB   in experiments:DSS
+  533  LYS   A       370  CB    LYS   A       497  CB   in experiments:DSS
+  534  LYS   A       391  CB    LYS   A       392  CB   in experiments:DSS
+  535  LYS   A       391  CB    LYS   A       436  CB   in experiments:DSS
+  536  LYS   A       391  CB    LYS   A       443  CB   in experiments:DSS
+  537  LYS   A       391  CB    LYS   A       447  CB   in experiments:DSS
+  538  LYS   A       391  CB    LYS   A       455  CB   in experiments:DSS
+  539  LYS   A       391  CB    LYS   A       490  CB   in experiments:DSS
+  540  LYS   A       391  CB    LYS   A       497  CB   in experiments:DSS
+  541  LYS   A       392  CB    LYS   A       436  CB   in experiments:DSS
+  542  LYS   A       392  CB    LYS   A       443  CB   in experiments:DSS
+  543  LYS   A       392  CB    LYS   A       447  CB   in experiments:DSS
+  544  LYS   A       392  CB    LYS   A       455  CB   in experiments:DSS
+  545  LYS   A       392  CB    LYS   A       490  CB   in experiments:DSS
+  546  LYS   A       392  CB    LYS   A       497  CB   in experiments:DSS
+  547  LYS   A       436  CB    LYS   A       443  CB   in experiments:DSS
+  548  LYS   A       436  CB    LYS   A       447  CB   in experiments:DSS
+  549  LYS   A       436  CB    LYS   A       455  CB   in experiments:DSS
+  550  LYS   A       436  CB    LYS   A       490  CB   in experiments:DSS
+  551  LYS   A       436  CB    LYS   A       497  CB   in experiments:DSS
+  552  LYS   A       443  CB    LYS   A       447  CB   in experiments:DSS
+  553  LYS   A       443  CB    LYS   A       455  CB   in experiments:DSS
+  554  LYS   A       443  CB    LYS   A       490  CB   in experiments:DSS
+  555  LYS   A       443  CB    LYS   A       497  CB   in experiments:DSS
+  556  LYS   A       447  CB    LYS   A       455  CB   in experiments:DSS
+  557  LYS   A       447  CB    LYS   A       490  CB   in experiments:DSS
+  558  LYS   A       447  CB    LYS   A       497  CB   in experiments:DSS
+  559  LYS   A       455  CB    LYS   A       490  CB   in experiments:DSS
+  560  LYS   A       455  CB    LYS   A       497  CB   in experiments:DSS
+  561  LYS   A       490  CB    LYS   A       497  CB   in experiments:DSS
+  
+  Number of atoms accessible to solvent:         2484
+  Number of residues accessible to solvent:          525
+  
+  -------------------------------------------------------------------------------------------------------------------------
+  >     RESIDUE1   ATOM1 RESIDUE2   ATOM2 EUCLDIST  TOPODIST OBSERVED    DMIN      DMAX        RESULT  OBSRES REACRES RA AA
+  -------------------------------------------------------------------------------------------------------------------------
+  LINK: LYS  A    5 CB   LYS  A   49 CB     36.558    40.018   YES      0.000    35.000     BAD: LONG    0/ 1    0/ 1 YY YY
+  LINK: LYS  A    5 CB   LYS  A   61 CB     16.800    17.405   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A    5 CB   LYS  A   65 CB     12.236    13.038   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A    5 CB   LYS  A  107 CB     20.463    23.253   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   46 CB   LYS  A   56 CB     12.211    12.232   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   46 CB   LYS  A   61 CB     21.064    21.161   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   46 CB   LYS  A   65 CB     23.464    23.893   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   46 CB   LYS  A  207 CB     13.975    13.975   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   46 CB   LYS  A  392 CB     20.769    20.802   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   49 CB   LYS  A   61 CB     25.790    27.251   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   49 CB   LYS  A   63 CB     30.590    37.782   YES      0.000    35.000     BAD: LONG    0/ 1    0/ 1 YY YY
+  LINK: LYS  A   49 CB   LYS  A   65 CB     25.061    27.104   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   49 CB   LYS  A   70 CB     23.400    29.695   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   49 CB   LYS  A  107 CB     38.097    41.402   YES      0.000    35.000     BAD: LONG    0/ 1    0/ 1 YY YY
+  LINK: LYS  A   49 CB   LYS  A  266 CB     38.665    39.768   YES      0.000    35.000     BAD: LONG    0/ 1    0/ 1 YY YY
+  LINK: LYS  A   49 CB   LYS  A  391 CB     18.924    19.528   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   49 CB   LYS  A  490 CB     21.852    22.024   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   56 CB   LYS  A   65 CB     16.883    18.254   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   56 CB   LYS  A  207 CB     14.663    14.819   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   61 CB   LYS  A   65 CB      7.466     7.935   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   61 CB   LYS  A   70 CB     12.887    17.287   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   61 CB   LYS  A   99 CB     21.153    22.497   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   63 CB   LYS  A   70 CB     10.359    10.848   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   65 CB   LYS  A   99 CB     14.273    18.723   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   65 CB   LYS  A  107 CB     23.362    24.748   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   65 CB   LYS  A  266 CB     38.585    38.684   YES      0.000    35.000     BAD: LONG    0/ 1    0/ 1 YY YY
+  LINK: LYS  A   70 CB   LYS  A   99 CB     17.646    23.677   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   99 CB   LYS  A  107 CB     13.395    14.998   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   99 CB   LYS  A  447 CB     14.353    14.390   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A   99 CB   LYS  A  455 CB     16.569    16.569   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  104 CB   LYS  A  436 CB     10.619    11.919   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  104 CB   LYS  A  443 CB     12.956    13.728   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  104 CB   LYS  A  447 CB     17.835    18.743   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  104 CB   LYS  A  455 CB     24.686    24.805   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  107 CB   LYS  A  447 CB     21.827    22.173   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  165 CB   LYS  A  170 CB     12.439    14.515   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  170 CB   LYS  A  207 CB     28.663    29.204   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  170 CB   LYS  A  338 CB     24.589    26.890   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  170 CB   LYS  A  361 CB     15.253    15.333   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  170 CB   LYS  A  363 CB     14.566    15.478   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  170 CB   LYS  A  370 CB     11.139    11.316   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  170 CB   LYS  A  497 CB     14.919    15.348   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  176 CB   LYS  A  210 CB     12.572    12.676   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  176 CB   LYS  A  333 CB     12.477    12.477   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  176 CB   LYS  A  363 CB     30.276    31.012   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  176 CB   LYS  A  370 CB     20.583    21.037   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  176 CB   LYS  A  392 CB      8.120     9.739   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  179 CB   LYS  A  333 CB     17.544    17.544   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  179 CB   LYS  A  363 CB     39.190    41.661   YES      0.000    35.000     BAD: LONG    0/ 1    0/ 1 YY YY
+  LINK: LYS  A  179 CB   LYS  A  392 CB     12.422    13.405   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  207 CB   LYS  A  343 CB     42.027    49.485   YES      0.000    35.000     BAD: LONG    0/ 1    0/ 1 YY YY
+  LINK: LYS  A  207 CB   LYS  A  392 CB     11.343    11.343   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  210 CB   LYS  A  392 CB     12.265    12.265   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  223 CB   LYS  A  333 CB     27.116    34.897   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  266 CB   LYS  A  343 CB     44.546    49.120   YES      0.000    35.000     BAD: LONG    0/ 1    0/ 1 YY YY
+  LINK: LYS  A  326 CB   LYS  A  363 CB     24.154    25.658   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  333 CB   LYS  A  338 CB     12.075    12.306   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  363 CB   LYS  A  370 CB     10.476    11.068   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  363 CB   LYS  A  392 CB     34.034    34.294   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  443 CB   LYS  A  447 CB      8.354     9.318   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  -------------------------------------------------------------------------------------------------------------------------
+  
+  RESULTS:
+  
+  For each experiment:
+  
+  -------------------------------------------------------------------------------------------------------------------------
+  
+  Experiment: DSS
+  
+  Number of type-reactive pairs of atoms:     1275
+  
+  Number of observed-reactive pairs of atoms:      561
+  Number of observed-reactive pairs of atoms within linker reach:       52
+  Number of observed-reactive pairs of atoms outside linker reach:      509
+  Missing links, according to the structure and observed-reactivity:        0
+  
+  Number of observed links:       61
+  Number of observed links consistent with the structure:       52
+  Number of observed links NOT consistent with the structure:        8
+  
+  Sum of scores of observed links:    0.0000000
+  
+  Sensitivity of the cross-linking reaction:    1.0000000
+  False-assignment probability:    0.0062745
+  
+  Likelihood of the experimental result:    1.0000000
+  Log-likelihood of the experimental result:    0.0000000
+  
+  Likelihood using user-defined pbad and pgood:    0.9999999
+  Log-likelihood using user-defined pbad and pgood:   -0.0000001
+  Using: pgood =    0.700; pbad =    0.050
+  
+  -------------------------------------------------------------------------------------------------------------------------
+  
+  FINAL RESULTS:
+  
+  RESULT0:    52 : Number of observations that are consistent with the structure.
+  
+  RESULT1:    52 : Number of topological distances consistent with all observations.
+  RESULT2:     8 : Number of topological distances NOT consistent with observations.
+  RESULT3:     0 : Number of links with missing observations.
+  
+  RESULT4:      0.00000 : Sum of scores of observed links of all experiments.
+  
+  RESULT5:      1.00000 : Likelihood of the set of experimental results.
+  RESULT6:      0.00000 : Log-likelihood of the set of experimental results.
+  
+  Using: pgood =    0.700; pbad =    0.050
+  RESULT7:      1.00000 : Likelihood of the set of experimental results.
+  RESULT8:     -0.00000 : Log-likelihood of the set of experimental results.
+  
+  -------------------------------------------------------------------------------------------------------------------------
+  ATTENTION: There are WARNINGS of input file parsing. Please check the output carefully.
+  -------------------------------------------------------------------------------------------------------------------------
+  
+  
+  #########################################################################################################################

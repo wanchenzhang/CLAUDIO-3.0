@@ -1,0 +1,215 @@
+IN:
+#
+# TOPOLINK input file example
+#
+# L. Martinez - Institute of Chemistry, University of Campinas
+# http://leandro.iqm.unicamp.br
+#
+# Structure file (can be provided in the command line, overwriting this definition); PDB or mmCIF formats
+structure data/temp/dist_reeval/tmp.pdb#endread ENDMDL  # Use this to stop reading atoms if this keyword is found (comment otherwise)
+readatoms backplusCB # Which atoms to consider (all/heavy(no-H)/backbone/backplusCB)
+# Output directory for links (comment if you do not want the PDB files, that may be a lot)
+printlinks no
+#linkdir ./links
+# What cross-links to compute (all/reactive/observed)
+compute observed
+#compute reactive
+#compute all
+# If only inter-domain (inter-chain) links are of interested, uncomment the following line
+#interchain
+# Only consider observed links with score greater than scorecut
+scorecut 0.d0
+# Cross-links observed:
+experiment DSS
+  # Possible types of cross-links and maximum distances
+  #        ResType  Chain  ResNum   AtomType    ResType  Chain  ResNum   AtomType  MaxDist
+  linktype   MET     all      1       N           LYS     all     all       CB        35
+  linktype   LYS     all     all      CB          LYS     all     all       CB        35
+
+  observed LYS A 45 LYS A 18
+  observed LYS A 175 LYS A 186
+
+end experiment DSS
+# Optional parameters
+search_limit relative 2  # Search for topological distances of up to search_range*dmaxlink
+printallfound yes    # Prints, or not, the structure of the links that were found but violate the distances
+printPDBnotfound yes # Prints, or not, PDB files for the links which were not found at all (prints a straight line)
+pgood 0.70 # Probability of observing a link which is within link reach
+pbad  0.05 # Probability of observing a link which is NOT within linker reach
+vdwrad 3.         # Radius to be used for excluded atom volume computation
+print 0           # Extensive or concise printing
+printnotfound yes # Print data for pairs for links which were not found
+quitgood no       # Quit whenever a valid link is found (stop searching for shortest one)
+dbond 1.5         # Bond distance of link atoms
+kbond 10.         # Energy constant for link bonds
+kpath 10.         # Energy constant for the complete path distension, used for computing probability
+kvdw  2.          # Force constant of overlap function
+# Technical parameters for the optimization method
+ntrial 400  # Maximum number of trials for best link search
+nbest 5     # Number of times the same best link is found until satisfied
+maxfunc 50  # Maximum number of function evaluations of CG-Newton
+maxcg 40    # Maximum number of CG iterations
+seed random # Seed for random number generator (random or integer number)
+iguess 2
+exit # You can add anything after this
+
+
+OUT:
+
+  ######################################################## TOPOLINK #######################################################
+                 Institute of Chemistry - University of Campinas. http://m3g.iqm.unicamp.br/topolink
+
+                                                                                                         Version 19.156 
+
+  Structure file: data/temp/dist_reeval/tmp.pdb
+  TopoLink input file: data/temp/dist_reeval/topo.tmp
+  Will stop structure reading when ################## is found.
+  Only backbone plus CB atoms will be considered.
+  
+  Links will not be written as PDB files.
+  
+  Printing option:        0
+  Leave when first valid link is found:  F
+  Link bond distance:    1.5000000
+  Link bond force-constant:   10.0000000
+  VdW radius for volume exclusion:    3.0000000
+  Path energy constant:   10.0000000
+  Cutoff for observed scores:    0.0000000
+  Number of trials for link search:      400
+  Number of repeated best links to find until quit:        5
+  Maximum number of function evaluations of CGNewton:       50
+  Maximum number of CG iterations in CGNewton:       40
+  Seed for random number generator:    11275
+  
+  Number of experiments:        1
+  WARNING: Multiple conformations of residue GLN A       56 found. Using only A.
+  WARNING: Multiple conformations of residue GLN A       56 found. Using only A.
+  WARNING: Multiple conformations of residue GLN A       56 found. Using only A.
+  WARNING: Multiple conformations of residue GLN A       56 found. Using only A.
+  WARNING: Multiple conformations of residue GLN A       56 found. Using only A.
+  WARNING: Multiple conformations of residue GLN A       56 found. Using only A.
+  WARNING: Multiple conformations of residue SER A       61 found. Using only A.
+  WARNING: Multiple conformations of residue SER A       61 found. Using only A.
+  WARNING: Multiple conformations of residue SER A       61 found. Using only A.
+  WARNING: Multiple conformations of residue ASN A      113 found. Using only A.
+  WARNING: Multiple conformations of residue ASN A      113 found. Using only A.
+  WARNING: Multiple conformations of residue ASN A      113 found. Using only A.
+  WARNING: Multiple conformations of residue ASN A      113 found. Using only A.
+  WARNING: Multiple conformations of residue ASN A      113 found. Using only A.
+  WARNING: Multiple conformations of residue HIS A      146 found. Using only A.
+  WARNING: Multiple conformations of residue HIS A      146 found. Using only A.
+  WARNING: Multiple conformations of residue HIS A      146 found. Using only A.
+  WARNING: Multiple conformations of residue HIS A      146 found. Using only A.
+  WARNING: Multiple conformations of residue HIS A      146 found. Using only A.
+  WARNING: Multiple conformations of residue HIS A      146 found. Using only A.
+  WARNING: Multiple conformations of residue HIS A      146 found. Using only A.
+  WARNING: Multiple conformations of residue SER A      211 found. Using only A.
+  WARNING: Multiple conformations of residue SER A      211 found. Using only A.
+  WARNING: Multiple conformations of residue SER A      211 found. Using only A.
+  
+  Number of atoms read from structure file:     1089
+  Number of chains found in structure file:            1
+  
+  WARNING: First atom of link type does not correspond to any atom of the structure.
+  Experiment: DSS
+  Link type:   MET   all   N     LYS   all   CB      35.000
+  
+  -------------------------------------------------------------------------------------------------------------------------
+  Experiment: DSS
+  Observed links:
+  1  LYS   A        45  LYS   A        18
+  2  LYS   A       175  LYS   A       186
+  
+  -------------------------------------------------------------------------------------------------------------------------
+  -------------------------------------------------------------------------------------------------------------------------
+  
+  Number of atoms that might be involved in reactions, according link types:       14
+  
+  All reactive atoms, according to observations:
+  1   LYS   A        18  CB
+  2   LYS   A        45  CB
+  3   LYS   A       175  CB
+  4   LYS   A       186  CB
+  
+  Number of reactive pairs according to sequence:
+  Experiment DSS:    91
+  Total number of unique reactive pairs, according to link types:           91
+  
+  Number of reactive pairs according to observations:
+  Experiment DSS:     6
+  Total number of unique reactive pairs, according to observations:            6
+  
+  List of reactive atom pairs, according to observations:
+  1  LYS   A        18  CB    LYS   A        45  CB   in experiments:DSS
+  2  LYS   A        18  CB    LYS   A       175  CB   in experiments:DSS
+  3  LYS   A        18  CB    LYS   A       186  CB   in experiments:DSS
+  4  LYS   A        45  CB    LYS   A       175  CB   in experiments:DSS
+  5  LYS   A        45  CB    LYS   A       186  CB   in experiments:DSS
+  6  LYS   A       175  CB    LYS   A       186  CB   in experiments:DSS
+  
+  Number of atoms accessible to solvent:         1053
+  Number of residues accessible to solvent:          221
+  
+  -------------------------------------------------------------------------------------------------------------------------
+  >     RESIDUE1   ATOM1 RESIDUE2   ATOM2 EUCLDIST  TOPODIST OBSERVED    DMIN      DMAX        RESULT  OBSRES REACRES RA AA
+  -------------------------------------------------------------------------------------------------------------------------
+  LINK: LYS  A   18 CB   LYS  A   45 CB     23.791    24.256   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  175 CB   LYS  A  186 CB     13.589    13.705   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  -------------------------------------------------------------------------------------------------------------------------
+  
+  RESULTS:
+  
+  For each experiment:
+  
+  -------------------------------------------------------------------------------------------------------------------------
+  
+  Experiment: DSS
+  
+  Number of type-reactive pairs of atoms:       91
+  
+  Number of observed-reactive pairs of atoms:        6
+  Number of observed-reactive pairs of atoms within linker reach:        2
+  Number of observed-reactive pairs of atoms outside linker reach:        4
+  Missing links, according to the structure and observed-reactivity:        0
+  
+  Number of observed links:        2
+  Number of observed links consistent with the structure:        2
+  Number of observed links NOT consistent with the structure:        0
+  
+  Sum of scores of observed links:    0.0000000
+  
+  Sensitivity of the cross-linking reaction:    1.0000000
+  False-assignment probability:    0.0000000
+  
+  Likelihood of the experimental result:    0.9995170
+  Log-likelihood of the experimental result:   -0.0004832
+  
+  Likelihood using user-defined pbad and pgood:    0.5100000
+  Log-likelihood using user-defined pbad and pgood:   -0.6733446
+  Using: pgood =    0.700; pbad =    0.050
+  
+  -------------------------------------------------------------------------------------------------------------------------
+  
+  FINAL RESULTS:
+  
+  RESULT0:     2 : Number of observations that are consistent with the structure.
+  
+  RESULT1:     2 : Number of topological distances consistent with all observations.
+  RESULT2:     0 : Number of topological distances NOT consistent with observations.
+  RESULT3:     0 : Number of links with missing observations.
+  
+  RESULT4:      0.00000 : Sum of scores of observed links of all experiments.
+  
+  RESULT5:      0.99952 : Likelihood of the set of experimental results.
+  RESULT6:     -0.00048 : Log-likelihood of the set of experimental results.
+  
+  Using: pgood =    0.700; pbad =    0.050
+  RESULT7:      0.51000 : Likelihood of the set of experimental results.
+  RESULT8:     -0.67334 : Log-likelihood of the set of experimental results.
+  
+  -------------------------------------------------------------------------------------------------------------------------
+  ATTENTION: There are WARNINGS of input file parsing. Please check the output carefully.
+  -------------------------------------------------------------------------------------------------------------------------
+  
+  
+  #########################################################################################################################

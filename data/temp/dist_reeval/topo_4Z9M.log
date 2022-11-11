@@ -1,0 +1,402 @@
+IN:
+#
+# TOPOLINK input file example
+#
+# L. Martinez - Institute of Chemistry, University of Campinas
+# http://leandro.iqm.unicamp.br
+#
+# Structure file (can be provided in the command line, overwriting this definition); PDB or mmCIF formats
+structure data/temp/dist_reeval/tmp.pdb#endread ENDMDL  # Use this to stop reading atoms if this keyword is found (comment otherwise)
+readatoms backplusCB # Which atoms to consider (all/heavy(no-H)/backbone/backplusCB)
+# Output directory for links (comment if you do not want the PDB files, that may be a lot)
+printlinks no
+#linkdir ./links
+# What cross-links to compute (all/reactive/observed)
+compute observed
+#compute reactive
+#compute all
+# If only inter-domain (inter-chain) links are of interested, uncomment the following line
+#interchain
+# Only consider observed links with score greater than scorecut
+scorecut 0.d0
+# Cross-links observed:
+experiment DSS
+  # Possible types of cross-links and maximum distances
+  #        ResType  Chain  ResNum   AtomType    ResType  Chain  ResNum   AtomType  MaxDist
+  linktype   MET     all      1       N           LYS     all     all       CB        35
+  linktype   LYS     all     all      CB          LYS     all     all       CB        35
+
+  observed LYS A 353 LYS A 338
+  observed LYS A 353 LYS A 292
+  observed LYS A 344 LYS A 276
+  observed LYS A 353 LYS A 353
+  observed LYS A 292 LYS A 140
+  observed LYS A 353 LYS A 335
+  observed LYS A 335 LYS A 344
+  observed LYS A 292 LYS A 276
+  observed LYS A 338 LYS A 344
+  observed LYS A 335 LYS A 276
+  observed LYS A 353 LYS A 344
+  observed LYS A 344 LYS A 344
+  observed LYS A 292 LYS A 344
+  observed LYS A 292 LYS A 128
+  observed LYS A 292 LYS A 200
+  observed LYS A 79 LYS A 79
+  observed LYS A 140 LYS A 128
+  observed LYS A 200 LYS A 59
+  observed LYS A 276 LYS A 230
+  observed LYS A 281 LYS A 200
+  observed LYS A 292 LYS A 59
+  observed LYS A 292 LYS A 209
+  observed LYS A 209 LYS A 200
+  observed LYS A 344 LYS A 128
+  observed LYS A 209 LYS A 209
+  observed LYS A 353 LYS A 230
+  observed LYS A 230 LYS A 230
+  observed LYS A 276 LYS A 276
+  observed LYS A 281 LYS A 292
+  observed LYS A 281 LYS A 344
+  observed LYS A 140 LYS A 149
+  observed LYS A 344 LYS A 140
+  observed LYS A 292 LYS A 149
+  observed LYS A 335 LYS A 292
+  observed LYS A 335 LYS A 335
+  observed LYS A 338 LYS A 335
+  observed LYS A 335 LYS A 59
+  observed LYS A 281 LYS A 338
+
+end experiment DSS
+# Optional parameters
+search_limit relative 2  # Search for topological distances of up to search_range*dmaxlink
+printallfound yes    # Prints, or not, the structure of the links that were found but violate the distances
+printPDBnotfound yes # Prints, or not, PDB files for the links which were not found at all (prints a straight line)
+pgood 0.70 # Probability of observing a link which is within link reach
+pbad  0.05 # Probability of observing a link which is NOT within linker reach
+vdwrad 3.         # Radius to be used for excluded atom volume computation
+print 0           # Extensive or concise printing
+printnotfound yes # Print data for pairs for links which were not found
+quitgood no       # Quit whenever a valid link is found (stop searching for shortest one)
+dbond 1.5         # Bond distance of link atoms
+kbond 10.         # Energy constant for link bonds
+kpath 10.         # Energy constant for the complete path distension, used for computing probability
+kvdw  2.          # Force constant of overlap function
+# Technical parameters for the optimization method
+ntrial 400  # Maximum number of trials for best link search
+nbest 5     # Number of times the same best link is found until satisfied
+maxfunc 50  # Maximum number of function evaluations of CG-Newton
+maxcg 40    # Maximum number of CG iterations
+seed random # Seed for random number generator (random or integer number)
+iguess 2
+exit # You can add anything after this
+
+
+OUT:
+
+  ######################################################## TOPOLINK #######################################################
+                 Institute of Chemistry - University of Campinas. http://m3g.iqm.unicamp.br/topolink
+
+                                                                                                         Version 19.156 
+
+  Structure file: data/temp/dist_reeval/tmp.pdb
+  TopoLink input file: data/temp/dist_reeval/topo.tmp
+  Will stop structure reading when ################## is found.
+  Only backbone plus CB atoms will be considered.
+  
+  Links will not be written as PDB files.
+  
+  Printing option:        0
+  Leave when first valid link is found:  F
+  Link bond distance:    1.5000000
+  Link bond force-constant:   10.0000000
+  VdW radius for volume exclusion:    3.0000000
+  Path energy constant:   10.0000000
+  Cutoff for observed scores:    0.0000000
+  Number of trials for link search:      400
+  Number of repeated best links to find until quit:        5
+  Maximum number of function evaluations of CGNewton:       50
+  Maximum number of CG iterations in CGNewton:       40
+  Seed for random number generator:     8165
+  
+  Number of experiments:        1
+  
+  Number of atoms read from structure file:     1733
+  Number of chains found in structure file:            1
+  
+  WARNING: First atom of link type does not correspond to any atom of the structure.
+  Experiment: DSS
+  Link type:   MET   all   N     LYS   all   CB      35.000
+  
+  -------------------------------------------------------------------------------------------------------------------------
+  Experiment: DSS
+  Observed links:
+  1  LYS   A       353  LYS   A       338
+  2  LYS   A       353  LYS   A       292
+  3  LYS   A       344  LYS   A       276
+  4  LYS   A       353  LYS   A       353
+  5  LYS   A       292  LYS   A       140
+  6  LYS   A       353  LYS   A       335
+  7  LYS   A       335  LYS   A       344
+  8  LYS   A       292  LYS   A       276
+  9  LYS   A       338  LYS   A       344
+  10  LYS   A       335  LYS   A       276
+  11  LYS   A       353  LYS   A       344
+  12  LYS   A       344  LYS   A       344
+  13  LYS   A       292  LYS   A       344
+  14  LYS   A       292  LYS   A       128
+  15  LYS   A       292  LYS   A       200
+  16  LYS   A        79  LYS   A        79
+  17  LYS   A       140  LYS   A       128
+  18  LYS   A       200  LYS   A        59
+  19  LYS   A       276  LYS   A       230
+  20  LYS   A       281  LYS   A       200
+  21  LYS   A       292  LYS   A        59
+  22  LYS   A       292  LYS   A       209
+  23  LYS   A       209  LYS   A       200
+  24  LYS   A       344  LYS   A       128
+  25  LYS   A       209  LYS   A       209
+  26  LYS   A       353  LYS   A       230
+  27  LYS   A       230  LYS   A       230
+  28  LYS   A       276  LYS   A       276
+  29  LYS   A       281  LYS   A       292
+  30  LYS   A       281  LYS   A       344
+  31  LYS   A       140  LYS   A       149
+  32  LYS   A       344  LYS   A       140
+  33  LYS   A       292  LYS   A       149
+  34  LYS   A       335  LYS   A       292
+  35  LYS   A       335  LYS   A       335
+  36  LYS   A       338  LYS   A       335
+  37  LYS   A       335  LYS   A        59
+  38  LYS   A       281  LYS   A       338
+  
+  -------------------------------------------------------------------------------------------------------------------------
+  -------------------------------------------------------------------------------------------------------------------------
+  
+  Number of atoms that might be involved in reactions, according link types:       18
+  
+  All reactive atoms, according to observations:
+  1   LYS   A        59  CB
+  2   LYS   A        79  CB
+  3   LYS   A       128  CB
+  4   LYS   A       140  CB
+  5   LYS   A       149  CB
+  6   LYS   A       200  CB
+  7   LYS   A       209  CB
+  8   LYS   A       230  CB
+  9   LYS   A       276  CB
+  10   LYS   A       281  CB
+  11   LYS   A       292  CB
+  12   LYS   A       335  CB
+  13   LYS   A       338  CB
+  14   LYS   A       344  CB
+  15   LYS   A       353  CB
+  
+  Number of reactive pairs according to sequence:
+  Experiment DSS:   153
+  Total number of unique reactive pairs, according to link types:          153
+  
+  Number of reactive pairs according to observations:
+  Experiment DSS:   105
+  Total number of unique reactive pairs, according to observations:          105
+  
+  List of reactive atom pairs, according to observations:
+  1  LYS   A        59  CB    LYS   A        79  CB   in experiments:DSS
+  2  LYS   A        59  CB    LYS   A       128  CB   in experiments:DSS
+  3  LYS   A        59  CB    LYS   A       140  CB   in experiments:DSS
+  4  LYS   A        59  CB    LYS   A       149  CB   in experiments:DSS
+  5  LYS   A        59  CB    LYS   A       200  CB   in experiments:DSS
+  6  LYS   A        59  CB    LYS   A       209  CB   in experiments:DSS
+  7  LYS   A        59  CB    LYS   A       230  CB   in experiments:DSS
+  8  LYS   A        59  CB    LYS   A       276  CB   in experiments:DSS
+  9  LYS   A        59  CB    LYS   A       281  CB   in experiments:DSS
+  10  LYS   A        59  CB    LYS   A       292  CB   in experiments:DSS
+  11  LYS   A        59  CB    LYS   A       335  CB   in experiments:DSS
+  12  LYS   A        59  CB    LYS   A       338  CB   in experiments:DSS
+  13  LYS   A        59  CB    LYS   A       344  CB   in experiments:DSS
+  14  LYS   A        59  CB    LYS   A       353  CB   in experiments:DSS
+  15  LYS   A        79  CB    LYS   A       128  CB   in experiments:DSS
+  16  LYS   A        79  CB    LYS   A       140  CB   in experiments:DSS
+  17  LYS   A        79  CB    LYS   A       149  CB   in experiments:DSS
+  18  LYS   A        79  CB    LYS   A       200  CB   in experiments:DSS
+  19  LYS   A        79  CB    LYS   A       209  CB   in experiments:DSS
+  20  LYS   A        79  CB    LYS   A       230  CB   in experiments:DSS
+  21  LYS   A        79  CB    LYS   A       276  CB   in experiments:DSS
+  22  LYS   A        79  CB    LYS   A       281  CB   in experiments:DSS
+  23  LYS   A        79  CB    LYS   A       292  CB   in experiments:DSS
+  24  LYS   A        79  CB    LYS   A       335  CB   in experiments:DSS
+  25  LYS   A        79  CB    LYS   A       338  CB   in experiments:DSS
+  26  LYS   A        79  CB    LYS   A       344  CB   in experiments:DSS
+  27  LYS   A        79  CB    LYS   A       353  CB   in experiments:DSS
+  28  LYS   A       128  CB    LYS   A       140  CB   in experiments:DSS
+  29  LYS   A       128  CB    LYS   A       149  CB   in experiments:DSS
+  30  LYS   A       128  CB    LYS   A       200  CB   in experiments:DSS
+  31  LYS   A       128  CB    LYS   A       209  CB   in experiments:DSS
+  32  LYS   A       128  CB    LYS   A       230  CB   in experiments:DSS
+  33  LYS   A       128  CB    LYS   A       276  CB   in experiments:DSS
+  34  LYS   A       128  CB    LYS   A       281  CB   in experiments:DSS
+  35  LYS   A       128  CB    LYS   A       292  CB   in experiments:DSS
+  36  LYS   A       128  CB    LYS   A       335  CB   in experiments:DSS
+  37  LYS   A       128  CB    LYS   A       338  CB   in experiments:DSS
+  38  LYS   A       128  CB    LYS   A       344  CB   in experiments:DSS
+  39  LYS   A       128  CB    LYS   A       353  CB   in experiments:DSS
+  40  LYS   A       140  CB    LYS   A       149  CB   in experiments:DSS
+  41  LYS   A       140  CB    LYS   A       200  CB   in experiments:DSS
+  42  LYS   A       140  CB    LYS   A       209  CB   in experiments:DSS
+  43  LYS   A       140  CB    LYS   A       230  CB   in experiments:DSS
+  44  LYS   A       140  CB    LYS   A       276  CB   in experiments:DSS
+  45  LYS   A       140  CB    LYS   A       281  CB   in experiments:DSS
+  46  LYS   A       140  CB    LYS   A       292  CB   in experiments:DSS
+  47  LYS   A       140  CB    LYS   A       335  CB   in experiments:DSS
+  48  LYS   A       140  CB    LYS   A       338  CB   in experiments:DSS
+  49  LYS   A       140  CB    LYS   A       344  CB   in experiments:DSS
+  50  LYS   A       140  CB    LYS   A       353  CB   in experiments:DSS
+  51  LYS   A       149  CB    LYS   A       200  CB   in experiments:DSS
+  52  LYS   A       149  CB    LYS   A       209  CB   in experiments:DSS
+  53  LYS   A       149  CB    LYS   A       230  CB   in experiments:DSS
+  54  LYS   A       149  CB    LYS   A       276  CB   in experiments:DSS
+  55  LYS   A       149  CB    LYS   A       281  CB   in experiments:DSS
+  56  LYS   A       149  CB    LYS   A       292  CB   in experiments:DSS
+  57  LYS   A       149  CB    LYS   A       335  CB   in experiments:DSS
+  58  LYS   A       149  CB    LYS   A       338  CB   in experiments:DSS
+  59  LYS   A       149  CB    LYS   A       344  CB   in experiments:DSS
+  60  LYS   A       149  CB    LYS   A       353  CB   in experiments:DSS
+  61  LYS   A       200  CB    LYS   A       209  CB   in experiments:DSS
+  62  LYS   A       200  CB    LYS   A       230  CB   in experiments:DSS
+  63  LYS   A       200  CB    LYS   A       276  CB   in experiments:DSS
+  64  LYS   A       200  CB    LYS   A       281  CB   in experiments:DSS
+  65  LYS   A       200  CB    LYS   A       292  CB   in experiments:DSS
+  66  LYS   A       200  CB    LYS   A       335  CB   in experiments:DSS
+  67  LYS   A       200  CB    LYS   A       338  CB   in experiments:DSS
+  68  LYS   A       200  CB    LYS   A       344  CB   in experiments:DSS
+  69  LYS   A       200  CB    LYS   A       353  CB   in experiments:DSS
+  70  LYS   A       209  CB    LYS   A       230  CB   in experiments:DSS
+  71  LYS   A       209  CB    LYS   A       276  CB   in experiments:DSS
+  72  LYS   A       209  CB    LYS   A       281  CB   in experiments:DSS
+  73  LYS   A       209  CB    LYS   A       292  CB   in experiments:DSS
+  74  LYS   A       209  CB    LYS   A       335  CB   in experiments:DSS
+  75  LYS   A       209  CB    LYS   A       338  CB   in experiments:DSS
+  76  LYS   A       209  CB    LYS   A       344  CB   in experiments:DSS
+  77  LYS   A       209  CB    LYS   A       353  CB   in experiments:DSS
+  78  LYS   A       230  CB    LYS   A       276  CB   in experiments:DSS
+  79  LYS   A       230  CB    LYS   A       281  CB   in experiments:DSS
+  80  LYS   A       230  CB    LYS   A       292  CB   in experiments:DSS
+  81  LYS   A       230  CB    LYS   A       335  CB   in experiments:DSS
+  82  LYS   A       230  CB    LYS   A       338  CB   in experiments:DSS
+  83  LYS   A       230  CB    LYS   A       344  CB   in experiments:DSS
+  84  LYS   A       230  CB    LYS   A       353  CB   in experiments:DSS
+  85  LYS   A       276  CB    LYS   A       281  CB   in experiments:DSS
+  86  LYS   A       276  CB    LYS   A       292  CB   in experiments:DSS
+  87  LYS   A       276  CB    LYS   A       335  CB   in experiments:DSS
+  88  LYS   A       276  CB    LYS   A       338  CB   in experiments:DSS
+  89  LYS   A       276  CB    LYS   A       344  CB   in experiments:DSS
+  90  LYS   A       276  CB    LYS   A       353  CB   in experiments:DSS
+  91  LYS   A       281  CB    LYS   A       292  CB   in experiments:DSS
+  92  LYS   A       281  CB    LYS   A       335  CB   in experiments:DSS
+  93  LYS   A       281  CB    LYS   A       338  CB   in experiments:DSS
+  94  LYS   A       281  CB    LYS   A       344  CB   in experiments:DSS
+  95  LYS   A       281  CB    LYS   A       353  CB   in experiments:DSS
+  96  LYS   A       292  CB    LYS   A       335  CB   in experiments:DSS
+  97  LYS   A       292  CB    LYS   A       338  CB   in experiments:DSS
+  98  LYS   A       292  CB    LYS   A       344  CB   in experiments:DSS
+  99  LYS   A       292  CB    LYS   A       353  CB   in experiments:DSS
+  100  LYS   A       335  CB    LYS   A       338  CB   in experiments:DSS
+  101  LYS   A       335  CB    LYS   A       344  CB   in experiments:DSS
+  102  LYS   A       335  CB    LYS   A       353  CB   in experiments:DSS
+  103  LYS   A       338  CB    LYS   A       344  CB   in experiments:DSS
+  104  LYS   A       338  CB    LYS   A       353  CB   in experiments:DSS
+  105  LYS   A       344  CB    LYS   A       353  CB   in experiments:DSS
+  
+  Number of atoms accessible to solvent:         1687
+  Number of residues accessible to solvent:          352
+  
+  -------------------------------------------------------------------------------------------------------------------------
+  >     RESIDUE1   ATOM1 RESIDUE2   ATOM2 EUCLDIST  TOPODIST OBSERVED    DMIN      DMAX        RESULT  OBSRES REACRES RA AA
+  -------------------------------------------------------------------------------------------------------------------------
+  LINK: LYS  A   59 CB   LYS  A  200 CB     53.537   >70.000   YES      0.000    35.000     BAD: EUCL    0/ 1    0/ 1 YY YY
+  LINK: LYS  A   59 CB   LYS  A  292 CB     45.422    59.660   YES      0.000    35.000     BAD: LONG    0/ 1    0/ 1 YY YY
+  LINK: LYS  A   59 CB   LYS  A  335 CB     35.188    38.655   YES      0.000    35.000     BAD: LONG    0/ 1    0/ 1 YY YY
+  LINK: LYS  A  128 CB   LYS  A  140 CB     14.169    18.120   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  128 CB   LYS  A  292 CB     30.104    39.457   YES      0.000    35.000     BAD: LONG    0/ 1    0/ 1 YY YY
+  LINK: LYS  A  128 CB   LYS  A  344 CB     22.394    22.751   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  140 CB   LYS  A  149 CB     19.873    20.574   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  140 CB   LYS  A  292 CB     21.360    21.625   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  140 CB   LYS  A  344 CB     30.957    32.024   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  149 CB   LYS  A  292 CB     14.549    15.922   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  200 CB   LYS  A  209 CB     22.474    23.657   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  200 CB   LYS  A  281 CB     22.498    22.928   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  200 CB   LYS  A  292 CB     13.395    13.707   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  209 CB   LYS  A  292 CB     26.180    30.062   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  230 CB   LYS  A  276 CB     25.121    26.938   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  230 CB   LYS  A  353 CB     23.736    27.738   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  276 CB   LYS  A  292 CB     24.530    28.092   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  276 CB   LYS  A  335 CB     23.469    24.546   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  276 CB   LYS  A  344 CB     30.875    43.836   YES      0.000    35.000     BAD: LONG    0/ 1    0/ 1 YY YY
+  LINK: LYS  A  281 CB   LYS  A  292 CB     16.910    18.328   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  281 CB   LYS  A  338 CB     30.888    34.315   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  281 CB   LYS  A  344 CB     29.060    32.282   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  292 CB   LYS  A  335 CB     40.241    40.717   YES      0.000    35.000     BAD: LONG    0/ 1    0/ 1 YY YY
+  LINK: LYS  A  292 CB   LYS  A  344 CB     37.678    45.157   YES      0.000    35.000     BAD: LONG    0/ 1    0/ 1 YY YY
+  LINK: LYS  A  292 CB   LYS  A  353 CB     30.954    37.923   YES      0.000    35.000     BAD: LONG    0/ 1    0/ 1 YY YY
+  LINK: LYS  A  335 CB   LYS  A  338 CB      6.823     7.724   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  335 CB   LYS  A  344 CB     16.070    16.867   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  335 CB   LYS  A  353 CB     15.302    18.180   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  338 CB   LYS  A  344 CB     14.419    16.999   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  338 CB   LYS  A  353 CB     13.020    14.035   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  LINK: LYS  A  344 CB   LYS  A  353 CB     11.834    15.073   YES      0.000    35.000     OK: FOUND    1/ 1    1/ 1 YY YY
+  -------------------------------------------------------------------------------------------------------------------------
+  
+  RESULTS:
+  
+  For each experiment:
+  
+  -------------------------------------------------------------------------------------------------------------------------
+  
+  Experiment: DSS
+  
+  Number of type-reactive pairs of atoms:      153
+  
+  Number of observed-reactive pairs of atoms:      105
+  Number of observed-reactive pairs of atoms within linker reach:       23
+  Number of observed-reactive pairs of atoms outside linker reach:       82
+  Missing links, according to the structure and observed-reactivity:        0
+  
+  Number of observed links:       38
+  Number of observed links consistent with the structure:       23
+  Number of observed links NOT consistent with the structure:        8
+  
+  Sum of scores of observed links:    0.0000000
+  
+  Sensitivity of the cross-linking reaction:    1.0000000
+  False-assignment probability:    0.0522876
+  
+  Likelihood of the experimental result:    0.9839173
+  Log-likelihood of the experimental result:   -0.0162134
+  
+  Likelihood using user-defined pbad and pgood: ************
+  Log-likelihood using user-defined pbad and pgood:          NaN
+  Using: pgood =    0.700; pbad =    0.050
+  
+  -------------------------------------------------------------------------------------------------------------------------
+  
+  FINAL RESULTS:
+  
+  RESULT0:    23 : Number of observations that are consistent with the structure.
+  
+  RESULT1:    23 : Number of topological distances consistent with all observations.
+  RESULT2:     8 : Number of topological distances NOT consistent with observations.
+  RESULT3:     0 : Number of links with missing observations.
+  
+  RESULT4:      0.00000 : Sum of scores of observed links of all experiments.
+  
+  RESULT5:      0.98392 : Likelihood of the set of experimental results.
+  RESULT6:     -0.01621 : Log-likelihood of the set of experimental results.
+  
+  Using: pgood =    0.700; pbad =    0.050
+  RESULT7:  -5363.39159 : Likelihood of the set of experimental results.
+  RESULT8:          NaN : Log-likelihood of the set of experimental results.
+  
+  -------------------------------------------------------------------------------------------------------------------------
+  ATTENTION: There are WARNINGS of input file parsing. Please check the output carefully.
+  -------------------------------------------------------------------------------------------------------------------------
+  
+  
+  #########################################################################################################################
