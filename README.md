@@ -87,20 +87,9 @@ Note: All csv-file outputs pertaining the input dataset are summarized into a si
 ### Example
 **CLAUDIO** (in full) can be run like this:
 ```
-
+python3 clauio.py -c data/in/iiCheck_config.txt
 ```
-**Module01** can be run like this:
-```
-python3 claudio_lists.py -i "c/user/documents/cross_links.csv -p "{'my_entry1': 'unip_id_a', 'my_entry2': 'unip_id_b'}" -xl "interaction_col" -o "c/user/documents/outs"
-```
-Runs unique protein list tool resulting in two csv-files in "c/user/documents/outs".
-
-**Module02** can be run like this:
-```
-python3 claudio_structdi.py -i "c/user/documents/cross_links.csv" -e 0.0001 -t hhsearch -o "c/user/documents/outs"
-```
-Runs structural distance analysis tool resulting in two csv-files, two png-files and one log-file in "c/user/documents/outs".
 
 ## Authors
 
-* **Alexander Röhl**
+* **Alexander Röhl, Hadeer Elhabashy, Eugen Netz**
