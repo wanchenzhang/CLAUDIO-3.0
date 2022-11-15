@@ -1,19 +1,6 @@
 # Module 03 - Overlapping peptide sequence analysis tool
 
-## Usage
-
 ### The CLI - Command Line Interface
-**Input**
-
-This tool requires a csv-file containing multiple observed cross-linking interactions. Two columns have to contain 
-uniprot ids for each interacting residue, two columns have to contain the observed peptides for each interacting residue
-and two columns have to contain the crosslinked lysin's position within the full sequence (alternative: fill these with
-Nans, but add two columns with the lysin's positions in the respective peptides).
-
-**Output**
-
-This tool will return a single csv-file containing the results of the ops analysis tool as well as three histograms
-showing the results in detail.
 ```
 > python3 claudio_ops.py [-i <filepath>] [-p <"projection_dict">] [-s <True/False>] [-o <directorypath>] 
 
@@ -28,6 +15,16 @@ showing the results in detail.
                                 (opposite of --read-temps), default=True
 -o,   --output-directory,       output directory for produced csv-files, default="data/out/homo_signal/"
 ```
+
+###Input
+This tool requires a csv-file containing multiple observed cross-linking interactions. Two columns have to contain 
+uniprot ids for each interacting residue, two columns have to contain the observed peptides for each interacting residue
+and two columns have to contain the crosslinked lysin's position within the full sequence (alternative: fill these with
+Nans, but add two columns with the lysin's positions in the respective peptides).
+
+###Output
+This tool will return a single csv-file containing the results of the ops analysis tool as well as three histograms
+showing the results in detail.
 
 ### Example
 The project can be run like this:
@@ -44,5 +41,6 @@ This will result in the respective outputs into the directory "c/user/documents/
 'cross_links.csv' with a fresh uniprot search for the full protein sequences.
 
 ## Authors
-
 * **Alexander Röhl**
+* **Hadeer Elhabashy**
+* **Eugen Netz**

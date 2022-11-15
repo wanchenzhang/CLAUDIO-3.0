@@ -28,9 +28,16 @@ from module04.src.main import main as run_claudio_xl
 @click.option("-dm", "--distance-maximum", default=50.0)
 @click.option("-ct", "--cutoff", default=0.0)
 @click.option("-o", "--output-directory", default="data/out/full")
+@click.option("-bl", "--blast-bin", default=None)
+@click.option("-bldb", "--blast-db", default="$BLASTDB")
+@click.option("-hh", "--hhsearch-bin", default=None)
+@click.option("-hhdb", "--hhsearch-db", default="$HHDB")
+@click.option("-hhout", "--hhsearch-out", default="$HHOUT")
+@click.option("-tl", "--topolink-bin", default=None)
 @click.option("-c", "--config", default='')
 def main(input_filepath, projections, read_temps, search_tool, e_value, query_id, coverage, res_cutoff, plddt_cutoff,
-         linker_minimum, linker_maximum, euclidean_strictness, distance_maximum, cutoff, output_directory, config):
+         linker_minimum, linker_maximum, euclidean_strictness, distance_maximum, cutoff, output_directory,
+         blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out, topolink_bin, config):
     print("Start full CLAUDIO pipeline")
     print("===================================")
     start_time = time.time()
@@ -40,13 +47,16 @@ def main(input_filepath, projections, read_temps, search_tool, e_value, query_id
         print("Configuration file given, ignore other inputs")
         input_filepath, projections, read_temps, search_tool, e_value, query_id, coverage, res_cutoff, plddt_cutoff,\
             linker_minimum, linker_maximum, euclidean_strictness, distance_maximum, cutoff, \
-            output_directory = read_config(config)
+            output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out, topolink_bin \
+            = read_config(config)
 
     if not output_directory.endswith('/'):
         output_directory += '/'
 
     try:
-        run_claudio_lists(["-i", input_filepath, "-p", projections, "-t", search_tool, "-o", output_directory])
+        run_claudio_lists(["-i", input_filepath, "-p", projections, "-t", search_tool, "-o", output_directory,
+                           "-bl", blast_bin, "-bldb", blast_db, "-hh", hhsearch_bin, "-hhdb", hhsearch_db, "-hhout",
+                           hhsearch_out])
     except SystemExit:
         pass
     try:
@@ -56,7 +66,8 @@ def main(input_filepath, projections, read_temps, search_tool, e_value, query_id
     try:
         run_claudio_structdi(["-i", input_filepath, "-p", projections, "-rt", read_temps, "-t", search_tool,
                               "-pc", plddt_cutoff, "-e", e_value, "-qi", query_id, "-c", coverage, "-r", res_cutoff,
-                              "-o", output_directory])
+                              "-o", output_directory, "-bl", blast_bin, "-bldb", blast_db, "-hh", hhsearch_bin, "-hhdb",
+                              hhsearch_db, "-hhout", hhsearch_out, "-tl", topolink_bin])
     except SystemExit:
         pass
 
@@ -83,7 +94,9 @@ def read_config(path):
     # input path: str
     # return input_filepath: str, projections: str, read_temps: bool, search_tool: str, e_value: float,
     # query_id: float, coverage: float, res_cutoff: float, plddt_cutoff: float, linker_minimum: float,
-    # linker_maximum: float, euclidean_strictness: float, distance_maximum: float, cutoff: float, output_directory: str
+    # linker_maximum: float, euclidean_strictness: float/None, distance_maximum: float, cutoff: float,
+    # output_directory: str, blast_bin: str/None, blast_db: str, hhsearch_bin: str/None, hhsearch_db: str,
+    # hhsearch_out: str, topolink_bin: str
 
     with open(path, 'r') as f:
         config_content = f.read()
@@ -91,31 +104,25 @@ def read_config(path):
                        for l in config_content.split('\n') if l and not l.startswith('#')]
         line_markers = ["input_filepath=", "projections=", "read_temps=", "search_tool=", "e_value=", "query_id=",
                         "coverage=", "res_cutoff=", "plddt_cutoff=", "linker_minimum=", "linker_maximum=",
-                        "euclidean_strictness=", "distance_maximum=", "cutoff=", "output_directory="]
+                        "euclidean_strictness=", "distance_maximum=", "cutoff=", "output_directory=",
+                        "blast_bin=", "blast_db=", "hhsearch_bin=", "hhsearch_db=", "hhsearch_out=", "topolink_bin="]
         params = [l[len(marker):] for marker in line_markers for l in input_lines if l.startswith(marker)]
 
-        # Check parameters
+        # Check number of parameters
         if len(params) != len(line_markers):
             print(f"Error! Number of parameters in configuration file do not match the expected number. Check whether "
                   f"you are either missing a parameter, or one is duplicated.\n"
                   f"\tExpected: {len(line_markers)}\n"
                   f"\tReceived: {len(list(params))}")
             sys.exit()
+
+        # Check whether read_temp can be correctly converted too boolean
         try:
             params[2] = params[2] == "True"
-            params[4] = float(params[4])
-            params[5] = float(params[5])
-            params[6] = float(params[6])
-            params[7] = float(params[7])
-            params[8] = float(params[8])
-            params[9] = float(params[9])
-            params[10] = float(params[10])
-            params[11] = float(params[11])
-            params[12] = float(params[12])
-            params[13] = float(params[13])
-        except:
-            print("Error! Could not change type of one or multiple parameters as intended.")
+        except ValueError:
+            print(f"Error! Could not change type of read_temp to boolean (given:{params[2]}).")
             sys.exit()
+
         return tuple(params)
 
 

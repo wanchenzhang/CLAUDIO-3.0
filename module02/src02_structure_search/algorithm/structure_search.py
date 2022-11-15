@@ -3,12 +3,14 @@ from io import StringIO
 import pandas as pd
 
 
-def structure_search(data, search_tool, e_value, query_id, coverage, intra_only, temp_path):
+def structure_search(data, search_tool, e_value, query_id, coverage, intra_only, temp_path, blast_bin, blast_db,
+                     hhsearch_bin, hhsearch_db, hhsearch_out):
     # Perform either hhsearch or blastp search for any unique uniprot entry in rcsb database and retrieve the best
-    # results, and save all entries for which no sufficient result was returned to retrieve these from alphafold database
-    # later
+    # results, and save all entries for which no sufficient result was returned to retrieve these from alphafold
+    # database later
+    #
     # input data: pd.DataFrame, search_tool: str, e_value: float, query_id: float, coverage: float, intra_only: bool,
-    # temp_path: str
+    # temp_path: str, blast_bin: str/None, blast_db: str, hhsearch_bin: str/None, hhsearch_db: str, hhsearch_out: str
     # return dataset: pd.DataFrame
 
     dataset, filename = data
@@ -35,7 +37,9 @@ def structure_search(data, search_tool, e_value, query_id, coverage, intra_only,
                 # Perform search with either hhsearch or blastp (Note: Watch environmental variables $BLASTDB, $HHDB,
                 # $HHOUT to be set according to instructions found in README.md)
                 if search_tool == "blastp":
-                    command_a = f"blastp -query {temp_path}tmp.fasta -db $BLASTDB/pdbaa -evalue {e_value} -max_target_seqs 20 -outfmt \"6 delim=, saccver pident qcovs evalue\""
+                    blast_call = "blastp" if blast_bin is None else f"{blast_bin}blastp"
+                    command_a = f"{blast_call} -query {temp_path}tmp.fasta -db {blast_db}pdbaa -evalue {e_value} " \
+                                f"-max_target_seqs 20 -outfmt \"6 delim=, saccver pident qcovs evalue\""
                     res_a = pd.read_csv(StringIO(os.popen(command_a).read()),
                                         sep=',',
                                         names=["pdb", "ident", "cov", "eval"],
@@ -43,8 +47,9 @@ def structure_search(data, search_tool, e_value, query_id, coverage, intra_only,
                     best_result_a = res_a[(res_a["ident"] >= query_id) & (res_a["cov"] >= coverage)]
                     best_result_a = best_result_a.loc[:, "pdb"].tolist()
                 elif search_tool == "hhsearch":
-                    command_a = f"hhsearch -i {temp_path}tmp.fasta -d $HHDB/pdb70 -e {e_value} -qid {query_id} " \
-                                f"-cov {coverage} -blasttab $HHOUT -v 0 -cpu 20"
+                    hhsearch_call = "hhsearch" if hhsearch_bin is None else f"{hhsearch_bin}hhsearch"
+                    command_a = f"{hhsearch_call} -i {temp_path}tmp.fasta -d {hhsearch_db}pdb70 -e {e_value} -qid " \
+                                f"{query_id} -cov {coverage} -blasttab {hhsearch_out} -v 0 -cpu 20"
                     os.system(command_a)
                     best_result_a = []
                     for j, line in enumerate(open(f"{temp_path}tmp.hhr", 'r').read().split('\n')):
@@ -103,16 +108,17 @@ def structure_search(data, search_tool, e_value, query_id, coverage, intra_only,
                     # Perform search with either hhsearch or blastp (Note: Watch environmental variables $BLASTDB,
                     # $HHDB, $HHOUT to be set according to instructions found in README.md)
                     if search_tool == "blastp":
-                        command_b = f"blastp -query {temp_path}tmp.fasta -db $BLASTDB/pdbaa -evalue {e_value} -max_target_seqs 20 -outfmt \"6 delim=, saccver pident qcovs evalue\""
+                        command_b = f"{blast_call} -query {temp_path}tmp.fasta -db {blast_db}pdbaa -evalue {e_value} " \
+                                    f"-max_target_seqs 20 -outfmt \"6 delim=, saccver pident qcovs evalue\""
                         res_b = pd.read_csv(StringIO(os.popen(command_b).read()),
                                             sep=',',
                                             names=["pdb", "ident", "cov", "eval"],
                                             dtype={"pdb": str, "ident": float, "cov": float, "eval": float})
                         best_result_b = res_b[(res_b["ident"] >= query_id) & (res_b["cov"] >= coverage)]
                         best_result_b = best_result_b.loc[:, "pdb"].tolist()
-                    elif search_tool == "hsearch":
-                        command_b = f"hhsearch -i {temp_path}tmp.fasta -d $HHDB/pdb70 -e {e_value} " \
-                                    f"-qid {query_id} -cov {coverage} -blasttab $HHOUT -v 0 -cpu 20"
+                    elif search_tool == "hhsearch":
+                        command_b = f"{hhsearch_call} -i {temp_path}tmp.fasta -d {hhsearch_db}pdb70 -e {e_value} " \
+                                    f"-qid {query_id} -cov {coverage} -blasttab {hhsearch_out} -v 0 -cpu 20"
                         os.system(command_b)
                         best_result_b = []
                         for j, line in enumerate(open(f"{temp_path}tmp.hhr", 'r').read().split('\n')):

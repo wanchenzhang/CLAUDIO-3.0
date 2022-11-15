@@ -1,42 +1,51 @@
 # Module 02 - Structural distance analysis tool
 
-## Usage
-
 ### The CLI - Command Line Interface
-**Input**
+```
+> python3 claudio_structdi.py [-i <filepath>] [-p <"projection_dict">] [-rt <True/False>] [-t <"blastp"/"hhsearch">] [-pc <float>] [-e <float>] [-qi <float>] [-c <float>] [-r <float>] [-o <directorypath>] [-bl <directorypath>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-hhout <directorypath>] [-tl <directorypath>]
 
+-i,    --input-filepath,        path to inputfile,
+                                default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv"
+-p,    --projections,           string which can be parsed as dictionary, containing the column names for the uniprot 
+                                entry columns (for naming convention see second example (Note: all values are mandatory,
+                                only change the keys accordingly)),
+                                default=str(liu18_schweppe17_linked_residues_intra_homo_2672_nonredundant)
+-rt,   --read-temps,            if the tool has been run before with the same input a temporary file was saved, which 
+                                can be used to retireve the previouse results of the uniprot and structure searches,
+                                default=False
+-t,    --search-tool,           can be either "blastp" or "hhsearch", specifying the tool which should be used for pdb 
+                                search, default="blastp"
+-pc,   --plddt-cutoff,          float value used as cutoff for alphafold structure prediction confidences (plddt), 
+                                default=70.0
+-e,    --e-value,               e-value used in structure search, default=1e-5
+-qi,   --query-id,              query identity used in structure search, default=90.0
+-c,    --coverage,              coverage used in structure search, default=50.0
+-r,    --res-cutoff,            float value used as cutoff in angstrom for resolution of structure files, default=6.5
+-o,    --output-directory,      output directory, default="data/out/module02"
+-bl,   --blast-bin,             binary directory in blast installation, or None if binary directory has been added to 
+                                PATH variable (e.g. if blast can be called from anywhere), default=None
+-bldb, --blast-db,              database directory for blast installation, default="$BLASTDB"
+-hh,   --hhsearch-bin,          binary directory in hh-suite installation, or None if binary directory has been added to
+                                PATH variable (e.g. if hhsearch can be called from anywhere), default=None
+-hhdb, --hhsearch-db,           database directory for hh-suite installation, default="$HHDB"
+-hhout,--hhsearch-out,          output directory for hhsearch results, default="$HHOUT"
+-tl,   --topolink-bin,          binary directory in topolink installation, or None if binary directory has been added to
+                                PATH variable (e.g. if topolink can be called from anywhere), default=None)
+```
+
+###Input
 This tool requires a csv-file containing multiple observed cross-linking interactions. Two columns have to contain 
 uniprot ids for each interacting residue, two columns have to contain the observed peptides for each interacting residue
 and two columns have to contain the crosslinked lysin's position within the full sequence (alternative: fill these with
 Nans, but add two columns with the lysin's positions in the respective peptides).
 
-**Output**
-
+###Output
 This tool will return a directory full of pdb structure files, which were necessary for the computation, a csv-file 
 ending with the extension ".sqcs.csv", which is the result of the uniprot (and needed structure) search including the 
 structural distance computation's results, a ".log"-file, that lists eventual issues or errors in the 
 inputfile that had to be changed/fixed for the computations, two histogram png-files depicting the computed 
 structural distances and their differences, and two more which depict the experimental methods and their resolution for
 each pdb structure.
-```
-> python3 claudio_structdi.py [-i <filepath>] [-p <"projection_dict">] [-rt <True/False>] [-t <"blastp"/"hhsearch">] [-pc <float>] [-e <float>] [-qi <float>] [-c <float>] [-r <float>] [-o <directorypath>]
--i, --input-filepath,   path to inputfile,
-                        default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv"
--p, --projections,      string which can be parsed as dictionary, containing the column names for the uniprot entry
-                        columns (for naming convention see second example (Note: all values are mandatory, only change 
-                        the keys accordingly)),
-                        default=str(liu18_schweppe17_linked_residues_intra_homo_2672_nonredundant)
--rt,--read-temps,       if the tool has been run before with the same input a temporary file was saved, which can be 
-                        used to retireve the previouse results of the uniprot and structure searches, default=False
--t, --search-tool,      can be either "blastp" or "hhsearch", specifying the tool which should be used for pdb search,
-                        default="blastp"
--pc,--plddt-cutoff,     float value used as cutoff for alphafold structure prediction confidences (plddt), default=70.0
--e, --e-value,          e-value used in structure search, default=1e-5
--qi,--query-id,         query identity used in structure search, default=90.0
--c, --coverage,         coverage used in structure search, default=50.0
--r, --res-cutoff,       float value used as cutoff in angstrom for resolution of structure files, default=6.5
--o, --output-directory, output directory, default="data/out/module02"
-```
 
 ### Example
 The project can be run like this:
@@ -55,5 +64,6 @@ This will result in the respective outputs into the directory "c/user/documents/
 same input, this will return an error).
 
 ## Authors
-
 * **Alexander Röhl**
+* **Hadeer Elhabashy**
+* **Eugen Netz**

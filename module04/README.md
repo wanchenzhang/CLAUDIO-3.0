@@ -1,18 +1,6 @@
 # Module 04 - XL-type evaluation
 
-## Usage
-
 ### The CLI - Command Line Interface
-**Input**
-
-This tool requires the outputs of the structural distance and ops analysis tools as input.
-
-**Output**
-
-This tool will return one csv-file with all results of the previous analysis as well as the computed confidence score 
-and new cross-link types (intra or inter), one histogram showing the confidence score distribution, and a directory
-called 'homomers' containing subdirectories for each unique protein, which in turn each contain a csv-file with all 
-restraints and one or multiple fasta files for each possible related oligomeric state found by SWISS-MODEL.
 ```
 > python3 claudio_xl.py [-i <filepath>] [-i2 <filepath>] [-p <float>] [-lmin <float>] [-lmax <float>] [-es <float>] [-dm <float] [-c <float>] [-o <directorypath>]
 
@@ -32,6 +20,15 @@ restraints and one or multiple fasta files for each possible related oligomeric 
                                 to inter, default=0.0  
 -o,   --output-directory,       output directory for produced csv-files, default="data/out/new_inter/"
 ```
+
+###Input
+This tool requires the outputs of the structural distance and ops analysis tools as input.
+
+###Output
+This tool will return one csv-file with all results of the previous analysis as well as the computed confidence score 
+and new cross-link types (intra or inter), one histogram showing the confidence score distribution, and a directory
+called 'homomers' containing subdirectories for each unique protein, which in turn each contain a csv-file with all 
+restraints and one or multiple fasta files for each possible related oligomeric state found by SWISS-MODEL.
 
 ### Example
 The project can be run like this:
@@ -53,5 +50,6 @@ This will result in the respective outputs into the directory "c/user/documents/
 'cross_links.csv' with a fresh uniprot search for the full protein sequences.
 
 ## Authors
-
 * **Alexander Röhl**
+* **Hadeer Elhabashy**
+* **Eugen Netz**

@@ -14,18 +14,42 @@ from module01.src.io.write_out import write_output
 @click.option("-p", "--projections", default=str(liu18_schweppe17_linked_residues_intra_homo_2370_nonredundant_unique))
 @click.option("-t", "--search-tool", default="blastp")
 @click.option("-o", "--output-directory", default="data/out/unique_protein_list")
-def main(input_filepath, projections, search_tool, output_directory):
+@click.option("-bl", "--blast-bin", default=None)
+@click.option("-bldb", "--blast-db", default="$BLASTDB")
+@click.option("-hh", "--hhsearch-bin", default=None)
+@click.option("-hhdb", "--hhsearch-db", default="$HHDB")
+@click.option("-hhout", "--hhsearch-out", default="$HHOUT")
+def main(input_filepath, projections, search_tool, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db,
+         hhsearch_out):
     print("Start Unique Protein List Tool")
     start_time = time.time()
 
     filename = ''.join(input_filepath.split('/')[-1].split('.')[:-1])
     output_directory = output_directory if output_directory else '/'.join(input_filepath.split('/')[:-1])
 
+    # Convert directory paths to literals if None
+    if blast_bin == "None":
+        blast_bin = None
+    if hhsearch_bin == "None":
+        hhsearch_bin = None
+
+    # Add '/' to end of directory paths if not there
     if not output_directory.endswith('/'):
         output_directory += '/'
+    if (blast_bin is not None) and (not blast_bin.endswith('/')):
+        blast_bin += '/'
+    if not blast_db.endswith('/'):
+        blast_db += '/'
+    if (hhsearch_bin is not None) and (not hhsearch_bin.endswith('/')):
+        hhsearch_bin += '/'
+    if not hhsearch_db.endswith('/'):
+        hhsearch_db += '/'
+    if not hhsearch_out.endswith('/'):
+        hhsearch_out += '/'
 
     # If parameters inputted by user valid
-    if inputs_valid(input_filepath, projections, search_tool, output_directory):
+    if inputs_valid(input_filepath, projections, search_tool, output_directory, blast_bin, blast_db, hhsearch_bin,
+                    hhsearch_db, hhsearch_out):
         # Use projections to apply unified column names to input dataset
         # (for example see module01/src/dict/default_projections.py)
         projections = ast.literal_eval(projections)
@@ -36,7 +60,8 @@ def main(input_filepath, projections, search_tool, output_directory):
 
         # Write list of unique protein pairs and unique proteins overall
         print("Write unique protein and protein pairs lists")
-        unique_pair_list, unique_proteins_list = create_list_of_unique_proteins(data, search_tool)
+        unique_pair_list, unique_proteins_list = create_list_of_unique_proteins(data, search_tool, blast_bin, blast_db,
+                                                                                hhsearch_bin, hhsearch_db, hhsearch_out)
 
         # Write ouput csv
         print("Write output")
@@ -47,13 +72,14 @@ def main(input_filepath, projections, search_tool, output_directory):
     sys.exit()
 
 
-def inputs_valid(input_filepath, projections, search_tool, output_directory):
+def inputs_valid(input_filepath, projections, search_tool, output_directory, blast_bin, blast_db, hhsearch_bin,
+                 hhsearch_db, hhsearch_out):
     # check validity of inputted parameters
     #
-    # input input_filepath: str, projections: str, search_tool: str, output_directory: str
+    # input input_filepath: str, projections: str, search_tool: str, output_directory: str, blast_bin: str/None,
+    # blast_db: str, hhsearch_bin: str/None, hhsearch_db: str, hhsearch_out: str
     # return inputs_valid: bool
 
-    filename = input_filepath.split('/')[-1]
     # check whether an inputfile is specified
     if input_filepath:
         try:
@@ -64,7 +90,8 @@ def inputs_valid(input_filepath, projections, search_tool, output_directory):
             else:
                 print(f"Error! Given search tool is neither blastp or hhsearch (given: {search_tool}).")
         except ValueError:
-            print(f"Error! Could not construct dictionary from value given for \"projections\" parameter (given: {projections}).")
+            print(f"Error! Could not construct dictionary from value given for \"projections\" parameter (given: "
+                  f"{projections}).")
     else:
         print(f"Error! The parameter \"input-filepath\" was not given (given: {input_filepath}).")
     return False

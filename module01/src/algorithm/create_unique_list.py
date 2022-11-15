@@ -6,11 +6,12 @@ from io import StringIO
 import os
 
 
-def create_list_of_unique_proteins(data, search_tool):
+def create_list_of_unique_proteins(data, search_tool, blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out):
     # create pandas dataframe of unique proteins depending on uniprot ids, and in the same way create list of unique
     # protein interaction pairs
     #
-    # input data: pd.DataFrame, search_tool: str
+    # input data: pd.DataFrame, search_tool: str, blast_bin: str/None, blast_db: str, hhsearch_bin: str/None,
+    # hhsearch_db: str, hhsearch_out:str
     # return unique_pair_list: pd.DataFrame, unique_proteins_list: pd.DataFrame
 
     # Create data container lists
@@ -61,7 +62,8 @@ def create_list_of_unique_proteins(data, search_tool):
     # Apply uniprot search for sequences and info on unique proteins
     infos, sequences = search_uniprot_entries(unique_proteins)
     # Apply blastp or hhsearch search for pdb entries on unique proteins by their sequences
-    pdbs = search_pdb_entries(unique_proteins, sequences, search_tool)
+    pdbs = search_pdb_entries(unique_proteins, sequences, search_tool, blast_bin, blast_db, hhsearch_bin, hhsearch_db,
+                              hhsearch_out)
     # Retrieve pair (sequences and) pdb entries for unique pair list
     _, pair_pdbs = get_pair_seqs_pdbs(sequences, pdbs, unique_proteins, unique_pairs)
 
@@ -128,11 +130,13 @@ def search_uniprot_entries(unique_proteins):
     return infos, sequences
 
 
-def search_pdb_entries(unique_proteins, sequences, search_tool):
+def search_pdb_entries(unique_proteins, sequences, search_tool, blast_bin, blast_db, hhsearch_bin, hhsearch_db,
+                       hhsearch_out):
     # use either hhsearch or blastp as search tool on protein sequence in order to retrieve matching pdb id, if no
     # result was found add an alphafold entry id instead (id: af<uniprot_id>_A)
     #
-    # input unique_proteins: list(str), sequences: list(str), search_tool: str
+    # input unique_proteins: list(str), sequences: list(str), search_tool: str, blast_bin: str/None, blast_db: str,
+    # hhsearch_bin: str/None, hhsearch_db: str, hhsearch_out: str
     # return pdbs: list(str)
 
     # Create data container list
@@ -155,8 +159,9 @@ def search_pdb_entries(unique_proteins, sequences, search_tool):
 
         # Depending on given string either perform blastp or hhsearch
         if search_tool == "blastp":
-            cmd = f"blastp -query {temp_path}tmp.fasta -db $BLASTDB/pdbaa -evalue 1e-5 -max_target_seqs 20 -outfmt" \
-                  f" \"6 delim=, saccver pident qcovs evalue\""
+            blast_call = "blastp" if blast_bin is None else f"{blast_bin}blastp"
+            cmd = f"{blast_call} -query {temp_path}tmp.fasta -db {blast_db}pdbaa -evalue 1e-5 -max_target_seqs 20 " \
+                  f"-outfmt \"6 delim=, saccver pident qcovs evalue\""
             res = pd.read_csv(StringIO(os.popen(cmd).read()),
                               sep=',',
                               names=["pdb", "ident", "cov", "eval"],
@@ -169,8 +174,9 @@ def search_pdb_entries(unique_proteins, sequences, search_tool):
             else:
                 res = res.iloc[0, :]["pdb"]
         elif search_tool == "hsearch":
-            cmd = f"hhsearch -i {temp_path}tmp.fasta -d $HHDB/pdb70 -e 1e-5 -qid 90 -cov 50 -blasttab $HHOUT" \
-                  f" -v 0 -cpu 20"
+            hhearch_call = "hhsearch" if hhsearch_bin is None else f"{hhsearch_bin}hhsearch"
+            cmd = f"{hhearch_call} -i {temp_path}tmp.fasta -d {hhsearch_db}pdb70 -e 1e-5 -qid 90 -cov 50 -blasttab " \
+                  f"{hhsearch_out} -v 0 -cpu 20"
             os.system(cmd)
             # Open hhsearch output (Note: hhsearch outs cannot be retrieved from the commandline, as it is the case with
             # blastp)

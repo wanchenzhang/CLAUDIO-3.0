@@ -76,3 +76,36 @@ cutoff = 0.0
 #type: string
 #ex.: /home/me/desktop/my_outputs
 output_directory = data/out/full
+
+#16.binary directory in blast installation, or None if binary directory has been added to PATH variable (e.g. if blast
+can be called from anywhere)
+#type: string / None
+#ex.: /home/me/desktop/ncbi-blast-2.13.0+/bin
+blast_bin = None
+
+#17.database directory for blast installation
+#type: string
+#ex.: /home/me/desktop/ncbi-blast-2.13.0+/blastdb
+blast_db = $BLASTDB
+
+#18.binary directory in hh-suite installation, or None if binary directory has been added to PATH variable (e.g. if
+hhsearch can be called from anywhere)
+#type: string / None
+#ex.: /home/me/desktop/hh-suite-3.3.0/bin
+hhsearch_bin = None
+
+#19.database directory for hh-suite installation
+#type: string
+#ex.: /home/me/desktop/hh-suite-3.3.0/hhdb
+hhsearch_db = $HHDB
+
+#20.output directory for hhsearch results
+#type: string
+#ex.: /home/me/desktop/hh-suite-3.3.0/hhout
+hhsearch_out = $HHOUT
+
+#21.binary directory in topolink installation, or None if binary directory has been added to PATH variable (e.g. if
+topolink can be called from anywhere)
+#type: string / None
+#ex.: /home/me/desktop/my_outputs
+topolink_bin = None

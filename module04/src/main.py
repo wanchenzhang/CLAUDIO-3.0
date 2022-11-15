@@ -1,6 +1,7 @@
 import click
 import sys
 import time
+import ast
 
 from module04.src.io.read_ins import read_inputs
 from module04.src.algorithm.combine_reevals import combine_inter_reevaluations
@@ -34,7 +35,7 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, linker_m
         plddt_cutoff = float(plddt_cutoff)
         linker_minimum = float(linker_minimum)
         linker_maximum = float(linker_maximum)
-        euclidean_strictness = float(euclidean_strictness)
+        euclidean_strictness = float(euclidean_strictness) if euclidean_strictness != "None" else None
         distance_maximum = float(distance_maximum)
         cutoff = float(cutoff)
 
@@ -88,32 +89,33 @@ def inputs_valid(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, 
                         # check whether maximum crosslinker distance has valid value
                         try:
                             linker_maximum = float(linker_maximum)
-                            # check whether euclidean strictness has valid value
+                            # check whether euclidean strictness has valid value (either float or None)
                             try:
                                 euclidean_strictness = float(euclidean_strictness)
-                                # check whether maximum distance has valid value
+                            except ValueError:
                                 try:
-                                    distance_maximum = float(distance_maximum)
-                                    # check whether reevaluation cutoff has valid value
-                                    try:
-                                        cutoff = float(cutoff)
-                                        if 0 <= cutoff <= 1:
-                                            return True
-                                        else:
-                                            print(
-                                                f"Cutoff value for reclassification should be in [0, 1] "
-                                                f"(given: {cutoff}).")
-                                    except:
-                                        print(
-                                            f"Value given for reclassification cutoff should be possible to turn into a"
-                                            f" float (given: {cutoff}).")
+                                    euclidean_strictness = ast.literal_eval(euclidean_strictness)
+                                except ValueError:
+                                    print(f"Error! Could not change type of given euclidean strictness to either float "
+                                          f"or None (given: {euclidean_strictness}).")
+                                    return False
+                            # check whether maximum distance has valid value
+                            try:
+                                distance_maximum = float(distance_maximum)
+                                # check whether reevaluation cutoff has valid value
+                                try:
+                                    cutoff = float(cutoff)
+                                    if 0 <= cutoff <= 1:
+                                        return True
+                                    else:
+                                        print(f"Cutoff value for reclassification should be in [0, 1] "
+                                              f"(given: {cutoff}).")
                                 except:
-                                    print(
-                                        f"Value given for maximum distance value should be possible to turn into a "
-                                        f"float (given: {distance_maximum}).")
+                                    print(f"Value given for reclassification cutoff should be possible to turn into a"
+                                          f" float (given: {cutoff}).")
                             except:
-                                print(f"Value given for euclidean strictness/leniency should be possible to turn into a"
-                                      f" float (given: {euclidean_strictness}).")
+                                print(f"Value given for maximum distance value should be possible to turn into a "
+                                      f"float (given: {distance_maximum}).")
                         except:
                             print(f"Value given for crosslinker maximum should be possible to turn into a float "
                                   f"(given: {linker_maximum}).")

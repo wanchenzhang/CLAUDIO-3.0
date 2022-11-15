@@ -20,7 +20,13 @@ from module02.src02_structure_search.io.write_out import write_output
 @click.option("-c", "--coverage", default=50.0)
 @click.option("-r", "--res-cutoff", default=6.5)
 @click.option("-o", "--output-directory", default="data/out/structure_search")
-def main(input_filepath, do_structure_search, search_tool, e_value, query_id, coverage, res_cutoff, output_directory):
+@click.option("-bl", "--blast-bin", default=None)
+@click.option("-bldb", "--blast-db", default="$BLASTDB")
+@click.option("-hh", "--hhsearch-bin", default=None)
+@click.option("-hhdb", "--hhsearch-db", default="$HHDB")
+@click.option("-hhout", "--hhsearch-out", default="$HHOUT")
+def main(input_filepath, do_structure_search, search_tool, e_value, query_id, coverage, res_cutoff, output_directory,
+         blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out):
     print("Start structure search")
     start_time = time.time()
 
@@ -28,12 +34,30 @@ def main(input_filepath, do_structure_search, search_tool, e_value, query_id, co
     temp_save_search_path = f"{project_path}/data/temp/structure_search/"
     output_directory = output_directory if output_directory else '/'.join(input_filepath.split('/')[:-1])
 
+    # Convert directory paths to literals if None
+    if blast_bin == "None":
+        blast_bin = None
+    if hhsearch_bin == "None":
+        hhsearch_bin = None
+
+    # Add '/' to end of directory paths if not there
     if not output_directory.endswith('/'):
         output_directory += '/'
+    if (blast_bin is not None) and (not blast_bin.endswith('/')):
+        blast_bin += '/'
+    if not blast_db.endswith('/'):
+        blast_db += '/'
+    if (hhsearch_bin is not None) and (not hhsearch_bin.endswith('/')):
+        hhsearch_bin += '/'
+    if not hhsearch_db.endswith('/'):
+        hhsearch_db += '/'
+    if not hhsearch_out.endswith('/'):
+        hhsearch_out += '/'
 
     # If parameters inputted by user valid
     if inputs_valid(input_filepath, do_structure_search, search_tool, e_value, query_id, coverage, res_cutoff,
-                    output_directory):
+                    output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out):
+        do_structure_search = do_structure_search == "True"
         e_value = float(e_value)
         query_id = float(query_id)
         coverage = float(coverage)
@@ -47,7 +71,8 @@ def main(input_filepath, do_structure_search, search_tool, e_value, query_id, co
         # save file
         if do_structure_search:
             print(f"Perform {search_tool} search")
-            data = structure_search(data, search_tool, e_value, query_id, coverage, intra_only, temp_save_search_path)
+            data = structure_search(data, search_tool, e_value, query_id, coverage, intra_only, temp_save_search_path,
+                                    blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out)
         else:
             print("Read from temporary save file")
             data = read_temp_file(data, search_tool, intra_only, temp_save_search_path)
@@ -71,11 +96,12 @@ def main(input_filepath, do_structure_search, search_tool, e_value, query_id, co
 
 
 def inputs_valid(input_filepath, do_structure_search, search_tool, e_value, query_id, coverage, res_cutoff,
-                 output_directory):
+                 output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out):
     # check validity of inputted parameters
     #
     # input input_filepath: str, do_structure_search: bool, search_tool: str, e_value: float, query_id: float,
-    # coverage: float, res_cutoff: float, output_directory: str
+    # coverage: float, res_cutoff: float, output_directory: str, blast_bin: str/None, blast_db: str,
+    # hhsearch_bin: str/None, hhsearch_db: str, hhsearch_out:str
     # return inputs_valid: bool
 
     # check whether an inputfile with the extension .sqcs is specified

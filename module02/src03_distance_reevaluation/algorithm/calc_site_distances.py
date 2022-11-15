@@ -7,12 +7,12 @@ import os
 warnings.filterwarnings("ignore")
 
 
-def calculate_site_dists(data, plddt_cutoff):
+def calculate_site_dists(data, plddt_cutoff, topolink_bin):
     # calculate distances between interaction sites, and extend input dataset by lysin_criteria, e.g. whether the found
     # sites satisfy the criteria of either being lysin or methionine, the method used to find the sites in the structure
     # file, in case said method was alphafold the pLDDT, e.g. confidence, value and finally the computed distances
     #
-    # input data: pd.DataFrame
+    # input data: pd.DataFrame, plddt_cutoff: float, topolink_bin: str/None
     # return data: pd.DataFrame
 
     # Self-compute euclidean distances in structures
@@ -62,26 +62,17 @@ def calculate_site_dists(data, plddt_cutoff):
     # Add self-computed euclidean distances to dataset
     data["eucl_dist"] = self_eucl_dists
     # Compute euclidean and topological distance of interacting residues with topolink and add them all to the dataset
-    data = compute_dists_with_topolink(data, plddt_cutoff)
+    data = compute_dists_with_topolink(data, plddt_cutoff, topolink_bin)
 
-    # # Determine interaction type: "inter", if all computed distances are not Nan, between 0 and 30
-    # # (35 for topological), and lysin criteria is fulfilled for both residues, else "intra"
-    # data["new_XL_type"] = ["inter" if (not pd.isna(data.loc[i, "eucl_dist"])) and
-    #                                   (not pd.isna(data.loc[i, "eucl_dist_tplk"])) and
-    #                                   (not pd.isna(data.loc[i, "topo_dist_tplk"])) and
-    #                                   (not (0 < data.loc[i, "eucl_dist"] < 30)) and
-    #                                   (not (0 < data.loc[i, "eucl_dist_tplk"] < 30)) and
-    #                                   (not (0 < data.loc[i, "topo_dist_tplk"] < 35))
-    #                        else "intra" for i in data.index]
     return data
 
 
-def compute_dists_with_topolink(data, plddt_cutoff):
+def compute_dists_with_topolink(data, plddt_cutoff, topolink_bin):
     # compute euclidean and topological distances between residues utilizing topolink software, also saves logs of
     # topolink computation into temporary folder "data/temp/dist_reeval" (careful: contents of this folder will be fully
     # deleted each time this script is executed
     #
-    # input data: pd.DataFrame, plddt_cutoff: float
+    # input data: pd.DataFrame, plddt_cutoff: float, topolink_bin: str/None
     # return data: pd.DataFrame
 
     toplink_dists = []
@@ -160,7 +151,8 @@ def compute_dists_with_topolink(data, plddt_cutoff):
             f.write(topo_in)
 
         # Run topolink and pop terminal print to variable
-        res = os.popen(f"topolink {project_path}/data/temp/dist_reeval/topo.tmp").read()
+        topolink_call = "topolink" if topolink_bin is None else f"{topolink_bin}topolink"
+        res = os.popen(f"{topolink_call} {project_path}/data/temp/dist_reeval/topo.tmp").read()
         # Write both input and output to temporary file marked by pdb id, e.g. topo_1b0j.log, topo_afA2ASZ8.log, ...
         # in case the user wishes to review them later
         with open(f"{project_path}/data/temp/dist_reeval/topo_{pdb_id}.log", 'w') as f:
