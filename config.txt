@@ -1,0 +1,78 @@
+#1.filepath to dataset
+#type: string
+#ex.: /home/me/desktop/my_dataset.csv
+input_filepath = data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv
+
+#2.column name projections (map your column names to this pipeline's)
+#type: string
+#ex.: {"your_pep1": "pep_a", "your_pep2": "pep_b", "your_pos1": "pos_a", "your_pos2": "pos_b", "your_k_pos1": "k_pos_a", "your_k_pos2": "k_pos_b", "your_entry1": "unip_id_a", "your_entry2": "unip_id_b", "your_gene1": "gene_a", "your_gene2": "gene_b", "your_publication": "pub"}
+projections = {"peptide1": "pep_a", "peptide2": "pep_b", "position1": "pos_a", "position2": "pos_b", "k_pos1": "k_pos_a", "k_pos2": "k_pos_b", "entry1": "unip_id_a", "entry2": "unip_id_b", "gene1": "gene_a", "gene2": "gene_b", "Publication": "pub"}
+
+#3.read some results from temporary save from previous run (overwritten each time)
+#type: boolean
+#ex.: True
+read_temps = False
+
+#4.search tool for structure search (either hhsearch or blastp)
+#type: string
+#ex.: blastp / hhsearch
+search_tool = blastp
+
+#5.e-value of structure search
+#type: float [0,1]
+#ex.: 0.3
+e_value = 0.00001
+
+#6.query identity of structure search
+#type: float [0,100]
+#ex.: 55.0
+query_id = 90.0
+
+#7.coverage of structure search
+#type: float [0,100]
+#ex.: 55.0
+coverage = 50.0
+
+#8.resolution cutoff value, for which structure files will be included if they are either equal or lower
+#type: float [0,infty)
+#ex.: 5.0
+res_cutoff = 6.5
+
+#9.alphafold structure pLDDT cutoff value, for which structure distances will be included if they are either equal or
+#higher
+#type: float [0,100]
+#ex.: 55.0
+plddt_cutoff = 70.0
+
+#10.minimum of crosslinker range capability in angstrom (not included in accepted range)
+#type: float [0,x]
+#ex.: 5.0
+linker_minimum = 0.0
+
+#11.maximum of crosslinker range capability in angstrom (included into accepted range)
+#type: float [x,infty)
+#ex.: 20.0
+linker_maximum = 35.0
+
+#12.strictness for euclidean distance, e.g. value substracted from euclidean distance in angstrom for confidence score
+#calculation, or None if euclidean score is not to be included into the final scoring (in which case only the
+#topological distance and OPS analysis are included)
+#type: float [0,infty) / None
+#ex.: None
+euclidean_strictness = 5.0
+
+#13.distance maximum which, if surpassed, by either the topological or euclidean distance replaces its value for the
+#confidence score (this ensures that outliers do not negatively impact the scoring)
+#type: float [0,infty)
+#ex.: 100.0
+distance_maximum = 50.0
+
+#14.inter protein crosslink confidence score cutoff
+#type: float [0,1]
+#ex.: 0.1
+cutoff = 0.0
+
+#15.output directory for results
+#type: string
+#ex.: /home/me/desktop/my_outputs
+output_directory = data/out/full

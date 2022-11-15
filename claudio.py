@@ -89,11 +89,34 @@ def read_config(path):
         config_content = f.read()
         input_lines = [l.replace('"', "'").replace(" ", "")
                        for l in config_content.split('\n') if l and not l.startswith('#')]
+        line_markers = ["input_filepath=", "projections=", "read_temps=", "search_tool=", "e_value=", "query_id=",
+                        "coverage=", "res_cutoff=", "plddt_cutoff=", "linker_minimum=", "linker_maximum=",
+                        "euclidean_strictness=", "distance_maximum=", "cutoff=", "output_directory="]
+        params = [l[len(marker):] for marker in line_markers for l in input_lines if l.startswith(marker)]
 
-        return input_lines[0], input_lines[1], input_lines[2] == "True", input_lines[3], \
-            float(input_lines[4]), float(input_lines[5]), float(input_lines[6]), float(input_lines[7]), \
-            float(input_lines[8]), float(input_lines[9]), float(input_lines[10]), float(input_lines[11]),\
-            float(input_lines[12]), float(input_lines[13]), input_lines[14]
+        # Check parameters
+        if len(params) != len(line_markers):
+            print(f"Error! Number of parameters in configuration file do not match the expected number. Check whether "
+                  f"you are either missing a parameter, or one is duplicated.\n"
+                  f"\tExpected: {len(line_markers)}\n"
+                  f"\tReceived: {len(list(params))}")
+            sys.exit()
+        try:
+            params[2] = params[2] == "True"
+            params[4] = float(params[4])
+            params[5] = float(params[5])
+            params[6] = float(params[6])
+            params[7] = float(params[7])
+            params[8] = float(params[8])
+            params[9] = float(params[9])
+            params[10] = float(params[10])
+            params[11] = float(params[11])
+            params[12] = float(params[12])
+            params[13] = float(params[13])
+        except:
+            print("Error! Could not change type of one or multiple parameters as intended.")
+            sys.exit()
+        return tuple(params)
 
 
 if __name__ == "__main__":
