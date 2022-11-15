@@ -87,7 +87,7 @@ Note: All csv-file outputs pertaining the input dataset are summarized into a si
 ### Example
 **CLAUDIO** (in full) can be run like this:
 ```
-python3 clauio.py -c data/in/iiCheck_config.txt
+python3 claudio.py -c data/in/iiCheck_config.txt
 ```
 
 ## Authors
