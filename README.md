@@ -18,20 +18,22 @@ Packages:
 * requests
 
 This tool furthermore utilizes the following external softwares:
-* *blast*
-* *hhsearch*
-* *topolink*
+* *blast* (see [here](https://www.ncbi.nlm.nih.gov/books/NBK52640/)) and/or 
+*hhsearch* (see [here](https://github.com/soedinglab/hh-suite))
+* *topolink* (see [here](http://leandro.iqm.unicamp.br/topolink/download.shtml))
 
 To ensure a flawless execution of *CLAUDIO* ensure that these tools can be executed directly from your terminal 
 (e.g. add their respective `bin` directories to the `Path` variable of your OS).
 
-For *blast* you have to download the `pdbaa` database, if it wasn't with the normal installation, and add 
+For *blast* you have to download the newest `pdbaa` database (see 'Database Download' chapter 
+[here](https://www.ncbi.nlm.nih.gov/books/NBK52640/)), if it wasn't with the normal installation, and add 
 the variable `$BLASTDB` (leading to the directory containing all database files) to the `Path` variable as a 
 shortcut.
 
-For *hhsearch* you have to download the `pdb70` database, and add both `$HHDB` (leading to the directory 
-containing all database files) and `$HHOUT` (leading to the directory for hhsearch outputs) to the `Path` variable as a 
-shortcut.
+For *hhsearch* you have to download the newest `pdb70` 
+database(from [here](https://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/pdb70_from_mmcif_220313.tar.gz)), 
+and add both `$HHDB` (leading to the directory containing all database files) and `$HHOUT` (leading to the directory for
+hhsearch outputs) to the `Path` variable as a shortcut.
 
 For *topolink* no additional steps have to be taken.
 
@@ -92,4 +94,6 @@ python3 clauio.py -c data/in/iiCheck_config.txt
 
 ## Authors
 
-* **Alexander Röhl, Hadeer Elhabashy, Eugen Netz**
+* **Alexander Röhl**
+* **Hadeer Elhabashy**
+* **Eugen Netz**

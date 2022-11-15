@@ -1,6 +1,6 @@
 
 def write_output(data, filepath):
-    # write dataset to output file as csv
+    # overwrite dataset to input filepath as csv
     #
     # input data: pd.DataFrame, filename: str, output_directory: str
     # no return

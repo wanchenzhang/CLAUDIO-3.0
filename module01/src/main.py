@@ -19,6 +19,7 @@ def main(input_filepath, projections, search_tool, output_directory):
     start_time = time.time()
 
     filename = ''.join(input_filepath.split('/')[-1].split('.')[:-1])
+    output_directory = output_directory if output_directory else '/'.join(input_filepath.split('/')[:-1])
 
     if not output_directory.endswith('/'):
         output_directory += '/'

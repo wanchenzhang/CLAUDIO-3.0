@@ -17,7 +17,6 @@ def download_pdbs(dataset, search_tool, intra_only, res_cutoff, output_directory
     ind = 0
     # Download pdb files for each datapoint
     for i, row in dataset.iterrows():
-        print(type(row['all_results']), row['all_results'])
         # Iterate over results
         for j, res in enumerate((row['all_results'] + ' ').split(' ')):
             # If an entry was found in the rcsb database, download from there
@@ -49,7 +48,12 @@ def download_pdbs(dataset, search_tool, intra_only, res_cutoff, output_directory
                 if filename not in dataset["path"]:
                     # Download pdb as str text
                     a_URL = f"https://alphafold.ebi.ac.uk/files/AF-{row['unip_id_a']}-F1-model_v1.pdb"
-                    a_pdb = r.get(a_URL).text
+                    try:
+                        a_pdb = r.get(a_URL).text
+                    except ConnectionError as e:
+                        print("No connection to AlphaFold API possible. Please try again later.")
+                        print(e)
+                        sys.exit()
                     # If no pdb retrieved from alphafold set filename to None, else save pdb with custom filename
                     if "NoSuchKey" in a_pdb:
                         filename = '-'
@@ -114,7 +118,12 @@ def download_pdbs(dataset, search_tool, intra_only, res_cutoff, output_directory
                     if filename not in dataset["path_b"]:
                         # Download pdb as str text
                         b_URL = f"https://alphafold.ebi.ac.uk/files/AF-{row['unip_id_b']}-F1-model_v1.pdb"
-                        b_pdb = r.get(b_URL).text
+                        try:
+                            b_pdb = r.get(b_URL).text
+                        except ConnectionError as e:
+                            print("No connection to AlphaFold API possible. Please try again later.")
+                            print(e)
+                            sys.exit()
                         # If no pdb retrieved from alphafold set filename to None, else save pdb with custom filename
                         if "NoSuchKey" in b_pdb:
                             filename = '-'

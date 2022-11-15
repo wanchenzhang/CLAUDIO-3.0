@@ -6,6 +6,10 @@ import ast
 import pandas as pd
 
 from module02.src01_uniprot_search.dict.default_projections import *
+from module01.src.main import main as run_claudio_lists
+from module02.run_module02_intra import main as run_claudio_structdi
+from module03.src.main import main as run_claudio_ops
+from module04.src.main import main as run_claudio_xl
 
 
 @click.command()
@@ -41,29 +45,32 @@ def main(input_filepath, projections, read_temps, search_tool, e_value, query_id
     if not output_directory.endswith('/'):
         output_directory += '/'
 
-    command = f"python3 claudio_lists.py -i {input_filepath} -p \"{projections}\" " \
-              f"-t {search_tool} -o {output_directory}"
-    command += " && "
-
-    command += f"python3 claudio_ops.py -i {input_filepath} -p \"{projections}\" "\
-               f"-s {not read_temps} -o {output_directory}"
-    command += " && "
-
-    command += f"python3 claudio_structdi.py -i {input_filepath} -p \"{projections}\" -rt {read_temps} " \
-               f"-t {search_tool} -pc {plddt_cutoff} -e {e_value} -qi {query_id} -c {coverage} -r {res_cutoff} " \
-               f"-o {output_directory}"
-    command += " && "
+    try:
+        run_claudio_lists(["-i", input_filepath, "-p", projections, "-t", search_tool, "-o", output_directory])
+    except SystemExit:
+        pass
+    try:
+        run_claudio_ops(["-i", input_filepath, "-p", projections, "-s", not read_temps, "-o", output_directory])
+    except SystemExit:
+        pass
+    try:
+        run_claudio_structdi(["-i", input_filepath, "-p", projections, "-rt", read_temps, "-t", search_tool,
+                              "-pc", plddt_cutoff, "-e", e_value, "-qi", query_id, "-c", coverage, "-r", res_cutoff,
+                              "-o", output_directory])
+    except SystemExit:
+        pass
 
     filename = input_filepath.split('/')[-1]
-    command += f"python3 claudio_xl.py -i {f'{output_directory}{filename}.sqcs.csv'} " \
-               f"-i2 {f'{output_directory}{filename}_homosig.csv'} -p {plddt_cutoff} -lmin {linker_minimum} " \
-               f"-lmax {linker_maximum} -es {euclidean_strictness} -dm {distance_maximum} -c {cutoff} " \
-               f"-o {output_directory}"
-    command += " && "
+    try:
+        run_claudio_xl(["-i", f"{output_directory}{filename}.sqcs.csv",
+                        "-i2", f"{output_directory}{filename}_homosig.csv", "-p", plddt_cutoff, "-lmin", linker_minimum,
+                        "-lmax", linker_maximum, "-es", euclidean_strictness, "-dm", distance_maximum, "-c", cutoff,
+                        "-o", output_directory])
+    except SystemExit:
+        pass
 
-    command += f"rm {output_directory}{filename}.sqcs.csv {output_directory}{filename}_homosig.csv"
-
-    os.system(command)
+    os.remove(f"{output_directory}{filename}.sqcs.csv")
+    os.remove(f"{output_directory}{filename}_homosig.csv")
 
     print(f"\nEnd full CLAUDIO pipeline execution (Total elapsed time: {round(time.time() - start_time, 2)}s)")
     print("===================================")

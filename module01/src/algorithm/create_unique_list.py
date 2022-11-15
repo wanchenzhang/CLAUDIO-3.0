@@ -1,3 +1,5 @@
+import sys
+
 import pandas as pd
 import requests as r
 from io import StringIO
@@ -102,11 +104,21 @@ def search_uniprot_entries(unique_proteins):
 
         # Retrieve sequence of protein
         url = f"https://www.uniprot.org/uniprot/{protein}.fasta?include=yes"
-        seq = [''.join(x.split('\n')[1:]) for x in r.get(url).text.split('>') if x][0]
+        try:
+            seq = [''.join(x.split('\n')[1:]) for x in r.get(url).text.split('>') if x][0]
+        except ConnectionError as e:
+            print("No connection to UniProt API possible. Please try again later.")
+            print(e)
+            sys.exit()
 
         # Retrieve uniprot information on protein
         urllib = f"https://rest.uniprot.org/uniprotkb/search?query={protein}&format=tsv"
-        info = r.get(urllib).text.split('\n')
+        try:
+            info = r.get(urllib).text.split('\n')
+        except ConnectionError as e:
+            print("No connection to UniProt API possible. Please try again later.")
+            print(e)
+            sys.exit()
 
         # Add information and sequence to container lists
         infos.append(info)
@@ -133,7 +145,8 @@ def search_pdb_entries(unique_proteins, sequences, search_tool):
         ind += 1
 
         # Create temporary fasta file at data/temp/unique_protein_list for commandline application in search tools
-        temp_path = "data/temp/unique_protein_list/"
+        project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
+        temp_path = f"{project_path}/data/temp/unique_protein_list/"
         with open(f"{temp_path}tmp.fasta", 'w') as tmp_file:
             tmp_file.write(f">Name\n{sequences[i]}\n")
 

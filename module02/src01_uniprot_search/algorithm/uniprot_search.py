@@ -1,4 +1,5 @@
 import sys
+import os
 
 import requests as r
 import pandas as pd
@@ -20,7 +21,9 @@ def do_uniprot_search(data, intra_only, filename):
     data["seq_b"] = seqs[0] if intra_only else seqs[1]
 
     # save results in temporary save file (can be used on rerun, instead of searching results again)
-    temp_save_filepath = f"data/temp/uniprot_search/{'.'.join(filename.split('.')[:-1])}_srtmp.{filename.split('.')[-1]}"
+    project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
+    temp_save_filepath = f"{project_path}/data/temp/uniprot_search/" \
+                         f"{'.'.join(filename.split('.')[:-1])}_srtmp.{filename.split('.')[-1]}"
     data[["seq_a", "seq_b"]].to_csv(temp_save_filepath, index=False)
 
     return data
@@ -45,7 +48,12 @@ def search_uniprot(data, intra_only):
     unip_search_results = []
     for id in unip_ids:
         url = f"https://rest.uniprot.org/uniprotkb/search?format=fasta&query={id}"
-        result = [''.join(x.split('\n')[1:]) for x in r.get(url).text.split('>') if x]
+        try:
+            result = [''.join(x.split('\n')[1:]) for x in r.get(url).text.split('>') if x]
+        except ConnectionError as e:
+            print("No connection to UniProt API possible. Please try again later.")
+            print(e)
+            sys.exit()
         unip_search_results.append(result)
 
     ind = 0

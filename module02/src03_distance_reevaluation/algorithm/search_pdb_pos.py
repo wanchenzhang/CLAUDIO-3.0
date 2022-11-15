@@ -3,6 +3,7 @@ from Bio.PDB import Polypeptide, PDBParser, MMCIFParser
 from Bio.Align import PairwiseAligner
 import requests as r
 import os
+import sys
 
 
 def search_site_pos_in_pdb(data):
@@ -16,7 +17,8 @@ def search_site_pos_in_pdb(data):
 
     # Read shift file given by EMBL-EBI database (see: https://www.ebi.ac.uk/pdbe/docs/sifts/quick.html) for rcsb files
     # to uniprot entries
-    pdb_uni_map = pd.read_csv("data/in/pdb_chain_uniprot.csv", header=1)
+    project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
+    pdb_uni_map = pd.read_csv(f"{project_path}/data/in/pdb_chain_uniprot.csv", header=1)
     pdb_uni_map["PDB"] = [x.upper() for x in pdb_uni_map["PDB"]]
 
     # Define data container lists
@@ -433,7 +435,12 @@ def replacement_alphafold_download(unip_id, path):
     if not os.path.exists(new_path):
         URL = f"https://alphafold.ebi.ac.uk/files/AF-{unip_id}-F1-model_v1.pdb"
         with open(new_path, 'w') as f:
-            f.write(r.get(URL).text)
+            try:
+                f.write(r.get(URL).text)
+            except ConnectionError as e:
+                print("No connection to AlphaFold API possible. Please try again later.")
+                print(e)
+                sys.exit()
     try:
         return PDBParser().get_structure('', new_path).get_list()[0].get_list()[0], new_path
     except:

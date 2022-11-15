@@ -5,6 +5,9 @@ import ast
 import pandas as pd
 
 from module02.src01_uniprot_search.dict.default_projections import *
+from module02.src01_uniprot_search.main import main as run_unip_search
+from module02.src02_structure_search.main import main as run_structure_search
+from module02.src03_distance_reevaluation.main import main as run_distance_analysis
 
 
 @click.command()
@@ -24,24 +27,22 @@ def main(input_filepath, projections, read_temps, search_tool, plddt_cutoff, e_v
     if not output_directory.endswith('/'):
         output_directory += '/'
 
-    command = f"python3 claudio_mod02_01.py -i {input_filepath} -p \"{projections}\" -s {not read_temps} " \
-              f"-o {output_directory}"
-    command += " && "
+    try:
+        run_unip_search(["-i", input_filepath, "-p", projections, "-s", not read_temps, "-o", output_directory])
+    except SystemExit:
+        pass
 
     filename = input_filepath.split('/')[-1]
-    if not os.path.exists(f"{output_directory}structures"):
-        os.mkdir(f"{output_directory}structures")
-    command += f"python3 claudio_mod02_02.py -i {f'{output_directory}{filename}.sqcs'} " \
-               f"-s {not read_temps} -t {search_tool} -e {e_value} -q {query_id} -c {coverage} " \
-               f"-r {res_cutoff} -o {f'{output_directory}structures'}"
-    command += " && "
+    try:
+        run_structure_search(["-i", f"{output_directory}{filename}.sqcs", "-s", not read_temps, "-t", search_tool,
+                              "-e", e_value, "-q", query_id, "-c", coverage, "-r", res_cutoff, "-o", output_directory])
+    except SystemExit:
+        pass
+    try:
+        run_distance_analysis(["-i", f"{output_directory}structures", "-i2", f"{output_directory}{filename}.sqcs",
+                               "-t", search_tool, "-p", plddt_cutoff, "-o", output_directory])
+    except SystemExit:
+        pass
 
-    command += f"python3 claudio_mod02_03.py -i {f'{output_directory}structures'} " \
-               f"-i2 {f'{output_directory}{filename}.sqcs'} -t {search_tool} -p {plddt_cutoff} " \
-               f"-o {output_directory}"
-    command += " && "
-
-    command += f"rm {output_directory}{filename}.sqcs"
-
-    os.system(command)
+    os.remove(f"{output_directory}{filename}.sqcs")
     sys.exit()

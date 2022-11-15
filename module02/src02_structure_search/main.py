@@ -24,9 +24,9 @@ def main(input_filepath, do_structure_search, search_tool, e_value, query_id, co
     print("Start structure search")
     start_time = time.time()
 
-    temp_save_search_path = os.getcwd().replace('\\', '/') + "/data/temp/structure_search/"
-    output_directory = os.getcwd().replace('\\', '/') + '/' + output_directory \
-        if output_directory else '/'.join(input_filepath.split('/')[:-1])
+    project_path = '/'.join(os.path.abspath(__file__).split('/')[:-3])
+    temp_save_search_path = f"{project_path}/data/temp/structure_search/"
+    output_directory = output_directory if output_directory else '/'.join(input_filepath.split('/')[:-1])
 
     if not output_directory.endswith('/'):
         output_directory += '/'
@@ -52,10 +52,12 @@ def main(input_filepath, do_structure_search, search_tool, e_value, query_id, co
             print("Read from temporary save file")
             data = read_temp_file(data, search_tool, intra_only, temp_save_search_path)
 
-        # Download structure files from RCSB database if search tool found a proper result, else use uniprot ID in order
-        # to attempt retrieval of matching AlphaFold entry
+        # Download structure files from RCSB database into structures subdirectory, if search tool found a proper
+        # result, else use uniprot ID in order to attempt retrieval of matching AlphaFold entry
         print("Download structures from RCSB database, or AlphaFold database if not found there")
-        data = download_pdbs(data, search_tool, intra_only, res_cutoff, output_directory)
+        if not os.path.exists(f"{output_directory}structures"):
+            os.mkdir(f"{output_directory}structures")
+        data = download_pdbs(data, search_tool, intra_only, res_cutoff, f"{output_directory}structures/")
 
         # Drop result columns
         data.drop("all_results" if intra_only else ["all_results", "all_results_b"], axis=1, inplace=True)

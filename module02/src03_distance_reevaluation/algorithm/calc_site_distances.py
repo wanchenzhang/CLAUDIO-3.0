@@ -88,7 +88,8 @@ def compute_dists_with_topolink(data, plddt_cutoff):
     ind = 0
 
     # delete contents in temporary save
-    files = [f"data/temp/dist_reeval/{f}" for f in os.listdir("data/temp/dist_reeval/")]
+    project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
+    files = [f"{project_path}/data/temp/dist_reeval/{f}" for f in os.listdir(f"{project_path}/data/temp/dist_reeval/")]
     for f in files:
         os.remove(f)
 
@@ -143,9 +144,10 @@ def compute_dists_with_topolink(data, plddt_cutoff):
 
         # Creates inputfile for topolink, utilizing templatefile: data/in/topolink_inputfile.inp
         topo_in = []
-        for line in open("data/in/topolink_inputfile.inp", 'r').readlines():
+        project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
+        for line in open(f"{project_path}/data/in/topolink_inputfile.inp", 'r').readlines():
             if line.startswith("linkdir"):
-                topo_in.append("linkdir data/temp/dist_reeval")
+                topo_in.append(f"linkdir {project_path}/data/temp/dist_reeval")
             elif line.startswith("structure"):
                 topo_in.append(f"structure {structure}")
             elif line.startswith("  observed"):
@@ -154,14 +156,14 @@ def compute_dists_with_topolink(data, plddt_cutoff):
                 topo_in.append(line)
         topo_in = ''.join(topo_in)
         # Write inputfile to temporary path (will be overwritten during next iteration)
-        with open("data/temp/dist_reeval/topo.tmp", 'w') as f:
+        with open(f"{project_path}/data/temp/dist_reeval/topo.tmp", 'w') as f:
             f.write(topo_in)
 
         # Run topolink and pop terminal print to variable
-        res = os.popen("topolink data/temp/dist_reeval/topo.tmp").read()
+        res = os.popen(f"topolink {project_path}/data/temp/dist_reeval/topo.tmp").read()
         # Write both input and output to temporary file marked by pdb id, e.g. topo_1b0j.log, topo_afA2ASZ8.log, ...
         # in case the user wishes to review them later
-        with open(f"data/temp/dist_reeval/topo_{pdb_id}.log", 'w') as f:
+        with open(f"{project_path}/data/temp/dist_reeval/topo_{pdb_id}.log", 'w') as f:
             f.write(f"IN:\n{topo_in}\n\n\nOUT:\n{res}")
 
         # zip topolink results with obs_inds
@@ -244,7 +246,8 @@ def isolate_pdb_chain(path, chain_ids):
                 return False
 
     # save new pdb to temporary pdb path
-    new_path = "data/temp/dist_reeval/tmp.pdb"
+    project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
+    new_path = f"{project_path}/data/temp/dist_reeval/tmp.pdb"
     io = PDBIO()
     io.set_structure(structure)
     io.save(new_path, ChainSelect())

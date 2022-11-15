@@ -22,8 +22,7 @@ def main(input_filepath, projections, uniprot_search, output_directory):
     print("Start uniprot search")
     start_time = time.time()
 
-    output_directory = os.getcwd().replace('\\', '/') + '/' + output_directory \
-        if output_directory else '/'.join(input_filepath.split('/')[:-1])
+    output_directory = output_directory if output_directory else '/'.join(input_filepath.split('/')[:-1])
 
     if not output_directory.endswith('/'):
         output_directory += '/'
@@ -75,7 +74,8 @@ def inputs_valid(input_filepath, projections, uniprot_search, output_directory):
             if not uniprot_search:
                 # if uniprot_search False then check whether temporary save file exists
                 try:
-                    pd.read_csv(f"data/temp/uniprot_search/{'.'.join(filename.split('.')[:-1])}_srtmp."
+                    project_path = '/'.join(os.path.abspath(__file__).split('/')[:-3])
+                    pd.read_csv(f"{project_path}/data/temp/uniprot_search/{'.'.join(filename.split('.')[:-1])}_srtmp."
                                 f"{filename.split('.')[-1]}")
                     return True
                 except FileNotFoundError:

@@ -6,6 +6,7 @@ import ast
 import pandas as pd
 
 from module02.src01_uniprot_search.dict.default_projections import *
+from module02.src01_uniprot_search.main import main as run_unip_search
 from module03.src.io.read_in import read_in
 from module03.src.algorithm.signal_analysis import analyse_homo_signals
 from module03.src.algorithm.create_histograms import create_homo_signal_histograms
@@ -23,18 +24,17 @@ def main(input_filepath, projections, uniprot_search, output_directory):
 
     # If parameters inputted by user valid
     if inputs_valid(input_filepath, projections, uniprot_search, output_directory):
+        output_directory = output_directory if output_directory else '/'.join(input_filepath.split('/')[:-1])
         if not output_directory.endswith('/'):
             output_directory += '/'
-        sqcs_path = os.getcwd().replace('\\', '/') + f"/{output_directory}{input_filepath.split('/')[-1]}.sqcs"
 
         # If no uniprot search run was performed already, do so now
+        sqcs_path = f"{output_directory}{input_filepath.split('/')[-1]}.sqcs"
         if not os.path.exists(sqcs_path):
-            command = f"python3 claudio_mod02_01.py -i {input_filepath} -p \"{projections}\" -s {uniprot_search}"\
-                      f" -o {output_directory}"
-            os.system(command)
-
-        output_directory = os.getcwd().replace('\\', '/') + '/' + output_directory \
-            if output_directory else '/'.join(input_filepath.split('/')[:-1])
+            try:
+                run_unip_search(["-i", input_filepath, "-p", projections, "-s", uniprot_search, "-o", output_directory])
+            except SystemExit:
+                pass
 
         # Read dataset and add columns for results
         print("Read input")
@@ -72,7 +72,8 @@ def inputs_valid(input_filepath, projections, uniprot_search, output_directory):
             if not uniprot_search:
                 # if uniprot_search False then check whether temporary save file exists
                 try:
-                    pd.read_csv(f"data/temp/uniprot_search/{'.'.join(filename.split('.')[:-1])}_srtmp."
+                    project_path = '/'.join(os.path.abspath(__file__).split('/')[:-3])
+                    pd.read_csv(f"{project_path}/data/temp/uniprot_search/{'.'.join(filename.split('.')[:-1])}_srtmp."
                                 f"{filename.split('.')[-1]}")
                     return True
                 except FileNotFoundError:

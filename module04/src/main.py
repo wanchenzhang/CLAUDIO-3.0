@@ -24,6 +24,7 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, linker_m
     print("Start New Inter Interaction Analysis")
     start_time = time.time()
 
+    output_directory = output_directory if output_directory else '/'.join(input_filepath.split('/')[:-1])
     if not output_directory.endswith('/'):
         output_directory += '/'
 

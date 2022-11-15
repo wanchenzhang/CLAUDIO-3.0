@@ -20,8 +20,7 @@ def main(input_directory, input_filepath, search_tool, plddt_cutoff, output_dire
     print("Start intra interaction check\n")
     start_time = time.time()
 
-    output_directory = os.getcwd().replace('\\', '/') + '/' + output_directory \
-        if output_directory else '/'.join(input_filepath.split('/')[:-1])
+    output_directory = output_directory if output_directory else '/'.join(input_filepath.split('/')[:-1])
 
     if not input_directory.endswith('/'):
         input_directory += '/'

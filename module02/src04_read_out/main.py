@@ -19,6 +19,7 @@ def main(input_filepath):
     print(f"number fulfilled criteria: {len(data[data.lysin_criteria_fulfilled].index)} of {len(data[data.path != '-'].index)}")
     print(f"number of unique proteins: {len(data[data.lysin_criteria_fulfilled]['unip_id_a'].unique())}")
     print(f"number of new inter interactions: {len(data[data.new_XL_type == 'inter'].index)}")
+    project_path = '/'.join(os.path.abspath(__file__).split('/')[:-3])
     print(f"number of used methods:\n\talphafold:\n\t\ta:{len(data[data.method_a == 'alphafold'].index)}\n\t\t\t"
           f"dist_true:{len(data[(data.method_a == 'alphafold') & (~pd.isna(data.eucl_dist))].index)}\n\t\t\t\t"
           f"lys_c_true:{len(data[(data.method_a == 'alphafold') & data.lysin_criteria_fulfilled].index)}\n\t\t"
@@ -48,12 +49,12 @@ def main(input_filepath):
           f"\n\tNo distance computed but lysin_crit_true (total number = {len(data[pd.isna(data.eucl_dist) & data.lysin_criteria_fulfilled].index)}): {data[pd.isna(data.eucl_dist) & data.lysin_criteria_fulfilled][['pdb_id', 'pos_a', 'pos_b', 'eucl_dist', 'lysin_criteria_fulfilled']]}"
           f"\n\tVery low distances (total number = {len(data[(0 < data.eucl_dist) & (data.eucl_dist < 5)].index)}): {data[(0 < data.eucl_dist) & (data.eucl_dist < 5)][['unip_id_a', 'eucl_dist']]}"
           f"\n\tTopolink is Nan but self computed is not zero or Nan (total number = {sum((~(data.eucl_dist == 0) & ~(pd.isna(data.eucl_dist))) & (pd.isna(data.eucl_dist_tplk)))}): {data[(~(data.eucl_dist == 0) & ~(pd.isna(data.eucl_dist))) & (pd.isna(data.eucl_dist_tplk))][['unip_id_a', 'pdb_pos_a', 'pdb_pos_b', 'pdb_id', 'eucl_dist', 'eucl_dist_tplk']]}")
-    final_data = pd.read_csv('data/out/new_inter/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant_final.csv', index_col=0)
+    final_data = pd.read_csv(f'{project_path}/data/out/new_inter/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant_final.csv', index_col=0)
     print(f"\n\nFinal results:"
           f"\n\ttotal number of interactions: {len(final_data.index)}"
           f"\n\ttotal number of proteins: {len(final_data.unip_id_a.unique())}"
           f"\n\tnumber of new inters: {sum(final_data.final_XL_type == 'inter')}"
-          f"\n\tnumber of discovered homomers: {len(os.listdir('data/out/new_inter/homomers'))}")
+          f"\n\tnumber of discovered homomers: {len(os.listdir(f'{project_path}/data/out/new_inter/homomers'))}")
 
 # nohup sh -c "python3 start01b_liu_uniprot_search.py -s True && python3 claudio_mod02_02.py -i data/out/uniprot_search/supp_RA117.000470_133922_0_supp_23973_3zf3c5_table1.csv.sqcs -s True && python3 claudio_mod02_03.py -i2 data/out/uniprot_search/supp_RA117.000470_133922_0_supp_23973_3zf3c5_table1.csv.sqcs && python3 read_out.py" > logs/log111121_0344.log 2>&1 &
 

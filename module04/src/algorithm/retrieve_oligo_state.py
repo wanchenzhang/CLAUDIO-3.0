@@ -1,3 +1,4 @@
+import sys
 import requests as r
 
 
@@ -31,9 +32,15 @@ def get_oligo_state_from_swiss(data, known_oligo_states):
         url = f"{url}{data['unip_id_a']}.json"
 
         # use get-request, retrieve all known multimer complexes, isolate homomers into list
-        list_of_states = [l.strip().replace("oligo-state\": ", '') for l in r.get(url).text.split('\n') if "oligo" in l]
-        list_of_states = sorted([state.replace('\"', '').replace(',', '').replace('-', '').replace("homo", '')
-                                 for state in list_of_states if state not in ['""heteromer",', '""monomer",']])
+        try:
+            list_of_states = [l.strip().replace("oligo-state\": ", '') for l in r.get(url).text.split('\n')
+                              if "oligo" in l]
+            list_of_states = sorted([state.replace('\"', '').replace(',', '').replace('-', '').replace("homo", '')
+                                     for state in list_of_states if state not in ['""heteromer",', '""monomer",']])
+        except ConnectionError as e:
+            print("No connection to SWISS-MODEL API possible. Please try again later.")
+            print(e)
+            sys.exit()
 
         # join known homomeric states into one string
         oligo_states = '_'.join(list(dict.fromkeys(list_of_states)))
