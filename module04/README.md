@@ -21,10 +21,10 @@
 -o,   --output-directory,       output directory for produced csv-files, default="data/out/new_inter/"
 ```
 
-###Input
+### Input
 This tool requires the outputs of the structural distance and ops analysis tools as input.
 
-###Output
+### Output
 This tool will return one csv-file with all results of the previous analysis as well as the computed confidence score 
 and new cross-link types (intra or inter), one histogram showing the confidence score distribution, and a directory
 called 'homomers' containing subdirectories for each unique protein, which in turn each contain a csv-file with all 

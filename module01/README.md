@@ -21,13 +21,13 @@
 -hhdb, --hhsearch-db,           database directory for hh-suite installation, default="$HHDB"
 -hhout,--hhsearch-out,          output directory for hhsearch results, default="$HHOUT"
 ```
-###Input
+### Input
 This tool requires a csv-file containing multiple observed cross-linking interactions. Two columns have to contain 
 uniprot ids for each interacting residue, two columns have to contain the observed peptides for each interacting residue
 and two columns have to contain the crosslinked lysin's position within the full sequence (alternative: fill these with
 Nans, but add two columns with the lysin's positions in the respective peptides).
 
-###Output
+### Output
 This tool will return two csv-files. One contains a list of all unique proteins, their full uniprot sequences,
 additional information retrieved from uniprot, their pdb id and the number of occurences in the inputfile, while the 
 other contains a list of all unique interaction pairs, their pdb ids and the number of occurences of this pair in the 

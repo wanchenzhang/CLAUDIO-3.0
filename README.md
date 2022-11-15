@@ -6,7 +6,7 @@ information. It returns structural restraints, which can be applied in structure
 extended by its analysis' results. 
 
 ## Prerequisites
-###Python
+### Python
 This tool is written in python (v3.6) and has thus to be run with python 3.\
 It has the following requirements:
 
@@ -28,7 +28,7 @@ pip install -r requirements.txt
 Note: Both approaches need to refer to the pip-installer associated to the python installation, that will be used to run
 the tool.
 
-###External Tools
+### External Tools
 This tool furthermore utilizes the following external softwares:
 * *Blast* (see [Installation Manual](https://www.ncbi.nlm.nih.gov/books/NBK52640/))
 * *HHsearch* (see [GitHub](https://github.com/soedinglab/hh-suite))
@@ -59,7 +59,7 @@ If you installed HHsearch, you also have to download its newest `pdb70` database
 **For TopoLink:**\
 No additional steps are necessary.
 
-###Online connection
+### Online connection
 CLAUDIO calls upon the API of a number of bioinformatic online databases ([UniProt](https://www.uniprot.org/), 
 [RCSB](https://www.rcsb.org/), [AlphaFold](https://alphafold.ebi.ac.uk/), and 
 [SWISS-MODEL](https://swissmodel.expasy.org/)) during most of its computations. This means it cannot be run offline.\
@@ -68,7 +68,6 @@ lead to empty results. This of course, also necessitates the database's servers 
 errors or suspicious inconsistencies in the results persist due to this, you may want to try again later.
 
 ## Usage
-
 CLAUDIO consists of a total of 5 modules. Each module can be run independently as long as appropriate inputs can be 
 delivered. For details on how to run the modules individually see their respective README-files.
 * [Module 01 - Unique protein (pair) listing tool](https://github.com/KohlbacherLab/CLAUDIO/blob/main/module01/README.md)
@@ -120,7 +119,7 @@ For details on how to run the **full** pipeline continue below.
 -c,    --config,                 filepath to configuration file containing all input parameters, if given all other 
                                 parameters will be ignored (see example: config.txt), default=''
 ```
-###Input
+### Input
 This tool requires a csv-file containing multiple observed cross-linking interactions. Two columns have to contain 
 uniprot ids for each interacting residue, two columns have to contain the observed peptides for each interacting residue
 and two columns have to contain the crosslinked lysin's position within the full sequence (alternative: fill these with
@@ -128,7 +127,7 @@ Nans, but add two columns with the lysin's positions in the respective peptides)
 
 All parameters can be given in a configuration file (see example: [config.txt](https://github.com/KohlbacherLab/CLAUDIO/blob/main/config.txt)).
 
-###Output
+### Output
 This tool returns all the outputs listed in the other modules (see respective README.md-files).
 Note: All csv-file outputs pertaining the input dataset are summarized into a single one (marked with 
 `_final.csv`-extension).
@@ -141,7 +140,6 @@ python3 claudio.py -i /home/user/docs/xl_dataset.csv -o /home/user/docs/claudio_
 ```
 
 ## Authors
-
 * **Alexander Röhl**
 * **Hadeer Elhabashy**
 * **Eugen Netz**

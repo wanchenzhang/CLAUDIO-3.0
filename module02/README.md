@@ -33,13 +33,13 @@
                                 PATH variable (e.g. if topolink can be called from anywhere), default=None)
 ```
 
-###Input
+### Input
 This tool requires a csv-file containing multiple observed cross-linking interactions. Two columns have to contain 
 uniprot ids for each interacting residue, two columns have to contain the observed peptides for each interacting residue
 and two columns have to contain the crosslinked lysin's position within the full sequence (alternative: fill these with
 Nans, but add two columns with the lysin's positions in the respective peptides).
 
-###Output
+### Output
 This tool will return a directory full of pdb structure files, which were necessary for the computation, a csv-file 
 ending with the extension ".sqcs.csv", which is the result of the uniprot (and needed structure) search including the 
 structural distance computation's results, a ".log"-file, that lists eventual issues or errors in the 
