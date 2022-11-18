@@ -2,10 +2,8 @@ import click
 import os
 import time
 import sys
-import ast
-import pandas as pd
 
-from module02.src01_uniprot_search.dict.default_projections import *
+from module01.src.dict.default_projections import liu18_schweppe17_linked_residues_intra_homo_2672_nonredundant
 from module01.src.main import main as run_claudio_lists
 from module02.run_module02_intra import main as run_claudio_structdi
 from module03.src.main import main as run_claudio_ops
@@ -52,36 +50,43 @@ def main(input_filepath, projections, read_temps, search_tool, e_value, query_id
 
     if not output_directory.endswith('/'):
         output_directory += '/'
+    filename = '.'.join(input_filepath.split('/')[-1].split('.')[:-1])
 
+    # Run Module01
     try:
-        run_claudio_lists(["-i", input_filepath, "-p", projections, "-t", search_tool, "-o", output_directory,
-                           "-bl", blast_bin, "-bldb", blast_db, "-hh", hhsearch_bin, "-hhdb", hhsearch_db, "-hhout",
-                           hhsearch_out])
+        run_claudio_lists(["-i", input_filepath, "-p", projections, "-s", not read_temps, "-t", search_tool,
+                           "-o", output_directory, "-bl", blast_bin, "-bldb", blast_db, "-hh", hhsearch_bin,
+                           "-hhdb", hhsearch_db, "-hhout", hhsearch_out])
     except SystemExit:
         pass
+
+    # Run Module03
     try:
-        run_claudio_ops(["-i", input_filepath, "-p", projections, "-s", not read_temps, "-o", output_directory])
+        run_claudio_ops(["-i", f"{output_directory}{filename}.sqcs", "-o", output_directory])
     except SystemExit:
         pass
+
+    # Run Module02
     try:
-        run_claudio_structdi(["-i", input_filepath, "-p", projections, "-rt", read_temps, "-t", search_tool,
+        run_claudio_structdi(["-i", f"{output_directory}{filename}.sqcs", "-rt", read_temps, "-t", search_tool,
                               "-pc", plddt_cutoff, "-e", e_value, "-qi", query_id, "-c", coverage, "-r", res_cutoff,
-                              "-o", output_directory, "-bl", blast_bin, "-bldb", blast_db, "-hh", hhsearch_bin, "-hhdb",
-                              hhsearch_db, "-hhout", hhsearch_out, "-tl", topolink_bin])
+                              "-o", output_directory, "-bl", blast_bin, "-bldb", blast_db, "-hh", hhsearch_bin,
+                              "-hhdb", hhsearch_db, "-hhout", hhsearch_out, "-tl", topolink_bin])
     except SystemExit:
         pass
 
-    filename = input_filepath.split('/')[-1]
+    # Run Module04
     try:
-        run_claudio_xl(["-i", f"{output_directory}{filename}.sqcs.csv",
-                        "-i2", f"{output_directory}{filename}_homosig.csv", "-p", plddt_cutoff, "-lmin", linker_minimum,
+        run_claudio_xl(["-i", f"{output_directory}{filename}.sqcs_structdi.csv",
+                        "-i2", f"{output_directory}{filename}.sqcs_ops.csv", "-p", plddt_cutoff, "-lmin", linker_minimum,
                         "-lmax", linker_maximum, "-es", euclidean_strictness, "-dm", distance_maximum, "-c", cutoff,
                         "-o", output_directory])
     except SystemExit:
         pass
 
-    os.remove(f"{output_directory}{filename}.sqcs.csv")
-    os.remove(f"{output_directory}{filename}_homosig.csv")
+    os.remove(f"{output_directory}{filename}.sqcs")
+    os.remove(f"{output_directory}{filename}.sqcs_structdi.csv")
+    os.remove(f"{output_directory}{filename}.sqcs_ops.csv")
 
     print(f"\nEnd full CLAUDIO pipeline execution (Total elapsed time: {round(time.time() - start_time, 2)}s)")
     print("===================================")
@@ -112,13 +117,18 @@ def read_config(path):
         if len(params) != len(line_markers):
             print(f"Error! Number of parameters in configuration file do not match the expected number. Check whether "
                   f"you are either missing a parameter, or one is duplicated.\n"
-                  f"\tExpected: {len(line_markers)}\n"
-                  f"\tReceived: {len(list(params))}")
+                  f"\tExpected number: {len(line_markers)}\n"
+                  f"\tReceived number: {len(list(params))}")
             sys.exit()
 
         # Check whether read_temp can be correctly converted too boolean
         try:
-            params[2] = params[2] == "True"
+            if params[2] == "True":
+                params[2] = True
+            elif params[2] == "False":
+                params[2] = False
+            else:
+                raise ValueError
         except ValueError:
             print(f"Error! Could not change type of read_temp to boolean (given:{params[2]}).")
             sys.exit()

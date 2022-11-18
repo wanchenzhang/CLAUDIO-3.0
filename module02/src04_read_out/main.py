@@ -56,13 +56,13 @@ def main(input_filepath):
           f"\n\tnumber of new inters: {sum(final_data.final_XL_type == 'inter')}"
           f"\n\tnumber of discovered homomers: {len(os.listdir(f'{project_path}/data/out/new_inter/homomers'))}")
 
-# nohup sh -c "python3 start01b_liu_uniprot_search.py -s True && python3 claudio_mod02_02.py -i data/out/uniprot_search/supp_RA117.000470_133922_0_supp_23973_3zf3c5_table1.csv.sqcs -s True && python3 claudio_mod02_03.py -i2 data/out/uniprot_search/supp_RA117.000470_133922_0_supp_23973_3zf3c5_table1.csv.sqcs && python3 read_out.py" > logs/log111121_0344.log 2>&1 &
+# nohup sh -c "python3 start01b_liu_uniprot_search.py -s True && python3 claudio_mod02_struct.py -i data/out/uniprot_search/supp_RA117.000470_133922_0_supp_23973_3zf3c5_table1.csv.sqcs -s True && python3 claudio_mod02_di.py -i2 data/out/uniprot_search/supp_RA117.000470_133922_0_supp_23973_3zf3c5_table1.csv.sqcs && python3 read_out.py" > logs/log111121_0344.log 2>&1 &
 
-# nohup sh -c "python3 claudio_mod02_01.py && python3 claudio_mod02_02.py && python3 claudio_mod02_03.py && python3 read_out.py" > logs/log220323_1400.log 2>&1 &
+# nohup sh -c "python3 claudio_mod02_01.py && python3 claudio_mod02_struct.py && python3 claudio_mod02_di.py && python3 read_out.py" > logs/log220323_1400.log 2>&1 &
 
-# nohup sh -c "python3 claudio_mod02_02.py && python3 claudio_mod02_03.py && python3 read_out.py" > logs/log220204_1300.log 2>&1 &
+# nohup sh -c "python3 claudio_mod02_struct.py && python3 claudio_mod02_di.py && python3 read_out.py" > logs/log220204_1300.log 2>&1 &
 
-# nohup sh -c "python3 claudio_mod02_03.py && python3 read_out.py" > logs/log220207_2000.log 2>&1 &
+# nohup sh -c "python3 claudio_mod02_di.py && python3 read_out.py" > logs/log220207_2000.log 2>&1 &
 
 # nohup sh -c "python3 claudio_lists.py" > nohup.log 2>&1 &
 

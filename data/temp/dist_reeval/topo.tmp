@@ -25,6 +25,8 @@ experiment DSS
   linktype   MET     all      1       N           LYS     all     all       CB        35
   linktype   LYS     all     all      CB          LYS     all     all       CB        35
 
+  observed LYS A 94 LYS A 129
+  observed LYS A 48 LYS A 140
 
 end experiment DSS
 # Optional parameters

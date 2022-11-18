@@ -22,10 +22,11 @@
 ```
 
 ### Input
-This tool requires the outputs of the structural distance and ops analysis tools as input.
+This tool requires the outputs of the [Structural distance](https://github.com/KohlbacherLab/CLAUDIO/tree/main/module02)
+and [OPS-analysis](https://github.com/KohlbacherLab/CLAUDIO/tree/main/module03) tools as input.
 
 ### Output
-This tool will return one csv-file with all results of the previous analysis as well as the computed confidence score 
+This tool will return one CSV-file with all results of the previous analysis as well as the computed confidence scores 
 and new cross-link types (intra or inter), one histogram showing the confidence score distribution, and a directory
 called 'homomers' containing subdirectories for each unique protein, which in turn each contain a csv-file with all 
 restraints and one or multiple fasta files for each possible related oligomeric state found by SWISS-MODEL.
@@ -35,10 +36,10 @@ The project can be run like this:
 ```
 python3 claudio_xl.py -c data/in/iiCheck_config.txt
 ```
-This will result in a csv-file in "data/out/new_inter" containing the full dataset with the results of the structural 
+This will result in a CSV-file in "data/out/new_inter" containing the full dataset with the results of the structural 
 distance analysis tool, OPS analysis tool, and final cross-link type evaluation, as well as one histogram depicting the 
 confidence score distribution, all pertaining the project's default dataset 
-'liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv'.
+['liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv'](https://github.com/KohlbacherLab/CLAUDIO/blob/main/data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv).
 ```
 python3 claudio_xl.py
 ```

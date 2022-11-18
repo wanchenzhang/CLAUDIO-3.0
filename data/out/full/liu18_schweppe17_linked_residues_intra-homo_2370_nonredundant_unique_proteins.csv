@@ -12,7 +12,7 @@
 10,10,Q9DCW4,ETFB_MOUSE,reviewed,Electron transfer flavoprotein subunit beta (Beta-ETF),Etfb,Mus musculus (Mouse),255,1EFV_B,17
 11,11,Q9CPQ1,COX6C_MOUSE,reviewed,Cytochrome c oxidase subunit 6C (Cytochrome c oxidase polypeptide VIc),Cox6c,Mus musculus (Mouse),76,7O37_i,2
 12,12,Q8QZT1,THIL_MOUSE,reviewed,"Acetyl-CoA acetyltransferase, mitochondrial (EC 2.3.1.9) (Acetoacetyl-CoA thiolase)",Acat1,Mus musculus (Mouse),424,afQ8QZT1_A,26
-13,13,Q8CAQ8,MIC60_MOUSE,reviewed,MICOS complex subunit Mic60 (Mitochondrial inner membrane protein) (Mitofilin),Immt Mic60,Mus musculus (Mouse),757,afQ8CAQ8_A,110
+13,13,Q8CAQ8,MIC60_MOUSE,reviewed,MICOS complex subunit Mic60 (Mitochondrial inner membrane protein) (Mitofilin),Immt Mic60,Mus musculus (Mouse),757,afQ8CAQ8_A,101
 14,14,Q8BMS1,ECHA_MOUSE,reviewed,"Trifunctional enzyme subunit alpha, mitochondrial (Monolysocardiolipin acyltransferase) (EC 2.3.1.-) (TP-alpha) [Includes: Long-chain enoyl-CoA hydratase (EC 4.2.1.17); Long chain 3-hydroxyacyl-CoA dehydrogenase (EC 1.1.1.211)]",Hadha,Mus musculus (Mouse),763,afQ8BMS1_A,86
 15,15,P97807,FUMH_MOUSE,reviewed,"Fumarate hydratase, mitochondrial (Fumarase) (EC 4.2.1.2) (EF-3)",Fh Fh1,Mus musculus (Mouse),507,3E04_A,18
 16,16,Q91VD9,NDUS1_MOUSE,reviewed,"NADH-ubiquinone oxidoreductase 75 kDa subunit, mitochondrial (EC 7.1.1.2) (Complex I-75kD) (CI-75kD)",Ndufs1,Mus musculus (Mouse),727,6G2J_G,11
@@ -51,7 +51,7 @@
 49,81,P62897,CYC_MOUSE,reviewed,"Cytochrome c, somatic",Cycs,Mus musculus (Mouse),105,5C0Z_A,22
 50,83,Q8BH59,S2512_MOUSE,reviewed,"Electrogenic aspartate/glutamate antiporter SLC25A12, mitochondrial (Solute carrier family 25 member 12)",Slc25a12,Mus musculus (Mouse),677,afQ8BH59_A,6
 51,92,Q9DBM2,ECHP_MOUSE,reviewed,"Peroxisomal bifunctional enzyme (PBE) (PBFE) (L-peroxisomal bifunctional enzyme) (L-PBE) (Multifunctional enzyme 1) (MFE1) (Multifunctional protein 1) (MFP-1) [Includes: Enoyl-CoA hydratase/3,2-trans-enoyl-CoA isomerase (EC 4.2.1.17) (EC 5.3.3.8); 3-hydroxyacyl-CoA dehydrogenase (EC 1.1.1.35)]",Ehhadh L-pbe,Mus musculus (Mouse),718,3ZW8_A,12
-52,94,Q60932,VDAC1_MOUSE,reviewed,Voltage-dependent anion-selective channel protein 1 (VDAC-1) (mVDAC1) (Outer mitochondrial membrane protein porin 1) (Plasmalemmal porin) (Voltage-dependent anion-selective channel protein 5) (VDAC-5) (mVDAC5),Vdac1 Vdac5,Mus musculus (Mouse),296,3EMN_X,12
+52,94,Q60932,VDAC1_MOUSE,reviewed,Voltage-dependent anion-selective channel protein 1 (VDAC-1) (mVDAC1) (Outer mitochondrial membrane protein porin 1) (Plasmalemmal porin) (Voltage-dependent anion-selective channel protein 5) (VDAC-5) (mVDAC5),Vdac1 Vdac5,Mus musculus (Mouse),296,3EMN_X,11
 53,95,P47934,CACP_MOUSE,reviewed,Carnitine O-acetyltransferase (Carnitine acetylase) (EC 2.3.1.137) (EC 2.3.1.7) (Carnitine acetyltransferase) (CAT) (CrAT),Crat,Mus musculus (Mouse),626,2H3P_A,8
 54,96,P42125,ECI1_MOUSE,reviewed,"Enoyl-CoA delta isomerase 1, mitochondrial (EC 5.3.3.8) (3,2-trans-enoyl-CoA isomerase) (Delta(3),Delta(2)-enoyl-CoA isomerase) (D3,D2-enoyl-CoA isomerase) (Dodecenoyl-CoA isomerase)",Eci1 Dci,Mus musculus (Mouse),289,afP42125_A,7
 55,97,P34914,HYES_MOUSE,reviewed,Bifunctional epoxide hydrolase 2 [Includes: Cytosolic epoxide hydrolase 2 (CEH) (EC 3.3.2.10) (Epoxide hydratase) (Soluble epoxide hydrolase) (SEH); Lipid-phosphate phosphatase (EC 3.1.3.76)],Ephx2 Eph2,Mus musculus (Mouse),554,1CQZ_A,2
@@ -74,7 +74,7 @@
 72,154,P40630,TFAM_MOUSE,reviewed,"Transcription factor A, mitochondrial (mtTFA) (Testis-specific high mobility group protein) (TS-HMG)",Tfam Hmgts,Mus musculus (Mouse),243,afP40630_A,5
 73,157,Q91WN4,KMO_MOUSE,reviewed,Kynurenine 3-monooxygenase (EC 1.14.13.9) (Kynurenine 3-hydroxylase),Kmo,Mus musculus (Mouse),479,6LKD_A,3
 74,160,Q8R4N0,CLYBL_MOUSE,reviewed,"Citramalyl-CoA lyase, mitochondrial (EC 4.1.3.25) ((3S)-malyl-CoA thioesterase) (EC 3.1.2.30) (Beta-methylmalate synthase) (EC 2.3.3.-) (Citrate lyase subunit beta-like protein, mitochondrial) (Citrate lyase beta-like) (Malate synthase) (EC 2.3.3.9)",Clybl Clb,Mus musculus (Mouse),338,afQ8R4N0_A,7
-75,164,P35486,ODPA_MOUSE,reviewed,"Pyruvate dehydrogenase E1 component subunit alpha, somatic form, mitochondrial (EC 1.2.4.1) (PDHE1-A type I)",Pdha1 Pdha-1,Mus musculus (Mouse),390,3EXE_A,14
+75,164,P35486,ODPA_MOUSE,reviewed,"Pyruvate dehydrogenase E1 component subunit alpha, somatic form, mitochondrial (EC 1.2.4.1) (PDHE1-A type I)",Pdha1 Pdha-1,Mus musculus (Mouse),390,3EXE_A,13
 76,166,Q9WUM5,SUCA_MOUSE,reviewed,"Succinate--CoA ligase [ADP/GDP-forming] subunit alpha, mitochondrial (EC 6.2.1.4) (EC 6.2.1.5) (Succinyl-CoA synthetase subunit alpha) (SCS-alpha)",Suclg1,Mus musculus (Mouse),346,1EUC_A,10
 77,167,Q99JY0,ECHB_MOUSE,reviewed,"Trifunctional enzyme subunit beta, mitochondrial (TP-beta) [Includes: 3-ketoacyl-CoA thiolase (EC 2.3.1.155) (EC 2.3.1.16) (Acetyl-CoA acyltransferase) (Beta-ketothiolase)]",Hadhb,Mus musculus (Mouse),475,5ZQZ_B,22
 78,172,O35459,ECH1_MOUSE,reviewed,"Delta(3,5)-Delta(2,4)-dienoyl-CoA isomerase, mitochondrial (EC 5.3.3.-)",Ech1,Mus musculus (Mouse),327,1DCI_A,12

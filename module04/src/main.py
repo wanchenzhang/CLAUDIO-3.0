@@ -11,8 +11,8 @@ from module04.src.io.write_outs import write_outputs
 
 
 @click.command()
-@click.option("-i", "--input-filepath", default="data/out/dist_reeval/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv.sqcs.csv")
-@click.option("-i2", "--input-filepath2", default="data/out/homo_signal/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv_homosig.csv")
+@click.option("-i", "--input-filepath", default="data/out/dist_reeval/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.sqcs_structdi.csv")
+@click.option("-i2", "--input-filepath2", default="data/out/homo_signal/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.sqcs_ops.csv")
 @click.option("-p", "--plddt-cutoff", default=70.0)
 @click.option("-lmin", "--linker-minimum", default=0.0)
 @click.option("-lmax", "--linker-maximum", default=35.0)
@@ -76,9 +76,9 @@ def inputs_valid(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, 
     # return inputs_valid: bool
 
     # check whether outputfile from distance-based reevauation is specified
-    if input_filepath.endswith(".sqcs.csv"):
+    if input_filepath.endswith(".sqcs_structdi.csv"):
         # check whether outputfile from homo-signal-based reevauation is specified
-        if input_filepath2.endswith("_homosig.csv"):
+        if input_filepath2.endswith(".sqcs_ops.csv"):
             # check whether plddt cutoff has valid value
             try:
                 plddt_cutoff = float(plddt_cutoff)

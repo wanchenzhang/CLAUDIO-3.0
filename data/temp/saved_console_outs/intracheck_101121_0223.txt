@@ -1,0 +1,18 @@
+C:\Users\alexander\PyCharmProjects\Master\venv\Scripts\python.exe C:/Users/alexander/PyCharmProjects/Master/start_intra_interaction_check.py
+Start intra interaction check
+
+Read peptide information from uniprot search results
+Read structure information and chain ids from structure search results
+1282 2564 1282 1282
+Locate residues
+	Peptide_a sites not found: 0
+	Peptide_a sites found not where supposed with too many alternatives: 0
+	Peptide_b sites not found: 4
+	Peptide_a sites found not where supposed with too many alternatives: 1 (Over_counts: {'12': (1, 'RLVVQQAGKADAGEYSCEAGGQK')})
+	Number of positions that changed for peptides a: 24 (of 1282)
+	Number of positions that changed for peptides b: 27 (of 1282)
+Calculate presumed interaction site distances and evaluate interaction likelihood
+[100.0%]
+End script (Elapsed time: 2215.79s)
+
+Process finished with exit code 0

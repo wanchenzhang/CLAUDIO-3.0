@@ -20,10 +20,12 @@ def create_list_of_unique_proteins(data, search_tool, blast_bin, blast_db, hhsea
         unique_protein_indeces, \
         unique_pair_indeces, \
         unique_protein_counts, \
-        unique_pair_counts = ([] for _ in range(6))
+        unique_pair_counts, \
+        unique_sequences = ([] for _ in range(7))
 
     for i, row in data.iterrows():
         pair = (row["unip_id_a"], row["unip_id_b"])
+        seqs = (row["seq_a"], row["seq_b"])
 
         # Check if first protein of pair is a new protein, if so add them to list of unique proteins, add their index
         # to list of unique protein indeces and set the respective count to 1, else just increase the counter by one
@@ -32,6 +34,7 @@ def create_list_of_unique_proteins(data, search_tool, blast_bin, blast_db, hhsea
             unique_proteins.append(pair[0])
             unique_protein_indeces.append(i)
             unique_protein_counts.append(1)
+            unique_sequences.append(seqs[0])
         else:
             unique_protein_counts[unique_proteins.index(pair[0])] += 1
 
@@ -42,6 +45,7 @@ def create_list_of_unique_proteins(data, search_tool, blast_bin, blast_db, hhsea
             unique_proteins.append(pair[1])
             unique_protein_indeces.append(i)
             unique_protein_counts.append(1)
+            unique_sequences.append(seqs[1])
         elif pair[0] != pair[1]:
             unique_protein_counts[unique_proteins.index(pair[1])] += 1
 
@@ -59,13 +63,13 @@ def create_list_of_unique_proteins(data, search_tool, blast_bin, blast_db, hhsea
             except KeyError:
                 unique_pair_counts[unique_pairs.index(reversed(pair))] += 1
 
-    # Apply uniprot search for sequences and info on unique proteins
-    infos, sequences = search_uniprot_entries(unique_proteins)
+    # Apply uniprot search for information on unique proteins
+    infos = search_uniprot_metadata(unique_proteins)
     # Apply blastp or hhsearch search for pdb entries on unique proteins by their sequences
-    pdbs = search_pdb_entries(unique_proteins, sequences, search_tool, blast_bin, blast_db, hhsearch_bin, hhsearch_db,
-                              hhsearch_out)
+    pdbs = search_pdb_entries(unique_proteins, unique_sequences, search_tool, blast_bin, blast_db, hhsearch_bin,
+                              hhsearch_db, hhsearch_out)
     # Retrieve pair (sequences and) pdb entries for unique pair list
-    _, pair_pdbs = get_pair_seqs_pdbs(sequences, pdbs, unique_proteins, unique_pairs)
+    _, pair_pdbs = get_pair_seqs_pdbs(unique_sequences, pdbs, unique_proteins, unique_pairs)
 
     # Collect information of unique proteins for final unique protein list dataset
     unique_proteins_list = pd.DataFrame()
@@ -88,30 +92,20 @@ def create_list_of_unique_proteins(data, search_tool, blast_bin, blast_db, hhsea
     return unique_pair_list, unique_proteins_list
 
 
-def search_uniprot_entries(unique_proteins):
+def search_uniprot_metadata(unique_proteins):
     # retrieve full sequences and info from uniprot database by given entries
     #
     # input unique_proteins: list(str)
-    # return infos: list(list(str)), sequences: list(str)
+    # return infos: list(list(str))
 
     # Create data container lists
-    infos, \
-        sequences = ([] for _ in range(2))
+    infos = []
 
     ind = 1
     # Iterate over proteins (proteins = uniprot ids)
     for protein in unique_proteins:
         print(f"\r\t[{round(ind * 100 / len(unique_proteins), 2)}%]", end='')
         ind += 1
-
-        # Retrieve sequence of protein
-        url = f"https://www.uniprot.org/uniprot/{protein}.fasta?include=yes"
-        try:
-            seq = [''.join(x.split('\n')[1:]) for x in r.get(url).text.split('>') if x][0]
-        except ConnectionError as e:
-            print("No connection to UniProt API possible. Please try again later.")
-            print(e)
-            sys.exit()
 
         # Retrieve uniprot information on protein
         urllib = f"https://rest.uniprot.org/uniprotkb/search?query={protein}&format=tsv"
@@ -124,18 +118,17 @@ def search_uniprot_entries(unique_proteins):
 
         # Add information and sequence to container lists
         infos.append(info)
-        sequences.append(seq)
     print()
 
-    return infos, sequences
+    return infos
 
 
-def search_pdb_entries(unique_proteins, sequences, search_tool, blast_bin, blast_db, hhsearch_bin, hhsearch_db,
+def search_pdb_entries(proteins, sequences, search_tool, blast_bin, blast_db, hhsearch_bin, hhsearch_db,
                        hhsearch_out):
     # use either hhsearch or blastp as search tool on protein sequence in order to retrieve matching pdb id, if no
     # result was found add an alphafold entry id instead (id: af<uniprot_id>_A)
     #
-    # input unique_proteins: list(str), sequences: list(str), search_tool: str, blast_bin: str/None, blast_db: str,
+    # input proteins: list(str), sequences: list(str), search_tool: str, blast_bin: str/None, blast_db: str,
     # hhsearch_bin: str/None, hhsearch_db: str, hhsearch_out: str
     # return pdbs: list(str)
 
@@ -144,8 +137,8 @@ def search_pdb_entries(unique_proteins, sequences, search_tool, blast_bin, blast
 
     ind = 1
     # Iterate over proteins (proteins = uniprot ids)
-    for i, protein in enumerate(unique_proteins):
-        print(f"\r\t[{round(ind * 100 / len(unique_proteins), 2)}%]", end='')
+    for i, protein in enumerate(proteins):
+        print(f"\r\t[{round(ind * 100 / len(proteins), 2)}%]", end='')
         ind += 1
 
         # Create temporary fasta file at data/temp/unique_protein_list for commandline application in search tools
