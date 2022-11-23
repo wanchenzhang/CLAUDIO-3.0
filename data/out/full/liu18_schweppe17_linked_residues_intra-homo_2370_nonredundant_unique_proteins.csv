@@ -58,7 +58,7 @@
 56,98,P17710,HXK1_MOUSE,reviewed,"Hexokinase-1 (EC 2.7.1.1) (Hexokinase type I) (HK I) (Hexokinase, tumor isozyme)",Hk1,Mus musculus (Mouse),974,1BG3_A,16
 57,100,Q8R1S0,COQ6_MOUSE,reviewed,"Ubiquinone biosynthesis monooxygenase COQ6, mitochondrial (EC 1.14.13.-) (Coenzyme Q10 monooxygenase 6)",Coq6,Mus musculus (Mouse),476,afQ8R1S0_A,2
 58,101,P45952,ACADM_MOUSE,reviewed,"Medium-chain specific acyl-CoA dehydrogenase, mitochondrial (MCAD) (EC 1.3.8.7)",Acadm,Mus musculus (Mouse),421,afP45952_A,12
-59,103,Q60597,ODO1_MOUSE,reviewed,"2-oxoglutarate dehydrogenase complex component E1 (E1o) (OGDC-E1) (OGDH-E1) (EC 1.2.4.2) (2-oxoglutarate dehydrogenase, mitochondrial) (Alpha-ketoglutarate dehydrogenase) (Alpha-KGDH-E1) (Thiamine diphosphate (ThDP)-dependent 2-oxoglutarate dehydrogenase)",Ogdh Kiaa4192,Mus musculus (Mouse),1023,afQ60597_A,16
+59,103,Q60597,ODO1_MOUSE,reviewed,"2-oxoglutarate dehydrogenase complex component E1 (E1o) (OGDC-E1) (OGDH-E1) (EC 1.2.4.2) (2-oxoglutarate dehydrogenase, mitochondrial) (Alpha-ketoglutarate dehydrogenase) (Alpha-KGDH-E1) (Thiamine diphosphate (ThDP)-dependent 2-oxoglutarate dehydrogenase)",Ogdh Kiaa4192,Mus musculus (Mouse),1023,afQ60597_A,15
 60,108,Q91VR2,ATPG_MOUSE,reviewed,"ATP synthase subunit gamma, mitochondrial (ATP synthase F1 subunit gamma) (F-ATPase gamma subunit)",Atp5f1c Atp5c1,Mus musculus (Mouse),298,2W6E_G,14
 61,111,O35143,ATIF1_MOUSE,reviewed,"ATPase inhibitor, mitochondrial (ATP synthase F1 subunit epsilon) (Inhibitor of F(1)F(o)-ATPase) (IF(1)) (IF1)",Atp5if1 Atpi Atpif1 If1,Mus musculus (Mouse),106,afO35143_A,9
 62,114,Q9D6R2,IDH3A_MOUSE,reviewed,"Isocitrate dehydrogenase [NAD] subunit alpha, mitochondrial (EC 1.1.1.41) (Isocitric dehydrogenase subunit alpha) (NAD(+)-specific ICDH subunit alpha)",Idh3a,Mus musculus (Mouse),366,7CE3_A,7
@@ -222,7 +222,7 @@
 220,1367,Q8CHT0,AL4A1_MOUSE,reviewed,"Delta-1-pyrroline-5-carboxylate dehydrogenase, mitochondrial (P5C dehydrogenase) (EC 1.2.1.88) (Aldehyde dehydrogenase family 4 member A1) (L-glutamate gamma-semialdehyde dehydrogenase)",Aldh4a1,Mus musculus (Mouse),562,3V9J_A,2
 221,1387,Q99L13,3HIDH_MOUSE,reviewed,"3-hydroxyisobutyrate dehydrogenase, mitochondrial (HIBADH) (EC 1.1.1.31)",Hibadh,Mus musculus (Mouse),335,2I9P_A,2
 222,1423,P56394,COX17_MOUSE,reviewed,Cytochrome c oxidase copper chaperone,Cox17 Cox17a,Mus musculus (Mouse),63,2RN9_A,2
-223,1425,E9Q7L0,E9Q7L0_MOUSE,unreviewed,Oxoglutarate dehydrogenase (succinyl-transferring) (EC 1.2.4.2),Ogdhl,Mus musculus (Mouse),1029,afE9Q7L0_A,3
+223,1425,E9Q7L0,E9Q7L0_MOUSE,unreviewed,Oxoglutarate dehydrogenase (succinyl-transferring) (EC 1.2.4.2),Ogdhl,Mus musculus (Mouse),1029,afE9Q7L0_A,2
 224,1427,Q3UV70,PDP1_MOUSE,reviewed,"[Pyruvate dehydrogenase [acetyl-transferring]]-phosphatase 1, mitochondrial (PDP 1) (EC 3.1.3.43) (Protein phosphatase 2C) (Pyruvate dehydrogenase phosphatase catalytic subunit 1) (PDPC 1)",Pdp1 Ppm2c,Mus musculus (Mouse),538,3MQ3_A,1
 225,1428,Q8R2Y8,PTH2_MOUSE,reviewed,"Peptidyl-tRNA hydrolase 2, mitochondrial (PTH 2) (EC 3.1.1.29)",Ptrh2 Pth2,Mus musculus (Mouse),181,afQ8R2Y8_A,1
 226,1429,Q8VCE1,DJC28_MOUSE,reviewed,DnaJ homolog subfamily C member 28,Dnajc28 ORF28,Mus musculus (Mouse),385,afQ8VCE1_A,1

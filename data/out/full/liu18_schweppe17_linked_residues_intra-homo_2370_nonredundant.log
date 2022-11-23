@@ -71,6 +71,10 @@
 	REPLACE: pos_b: 206 -> 62
 		VERIFY: new residue is K: True
 	SUCCESS
+1447_a: pep_a was found more than once in full seq_a
+	ISSUE
+1447_b: pep_b was found more than once in full seq_b
+	ISSUE
 1448_a: residue in peptide at pos_a is not K or M.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
@@ -85,6 +89,10 @@
 	REPLACE: pos_b: 3047 -> 3323
 		VERIFY: new residue is K: True
 	SUCCESS
+1449_a: pep_a was found more than once in full seq_a
+	ISSUE
+1449_b: pep_b was found more than once in full seq_b
+	ISSUE
 1451_b: residue in peptide at pos_b is not K or M.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
@@ -392,7 +400,7 @@
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
 	k_pos_a was given
-	REPLACE: pos_a: 272 -> 282
+	REPLACE: pos_a: 272 -> 276
 		VERIFY: new residue is K: True
 	SUCCESS
 1481_b: residue in peptide at pos_b is not K or M.
@@ -401,6 +409,8 @@
 	k_pos_b was given
 	REPLACE: pos_b: 995 -> 999
 		VERIFY: new residue is K: True
+	SUCCESS
+1481: entry is a DUPLICATE (see entry 276). will be removed
 	SUCCESS
 1482_a: residue in peptide at pos_a is not K or M.
 	found pep_a exactly once in full sequence
@@ -1546,12 +1556,18 @@
 	REPLACE: pos_b: 311 -> 168
 		VERIFY: new residue is K: True
 	SUCCESS
+2238_a: pep_a was found more than once in full seq_a
+	ISSUE
+2238_b: pep_b was found more than once in full seq_b
+	ISSUE
 2239_a: residue in peptide at pos_a is not K or M.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
 	REPLACE: pos_a: 1994 -> 2061
 		VERIFY: new residue is K: True
 	SUCCESS
+2240_b: pep_b was found more than once in full seq_b
+	ISSUE
 2240_a: residue in peptide at pos_a is not K or M.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
@@ -1742,6 +1758,6 @@
 ======================================================================
 Final result:
 	FAILS: 0
-	SUCCESSES: 256
-	ISSUES: 16
-	DUPLICATES: 11
+	SUCCESSES: 257
+	ISSUES: 23
+	DUPLICATES: 12

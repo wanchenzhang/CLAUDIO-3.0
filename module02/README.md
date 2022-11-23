@@ -60,7 +60,7 @@ python3 claudio_structdi.py
 This will result in a directory called 'structures' in "data/out/module02" filled with pdb structures, two 
 histograms describing their resolutions and experimental methods, and one CSV-file with the associated results of the
 structural distance analysis, all pertaining the project's default dataset 
-'liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv'.
+['liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv'](https://github.com/KohlbacherLab/CLAUDIO/blob/main/data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv).
 ```
 python3 claudio_structdi.py -i "c/user/documents/cross_links.csv -p "{'my_entry1': 'unip_id_a', 'my_entry2': 'unip_id_b', "peptide1": "pep_a", "peptide2": "pep_b", "position1": "pos_a", "position2": "pos_b", "k_pos1": "k_pos_a", "k_pos2": "k_pos_b", "gene1": "gene_a", "gene2": "gene_b", "Publication": "pub"}" -rt True -o "c/user/documents/outs"
 ```

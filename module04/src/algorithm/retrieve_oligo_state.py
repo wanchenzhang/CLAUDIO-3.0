@@ -1,5 +1,8 @@
 import sys
 import requests as r
+import pandas as pd
+
+NUMBER_OF_CALL_REPEATS = 5
 
 
 def retrieve_oligomeric_states(data):
@@ -31,19 +34,25 @@ def get_oligo_state_from_swiss(data, known_oligo_states):
         # set json url with uniprot id up
         url = f"{url}{data['unip_id_a']}.json"
 
-        # use get-request, retrieve all known multimer complexes, isolate homomers into list
-        try:
-            list_of_states = [l.strip().replace("oligo-state\": ", '') for l in r.get(url).text.split('\n')
-                              if "oligo" in l]
-            list_of_states = sorted([state.replace('\"', '').replace(',', '').replace('-', '').replace("homo", '')
-                                     for state in list_of_states if state not in ['""heteromer",', '""monomer",']])
-        except ConnectionError as e:
-            print("No connection to SWISS-MODEL API possible. Please try again later.")
-            print(e)
-            sys.exit()
+        # repeat SWISS-MODEL calls for consistency (SWISS-MODEL has shown to inconsistently return empty API call
+        # results)
+        oligo_states = []
+        for _ in range(NUMBER_OF_CALL_REPEATS):
+            # use get-request, retrieve all known multimer complexes, isolate homomeric oligomer-states into list
+            try:
+                list_of_states = [l.strip().replace("oligo-state\": ", '')
+                                  for l in r.get(url).text.split('\n') if "oligo" in l]
+                list_of_states = sorted([state.replace('\"', '').replace(',', '').replace('-', '').replace("homo", '')
+                                         for state in list_of_states if state not in ['""heteromer",', '""monomer",']])
+            except ConnectionError as e:
+                print("No connection to SWISS-MODEL API possible. Please try again later.")
+                print(e)
+                sys.exit()
+            oligo_states.append(list_of_states)
 
         # join known homomeric states into one string
-        oligo_states = '_'.join(list(dict.fromkeys(list_of_states)))
+        oligo_states = pd.unique([states for repeat in oligo_states for states in repeat]).tolist()
+        oligo_states = '_'.join(oligo_states)
 
         # add result to known oligomeric states
         known_oligo_states.append((data['unip_id_a'], oligo_states))

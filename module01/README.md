@@ -50,7 +50,7 @@ The project can be run like this:
 python3 claudio_lists.py
 ```
 This will result in three CSV-files in "data/out/unique_protein_list" pertaining the project's default dataset 
-'liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv'.
+['liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv'](https://github.com/KohlbacherLab/CLAUDIO/blob/main/data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv).
 ```
 python3 claudio_lists.py -i "c/user/documents/cross_links.csv -p "{'my_entry1': 'unip_id_a', 'my_entry2': 'unip_id_b'}" -t "hhsearch" -o "c/user/documents/outs"
 ```

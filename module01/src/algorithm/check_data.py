@@ -50,6 +50,16 @@ def double_check_data(data, intra_only, filename, output_directory):
             log_text += f"{i}_b: pep_b is not completely in full seq_b\n"
             log_text += f"\tISSUE\n"
 
+        # ISSUE: Check if peptide occurs multiple times in full sequence as is (possible insertions are not considered)
+        if row["seq_a"].count(row["pep_a"]) > 1:
+            log_text += f"{i}_a: pep_a was found more than once in full seq_a " \
+                        f"(count: {row['seq_a'].count(row['pep_a'])})\n"
+            log_text += f"\tISSUE\n"
+        if row["seq_b"].count(row["pep_b"]) > 1:
+            log_text += f"{i}_b: pep_b was found more than once in full seq_b " \
+                        f"(count: {row['seq_b'].count(row['pep_b'])})\n"
+            log_text += f"\tISSUE\n"
+
         # Recompute lysin positions for site a and b
         row, log_text = check_pep_pos(i, row, 'a', log_text)
         row, log_text = check_pep_pos(i, row, 'b', log_text)
