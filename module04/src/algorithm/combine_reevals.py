@@ -64,4 +64,22 @@ def score_inter_potential(datapoint, plddt_cutoff, linker_minimum, linker_maximu
     if datapoint.homo_pep_overl:
         score += datapoint.homo_int_overl / 2
 
-    return score
+    return round_self(score, 3)
+
+
+def round_self(value, decimals):
+    # simple decimal rounding function (python by itself has a tendency to round fragmented with the buit-in function)
+    #
+    # input value: float, decimals: int
+    # return rounded_value: float/int
+
+    # If decimal less than 1, the resulting value will be an integer
+    if pd.isna(value):
+        return float("Nan")
+    if decimals < 1:
+        rounded_value = int(int((value * (10 ** decimals)) + .5) / (10 ** decimals))
+        return rounded_value
+    # Else, the resulting value will be a float
+    else:
+        rounded_value = int((value * (10 ** decimals)) + .5) / (10 ** decimals)
+        return rounded_value

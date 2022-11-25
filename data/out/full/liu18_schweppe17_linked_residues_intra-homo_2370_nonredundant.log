@@ -75,6 +75,336 @@
 	ISSUE
 1447_b: pep_b was found more than once in full seq_b
 	ISSUE
+	datapoint already in dataset (1 of 48)
+	create new datapoint (2 of 48):
+		pos_a: 1509 -> 1509
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1019
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (3 of 48):
+		pos_a: 1509 -> 1509
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1111
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (4 of 48):
+		pos_a: 1509 -> 1509
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1203
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (5 of 48):
+		pos_a: 1509 -> 1509
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1295
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (6 of 48):
+		pos_a: 1509 -> 1509
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1479
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (7 of 48):
+		pos_a: 1509 -> 1509
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1571
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (8 of 48):
+		pos_a: 1509 -> 1509
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1663
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (9 of 48):
+		pos_a: 1509 -> 1509
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1755
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (10 of 48):
+		pos_a: 1509 -> 1509
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1847
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (11 of 48):
+		pos_a: 1509 -> 1509
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1939
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (12 of 48):
+		pos_a: 1509 -> 1509
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 2123
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (13 of 48):
+		pos_a: 1509 -> 1601
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 927
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (14 of 48):
+		pos_a: 1509 -> 1601
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1019
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (15 of 48):
+		pos_a: 1509 -> 1601
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1111
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (16 of 48):
+		pos_a: 1509 -> 1601
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1203
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (17 of 48):
+		pos_a: 1509 -> 1601
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1295
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (18 of 48):
+		pos_a: 1509 -> 1601
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1479
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (19 of 48):
+		pos_a: 1509 -> 1601
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1571
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (20 of 48):
+		pos_a: 1509 -> 1601
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1663
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (21 of 48):
+		pos_a: 1509 -> 1601
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1755
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (22 of 48):
+		pos_a: 1509 -> 1601
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1847
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (23 of 48):
+		pos_a: 1509 -> 1601
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1939
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (24 of 48):
+		pos_a: 1509 -> 1601
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 2123
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (25 of 48):
+		pos_a: 1509 -> 1693
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 927
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (26 of 48):
+		pos_a: 1509 -> 1693
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1019
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (27 of 48):
+		pos_a: 1509 -> 1693
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1111
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (28 of 48):
+		pos_a: 1509 -> 1693
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1203
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (29 of 48):
+		pos_a: 1509 -> 1693
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1295
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (30 of 48):
+		pos_a: 1509 -> 1693
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1479
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (31 of 48):
+		pos_a: 1509 -> 1693
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1571
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (32 of 48):
+		pos_a: 1509 -> 1693
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1663
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (33 of 48):
+		pos_a: 1509 -> 1693
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1755
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (34 of 48):
+		pos_a: 1509 -> 1693
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1847
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (35 of 48):
+		pos_a: 1509 -> 1693
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1939
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (36 of 48):
+		pos_a: 1509 -> 1693
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 2123
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (37 of 48):
+		pos_a: 1509 -> 1785
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 927
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (38 of 48):
+		pos_a: 1509 -> 1785
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1019
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (39 of 48):
+		pos_a: 1509 -> 1785
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1111
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (40 of 48):
+		pos_a: 1509 -> 1785
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1203
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (41 of 48):
+		pos_a: 1509 -> 1785
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1295
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (42 of 48):
+		pos_a: 1509 -> 1785
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1479
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (43 of 48):
+		pos_a: 1509 -> 1785
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1571
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (44 of 48):
+		pos_a: 1509 -> 1785
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1663
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (45 of 48):
+		pos_a: 1509 -> 1785
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1755
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (46 of 48):
+		pos_a: 1509 -> 1785
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1847
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (47 of 48):
+		pos_a: 1509 -> 1785
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1939
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (48 of 48):
+		pos_a: 1509 -> 1785
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 2123
+		VERIFY: new residue is K: True
+			SUCCESS
 1448_a: residue in peptide at pos_a is not K or M.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
@@ -93,6 +423,168 @@
 	ISSUE
 1449_b: pep_b was found more than once in full seq_b
 	ISSUE
+	datapoint already in dataset (1 of 24)
+	create new datapoint (2 of 24):
+		pos_a: 865 -> 865
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1019
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (3 of 24):
+		pos_a: 865 -> 865
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1111
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (4 of 24):
+		pos_a: 865 -> 865
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1203
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (5 of 24):
+		pos_a: 865 -> 865
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1295
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (6 of 24):
+		pos_a: 865 -> 865
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1479
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (7 of 24):
+		pos_a: 865 -> 865
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1571
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (8 of 24):
+		pos_a: 865 -> 865
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1663
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (9 of 24):
+		pos_a: 865 -> 865
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1755
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (10 of 24):
+		pos_a: 865 -> 865
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1847
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (11 of 24):
+		pos_a: 865 -> 865
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1939
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (12 of 24):
+		pos_a: 865 -> 865
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 2123
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (13 of 24):
+		pos_a: 865 -> 957
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 927
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (14 of 24):
+		pos_a: 865 -> 957
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1019
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (15 of 24):
+		pos_a: 865 -> 957
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1111
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (16 of 24):
+		pos_a: 865 -> 957
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1203
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (17 of 24):
+		pos_a: 865 -> 957
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1295
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (18 of 24):
+		pos_a: 865 -> 957
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1479
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (19 of 24):
+		pos_a: 865 -> 957
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1571
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (20 of 24):
+		pos_a: 865 -> 957
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1663
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (21 of 24):
+		pos_a: 865 -> 957
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1755
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (22 of 24):
+		pos_a: 865 -> 957
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1847
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (23 of 24):
+		pos_a: 865 -> 957
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1939
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (24 of 24):
+		pos_a: 865 -> 957
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 2123
+		VERIFY: new residue is K: True
+			SUCCESS
 1451_b: residue in peptide at pos_b is not K or M.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
@@ -1560,14 +2052,258 @@
 	ISSUE
 2238_b: pep_b was found more than once in full seq_b
 	ISSUE
+	datapoint already in dataset (1 of 36)
+	create new datapoint (2 of 36):
+		pos_a: 1233 -> 1233
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1019
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (3 of 36):
+		pos_a: 1233 -> 1233
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1111
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (4 of 36):
+		pos_a: 1233 -> 1233
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1203
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (5 of 36):
+		pos_a: 1233 -> 1233
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1295
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (6 of 36):
+		pos_a: 1233 -> 1233
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1479
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (7 of 36):
+		pos_a: 1233 -> 1233
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1571
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (8 of 36):
+		pos_a: 1233 -> 1233
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1663
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (9 of 36):
+		pos_a: 1233 -> 1233
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1755
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (10 of 36):
+		pos_a: 1233 -> 1233
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1847
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (11 of 36):
+		pos_a: 1233 -> 1233
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1939
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (12 of 36):
+		pos_a: 1233 -> 1233
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 2123
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (13 of 36):
+		pos_a: 1233 -> 1325
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 927
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (14 of 36):
+		pos_a: 1233 -> 1325
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1019
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (15 of 36):
+		pos_a: 1233 -> 1325
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1111
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (16 of 36):
+		pos_a: 1233 -> 1325
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1203
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (17 of 36):
+		pos_a: 1233 -> 1325
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1295
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (18 of 36):
+		pos_a: 1233 -> 1325
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1479
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (19 of 36):
+		pos_a: 1233 -> 1325
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1571
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (20 of 36):
+		pos_a: 1233 -> 1325
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1663
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (21 of 36):
+		pos_a: 1233 -> 1325
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1755
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (22 of 36):
+		pos_a: 1233 -> 1325
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1847
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (23 of 36):
+		pos_a: 1233 -> 1325
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1939
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (24 of 36):
+		pos_a: 1233 -> 1325
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 2123
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (25 of 36):
+		pos_a: 1233 -> 1969
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 927
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (26 of 36):
+		pos_a: 1233 -> 1969
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1019
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (27 of 36):
+		pos_a: 1233 -> 1969
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1111
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (28 of 36):
+		pos_a: 1233 -> 1969
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1203
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (29 of 36):
+		pos_a: 1233 -> 1969
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1295
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (30 of 36):
+		pos_a: 1233 -> 1969
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1479
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (31 of 36):
+		pos_a: 1233 -> 1969
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1571
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (32 of 36):
+		pos_a: 1233 -> 1969
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1663
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (33 of 36):
+		pos_a: 1233 -> 1969
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1755
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (34 of 36):
+		pos_a: 1233 -> 1969
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1847
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (35 of 36):
+		pos_a: 1233 -> 1969
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 1939
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (36 of 36):
+		pos_a: 1233 -> 1969
+		VERIFY: new residue is K: True
+			SUCCESS
+		pos_b: 927 -> 2123
+		VERIFY: new residue is K: True
+			SUCCESS
 2239_a: residue in peptide at pos_a is not K or M.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
 	REPLACE: pos_a: 1994 -> 2061
 		VERIFY: new residue is K: True
 	SUCCESS
-2240_b: pep_b was found more than once in full seq_b
-	ISSUE
 2240_a: residue in peptide at pos_a is not K or M.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
@@ -1575,6 +2311,53 @@
 	REPLACE: pos_a: 1810 -> 1877
 		VERIFY: new residue is K: True
 	SUCCESS
+2240_b: pep_b was found more than once in full seq_b
+	ISSUE
+	datapoint already in dataset (1 of 12)
+	create new datapoint (2 of 12):
+		pos_b: 927 -> 1019
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (3 of 12):
+		pos_b: 927 -> 1111
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (4 of 12):
+		pos_b: 927 -> 1203
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (5 of 12):
+		pos_b: 927 -> 1295
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (6 of 12):
+		pos_b: 927 -> 1479
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (7 of 12):
+		pos_b: 927 -> 1571
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (8 of 12):
+		pos_b: 927 -> 1663
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (9 of 12):
+		pos_b: 927 -> 1755
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (10 of 12):
+		pos_b: 927 -> 1847
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (11 of 12):
+		pos_b: 927 -> 1939
+		VERIFY: new residue is K: True
+			SUCCESS
+	create new datapoint (12 of 12):
+		pos_b: 927 -> 2123
+		VERIFY: new residue is K: True
+			SUCCESS
 2242_a: residue in peptide at pos_a is not K or M.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
@@ -1758,6 +2541,6 @@
 ======================================================================
 Final result:
 	FAILS: 0
-	SUCCESSES: 257
+	SUCCESSES: 478
 	ISSUES: 23
 	DUPLICATES: 12

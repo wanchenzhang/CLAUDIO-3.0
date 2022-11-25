@@ -72,7 +72,7 @@ def main(input_filepath, projections, uniprot_search, search_tool, output_direct
 
         print("Check datapoints for inconsistencies")
         # Check datapoints for inconsistencies and correct them if possible (creates logfile in the process)
-        data = double_check_data(data, intra_only, filename, output_directory)
+        data = double_check_data(data, filename, output_directory)
         print("Changes made to dataset written to log-file")
 
         # Write list of unique protein pairs and unique proteins overall
@@ -108,7 +108,8 @@ def inputs_valid(input_filepath, projections, uniprot_search, search_tool, outpu
             if not uniprot_search:
                 try:
                     project_path = '/'.join(os.path.abspath(__file__).split('/')[:-3])
-                    pd.read_csv(f"{project_path}/data/temp/uniprot_search/{'.'.join(filename.split('.')[:-1])}_srtmp."
+                    project_path = project_path + '/' if project_path else ""
+                    pd.read_csv(f"{project_path}data/temp/uniprot_search/{'.'.join(filename.split('.')[:-1])}_srtmp."
                                 f"{filename.split('.')[-1]}")
                 except FileNotFoundError:
                     print(f"Error! No temporary save file was found. Run the program with \"-s True\" to perform an "

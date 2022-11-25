@@ -143,7 +143,8 @@ def search_pdb_entries(proteins, sequences, search_tool, blast_bin, blast_db, hh
 
         # Create temporary fasta file at data/temp/unique_protein_list for commandline application in search tools
         project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
-        temp_path = f"{project_path}/data/temp/unique_protein_list/"
+        project_path = project_path + '/' if project_path else ""
+        temp_path = f"{project_path}data/temp/unique_protein_list/"
         with open(f"{temp_path}tmp.fasta", 'w') as tmp_file:
             tmp_file.write(f">Name\n{sequences[i]}\n")
 

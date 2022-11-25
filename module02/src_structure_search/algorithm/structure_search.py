@@ -174,7 +174,7 @@ def structure_search(data, search_tool, e_value, query_id, coverage, intra_only,
         dataset[["pdb_id", "pdb_id_b", "chain", "chain_b", "all_results", "all_results_b"]].to_csv(temp_save_filepath, index=False)
 
     # Print ids of entries which were not found in rcsb database (will be retrieved from alphafold database instead)
-    not_found_proteins = dataset.iloc[not_found].unip_id_a.unique
+    not_found_proteins = dataset.iloc[not_found].unip_id_a.unique()
     print(f"\tProteins which yielded no results from RCSB database (will be retrieved from AlphaFold "
           f"(n = {len(not_found_proteins)})): {not_found_proteins}")
 

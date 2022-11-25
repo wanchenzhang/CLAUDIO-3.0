@@ -21,7 +21,8 @@ def do_uniprot_search(data, intra_only, filename):
 
     # save results in temporary save file (can be used on rerun, instead of searching results again)
     project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
-    temp_save_filepath = f"{project_path}/data/temp/uniprot_search/" \
+    project_path = project_path + '/' if project_path else ""
+    temp_save_filepath = f"{project_path}data/temp/uniprot_search/" \
                          f"{'.'.join(filename.split('.')[:-1])}_srtmp.{filename.split('.')[-1]}"
     data[["seq_a", "seq_b"]].to_csv(temp_save_filepath, index=False)
 

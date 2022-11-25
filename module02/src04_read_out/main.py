@@ -51,18 +51,24 @@ def main(input_filepath):
           f"\n\tVery low distances (total number = {len(data[(0 < data.eucl_dist) & (data.eucl_dist < 5)].index)}): {data[(0 < data.eucl_dist) & (data.eucl_dist < 5)][['unip_id_a', 'eucl_dist']]}"
           f"\n\tTopolink is Nan but self computed is not zero or Nan (total number = {sum((~(data.eucl_dist == 0) & ~(pd.isna(data.eucl_dist))) & (pd.isna(data.eucl_dist_tplk)))}): {data[(~(data.eucl_dist == 0) & ~(pd.isna(data.eucl_dist))) & (pd.isna(data.eucl_dist_tplk))][['unip_id_a', 'pdb_pos_a', 'pdb_pos_b', 'pdb_id', 'eucl_dist', 'eucl_dist_tplk']]}")
     final_data = pd.read_csv(f'{project_path}data/out/full/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant_final.csv', index_col=0)
-    list_a = sorted([dir for dir in os.listdir(f'{project_path}data/out/full/homomers') for f in os.listdir(f'{project_path}data/out/full/homomers/{dir}') if f.endswith('_.csv')])
+    homomers_path = f'{project_path}data/out/full/homomers'
+    structures_path = f'{project_path}data/out/full/structures'
+    list_a = sorted([dir for dir in os.listdir(homomers_path) for f in os.listdir(f'{homomers_path}/{dir}') if f.endswith('_.csv')])
     list_b = sorted(final_data[~final_data.oligo_states.str.contains('mer', na=False) & (final_data.final_XL_type == 'inter')].unip_id_a.unique().tolist())
     print(f"\n\nFinal results:"
           f"\n\ttotal number of interactions: {len(final_data.index)}"
           f"\n\ttotal number of proteins: {len(final_data.unip_id_a.unique())}"
-          f"\n\tnumber of new inters: {sum(final_data.final_XL_type == 'inter')}"
-          f"\n\tnumber of discovered homomers: {len(os.listdir(f'{project_path}data/out/full/homomers'))}"
-          f"\n\tnumber of newly discovered homomers: {len(list_a)}\t== {len(list_b)}"
-          f"\n\t\t{list_a}\t\t == \t\t{list_b}"
+          f"\n\tnumber of downloaded structures: {len(os.listdir(structures_path))}"
+          f"\n\tnumber of new inters: {sum(final_data.final_XL_type == 'inter')} "
+          f"({(sum(final_data.final_XL_type == 'inter') / len(final_data.index)) * 100:.2f}%)"
+          f"\n\tnumber of discovered homomers: {len(os.listdir(homomers_path))} "
+          f"({(len(os.listdir(homomers_path)) / len(final_data.unip_id_a.unique())) * 100:.2f}%)"
+          f"\n\tnumber of newly discovered homomers: {len(list_a)}\t== {len(list_b)} "
+          f"({(len(list_a) / len(final_data.unip_id_a.unique())) * 100:.2f}%)"
+          f"\n\t\t{list_a}\n\t\t == \n\t\t{list_b}\n\t\t-------------------------------------"
           f"\n\t\tunequal set: {[e for e in list_a + list_b if (e not in list_a) or (e not in list_b)]}"
-          f"\n\thomomers (with issues?): "
-          f"{[dir for dir in os.listdir(f'{project_path}data/out/full/homomers') if len(os.listdir(f'{project_path}data/out/full/homomers/{dir}')) > 2]}")
+          f"\n\thomomers with multiple possible states (possible issues?): "
+          f"{[dir for dir in os.listdir(homomers_path) if len(os.listdir(f'{homomers_path}/{dir}')) > 2]}")
 
 # nohup sh -c "python3 start01b_liu_uniprot_search.py -s True && python3 claudio_mod02_struct.py -i data/out/uniprot_search/supp_RA117.000470_133922_0_supp_23973_3zf3c5_table1.csv.sqcs -s True && python3 claudio_mod02_di.py -i2 data/out/uniprot_search/supp_RA117.000470_133922_0_supp_23973_3zf3c5_table1.csv.sqcs && python3 read_out.py" > logs/log111121_0344.log 2>&1 &
 

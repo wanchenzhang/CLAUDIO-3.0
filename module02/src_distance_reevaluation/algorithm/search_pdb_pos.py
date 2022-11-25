@@ -18,7 +18,8 @@ def search_site_pos_in_pdb(data):
     # Read shift file given by EMBL-EBI database (see: https://www.ebi.ac.uk/pdbe/docs/sifts/quick.html) for rcsb files
     # to uniprot entries
     project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
-    pdb_uni_map = pd.read_csv(f"{project_path}/data/in/pdb_chain_uniprot.csv", header=1)
+    project_path = project_path + '/' if project_path else ""
+    pdb_uni_map = pd.read_csv(f"{project_path}data/in/pdb_chain_uniprot.csv", header=1)
     pdb_uni_map["PDB"] = [x.upper() for x in pdb_uni_map["PDB"]]
 
     # Define data container lists

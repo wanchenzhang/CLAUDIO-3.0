@@ -60,7 +60,7 @@ def calculate_site_dists(data, plddt_cutoff, topolink_bin):
                     self_eucl_dists.append(float("Nan"))
 
     # Add self-computed euclidean distances to dataset
-    data["eucl_dist"] = self_eucl_dists
+    data["eucl_dist"] = [round_self(dist, 3) for dist in self_eucl_dists]
     # Compute euclidean and topological distance of interacting residues with topolink and add them all to the dataset
     data = compute_dists_with_topolink(data, plddt_cutoff, topolink_bin)
 
@@ -80,7 +80,8 @@ def compute_dists_with_topolink(data, plddt_cutoff, topolink_bin):
 
     # delete contents in temporary save
     project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
-    files = [f"{project_path}/data/temp/dist_reeval/{f}" for f in os.listdir(f"{project_path}/data/temp/dist_reeval/")]
+    project_path = project_path + '/' if project_path else ""
+    files = [f"{project_path}data/temp/dist_reeval/{f}" for f in os.listdir(f"{project_path}/data/temp/dist_reeval/")]
     for f in files:
         os.remove(f)
 
@@ -136,9 +137,10 @@ def compute_dists_with_topolink(data, plddt_cutoff, topolink_bin):
         # Creates inputfile for topolink, utilizing templatefile: data/in/topolink_inputfile.inp
         topo_in = []
         project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
-        for line in open(f"{project_path}/data/in/topolink_inputfile.inp", 'r').readlines():
+        project_path = project_path + '/' if project_path else ""
+        for line in open(f"{project_path}data/in/topolink_inputfile.inp", 'r').readlines():
             if line.startswith("linkdir"):
-                topo_in.append(f"linkdir {project_path}/data/temp/dist_reeval")
+                topo_in.append(f"linkdir {project_path}data/temp/dist_reeval")
             elif line.startswith("structure"):
                 topo_in.append(f"structure {structure}")
             elif line.startswith("  observed"):
@@ -147,15 +149,15 @@ def compute_dists_with_topolink(data, plddt_cutoff, topolink_bin):
                 topo_in.append(line)
         topo_in = ''.join(topo_in)
         # Write inputfile to temporary path (will be overwritten during next iteration)
-        with open(f"{project_path}/data/temp/dist_reeval/topo.tmp", 'w') as f:
+        with open(f"{project_path}data/temp/dist_reeval/topo.tmp", 'w') as f:
             f.write(topo_in)
 
         # Run topolink and pop terminal print to variable
         topolink_call = "topolink" if topolink_bin is None else f"{topolink_bin}topolink"
-        res = os.popen(f"{topolink_call} {project_path}/data/temp/dist_reeval/topo.tmp").read()
+        res = os.popen(f"{topolink_call} {project_path}data/temp/dist_reeval/topo.tmp").read()
         # Write both input and output to temporary file marked by pdb id, e.g. topo_1b0j.log, topo_afA2ASZ8.log, ...
         # in case the user wishes to review them later
-        with open(f"{project_path}/data/temp/dist_reeval/topo_{pdb_id}.log", 'w') as f:
+        with open(f"{project_path}data/temp/dist_reeval/topo_{pdb_id}.log", 'w') as f:
             f.write(f"IN:\n{topo_in}\n\n\nOUT:\n{res}")
 
         # zip topolink results with obs_inds
@@ -207,8 +209,8 @@ def compute_dists_with_topolink(data, plddt_cutoff, topolink_bin):
     # For zipped distances in collection, replace them at specified index in dataset
     for dist in toplink_dists:
         index, eucl_dist, top_dist = dist
-        data.loc[index, "eucl_dist_tplk"] = eucl_dist
-        data.loc[index, "topo_dist_tplk"] = top_dist
+        data.loc[index, "eucl_dist_tplk"] = round_self(eucl_dist, 3)
+        data.loc[index, "topo_dist_tplk"] = round_self(top_dist, 3)
 
     # Fill topolink distances with zero, if self-computed distance is zero
     data["eucl_dist_tplk"] = data.apply(lambda x: 0.0 if x.eucl_dist == 0 else x.eucl_dist_tplk, axis=1)
@@ -239,9 +241,28 @@ def isolate_pdb_chain(path, chain_ids):
 
     # save new pdb to temporary pdb path
     project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
-    new_path = f"{project_path}/data/temp/dist_reeval/tmp.pdb"
+    project_path = project_path + '/' if project_path else ""
+    new_path = f"{project_path}data/temp/dist_reeval/tmp.pdb"
     io = PDBIO()
     io.set_structure(structure)
     io.save(new_path, ChainSelect())
 
     return new_path
+
+
+def round_self(value, decimals):
+    # simple decimal rounding function (python by itself has a tendency to round fragmented with the buit-in function)
+    #
+    # input value: float, decimals: int
+    # return rounded_value: float/int
+
+    # If decimal less than 1, the resulting value will be an integer
+    if pd.isna(value):
+        return float("Nan")
+    if decimals < 1:
+        rounded_value = int(int((value * (10 ** decimals)) + .5) / (10 ** decimals))
+        return rounded_value
+    # Else, the resulting value will be a float
+    else:
+        rounded_value = int((value * (10 ** decimals)) + .5) / (10 ** decimals)
+        return rounded_value

@@ -31,7 +31,8 @@ def main(input_filepath, do_structure_search, search_tool, e_value, query_id, co
     start_time = time.time()
 
     project_path = '/'.join(os.path.abspath(__file__).split('/')[:-3])
-    temp_save_search_path = f"{project_path}/data/temp/structure_search/"
+    project_path = project_path + '/' if project_path else ""
+    temp_save_search_path = f"{project_path}data/temp/structure_search/"
     output_directory = output_directory if output_directory else '/'.join(input_filepath.split('/')[:-1])
 
     # Convert directory paths to literals if None
