@@ -49,11 +49,11 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, linker_m
         data = combine_inter_reevaluations(data, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,
                                            distance_maximum, cutoff)
 
-        # # Retrieve known oligomeric states from SWISS-MODEL
-        # print("Retrieve known oligomeric states from SWISS-MODEL")
-        # data = retrieve_oligomeric_states(data)
-        #
-        data.oligo_states.fillna(value="", inplace=True) # TODO
+        # Retrieve known oligomeric states from SWISS-MODEL
+        print("Retrieve known oligomeric states from SWISS-MODEL")
+        data = retrieve_oligomeric_states(data)
+
+        # data.oligo_states.fillna(value="", inplace=True) # TODO
 
         # Create inter score histogram
         print("Create inter score histogram")
@@ -79,9 +79,9 @@ def inputs_valid(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, 
     # return inputs_valid: bool
 
     # check whether outputfile from distance-based reevauation is specified
-    if input_filepath.endswith(".sqcs_structdi.csv") or True: #TODO
+    if input_filepath.endswith(".sqcs_structdi.csv"):# or True: #TODO
         # check whether outputfile from homo-signal-based reevauation is specified
-        if input_filepath2.endswith(".sqcs_ops.csv") or True: #TODO
+        if input_filepath2.endswith(".sqcs_ops.csv"):# or True: #TODO
             # check whether plddt cutoff has valid value
             try:
                 plddt_cutoff = float(plddt_cutoff)
