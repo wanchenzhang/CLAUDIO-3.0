@@ -16,7 +16,7 @@ from module04.src.io.write_outs import write_outputs
 @click.option("-p", "--plddt-cutoff", default=70.0)
 @click.option("-lmin", "--linker-minimum", default=0.0)
 @click.option("-lmax", "--linker-maximum", default=35.0)
-@click.option("-es", "--euclidean-strictness", default=5.0)
+@click.option("-es", "--euclidean-strictness", default=None)
 @click.option("-dm", "--distance-maximum", default=50.0)
 @click.option("-c", "--cutoff", default=0.0)
 @click.option("-o", "--output-directory", default="data/out/new_inter/")
@@ -35,7 +35,8 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, linker_m
         plddt_cutoff = float(plddt_cutoff)
         linker_minimum = float(linker_minimum)
         linker_maximum = float(linker_maximum)
-        euclidean_strictness = float(euclidean_strictness) if euclidean_strictness != "None" else None
+        euclidean_strictness = float(euclidean_strictness) \
+            if euclidean_strictness != "None" and euclidean_strictness is not None else None
         distance_maximum = float(distance_maximum)
         cutoff = float(cutoff)
 
@@ -48,9 +49,11 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, linker_m
         data = combine_inter_reevaluations(data, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,
                                            distance_maximum, cutoff)
 
-        # Retrieve known oligomeric states from SWISS-MODEL
-        print("Retrieve known oligomeric states from SWISS-MODEL")
-        data = retrieve_oligomeric_states(data)
+        # # Retrieve known oligomeric states from SWISS-MODEL
+        # print("Retrieve known oligomeric states from SWISS-MODEL")
+        # data = retrieve_oligomeric_states(data)
+        #
+        data.oligo_states.fillna(value="", inplace=True) # TODO
 
         # Create inter score histogram
         print("Create inter score histogram")
@@ -76,9 +79,9 @@ def inputs_valid(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, 
     # return inputs_valid: bool
 
     # check whether outputfile from distance-based reevauation is specified
-    if input_filepath.endswith(".sqcs_structdi.csv"):
+    if input_filepath.endswith(".sqcs_structdi.csv") or True: #TODO
         # check whether outputfile from homo-signal-based reevauation is specified
-        if input_filepath2.endswith(".sqcs_ops.csv"):
+        if input_filepath2.endswith(".sqcs_ops.csv") or True: #TODO
             # check whether plddt cutoff has valid value
             try:
                 plddt_cutoff = float(plddt_cutoff)
@@ -91,10 +94,12 @@ def inputs_valid(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, 
                             linker_maximum = float(linker_maximum)
                             # check whether euclidean strictness has valid value (either float or None)
                             try:
-                                euclidean_strictness = float(euclidean_strictness)
+                                if euclidean_strictness is not None:
+                                    euclidean_strictness = float(euclidean_strictness)
                             except ValueError:
                                 try:
-                                    euclidean_strictness = ast.literal_eval(euclidean_strictness)
+                                    if euclidean_strictness is not None:
+                                        euclidean_strictness = ast.literal_eval(euclidean_strictness)
                                 except ValueError:
                                     print(f"Error! Could not change type of given euclidean strictness to either float "
                                           f"or None (given: {euclidean_strictness}).")

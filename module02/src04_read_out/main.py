@@ -68,7 +68,12 @@ def main(input_filepath):
           f"\n\t\t{list_a}\n\t\t == \n\t\t{list_b}\n\t\t-------------------------------------"
           f"\n\t\tunequal set: {[e for e in list_a + list_b if (e not in list_a) or (e not in list_b)]}"
           f"\n\thomomers with multiple possible states (possible issues?): "
-          f"{[dir for dir in os.listdir(homomers_path) if len(os.listdir(f'{homomers_path}/{dir}')) > 2]}")
+          f"{[dir for dir in os.listdir(homomers_path) if len(os.listdir(f'{homomers_path}/{dir}')) > 2]}"
+          f"\n\n{final_data[final_data.unip_id_a.str.contains('|'.join(['Q91VD9', 'Q9CPQ1', 'Q9DCN2', 'Q9WTP6']))].score_XL_type}"
+          f"\n\nscore_XL_type != final_XL_type:"
+          f"\n\t{final_data[~(final_data.score_XL_type == final_data.final_XL_type)][['score_XL_type', 'final_XL_type']]}")
+          # f"\n\nobscurin:\n{final_data[final_data.unip_id_a == 'A2AAJ9'][['topo_dist_tplk', 'homo_pep_overl', 'inter_score', 'final_XL_type', 'oligo_states']]}"
+          # f"\n\tobscurin with inter:\n{final_data[(final_data.unip_id_a == 'A2AAJ9') & (final_data.final_XL_type == 'inter')][['topo_dist_tplk', 'homo_pep_overl', 'inter_score', 'final_XL_type', 'oligo_states']]}")
 
 # nohup sh -c "python3 start01b_liu_uniprot_search.py -s True && python3 claudio_mod02_struct.py -i data/out/uniprot_search/supp_RA117.000470_133922_0_supp_23973_3zf3c5_table1.csv.sqcs -s True && python3 claudio_mod02_di.py -i2 data/out/uniprot_search/supp_RA117.000470_133922_0_supp_23973_3zf3c5_table1.csv.sqcs && python3 read_out.py" > logs/log111121_0344.log 2>&1 &
 

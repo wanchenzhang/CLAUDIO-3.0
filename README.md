@@ -116,21 +116,29 @@ For details on how to run the **full** pipeline continue below.
 -hhout,--hhsearch-out,          output directory for hhsearch results, default="$HHOUT"
 -tl,   --topolink-bin,          binary directory in topolink installation, or None if binary directory has been added to
                                 PATH variable (e.g. if topolink can be called from anywhere), default=None)
--c,    --config,                 filepath to configuration file containing all input parameters, if given all other 
+-c,    --config,                filepath to configuration file containing all input parameters, if given all other 
                                 parameters will be ignored (see example: config.txt), default=''
 ```
 ### Input
-This tool requires a csv-file containing multiple observed cross-linking interactions. Two columns have to contain 
+This tool requires a CSV-file containing multiple observed cross-linking interactions. Two columns have to contain 
 uniprot ids for each interacting residue, two columns have to contain the observed peptides for each interacting residue
-and two columns have to contain the crosslinked lysin's position within the full sequence (alternative: fill these with
-Nans, but add two columns with the lysin's positions in the respective peptides).
+and two columns have to contain the crosslinked residue's position within the full sequence (alternative: fill these with
+Nans, but add two columns with the residue's positions in the respective peptides).\
+First, it is important to customize the parameter "-p / --projections". This parameter requires a python dictionary as 
+input, which maps the column names of your dataset to the ones used in the tool. You may see examples for this in 
+[this module](https://github.com/KohlbacherLab/CLAUDIO/blob/main/module01/src/dict/default_projections.py) or in the 
+[example configuration-file](https://github.com/KohlbacherLab/CLAUDIO/blob/main/config.txt).
 
 All parameters can be given in a configuration file (see example: [config.txt](https://github.com/KohlbacherLab/CLAUDIO/blob/main/config.txt)).
 
 ### Output
-This tool returns all the outputs listed in the other modules (see respective README.md-files).
-Note: All csv-file outputs pertaining the input dataset are summarized into a single one (marked with 
-`_final.csv`-extension).
+This tool returns all the outputs listed in the other modules (see 
+[module01](https://github.com/KohlbacherLab/CLAUDIO/tree/main/module01),
+[module02](https://github.com/KohlbacherLab/CLAUDIO/tree/main/module02),
+[module03](https://github.com/KohlbacherLab/CLAUDIO/tree/main/module03)).
+Note: All CSV-file outputs pertaining the input dataset are summarized into a single one (marked with 
+'_final.csv'-extension), e.g. the output CSV-file of module01 ending with '.sqcs', of module02 ending with 
+'.sqcs_structdi.csv', and of module03 ending with '.sqcs_ops.csv' will be summarized here. 
 
 ### Example
 **CLAUDIO** (in full) can be run like this:
