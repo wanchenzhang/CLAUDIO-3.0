@@ -14,6 +14,7 @@ from module04.src.main import main as run_claudio_xl
 @click.option("-i", "--input-filepath", default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv")
 @click.option("-p", "--projections", default=str(liu18_schweppe17_linked_residues_intra_homo_2672_nonredundant))
 @click.option("-rt", "--read-temps", default=False)
+@click.option("-x", "--xl-residues", default="K,M:1")
 @click.option("-t", "--search-tool", default="blastp")
 @click.option("-e", "--e-value", default=1e-5)
 @click.option("-qi", "--query-id", default=90.0)
@@ -33,8 +34,8 @@ from module04.src.main import main as run_claudio_xl
 @click.option("-hhout", "--hhsearch-out", default="$HHOUT")
 @click.option("-tl", "--topolink-bin", default=None)
 @click.option("-c", "--config", default='')
-def main(input_filepath, projections, read_temps, search_tool, e_value, query_id, coverage, res_cutoff, plddt_cutoff,
-         linker_minimum, linker_maximum, euclidean_strictness, distance_maximum, cutoff, output_directory,
+def main(input_filepath, projections, read_temps, xl_residues, search_tool, e_value, query_id, coverage, res_cutoff,
+         plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness, distance_maximum, cutoff, output_directory,
          blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out, topolink_bin, config):
     print("Start full CLAUDIO pipeline")
     print("===================================")
@@ -54,9 +55,9 @@ def main(input_filepath, projections, read_temps, search_tool, e_value, query_id
 
     # Run Module01
     try:
-        run_claudio_lists(["-i", input_filepath, "-p", projections, "-s", not read_temps, "-t", search_tool,
-                           "-o", output_directory, "-bl", blast_bin, "-bldb", blast_db, "-hh", hhsearch_bin,
-                           "-hhdb", hhsearch_db, "-hhout", hhsearch_out])
+        run_claudio_lists(["-i", input_filepath, "-p", projections, "-s", not read_temps, "-x", xl_residues,
+                           "-t", search_tool, "-o", output_directory, "-bl", blast_bin, "-bldb", blast_db,
+                           "-hh", hhsearch_bin, "-hhdb", hhsearch_db, "-hhout", hhsearch_out])
     except SystemExit:
         pass
 

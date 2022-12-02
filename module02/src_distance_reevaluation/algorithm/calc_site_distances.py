@@ -8,8 +8,8 @@ warnings.filterwarnings("ignore")
 
 
 def calculate_site_dists(data, plddt_cutoff, topolink_bin):
-    # calculate distances between interaction sites, and extend input dataset by lysin_criteria, e.g. whether the found
-    # sites satisfy the criteria of either being lysin or methionine, the method used to find the sites in the structure
+    # calculate distances between interaction sites, and extend input dataset by res_criteria, e.g. whether the found
+    # sites satisfy the criteria of being the specified residue, the method used to find the sites in the structure
     # file, in case said method was alphafold the pLDDT, e.g. confidence, value and finally the computed distances
     #
     # input data: pd.DataFrame, plddt_cutoff: float, topolink_bin: str/None
@@ -21,9 +21,9 @@ def calculate_site_dists(data, plddt_cutoff, topolink_bin):
         # Set boolean for whether pLDDT cutoff is unfulfilled if the used method was alphafold
         plddt_unfulfilled = (row["method_a"] == "alphafold") and \
                             ((float(row["pLDDT_a"]) < plddt_cutoff) or (float(row["pLDDT_b"]) < plddt_cutoff))
-        # If no structure file given for interaction or lysin criteria fulfilled or pLDDT unfulfilled,
+        # If no structure file given for interaction or residue criteria fulfilled or pLDDT unfulfilled,
         # add Nan to distances
-        if row["path"] == '-' or not row["lysin_criteria_fulfilled"] or plddt_unfulfilled:
+        if row["path"] == '-' or not row["res_criteria_fulfilled"] or plddt_unfulfilled:
             self_eucl_dists.append(float("Nan"))
         # Else load structure (either with normal PDBParser or MMCIFParser)
         else:
@@ -116,8 +116,8 @@ def compute_dists_with_topolink(data, plddt_cutoff, topolink_bin):
             # Set boolean for whether pLDDT cutoff is unfulfilled if the used method was alphafold
             plddt_unfulfilled = (row["method_a"] == "alphafold") and \
                                 ((float(row["pLDDT_a"]) < plddt_cutoff) or (float(row["pLDDT_b"]) < plddt_cutoff))
-            # Don't compute dist for datapoints which do not fulfill the lysin criteria, or pLDDT cutoff
-            if row["lysin_criteria_fulfilled"] and not plddt_unfulfilled:
+            # Don't compute dist for datapoints which do not fulfill the residue criteria, or pLDDT cutoff
+            if row["res_criteria_fulfilled"] and not plddt_unfulfilled:
                 try:
                     # observed LYS A 468 LYS A 457
                     # LINK: LYS A 457 CA LYS A 468 CA 11.814 12.568 YES 0.000 35.000 OK: FOUND 1 / 1 1 / 1 YY YY

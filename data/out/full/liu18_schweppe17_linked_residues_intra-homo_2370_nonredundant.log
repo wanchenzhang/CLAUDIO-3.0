@@ -1,75 +1,76 @@
-816_b: residue in peptide at pos_b is not K or M.
+816_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 244 -> 194
-		VERIFY: new residue is K: True
 	SUCCESS
-1423_a: residue in peptide at pos_a is not K or M.
+1423_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 58 -> 62
-		VERIFY: new residue is K: True
 	SUCCESS
-1423_b: residue in peptide at pos_b is not K or M.
+1423_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 41 -> 53
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 41 -> 53
 	SUCCESS
-1427_a: residue in peptide at pos_a is not K or M.
+1427_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 362 -> 326
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 362 -> 326
 	SUCCESS
-1427_b: residue in peptide at pos_b is not K or M.
+1427_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 371 -> 335
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 371 -> 335
 	SUCCESS
-1429_a: residue in peptide at pos_a is not K or M.
+1429_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 129 -> 105
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 129 -> 105
 	SUCCESS
-1429_b: residue in peptide at pos_b is not K or M.
+1429_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 137 -> 113
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 137 -> 113
 	SUCCESS
-1434_a: residue in peptide at pos_a is not K or M.
+1434_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 94 -> 104
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 94 -> 104
 	SUCCESS
-1434_b: residue in peptide at pos_b is not K or M.
+1434_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 90 -> 100
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 90 -> 100
 	SUCCESS
 1435_b: pep_b is not completely in full seq_b
 	ISSUE
-1435_a: residue in peptide at pos_a is not K or M.
+1435_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 220 -> 76
-		VERIFY: new residue is K: True
 	SUCCESS
-1435_b: residue in peptide at pos_b is not K or M.
-	k_pos_b was given
+1435_b: residue in peptide at pos_b is any of the specified residues.
+	found pep_b more than once or not even once in sequence
+	res_pos_b was given
 	align peptide to sequence
-	REPLACE: pos_b: 206 -> 62
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 206 -> 62
 	SUCCESS
 1447_a: pep_a was found more than once in full seq_a
 	ISSUE
@@ -405,19 +406,19 @@
 		pos_b: 927 -> 2123
 		VERIFY: new residue is K: True
 			SUCCESS
-1448_a: residue in peptide at pos_a is not K or M.
+1448_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 3020 -> 3296
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 3020 -> 3296
 	SUCCESS
-1448_b: residue in peptide at pos_b is not K or M.
+1448_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 3047 -> 3323
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 3047 -> 3323
 	SUCCESS
 1449_a: pep_a was found more than once in full seq_a
 	ISSUE
@@ -585,1002 +586,1002 @@
 		pos_b: 927 -> 2123
 		VERIFY: new residue is K: True
 			SUCCESS
-1451_b: residue in peptide at pos_b is not K or M.
+1451_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 237 -> 236
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 237 -> 236
 	SUCCESS
-1453_a: residue in peptide at pos_a is not K or M.
+1453_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 227 -> 226
-		VERIFY: new residue is K: True
 	SUCCESS
-1454_a: residue in peptide at pos_a is not K or M.
+1454_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 222 -> 204
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 222 -> 204
 	SUCCESS
-1454_b: residue in peptide at pos_b is not K or M.
+1454_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 232 -> 214
-		VERIFY: new residue is K: True
 	SUCCESS
-1455_a: residue in peptide at pos_a is not K or M.
+1455_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 222 -> 204
-		VERIFY: new residue is K: True
 	SUCCESS
-1455_b: residue in peptide at pos_b is not K or M.
+1455_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 246 -> 228
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 246 -> 228
 	SUCCESS
-1456_b: residue in peptide at pos_b is not K or M.
+1456_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 246 -> 228
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 246 -> 228
 	SUCCESS
-1457_a: residue in peptide at pos_a is not K or M.
+1457_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 263 -> 245
-		VERIFY: new residue is K: True
 	SUCCESS
-1457_b: residue in peptide at pos_b is not K or M.
+1457_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 256 -> 238
-		VERIFY: new residue is K: True
 	SUCCESS
-1458_b: residue in peptide at pos_b is not K or M.
+1458_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 256 -> 238
-		VERIFY: new residue is K: True
 	SUCCESS
-1459_b: residue in peptide at pos_b is not K or M.
+1459_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 268 -> 250
-		VERIFY: new residue is K: True
 	SUCCESS
-1460_a: residue in peptide at pos_a is not K or M.
+1460_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 263 -> 245
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 263 -> 245
 	SUCCESS
-1460_b: residue in peptide at pos_b is not K or M.
+1460_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 271 -> 253
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 271 -> 253
 	SUCCESS
-1461_a: residue in peptide at pos_a is not K or M.
+1461_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 268 -> 250
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 268 -> 250
 	SUCCESS
-1461_b: residue in peptide at pos_b is not K or M.
+1461_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 271 -> 253
-		VERIFY: new residue is K: True
 	SUCCESS
-1462_a: residue in peptide at pos_a is not K or M.
+1462_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 268 -> 250
-		VERIFY: new residue is K: True
 	SUCCESS
-1463_a: residue in peptide at pos_a is not K or M.
+1463_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 271 -> 253
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 271 -> 253
 	SUCCESS
 1463_b: given pos_b is out of bounds of sequence.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 978 -> 960
-		VERIFY: new residue is K: True
 	SUCCESS
-1464_a: residue in peptide at pos_a is not K or M.
+1464_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 944 -> 926
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 944 -> 926
 	SUCCESS
-1464_b: residue in peptide at pos_b is not K or M.
+1464_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 390 -> 372
-		VERIFY: new residue is K: True
 	SUCCESS
-1465_a: residue in peptide at pos_a is not K or M.
+1465_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 553 -> 535
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 553 -> 535
 	SUCCESS
-1465_b: residue in peptide at pos_b is not K or M.
+1465_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 507 -> 489
-		VERIFY: new residue is K: True
 	SUCCESS
-1466_a: residue in peptide at pos_a is not K or M.
+1466_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 553 -> 535
-		VERIFY: new residue is K: True
 	SUCCESS
-1466_b: residue in peptide at pos_b is not K or M.
+1466_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 512 -> 494
-		VERIFY: new residue is K: True
 	SUCCESS
-1467_a: residue in peptide at pos_a is not K or M.
+1467_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 707 -> 689
-		VERIFY: new residue is K: True
 	SUCCESS
-1468_a: residue in peptide at pos_a is not K or M.
+1468_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 709 -> 691
-		VERIFY: new residue is K: True
 	SUCCESS
-1469_a: residue in peptide at pos_a is not K or M.
+1469_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 707 -> 689
-		VERIFY: new residue is K: True
 	SUCCESS
-1469_b: residue in peptide at pos_b is not K or M.
+1469_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 723 -> 705
-		VERIFY: new residue is K: True
 	SUCCESS
-1470_a: residue in peptide at pos_a is not K or M.
+1470_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 717 -> 699
-		VERIFY: new residue is K: True
 	SUCCESS
-1471_a: residue in peptide at pos_a is not K or M.
+1471_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 944 -> 926
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 944 -> 926
 	SUCCESS
-1471_b: residue in peptide at pos_b is not K or M.
+1471_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 717 -> 699
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 717 -> 699
 	SUCCESS
-1472_a: residue in peptide at pos_a is not K or M.
+1472_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 728 -> 710
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 728 -> 710
 	SUCCESS
-1473_b: residue in peptide at pos_b is not K or M.
+1473_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 731 -> 713
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 731 -> 713
 	SUCCESS
 1474_b: given pos_b is out of bounds of sequence.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 978 -> 960
-		VERIFY: new residue is K: True
 	SUCCESS
-1475_a: residue in peptide at pos_a is not K or M.
+1475_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 272 -> 282
-		VERIFY: new residue is K: True
 	SUCCESS
-1475_b: residue in peptide at pos_b is not K or M.
+1475_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 272 -> 282
-		VERIFY: new residue is K: True
 	SUCCESS
-1476_a: residue in peptide at pos_a is not K or M.
+1476_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 1016 -> 1020
-		VERIFY: new residue is K: True
 	SUCCESS
-1476_b: residue in peptide at pos_b is not K or M.
+1476_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 977 -> 981
-		VERIFY: new residue is K: True
 	SUCCESS
-1477_a: residue in peptide at pos_a is not K or M.
+1477_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 996 -> 1000
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 996 -> 1000
 	SUCCESS
-1477_b: residue in peptide at pos_b is not K or M.
+1477_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 332 -> 336
-		VERIFY: new residue is K: True
 	SUCCESS
-1478_a: residue in peptide at pos_a is not K or M.
+1478_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 530 -> 534
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 530 -> 534
 	SUCCESS
-1479_a: residue in peptide at pos_a is not K or M.
+1479_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 530 -> 534
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 530 -> 534
 	SUCCESS
-1479_b: residue in peptide at pos_b is not K or M.
+1479_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 530 -> 534
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 530 -> 534
 	SUCCESS
-1480_a: residue in peptide at pos_a is not K or M.
+1480_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 996 -> 1000
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 996 -> 1000
 	SUCCESS
-1480_b: residue in peptide at pos_b is not K or M.
+1480_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 573 -> 577
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 573 -> 577
 	SUCCESS
-1481_a: residue in peptide at pos_a is not K or M.
+1481_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 272 -> 276
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 272 -> 276
 	SUCCESS
-1481_b: residue in peptide at pos_b is not K or M.
+1481_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 995 -> 999
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 995 -> 999
 	SUCCESS
 1481: entry is a DUPLICATE (see entry 276). will be removed
 	SUCCESS
-1482_a: residue in peptide at pos_a is not K or M.
+1482_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 996 -> 1000
-		VERIFY: new residue is K: True
 	SUCCESS
-1482_b: residue in peptide at pos_b is not K or M.
+1482_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 996 -> 1000
-		VERIFY: new residue is K: True
 	SUCCESS
-1483_a: residue in peptide at pos_a is not K or M.
+1483_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 100 -> 103
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 100 -> 103
 	SUCCESS
-1483_b: residue in peptide at pos_b is not K or M.
+1483_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 178 -> 181
-		VERIFY: new residue is K: True
 	SUCCESS
-1484_a: residue in peptide at pos_a is not K or M.
+1484_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 100 -> 103
-		VERIFY: new residue is K: True
 	SUCCESS
-1484_b: residue in peptide at pos_b is not K or M.
+1484_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 466 -> 469
-		VERIFY: new residue is K: True
 	SUCCESS
-1485_a: residue in peptide at pos_a is not K or M.
+1485_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 220 -> 298
-		VERIFY: new residue is K: True
 	SUCCESS
-1486_b: residue in peptide at pos_b is not K or M.
+1486_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 190 -> 268
-		VERIFY: new residue is K: True
 	SUCCESS
-1488_b: residue in peptide at pos_b is not K or M.
+1488_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 265 -> 343
-		VERIFY: new residue is K: True
 	SUCCESS
-1489_b: residue in peptide at pos_b is not K or M.
+1489_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 218 -> 296
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 218 -> 296
 	SUCCESS
-1490_b: residue in peptide at pos_b is not K or M.
+1490_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 235 -> 313
-		VERIFY: new residue is K: True
 	SUCCESS
-1494_a: residue in peptide at pos_a is not K or M.
+1494_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 220 -> 298
-		VERIFY: new residue is K: True
 	SUCCESS
-1495_a: residue in peptide at pos_a is not K or M.
+1495_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 225 -> 303
-		VERIFY: new residue is K: True
 	SUCCESS
-1496_a: residue in peptide at pos_a is not K or M.
+1496_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 227 -> 305
-		VERIFY: new residue is K: True
 	SUCCESS
-1497_a: residue in peptide at pos_a is not K or M.
+1497_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 203 -> 281
-		VERIFY: new residue is K: True
 	SUCCESS
-1498_a: residue in peptide at pos_a is not K or M.
+1498_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 235 -> 313
-		VERIFY: new residue is K: True
 	SUCCESS
-1500_a: residue in peptide at pos_a is not K or M.
+1500_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 265 -> 343
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 265 -> 343
 	SUCCESS
-1502_b: residue in peptide at pos_b is not K or M.
+1502_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 190 -> 268
-		VERIFY: new residue is K: True
 	SUCCESS
-1503_b: residue in peptide at pos_b is not K or M.
+1503_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 235 -> 313
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 235 -> 313
 	SUCCESS
-1505_a: residue in peptide at pos_a is not K or M.
+1505_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 363 -> 441
-		VERIFY: new residue is K: True
 	SUCCESS
-1506_a: residue in peptide at pos_a is not K or M.
+1506_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 220 -> 298
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 220 -> 298
 	SUCCESS
-1508_b: residue in peptide at pos_b is not K or M.
+1508_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 235 -> 313
-		VERIFY: new residue is K: True
 	SUCCESS
-1509_a: residue in peptide at pos_a is not K or M.
+1509_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 265 -> 343
-		VERIFY: new residue is K: True
 	SUCCESS
-1510_a: residue in peptide at pos_a is not K or M.
+1510_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 225 -> 303
-		VERIFY: new residue is K: True
 	SUCCESS
-1511_a: residue in peptide at pos_a is not K or M.
+1511_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 363 -> 441
-		VERIFY: new residue is K: True
 	SUCCESS
-1512_b: residue in peptide at pos_b is not K or M.
+1512_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 372 -> 450
-		VERIFY: new residue is K: True
 	SUCCESS
-1513_a: residue in peptide at pos_a is not K or M.
+1513_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 359 -> 437
-		VERIFY: new residue is K: True
 	SUCCESS
-1514_b: residue in peptide at pos_b is not K or M.
+1514_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 218 -> 296
-		VERIFY: new residue is K: True
 	SUCCESS
-1515_a: residue in peptide at pos_a is not K or M.
+1515_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 220 -> 298
-		VERIFY: new residue is K: True
 	SUCCESS
-1516_a: residue in peptide at pos_a is not K or M.
+1516_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 227 -> 305
-		VERIFY: new residue is K: True
 	SUCCESS
-1517_b: residue in peptide at pos_b is not K or M.
+1517_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 357 -> 435
-		VERIFY: new residue is K: True
 	SUCCESS
-1518_b: residue in peptide at pos_b is not K or M.
+1518_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 190 -> 268
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 190 -> 268
 	SUCCESS
-1519_b: residue in peptide at pos_b is not K or M.
+1519_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 235 -> 313
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 235 -> 313
 	SUCCESS
-1520_a: residue in peptide at pos_a is not K or M.
+1520_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 265 -> 343
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 265 -> 343
 	SUCCESS
-1521_a: residue in peptide at pos_a is not K or M.
+1521_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 203 -> 281
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 203 -> 281
 	SUCCESS
-1522_b: residue in peptide at pos_b is not K or M.
+1522_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 225 -> 303
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 225 -> 303
 	SUCCESS
-1523_a: residue in peptide at pos_a is not K or M.
+1523_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 265 -> 343
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 265 -> 343
 	SUCCESS
-1523_b: residue in peptide at pos_b is not K or M.
+1523_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 171 -> 249
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 171 -> 249
 	SUCCESS
 1523: entry is a DUPLICATE (see entry 343). will be removed
 	SUCCESS
-1524_a: residue in peptide at pos_a is not K or M.
+1524_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 357 -> 435
-		VERIFY: new residue is K: True
 	SUCCESS
-1524_b: residue in peptide at pos_b is not K or M.
+1524_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 190 -> 268
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 190 -> 268
 	SUCCESS
-1525_a: residue in peptide at pos_a is not K or M.
+1525_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 344 -> 422
-		VERIFY: new residue is K: True
 	SUCCESS
-1525_b: residue in peptide at pos_b is not K or M.
+1525_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 190 -> 268
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 190 -> 268
 	SUCCESS
-1526_a: residue in peptide at pos_a is not K or M.
+1526_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 265 -> 343
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 265 -> 343
 	SUCCESS
-1526_b: residue in peptide at pos_b is not K or M.
+1526_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 190 -> 268
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 190 -> 268
 	SUCCESS
-1527_a: residue in peptide at pos_a is not K or M.
+1527_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 203 -> 281
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 203 -> 281
 	SUCCESS
-1527_b: residue in peptide at pos_b is not K or M.
+1527_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 190 -> 268
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 190 -> 268
 	SUCCESS
 1527: entry is a DUPLICATE (see entry 281). will be removed
 	SUCCESS
-1528_a: residue in peptide at pos_a is not K or M.
+1528_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 190 -> 268
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 190 -> 268
 	SUCCESS
-1528_b: residue in peptide at pos_b is not K or M.
+1528_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 348 -> 426
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 348 -> 426
 	SUCCESS
-1529_a: residue in peptide at pos_a is not K or M.
+1529_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 191 -> 269
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 191 -> 269
 	SUCCESS
-1529_b: residue in peptide at pos_b is not K or M.
+1529_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 203 -> 281
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 203 -> 281
 	SUCCESS
 1529: entry is a DUPLICATE (see entry 269). will be removed
 	SUCCESS
-1530_a: residue in peptide at pos_a is not K or M.
+1530_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 191 -> 269
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 191 -> 269
 	SUCCESS
-1530_b: residue in peptide at pos_b is not K or M.
+1530_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 306 -> 384
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 306 -> 384
 	SUCCESS
 1530: entry is a DUPLICATE (see entry 269). will be removed
 	SUCCESS
-1531_a: residue in peptide at pos_a is not K or M.
+1531_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 203 -> 281
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 203 -> 281
 	SUCCESS
-1531_b: residue in peptide at pos_b is not K or M.
+1531_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 203 -> 281
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 203 -> 281
 	SUCCESS
 1531: entry is a DUPLICATE (see entry 281). will be removed
 	SUCCESS
-1532_a: residue in peptide at pos_a is not K or M.
+1532_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 203 -> 281
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 203 -> 281
 	SUCCESS
-1532_b: residue in peptide at pos_b is not K or M.
+1532_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 292 -> 370
-		VERIFY: new residue is K: True
 	SUCCESS
-1533_a: residue in peptide at pos_a is not K or M.
+1533_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 203 -> 281
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 203 -> 281
 	SUCCESS
-1533_b: residue in peptide at pos_b is not K or M.
+1533_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 265 -> 343
-		VERIFY: new residue is K: True
 	SUCCESS
-1534_a: residue in peptide at pos_a is not K or M.
+1534_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 203 -> 281
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 203 -> 281
 	SUCCESS
-1534_b: residue in peptide at pos_b is not K or M.
+1534_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 207 -> 285
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 207 -> 285
 	SUCCESS
 1534: entry is a DUPLICATE (see entry 281). will be removed
 	SUCCESS
-1535_a: residue in peptide at pos_a is not K or M.
+1535_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 225 -> 303
-		VERIFY: new residue is K: True
 	SUCCESS
-1535_b: residue in peptide at pos_b is not K or M.
+1535_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 218 -> 296
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 218 -> 296
 	SUCCESS
-1536_a: residue in peptide at pos_a is not K or M.
+1536_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 265 -> 343
-		VERIFY: new residue is K: True
 	SUCCESS
-1536_b: residue in peptide at pos_b is not K or M.
+1536_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 218 -> 296
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 218 -> 296
 	SUCCESS
-1537_a: residue in peptide at pos_a is not K or M.
+1537_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 220 -> 298
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 220 -> 298
 	SUCCESS
-1537_b: residue in peptide at pos_b is not K or M.
+1537_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 363 -> 441
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 363 -> 441
 	SUCCESS
 1537: entry is a DUPLICATE (see entry 298). will be removed
 	SUCCESS
-1538_a: residue in peptide at pos_a is not K or M.
+1538_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 220 -> 298
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 220 -> 298
 	SUCCESS
-1538_b: residue in peptide at pos_b is not K or M.
+1538_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 227 -> 305
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 227 -> 305
 	SUCCESS
 1538: entry is a DUPLICATE (see entry 298). will be removed
 	SUCCESS
-1539_a: residue in peptide at pos_a is not K or M.
+1539_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 220 -> 298
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 220 -> 298
 	SUCCESS
-1539_b: residue in peptide at pos_b is not K or M.
+1539_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 264 -> 342
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 264 -> 342
 	SUCCESS
 1539: entry is a DUPLICATE (see entry 298). will be removed
 	SUCCESS
-1540_a: residue in peptide at pos_a is not K or M.
+1540_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 225 -> 303
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 225 -> 303
 	SUCCESS
-1540_b: residue in peptide at pos_b is not K or M.
+1540_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 235 -> 313
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 235 -> 313
 	SUCCESS
-1541_a: residue in peptide at pos_a is not K or M.
+1541_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 363 -> 441
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 363 -> 441
 	SUCCESS
-1541_b: residue in peptide at pos_b is not K or M.
+1541_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 227 -> 305
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 227 -> 305
 	SUCCESS
 1542_a: Found 'Mo' in pep_a.
 	REPLACE: Mo -> M
-1542_a: residue in peptide at pos_a is not K or M.
+1542_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 227 -> 305
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 227 -> 305
 	SUCCESS
-1542_b: residue in peptide at pos_b is not K or M.
+1542_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 235 -> 313
-		VERIFY: new residue is K: True
 	SUCCESS
-1543_a: residue in peptide at pos_a is not K or M.
+1543_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 359 -> 437
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 359 -> 437
 	SUCCESS
-1543_b: residue in peptide at pos_b is not K or M.
+1543_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 264 -> 342
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 264 -> 342
 	SUCCESS
-1544_a: residue in peptide at pos_a is not K or M.
+1544_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 363 -> 441
-		VERIFY: new residue is K: True
 	SUCCESS
-1544_b: residue in peptide at pos_b is not K or M.
+1544_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 264 -> 342
-		VERIFY: new residue is K: True
 	SUCCESS
-1545_a: residue in peptide at pos_a is not K or M.
+1545_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 265 -> 343
-		VERIFY: new residue is K: True
 	SUCCESS
-1545_b: residue in peptide at pos_b is not K or M.
+1545_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 357 -> 435
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 357 -> 435
 	SUCCESS
-1546_a: residue in peptide at pos_a is not K or M.
+1546_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 359 -> 437
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 359 -> 437
 	SUCCESS
-1546_b: residue in peptide at pos_b is not K or M.
+1546_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 274 -> 352
-		VERIFY: new residue is K: True
 	SUCCESS
-1547_a: residue in peptide at pos_a is not K or M.
+1547_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 357 -> 435
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 357 -> 435
 	SUCCESS
-1547_b: residue in peptide at pos_b is not K or M.
+1547_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 344 -> 422
-		VERIFY: new residue is K: True
 	SUCCESS
-1548_a: residue in peptide at pos_a is not K or M.
+1548_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 359 -> 437
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 359 -> 437
 	SUCCESS
-1548_b: residue in peptide at pos_b is not K or M.
+1548_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 348 -> 426
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 348 -> 426
 	SUCCESS
-1549_a: residue in peptide at pos_a is not K or M.
+1549_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 357 -> 435
-		VERIFY: new residue is K: True
 	SUCCESS
-1549_b: residue in peptide at pos_b is not K or M.
+1549_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 348 -> 426
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 348 -> 426
 	SUCCESS
-1550_a: residue in peptide at pos_a is not K or M.
+1550_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 359 -> 437
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 359 -> 437
 	SUCCESS
-1550_b: residue in peptide at pos_b is not K or M.
+1550_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 357 -> 435
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 357 -> 435
 	SUCCESS
 1551_b: pep_b is not completely in full seq_b
 	ISSUE
-1551_a: residue in peptide at pos_a is not K or M.
+1551_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 220 -> 298
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 220 -> 298
 	SUCCESS
 1552_b: pep_b is not completely in full seq_b
 	ISSUE
-1552_a: residue in peptide at pos_a is not K or M.
+1552_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 359 -> 437
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 359 -> 437
 	SUCCESS
 1553_b: pep_b is not completely in full seq_b
 	ISSUE
-1553_a: residue in peptide at pos_a is not K or M.
+1553_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 363 -> 441
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 363 -> 441
 	SUCCESS
 1554_b: pep_b is not completely in full seq_b
 	ISSUE
 1555_b: pep_b is not completely in full seq_b
 	ISSUE
-1555_a: residue in peptide at pos_a is not K or M.
+1555_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 225 -> 303
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 225 -> 303
 	SUCCESS
 1556_b: pep_b is not completely in full seq_b
 	ISSUE
@@ -1588,42 +1589,42 @@
 	ISSUE
 1558_b: pep_b is not completely in full seq_b
 	ISSUE
-1558_a: residue in peptide at pos_a is not K or M.
+1558_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 203 -> 281
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 203 -> 281
 	SUCCESS
 1559_a: pep_a is not completely in full seq_a
 	ISSUE
 1560_a: pep_a is not completely in full seq_a
 	ISSUE
-1560_b: residue in peptide at pos_b is not K or M.
+1560_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 372 -> 450
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 372 -> 450
 	SUCCESS
 1561_a: pep_a is not completely in full seq_a
 	ISSUE
-1561_b: residue in peptide at pos_b is not K or M.
+1561_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 235 -> 313
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 235 -> 313
 	SUCCESS
-1563_a: residue in peptide at pos_a is M, but should only be possible in pos=1.
+1563_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 414 -> 395
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 414 -> 395
 	SUCCESS
-1563_b: residue in peptide at pos_b is not K or M.
+1563_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 402 -> 383
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 402 -> 383
 	SUCCESS
 1570_b: Found 'Mo' in pep_b.
 	REPLACE: Mo -> M
@@ -1635,32 +1636,32 @@
 	ISSUE
 1605_a: Found 'Mo' in pep_a.
 	REPLACE: Mo -> M
-1618_a: residue in peptide at pos_a is not K or M.
+1618_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 390 -> 386
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 390 -> 386
 	SUCCESS
-1618_b: residue in peptide at pos_b is not K or M.
+1618_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 199 -> 195
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 199 -> 195
 	SUCCESS
-1619_a: residue in peptide at pos_a is not K or M.
+1619_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 98 -> 97
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 98 -> 97
 	SUCCESS
-1619_b: residue in peptide at pos_b is not K or M.
+1619_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 89 -> 88
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 89 -> 88
 	SUCCESS
 1635_a: Found 'Mo' in pep_a.
 	REPLACE: Mo -> M
@@ -1668,228 +1669,228 @@
 	REPLACE: Mo -> M
 1706_b: Found 'Mo' in pep_b.
 	REPLACE: Mo -> M
-1711_a: residue in peptide at pos_a is not K or M.
+1711_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 84 -> 83
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 84 -> 83
 	SUCCESS
-1711_b: residue in peptide at pos_b is not K or M.
+1711_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 78 -> 77
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 78 -> 77
 	SUCCESS
 1723_b: Found 'Mo' in pep_b.
 	REPLACE: Mo -> M
-1727_a: residue in peptide at pos_a is not K or M.
+1727_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 74 -> 73
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 74 -> 73
 	SUCCESS
-1727_b: residue in peptide at pos_b is not K or M.
+1727_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 121 -> 120
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 121 -> 120
 	SUCCESS
 1733_b: Found 'Mo' in pep_b.
 	REPLACE: Mo -> M
 1742_b: Found 'Mo' in pep_b.
 	REPLACE: Mo -> M
-1751_b: residue in peptide at pos_b is not K or M.
+1751_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 765 -> 794
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 765 -> 794
 	SUCCESS
 1752_b: Found 'Mo' in pep_b.
 	REPLACE: Mo -> M
-1827_a: residue in peptide at pos_a is not K or M.
+1827_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 115 -> 128
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 115 -> 128
 	SUCCESS
-1827_b: residue in peptide at pos_b is not K or M.
+1827_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 61 -> 74
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 61 -> 74
 	SUCCESS
-1828_a: residue in peptide at pos_a is not K or M.
+1828_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 115 -> 128
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 115 -> 128
 	SUCCESS
-1828_b: residue in peptide at pos_b is not K or M.
+1828_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 96 -> 109
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 96 -> 109
 	SUCCESS
 1828: entry is a DUPLICATE (see entry 128). will be removed
 	SUCCESS
-1829_a: residue in peptide at pos_a is not K or M.
+1829_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 61 -> 74
-		VERIFY: new residue is K: True
 	SUCCESS
-1829_b: residue in peptide at pos_b is not K or M.
+1829_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 34 -> 47
-		VERIFY: new residue is K: True
 	SUCCESS
-1831_a: residue in peptide at pos_a is not K or M.
+1831_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 100 -> 133
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 100 -> 133
 	SUCCESS
-1831_b: residue in peptide at pos_b is not K or M.
+1831_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 105 -> 138
-		VERIFY: new residue is K: True
 	SUCCESS
-1832_a: residue in peptide at pos_a is not K or M.
+1832_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 100 -> 133
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 100 -> 133
 	SUCCESS
-1832_b: residue in peptide at pos_b is not K or M.
+1832_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 125 -> 158
-		VERIFY: new residue is K: True
 	SUCCESS
-1833_a: residue in peptide at pos_a is not K or M.
+1833_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 20 -> 53
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 20 -> 53
 	SUCCESS
-1833_b: residue in peptide at pos_b is not K or M.
+1833_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 105 -> 138
-		VERIFY: new residue is K: True
 	SUCCESS
-1834_a: residue in peptide at pos_a is not K or M.
+1834_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 299 -> 332
-		VERIFY: new residue is K: True
 	SUCCESS
-1834_b: residue in peptide at pos_b is not K or M.
+1834_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 117 -> 150
-		VERIFY: new residue is K: True
 	SUCCESS
-1835_a: residue in peptide at pos_a is not K or M.
+1835_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 27 -> 60
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 27 -> 60
 	SUCCESS
-1835_b: residue in peptide at pos_b is not K or M.
+1835_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 16 -> 49
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 16 -> 49
 	SUCCESS
-1836_a: residue in peptide at pos_a is not K or M.
+1836_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 20 -> 53
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 20 -> 53
 	SUCCESS
-1836_b: residue in peptide at pos_b is not K or M.
+1836_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 94 -> 127
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 94 -> 127
 	SUCCESS
-1837_a: residue in peptide at pos_a is not K or M.
+1837_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 27 -> 60
-		VERIFY: new residue is K: True
 	SUCCESS
-1837_b: residue in peptide at pos_b is not K or M.
+1837_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 57 -> 90
-		VERIFY: new residue is K: True
 	SUCCESS
-1844_b: residue in peptide at pos_b is not K or M.
+1844_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 82 -> 79
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 82 -> 79
 	SUCCESS
 1860_b: Found 'Mo' in pep_b.
 	REPLACE: Mo -> M
-1896_a: residue in peptide at pos_a is not K or M.
+1896_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 210 -> 205
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 210 -> 205
 	SUCCESS
-1896_b: residue in peptide at pos_b is not K or M.
+1896_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 173 -> 168
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 173 -> 168
 	SUCCESS
 1897_b: Found 'Mo' in pep_b.
 	REPLACE: Mo -> M
 1904_a: Found 'Mo' in pep_a.
 	REPLACE: Mo -> M
-1910_a: residue in peptide at pos_a is not K or M.
+1910_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 732 -> 614
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 732 -> 614
 	SUCCESS
-1910_b: residue in peptide at pos_b is not K or M.
+1910_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 726 -> 608
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 726 -> 608
 	SUCCESS
-1962_a: residue in peptide at pos_a is not K or M.
+1962_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 111 -> 107
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 111 -> 107
 	SUCCESS
 1963_a: Found 'Mo' in pep_a.
 	REPLACE: Mo -> M
@@ -1897,90 +1898,90 @@
 	REPLACE: Mo -> M
 2001_a: Found 'Mo' in pep_a.
 	REPLACE: Mo -> M
-2014_a: residue in peptide at pos_a is not K or M.
+2014_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 95 -> 124
-		VERIFY: new residue is K: True
 	SUCCESS
-2023_a: residue in peptide at pos_a is not K or M.
+2023_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 323 -> 330
-		VERIFY: new residue is K: True
 	SUCCESS
-2024_a: residue in peptide at pos_a is not K or M.
+2024_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 550 -> 557
-		VERIFY: new residue is K: True
 	SUCCESS
-2025_a: residue in peptide at pos_a is not K or M.
+2025_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 45 -> 43
-		VERIFY: new residue is K: True
 	SUCCESS
-2025_b: residue in peptide at pos_b is not K or M.
+2025_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 57 -> 55
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 57 -> 55
 	SUCCESS
-2036_a: residue in peptide at pos_a is not K or M.
+2036_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 209 -> 220
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 209 -> 220
 	SUCCESS
-2036_b: residue in peptide at pos_b is not K or M.
+2036_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 32 -> 43
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 32 -> 43
 	SUCCESS
 2044_a: given pos_a is out of bounds of sequence.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 1056 -> 542
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 1056 -> 542
 	SUCCESS
 2044_b: given pos_b is out of bounds of sequence.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 948 -> 439
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 948 -> 439
 	SUCCESS
 2045_a: given pos_a is out of bounds of sequence.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 1056 -> 542
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 1056 -> 542
 	SUCCESS
 2046_b: given pos_b is out of bounds of sequence.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 843 -> 334
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 843 -> 334
 	SUCCESS
-2083_a: residue in peptide at pos_a is not K or M.
+2083_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 125 -> 123
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 125 -> 123
 	SUCCESS
-2083_b: residue in peptide at pos_b is not K or M.
+2083_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 99 -> 97
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 99 -> 97
 	SUCCESS
 2099_b: Found 'Mo' in pep_b.
 	REPLACE: Mo -> M
@@ -1988,65 +1989,65 @@
 	REPLACE: Mo -> M
 2161_a: Found 'Mo' in pep_a.
 	REPLACE: Mo -> M
-2163_b: residue in peptide at pos_b is not K or M.
+2163_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 254 -> 255
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 254 -> 255
 	SUCCESS
-2164_b: residue in peptide at pos_b is not K or M.
+2164_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 254 -> 255
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 254 -> 255
 	SUCCESS
-2178_a: residue in peptide at pos_a is M, but should only be possible in pos=1.
+2178_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 169 -> 204
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 169 -> 204
 	SUCCESS
-2178_b: residue in peptide at pos_b is not K or M.
+2178_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 385 -> 420
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 385 -> 420
 	SUCCESS
 2207_a: Found 'Mo' in pep_a.
 	REPLACE: Mo -> M
-2210_a: residue in peptide at pos_a is not K or M.
+2210_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 201 -> 177
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 201 -> 177
 	SUCCESS
-2210_b: residue in peptide at pos_b is not K or M.
+2210_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 267 -> 243
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 267 -> 243
 	SUCCESS
-2232_b: residue in peptide at pos_b is not K or M.
+2232_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 5 -> 29
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 5 -> 29
 	SUCCESS
 2234_a: given pos_a is out of bounds of sequence.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 362 -> 219
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 362 -> 219
 	SUCCESS
-2234_b: residue in peptide at pos_b is not K or M.
+2234_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 311 -> 168
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 311 -> 168
 	SUCCESS
 2238_a: pep_a was found more than once in full seq_a
 	ISSUE
@@ -2298,18 +2299,18 @@
 		pos_b: 927 -> 2123
 		VERIFY: new residue is K: True
 			SUCCESS
-2239_a: residue in peptide at pos_a is not K or M.
+2239_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 1994 -> 2061
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 1994 -> 2061
 	SUCCESS
-2240_a: residue in peptide at pos_a is not K or M.
+2240_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 1810 -> 1877
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 1810 -> 1877
 	SUCCESS
 2240_b: pep_b was found more than once in full seq_b
 	ISSUE
@@ -2358,132 +2359,133 @@
 		pos_b: 927 -> 2123
 		VERIFY: new residue is K: True
 			SUCCESS
-2242_a: residue in peptide at pos_a is not K or M.
+2242_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 548 -> 530
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 548 -> 530
 	SUCCESS
-2242_b: residue in peptide at pos_b is not K or M.
+2242_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 507 -> 489
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 507 -> 489
 	SUCCESS
-2243_a: residue in peptide at pos_a is not K or M.
+2243_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 944 -> 926
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 944 -> 926
 	SUCCESS
-2244_a: residue in peptide at pos_a is not K or M.
+2244_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 966 -> 970
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 966 -> 970
 	SUCCESS
-2244_b: residue in peptide at pos_b is not K or M.
+2244_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 966 -> 970
-		VERIFY: new residue is K: True
 	SUCCESS
-2246_b: residue in peptide at pos_b is not K or M.
+2246_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 225 -> 303
-		VERIFY: new residue is K: True
 	SUCCESS
-2247_a: residue in peptide at pos_a is not K or M.
+2247_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 227 -> 305
-		VERIFY: new residue is K: True
 	SUCCESS
-2248_a: residue in peptide at pos_a is not K or M.
+2248_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 225 -> 303
-		VERIFY: new residue is K: True
 	SUCCESS
-2249_a: residue in peptide at pos_a is not K or M.
+2249_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 234 -> 312
-		VERIFY: new residue is K: True
 	SUCCESS
-2250_b: residue in peptide at pos_b is not K or M.
+2250_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
+	res_pos_b was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_b: 357 -> 435
-		VERIFY: new residue is K: True
 	SUCCESS
-2251_a: residue in peptide at pos_a is not K or M.
+2251_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 203 -> 281
-		VERIFY: new residue is K: True
 	SUCCESS
-2252_a: residue in peptide at pos_a is not K or M.
+2252_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 191 -> 269
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 191 -> 269
 	SUCCESS
-2252_b: residue in peptide at pos_b is not K or M.
+2252_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 190 -> 268
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 190 -> 268
 	SUCCESS
-2253_a: residue in peptide at pos_a is not K or M.
+2253_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 190 -> 268
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 190 -> 268
 	SUCCESS
-2253_b: residue in peptide at pos_b is not K or M.
+2253_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 190 -> 268
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 190 -> 268
 	SUCCESS
 2254_a: pep_a is not completely in full seq_a
 	ISSUE
-2254_b: residue in peptide at pos_b is not K or M.
+2254_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 357 -> 435
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 357 -> 435
 	SUCCESS
 2255_b: pep_b is not completely in full seq_b
 	ISSUE
-2255_b: residue in peptide at pos_b is not K or M.
-	k_pos_b was given
+2255_b: residue in peptide at pos_b is any of the specified residues.
+	found pep_b more than once or not even once in sequence
+	res_pos_b was given
 	align peptide to sequence
-	REPLACE: pos_b: 143 -> 221
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 143 -> 221
 	SUCCESS
 2269_b: Found 'Mo' in pep_b.
 	REPLACE: Mo -> M
-2277_b: residue in peptide at pos_b is not K or M.
+2277_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 78 -> 77
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 78 -> 77
 	SUCCESS
 2277: entry is a DUPLICATE (see entry 313). will be removed
 	SUCCESS
@@ -2491,51 +2493,51 @@
 	REPLACE: Mo -> M
 2285_b: Found 'Mo' in pep_b.
 	REPLACE: Mo -> M
-2304_a: residue in peptide at pos_a is not K or M.
+2304_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
+	res_pos_a was given
+		VERIFY: new residue is K: True
 	REPLACE: pos_a: 20 -> 53
-		VERIFY: new residue is K: True
 	SUCCESS
-2304_b: residue in peptide at pos_b is not K or M.
+2304_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 100 -> 133
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 100 -> 133
 	SUCCESS
-2305_a: residue in peptide at pos_a is not K or M.
+2305_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K more than once in pep_a
-	k_pos_a was given
-	REPLACE: pos_a: 100 -> 133
+	res_pos_a was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 100 -> 133
 	SUCCESS
-2305_b: residue in peptide at pos_b is not K or M.
+2305_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K exactly once in pep_b
-	REPLACE: pos_b: 94 -> 127
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 94 -> 127
 	SUCCESS
-2306_b: residue in peptide at pos_b is not K or M.
+2306_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 156 -> 153
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 156 -> 153
 	SUCCESS
-2321_a: residue in peptide at pos_a is not K or M.
+2321_a: residue in peptide at pos_a is any of the specified residues.
 	found pep_a exactly once in full sequence
 	found K exactly once in pep_a
-	REPLACE: pos_a: 157 -> 89
 		VERIFY: new residue is K: True
+	REPLACE: pos_a: 157 -> 89
 	SUCCESS
-2321_b: residue in peptide at pos_b is not K or M.
+2321_b: residue in peptide at pos_b is any of the specified residues.
 	found pep_b exactly once in full sequence
 	found K more than once in pep_b
-	k_pos_b was given
-	REPLACE: pos_b: 153 -> 85
+	res_pos_b was given
 		VERIFY: new residue is K: True
+	REPLACE: pos_b: 153 -> 85
 	SUCCESS
 
 ======================================================================

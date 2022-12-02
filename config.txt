@@ -5,8 +5,8 @@ input_filepath = data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonred
 
 #2.column name projections (map your column names to this pipeline's)
 #type: string
-#ex.: {"your_pep1": "pep_a", "your_pep2": "pep_b", "your_pos1": "pos_a", "your_pos2": "pos_b", "your_k_pos1": "k_pos_a", "your_k_pos2": "k_pos_b", "your_entry1": "unip_id_a", "your_entry2": "unip_id_b", "your_gene1": "gene_a", "your_gene2": "gene_b", "your_publication": "pub"}
-projections = {"peptide1": "pep_a", "peptide2": "pep_b", "position1": "pos_a", "position2": "pos_b", "k_pos1": "k_pos_a", "k_pos2": "k_pos_b", "entry1": "unip_id_a", "entry2": "unip_id_b", "gene1": "gene_a", "gene2": "gene_b", "Publication": "pub"}
+#ex.: {"your_pep1": "pep_a", "your_pep2": "pep_b", "your_pos1": "pos_a", "your_pos2": "pos_b", "your_k_pos1": "res_pos_a", "your_k_pos2": "res_pos_b", "your_entry1": "unip_id_a", "your_entry2": "unip_id_b", "your_gene1": "gene_a", "your_gene2": "gene_b", "your_publication": "pub"}
+projections = {"peptide1": "pep_a", "peptide2": "pep_b", "position1": "pos_a", "position2": "pos_b", "k_pos1": "res_pos_a", "k_pos2": "res_pos_b", "entry1": "unip_id_a", "entry2": "unip_id_b", "gene1": "gene_a", "gene2": "gene_b", "Publication": "pub"}
 
 #3.read some results from temporary save from previous run (overwritten each time)
 #type: boolean

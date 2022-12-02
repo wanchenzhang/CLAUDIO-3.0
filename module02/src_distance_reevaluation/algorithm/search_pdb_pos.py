@@ -6,13 +6,13 @@ import os
 import sys
 
 
-def search_site_pos_in_pdb(data):
-    # search for site positions in pdb, extend input dataset by lysin_criteria, e.g. whether the found
-    # sites satisfy the criteria of either being lysin or methionine, the method used to find the sites in the structure
+def search_site_pos_in_pdb(data, df_xl_res):
+    # search for site positions in pdb, extend input dataset by res_criteria, e.g. whether the found
+    # sites satisfy the criteria of being the specified residue, the method used to find the sites in the structure
     # file, in case said method was alphafold the pLDDT, e.g. confidence, value, and download new alphafold pdb into
     # directory, if needed
     #
-    # input data: pd.DataFrame
+    # input data: pd.DataFrame, df_xl_res: pd.DataFrame
     # return data: pd.DataFrame
 
     # Read shift file given by EMBL-EBI database (see: https://www.ebi.ac.uk/pdbe/docs/sifts/quick.html) for rcsb files
@@ -26,19 +26,17 @@ def search_site_pos_in_pdb(data):
     ind = 0
     pdb_pos_as,\
         pdb_pos_bs,\
-        lysin_criteria = ([] for _ in range(3))
-    lysin_crit_site_specific, \
+        res_criteria = ([] for _ in range(3))
+    res_crit_site_specific, \
         methods, \
         pLDDTs = ([[], []] for _ in range(3))
 
     # Save numbers for performance/success statistics
     errors = [[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0]]
     successes, \
-        true_lysin_crits = ([0, 0] for _ in range(2))
+        true_res_crits = ([0, 0] for _ in range(2))
 
     # Iterate over given dataset
-    print(data[pd.isna(data.pdb_id) & ~(data.path == '-')])
-    print()
     for i, row in data.iterrows():
         print(f"\r\t[{round((ind * 100) / len(data.index), 2)}%]", end='')
         # If saved path is not '-' perform site distance calculation, else append values to list containers indicating
@@ -47,29 +45,29 @@ def search_site_pos_in_pdb(data):
         if not both_pdbs_found:
             pdb_pos_as.append(None)
             pdb_pos_bs.append(None)
-            lysin_criteria.append(False)
-            lysin_crit_site_specific[0].append(False)
-            lysin_crit_site_specific[1].append(False)
+            res_criteria.append(False)
+            res_crit_site_specific[0].append(False)
+            res_crit_site_specific[1].append(False)
             methods[0].append('')
             methods[1].append('')
             pLDDTs[0].append('-')
             pLDDTs[1].append('-')
         else:
             # Search site_a in structure file
-            pdb_pos_a, lys_criteria_a, method_a, i_error_a, pLDDT_a, new_path = \
-                compute_site_pos(i, row, 'a', pdb_uni_map, "")
+            pdb_pos_a, res_criteria_a, method_a, i_error_a, pLDDT_a, new_path = \
+                compute_site_pos(i, row, 'a', pdb_uni_map, "", df_xl_res)
             # If method used for site_a is alphafold, set method for set_b to alphafold as well
             method_b = "" if method_a != "alphafold" else "alphafold"
 
             # Search site_b in structure file
-            pdb_pos_b, lys_criteria_b, method_b, i_error_b, pLDDT_b, new_path = \
-                compute_site_pos(i, row, 'b', pdb_uni_map, method_b)
+            pdb_pos_b, res_criteria_b, method_b, i_error_b, pLDDT_b, new_path = \
+                compute_site_pos(i, row, 'b', pdb_uni_map, method_b, df_xl_res)
 
             # If method for site_b was alphafold, but not for site_a, search site_a again with alphafold method
             # specified this time
             if method_b == "alphafold" and method_a != "alphafold":
-                pdb_pos_a, lys_criteria_a, method_a, i_error_a, pLDDT_a, new_path = \
-                    compute_site_pos(i, row, 'a', pdb_uni_map, "alphafold")
+                pdb_pos_a, res_criteria_a, method_a, i_error_a, pLDDT_a, new_path = \
+                    compute_site_pos(i, row, 'a', pdb_uni_map, "alphafold", df_xl_res)
 
             # Replace path if alphafold file was downloaded instead
             if new_path:
@@ -86,13 +84,13 @@ def search_site_pos_in_pdb(data):
             methods[1].append(method_b)
             pLDDTs[0].append(pLDDT_a)
             pLDDTs[1].append(pLDDT_b)
-            lysin_crit_site_specific[0].append(lys_criteria_a)
-            lysin_crit_site_specific[1].append(lys_criteria_b)
-            lysin_criteria.append(lys_criteria_a and lys_criteria_b)
+            res_crit_site_specific[0].append(res_criteria_a)
+            res_crit_site_specific[1].append(res_criteria_b)
+            res_criteria.append(res_criteria_a and res_criteria_b)
 
             # Increase counters for performance/success statistics
-            true_lysin_crits[0] += 1 if lys_criteria_a else 0
-            true_lysin_crits[1] += 1 if lys_criteria_b else 0
+            true_res_crits[0] += 1 if res_criteria_a else 0
+            true_res_crits[1] += 1 if res_criteria_b else 0
             if i_error_a >= 0:
                 errors[0][i_error_a] += 1
             else:
@@ -117,7 +115,7 @@ def search_site_pos_in_pdb(data):
           f"\n\t\t\tGot non-aminoacid at residue position: {errors[0][5]}"
           f"\n\t\t\tNo C-beta found: {errors[0][6]}\n"
           f"\n\t\t\tSuccessfully computed pdb positions: {successes[0]}"
-          f"\n\t\t\t\tNumber of fulfilled lysin criteria: {true_lysin_crits[0]}"
+          f"\n\t\t\t\tNumber of fulfilled residue criteria: {true_res_crits[0]}"
           f"\n\t\tb:"
           f"\n\t\t\tIndexError with unip_pos: {errors[1][0]}"
           f"\n\t\t\tNo model in pdb, or other error with command: \"chains = models[0].get_list()\": {errors[1][1]}"
@@ -127,16 +125,16 @@ def search_site_pos_in_pdb(data):
           f"\n\t\t\tGot non-aminoacid at residue position: {errors[1][5]}"
           f"\n\t\t\tNo C-beta found: {errors[1][6]}\n"
           f"\n\t\t\tSuccessfully computed pdb positions: {successes[1]}"
-          f"\n\t\t\t\tNumber of fulfilled lysin criteria: {true_lysin_crits[1]}"
+          f"\n\t\t\t\tNumber of fulfilled residue criteria: {true_res_crits[1]}"
           f"\n\t\tTotal number of entries not found in databases: "
           f"{len(data[data.path == '-'])}")
 
     # Append data container lists to dataset
     data["pdb_pos_a"] = pdb_pos_as
     data["pdb_pos_b"] = pdb_pos_bs
-    data["lysin_criteria_fulfilled"] = lysin_criteria
-    data["lys_crit_a"] = lysin_crit_site_specific[0]
-    data["lys_crit_b"] = lysin_crit_site_specific[1]
+    data["res_criteria_fulfilled"] = res_criteria
+    data["res_crit_a"] = res_crit_site_specific[0]
+    data["res_crit_b"] = res_crit_site_specific[1]
     data["method_a"] = methods[0]
     data["method_b"] = methods[1]
     data["pLDDT_a"] = pLDDTs[0]
@@ -145,11 +143,11 @@ def search_site_pos_in_pdb(data):
     return data
 
 
-def compute_site_pos(i, data, site_id, pdb_uni_map, method):
+def compute_site_pos(i, data, site_id, pdb_uni_map, method, df_xl_res):
     # Search site in structure file and return threedimensional position
     #
-    # input i: int, data: pd.Series, site_id: int, pdb_uni_map: pd.DataFrame, method: str
-    # return pdb_pos: int, lys_criteria: bool, method: str, i_error: int, pLDDT: float, new_path_a: str
+    # input i: int, data: pd.Series, site_id: int, pdb_uni_map: pd.DataFrame, method: str, df_xl_res: pd.DataFrame
+    # return pdb_pos: int, res_criteria: bool, method: str, i_error: int, pLDDT: float, new_path_a: str
 
     # Extract pdb_id, chain_id and unip_id from data
     pdb_id = data["pdb_id"]
@@ -159,7 +157,7 @@ def compute_site_pos(i, data, site_id, pdb_uni_map, method):
     # Test whether specified position is accessible in uniprot sequence, if not return fail with i_error = 0
     try:
         print(f"\n\tunip_pos:{data[f'pos_{site_id}']}, Acid at pos: {data[f'seq_{site_id}'][data[f'pos_{site_id}'] - 1]}"
-              f", fulfills lysin criteria: {data[f'seq_{site_id}'][data[f'pos_{site_id}'] - 1] in ['M', 'K']}")
+              f", fulfills residue criteria: {data[f'seq_{site_id}'][data[f'pos_{site_id}'] - 1] in df_xl_res.res.tolist()}")
     except IndexError:
         print(f"\n\tIndexError with unip_pos: {data[f'pos_{site_id}']} (entry: {i}, unip_id: {unip_id})")
         return None, False, method, 0, '-', ''
@@ -245,7 +243,7 @@ def compute_site_pos(i, data, site_id, pdb_uni_map, method):
             # Else print computed position by realigning and continue with method = "realigning"
             else:
                 print(f"\tSelf computed res pos ({unip_id}, {data[f'pos_{site_id}']}): {residue_pos}, "
-                      f"fulfills lysin criteria: {pdb_seq[residue_pos - 1] in ['M', 'K']}:{pdb_seq[residue_pos - 1]}")
+                      f"fulfills residue criteria: {pdb_seq[residue_pos - 1] in df_xl_res.res.tolist()}:{pdb_seq[residue_pos - 1]}")
         # Else print position given by shift file and continue with method = "pdb_chain_uniprot"
         else:
             method = "pdb_chain_uniprot"
@@ -294,7 +292,7 @@ def compute_site_pos(i, data, site_id, pdb_uni_map, method):
                 print(f"\tReplacement attempt successful (new residue: {Polypeptide.three_to_one(res.get_resname())}).")
             except:
                 pass
-    # Check whether lysin criteria is fulfilled, if not attempt final alphafold replacement; Check whether a valid CB is
+    # Check whether residue criteria is fulfilled, if not attempt final alphafold replacement; Check whether a valid CB is
     # accessible for specified residue, else return fail with i_error = 6
     try:
         # Check whether specified residue has valid name, else return fail with i_error = 5
@@ -304,14 +302,14 @@ def compute_site_pos(i, data, site_id, pdb_uni_map, method):
             print(f"\tWarning! Got non-aminoacid at residue position ({res.get_resname()}).\n\t\t\t"
                   f"(entry: {i}, pdb: {pdb_id}:{chain_id})")
             return None, False, method, 5, '-', ''
-        lys_criteria = ((resname == 'K') or (resname == 'M')) and \
+        res_criteria = (resname in df_xl_res.res.tolist()) and \
                        (resname == data[f'seq_{site_id}'][data[f'pos_{site_id}'] - 1])
-        print(f"\tFinal residue is '{resname}' (thus lysin_criteria_{site_id}: {lys_criteria})")
-        # If lysin criteria fulfilled return result
-        if lys_criteria:
+        print(f"\tFinal residue is '{resname}' (thus res_criteria_{site_id}: {res_criteria})")
+        # If residue criteria fulfilled return result
+        if res_criteria:
             try:
                 _ = res["CB"]
-                return int(res.get_id()[1]), lys_criteria, method, -1,\
+                return int(res.get_id()[1]), res_criteria, method, -1,\
                        res["CB"].get_bfactor() if method == "alphafold" else '-', new_path
             except:
                 pass
@@ -328,13 +326,12 @@ def compute_site_pos(i, data, site_id, pdb_uni_map, method):
                 method = "alphafold"
                 residue_pos = data[f"pos_{site_id}"]
                 res = chain.__getitem__(residue_pos)
-                print(residue_pos, ':', res.get_resname())
                 print(f"\tReplacement attempt successful "
                       f"(new residue: {Polypeptide.three_to_one(res.get_resname())}).")
                 resname = Polypeptide.three_to_one(res.get_resname())
-                lys_criteria = (resname == 'K') or (resname == 'M')
-                print(f"\tFinal residue is '{resname}' (thus lysin_criteria_{site_id}: {lys_criteria})")
-                return int(res.get_id()[1]), lys_criteria, method, -1, res["CB"].get_bfactor(), new_path
+                res_criteria = resname in df_xl_res.res.tolist()
+                print(f"\tFinal residue is '{resname}' (thus res_criteria_{site_id}: {res_criteria})")
+                return int(res.get_id()[1]), res_criteria, method, -1, res["CB"].get_bfactor(), new_path
             except:
                 print(f"\tWarning! Got non-aminoacid at residue position ({res.get_resname()}).\n\t\t\t"
                       f"(entry: {i}, pdb: {pdb_id}:{chain_id})")

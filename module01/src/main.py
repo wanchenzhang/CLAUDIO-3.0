@@ -18,6 +18,7 @@ from module01.src.io.write_out import write_outputs
 @click.option("-i", "--input-filepath", default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv")
 @click.option("-p", "--projections", default=str(liu18_schweppe17_linked_residues_intra_homo_2672_nonredundant))
 @click.option("-s", "--uniprot-search", default=True)
+@click.option("-x", "--xl-residues", default="K,M:1")
 @click.option("-t", "--search-tool", default="blastp")
 @click.option("-o", "--output-directory", default="data/out/unique_protein_list")
 @click.option("-bl", "--blast-bin", default=None)
@@ -25,8 +26,8 @@ from module01.src.io.write_out import write_outputs
 @click.option("-hh", "--hhsearch-bin", default=None)
 @click.option("-hhdb", "--hhsearch-db", default="$HHDB")
 @click.option("-hhout", "--hhsearch-out", default="$HHOUT")
-def main(input_filepath, projections, uniprot_search, search_tool, output_directory, blast_bin, blast_db, hhsearch_bin,
-         hhsearch_db, hhsearch_out):
+def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, output_directory, blast_bin, blast_db,
+         hhsearch_bin, hhsearch_db, hhsearch_out):
     print("Start Unique Protein List Tool")
     start_time = time.time()
 
@@ -54,11 +55,17 @@ def main(input_filepath, projections, uniprot_search, search_tool, output_direct
         hhsearch_out += '/'
 
     # If parameters inputted by user valid
-    if inputs_valid(input_filepath, projections, uniprot_search, search_tool, output_directory, blast_bin, blast_db,
-                    hhsearch_bin, hhsearch_db, hhsearch_out):
+    if inputs_valid(input_filepath, projections, uniprot_search, xl_residues, search_tool, output_directory, blast_bin,
+                    blast_db, hhsearch_bin, hhsearch_db, hhsearch_out):
         # Use projections to apply unified column names to input dataset
         # (for example see module01/src/dict/default_projections.py)
         projections = ast.literal_eval(projections)
+
+        # Define dataset for crosslink residues including possible positions
+        df_xl_res = pd.DataFrame()
+        df_xl_res["res"] = [s.split(':')[0] for s in xl_residues.replace(';', ',').split(',')]
+        df_xl_res["pos"] = [int(s.split(':')[-1]) if s.split(':')[-1].isdigit() else 0
+                            for s in xl_residues.replace(';', ',').split(',')]
 
         # Read input file: extract dataset, whether all datapoints are intra type interactions
         print("Read input")
@@ -72,7 +79,7 @@ def main(input_filepath, projections, uniprot_search, search_tool, output_direct
 
         print("Check datapoints for inconsistencies")
         # Check datapoints for inconsistencies and correct them if possible (creates logfile in the process)
-        data = double_check_data(data, filename, output_directory)
+        data = double_check_data(data, filename, df_xl_res, output_directory)
         print("Changes made to dataset written to log-file")
 
         # Write list of unique protein pairs and unique proteins overall
@@ -89,12 +96,13 @@ def main(input_filepath, projections, uniprot_search, search_tool, output_direct
     sys.exit()
 
 
-def inputs_valid(input_filepath, projections, uniprot_search, search_tool, output_directory, blast_bin, blast_db,
-                 hhsearch_bin, hhsearch_db, hhsearch_out):
+def inputs_valid(input_filepath, projections, uniprot_search, xl_residues, search_tool, output_directory, blast_bin,
+                 blast_db, hhsearch_bin, hhsearch_db, hhsearch_out):
     # check validity of inputted parameters
     #
-    # input input_filepath: str, projections: str, uniprot_search: bool, search_tool: str, output_directory: str,
-    # blast_bin: str/None, blast_db: str, hhsearch_bin: str/None, hhsearch_db: str, hhsearch_out: str
+    # input input_filepath: str, projections: str, uniprot_search: bool, xl_residues: str, search_tool: str,
+    # output_directory: str, blast_bin: str/None, blast_db: str, hhsearch_bin: str/None, hhsearch_db: str,
+    # hhsearch_out: str
     # return inputs_valid: bool
 
     filename = input_filepath.split('/')[-1]
@@ -115,10 +123,20 @@ def inputs_valid(input_filepath, projections, uniprot_search, search_tool, outpu
                     print(f"Error! No temporary save file was found. Run the program with \"-s True\" to perform an "
                           f"actual search first (given: {uniprot_search}).")
                     return False
-            if search_tool in ["blastp", "hhsearch"]:
-                return True
-            else:
-                print(f"Error! Given search tool is neither blastp or hhsearch (given: {search_tool}).")
+            # check whether xl_residues can be turned into a proper DataFrame, else return False
+            try:
+                df_xl_res = pd.DataFrame()
+                df_xl_res["res"] = [s.split(':')[0] for s in xl_residues.replace(';', ',').split(',')]
+                df_xl_res["pos"] = [int(s.split(':')[-1]) if s.split(':')[-1].isdigit() else 0
+                                    for s in xl_residues.replace(';', ',').split(',')]
+                # check whether specified structure search tool is either blastp or hhsearch
+                if search_tool in ["blastp", "hhsearch"]:
+                    return True
+                else:
+                    print(f"Error! Given search tool is neither blastp or hhsearch (given: {search_tool}).")
+            except:
+                print(f"Error! Could not properly parse xl_residues for accepted crosslinked residues "
+                      f"(given: {xl_residues}).")
         except ValueError:
             print(f"Error! Could not construct dictionary from value given for \"projections\" parameter (given: "
                   f"{projections}).")

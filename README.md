@@ -90,6 +90,8 @@ For details on how to run the **full** pipeline continue below.
                                 default=str(liu18_schweppe17_linked_residues_intra_homo_2672_nonredundant)
 -rt,   --read-temps,            if the tool has been run before with the same input a temporary file was saved, which
                                 can be used to skip some of the steps, default=False
+-x,    --xl-residues,           commaseperated one-letter-code residues, optional: add ':' after the one-letter-code 
+                                symbol of the residue in order to specify fulls equence position, default="K,M:1"
 -t,    --search-tool,           can be either "blastp" or "hhsearch", specifying the tool which should be used for pdb 
                                 search, default="blastp"
 -e,    --e-value,               e-value used in structure search, default=1e-5
@@ -122,8 +124,8 @@ For details on how to run the **full** pipeline continue below.
 ### Input
 This tool requires a CSV-file containing multiple observed cross-linking interactions. Two columns have to contain 
 uniprot ids for each interacting residue, two columns have to contain the observed peptides for each interacting residue
-and two columns have to contain the crosslinked residue's position within the full sequence (alternative: fill these with
-Nans, but add two columns with the residue's positions in the respective peptides).\
+and two columns have to contain the crosslinked residue's position within the full sequence (alternative: fill these 
+with Nans, but add two columns with the residue's positions in the respective peptides).\
 First, it is important to customize the parameter "-p / --projections". This parameter requires a python dictionary as 
 input, which maps the column names of your dataset to the ones used in the tool. You may see examples for this in 
 [this module](https://github.com/KohlbacherLab/CLAUDIO/blob/main/module01/src/dict/default_projections.py) or in the 

@@ -4,10 +4,10 @@ import pandas as pd
 from Bio.Align import PairwiseAligner
 
 
-def double_check_data(data, filename, output_directory):
+def double_check_data(data, filename, df_xl_res, output_directory):
     # Check given datapoints and correct it, if possible/needed
     #
-    # input data: pd.DataFrame, filename: str, output_directory: str
+    # input data: pd.DataFrame, filename: str, df_xl_res: pd.DataFrame, output_directory: str
     # return data: pd.DataFrame
 
     log_text = ''
@@ -30,12 +30,12 @@ def double_check_data(data, filename, output_directory):
             log_text += "\tSUCCESS\n"
             continue
 
-        # FAIL: Neither K nor M is in the peptide (wrong peptide, or faulty interaction found)
-        if 'K' not in row["pep_a"] and 'M' not in row["pep_a"]:
-            log_text += f"{i}_a: pep_a does not contain K or M!\n"
+        # FAIL: Neither of the specified residues are in the peptide (wrong peptide, or faulty interaction found)
+        if all(res not in row["pep_a"] for res in df_xl_res.res.tolist()):
+            log_text += f"{i}_a: pep_a does not contain any of the specified residues!\n"
             log_text += "\tFAIL\n"
-        if 'K' not in row["pep_b"] and 'M' not in row["pep_b"]:
-            log_text += f"{i}_b: pep_b does not contain K or M!\n"
+        if all(res not in row["pep_b"] for res in df_xl_res.res.tolist()):
+            log_text += f"{i}_b: pep_b does not contain any of the specified residues!\n"
             log_text += "\tFAIL\n"
 
         # REPLACE: Replace methionineoxide with methionine in peptide
@@ -56,9 +56,9 @@ def double_check_data(data, filename, output_directory):
             log_text += f"{i}_b: pep_b is not completely in full seq_b\n"
             log_text += f"\tISSUE\n"
 
-        # Recompute lysin positions for site a and b
-        row, log_text = check_pep_pos(i, row, 'a', log_text)
-        row, log_text = check_pep_pos(i, row, 'b', log_text)
+        # Recompute residue positions for site a and b
+        row, log_text = check_pep_pos(i, row, 'a', df_xl_res, log_text)
+        row, log_text = check_pep_pos(i, row, 'b', df_xl_res, log_text)
         # Update row
         data.loc[i, :] = row
 
@@ -75,7 +75,7 @@ def double_check_data(data, filename, output_directory):
 
         # If any peptide was found multiple times, create possible variations (add them later (*))
         if pep_found_multiple_times:
-            datapoints, log_text = create_duplicates(row, log_text)
+            datapoints, log_text = create_duplicates(row, df_xl_res, log_text)
             new_datapoints.append(datapoints)
 
         # If not in known interactions, save unip ids and positions in known interactions, else drop datapoint
@@ -115,10 +115,10 @@ def double_check_data(data, filename, output_directory):
     return data
 
 
-def check_pep_pos(i, row, site, log_text):
+def check_pep_pos(i, row, site, df_xl_res, log_text):
     # Check given positions and correct it, if possible/needed
     #
-    # input i: int, row: pd.Series, site: str, log_text: str
+    # input i: int, row: pd.Series, site: str, df_xl_res: pd.DataFrame, log_text: str
     # return row: pd.Series, log_text: str
 
     seq = row[f"seq_{site}"]
@@ -127,112 +127,113 @@ def check_pep_pos(i, row, site, log_text):
 
     wrong_pos = False
     try:
-        # Check whether aminoacid at given position is either K or M
-        if seq[pep_pos - 1] not in ['K', 'M']:
-            log_text += f"{i}_{site}: residue in peptide at pos_{site} is not K or M.\n"
-            wrong_pos = True
-        # Check if residue is M, whether it is in position 1 of chain
-        elif (seq[pep_pos - 1] == 'M') and (pep_pos != 1):
-            log_text += f"{i}_{site}: residue in peptide at pos_{site} is M, but " \
-                        f"should only be possible in pos=1.\n"
+        # Check whether aminoacid at given position is one of the specified residues (position specific)
+        if not any((seq[pep_pos - 1] == dp.res) and (True if dp.pos == 0 else pep_pos == dp.pos)
+                   for _, dp in df_xl_res.iterrows()):
+            log_text += f"{i}_{site}: residue in peptide at pos_{site} is any of the specified residues.\n"
             wrong_pos = True
     except IndexError:
         # Catch given position out of bounds exception
         log_text += f"{i}_{site}: given pos_{site} is out of bounds of sequence.\n"
         wrong_pos = True
 
-    # Recompute position if acid at position is not K or M, or if position out of bounds
+    # Recompute position if acid at position is not of the specified ones, or if position out of bounds
     if wrong_pos:
+        pos_replaced = False
         # Count peptide-as-is-occurences in full sequence
         pep_count_in_seq = seq.count(peptide)
-        # Peptide occured exactly once in sequence (uniquely identified peptide)
-        if pep_count_in_seq == 1:
-            log_text += f"\tfound pep_{site} exactly once in full sequence\n"
 
-            # Count Lysins
-            k_count = peptide.count('K')
-            if k_count == 0:
-                log_text += f"\tno K found in pep_{site} (try M)\n"
-                m_count = peptide.count('K')
-
-                # FAIL: If no K and no M
-                if m_count == 0:
-                    log_text += "\tno M found either\n"
-                    log_text += "\tFAIL\n"
-                else:
-                    # SUCCESS: M should be in first position, if true replace given position with 1 (Verify, FAIL if wrong)
-                    if seq.find('M') != 0:
-                        log_text += "\tno M found in expected first position of full sequence\n"
-                        log_text += "\tFAIL\n"
+        # Parse through possible residues
+        for _, dp in df_xl_res.iterrows():
+            # Peptide occurred exactly once in sequence (uniquely identified peptide)
+            if pep_count_in_seq == 1:
+                # If position has not been replaced yet
+                if not pos_replaced:
+                    log_text += f"\tfound pep_{site} exactly once in full sequence\n"
+                    res_count = peptide.count(dp.res)
+                    if res_count == 0:
+                        log_text += f"\tno {dp.res} found in pep_{site}\n"
                     else:
-                        log_text += f"\tfound M at first position in pep_{site}\n"
-                        log_text += f"\tREPLACE: pos_{site}: {pep_pos} -> 1\n"
-                        row[f"pos_{site}"] = 1
-                        log_text += f"\t\tVERIFY: new residue is M: {seq[0] == 'M'}\n"
-                        if seq[0] == 'M':
+                        # Check if residue at specified position is the searched one
+                        if dp.pos != 0:
+                            log_text += f"\tcheck {dp.res} at specified position (={dp.pos}) in seq_{site}\n"
+                            log_text += f"\t\tVERIFY: new residue is {dp.res}: {seq[dp.pos - 1] == dp.res}\n"
+                            if seq[dp.pos - 1] == dp.res:
+                                row[f"pos_{site}"] = dp.pos
+                                log_text += f"\tREPLACE: pos_{site}: {pep_pos} -> {dp.pos}\n"
+                                log_text += f"\tSUCCESS\n"
+                                pos_replaced = True
+                            else:
+                                log_text += f"\tFAIL\n"
+                        # Else, try to find searched residue
+                        else:
+                            # SUCCESS: Uniquely identified residue, replace given position with its (Verify,
+                            # FAIL if wrong)
+                            if res_count == 1:
+                                log_text += f"\tfound {dp.res} exactly once in pep_{site}\n"
+                                new_pos = seq.find(peptide) + peptide.find(dp.res) + 1
+                                log_text += f"\t\tVERIFY: new residue is {dp.res}: {seq[new_pos - 1] == dp.res}\n"
+                                if seq[new_pos - 1] == dp.res:
+                                    row[f"pos_{site}"] = new_pos
+                                    log_text += f"\tREPLACE: pos_{site}: {pep_pos} -> {new_pos}\n"
+                                    log_text += f"\tSUCCESS\n"
+                                    pos_replaced = True
+                                else:
+                                    log_text += f"\tFAIL\n"
+
+                            # More than one searched residue in peptide (impossible to identify correct one, if not
+                            # specified by data)
+                            else:
+                                log_text += f"\tfound {dp.res} more than once in pep_{site}\n"
+                                # SUCCESS: Try res_pos specification (only for data by Liu et al.), if so replace given
+                                # position with it (Verify, FAIL if wrong)
+                                try:
+                                    res_pos = int(row[f"res_pos_{site}"])
+                                    log_text += f"\tres_pos_{site} was given\n"
+                                    new_pos = seq.find(peptide) + res_pos
+                                    log_text += f"\t\tVERIFY: new residue is {dp.res}: {seq[new_pos - 1] == dp.res}\n"
+                                    if seq[new_pos - 1] == dp.res:
+                                        row[f"pos_{site}"] = new_pos
+                                        log_text += f"\tREPLACE: pos_{site}: {pep_pos} -> {new_pos}\n"
+                                        log_text += f"\tSUCCESS\n"
+                                        pos_replaced = True
+                                    else:
+                                        log_text += f"\tFAIL\n"
+                                # FAIL: res_pos not given
+                                except:
+                                    log_text += f"\tres_pos_{site} was not given\n"
+                                    log_text += "\tFAIL\n"
+
+            # Align peptide to sequence, if peptide found more than once or not found
+            else:
+                # If position has not been replaced yet
+                if not pos_replaced:
+                    log_text += f"\tfound pep_{site} more than once or not even once in sequence\n"
+                    try:
+                        res_pos = int(row[f"res_pos_{site}"])
+                        log_text += f"\tres_pos_{site} was given\n"
+                        log_text += "\talign peptide to sequence\n"
+                        new_pos = realign_pep_to_seq(seq, peptide, res_pos)
+                        log_text += f"\t\tVERIFY: new residue is {dp.res}: {seq[new_pos - 1] == dp.res}\n"
+                        if seq[new_pos - 1] == dp.res:
+                            row[f"pos_{site}"] = new_pos
+                            log_text += f"\tREPLACE: pos_{site}: {pep_pos} -> {new_pos}\n"
                             log_text += f"\tSUCCESS\n"
+                            pos_replaced = True
                         else:
                             log_text += f"\tFAIL\n"
-
-            # SUCCESS: Uniquely identified K, replace given position with its (Verify, FAIL if wrong)
-            elif k_count == 1:
-                log_text += f"\tfound K exactly once in pep_{site}\n"
-                new_pos = seq.find(peptide) + peptide.find('K') + 1
-                log_text += f"\tREPLACE: pos_{site}: {pep_pos} -> {new_pos}\n"
-                row[f"pos_{site}"] = new_pos
-                log_text += f"\t\tVERIFY: new residue is K: {seq[new_pos - 1] == 'K'}\n"
-                if seq[new_pos - 1] == 'K':
-                    log_text += f"\tSUCCESS\n"
-                else:
-                    log_text += f"\tFAIL\n"
-
-            # More than one K in peptide (impossible to identify correct one, if not specified by data)
-            else:
-                log_text += f"\tfound K more than once in pep_{site}\n"
-                # SUCCESS: Try k_pos specification (only for data by Liu et al.), if so replace given position with its (Verify, FAIL if wrong)
-                try:
-                    k_pos = int(row[f"k_pos_{site}"])
-                    log_text += f"\tk_pos_{site} was given\n"
-                    new_pos = seq.find(peptide) + k_pos
-                    log_text += f"\tREPLACE: pos_{site}: {pep_pos} -> {new_pos}\n"
-                    row[f"pos_{site}"] = new_pos
-                    log_text += f"\t\tVERIFY: new residue is K: {seq[new_pos - 1] == 'K'}\n"
-                    if seq[new_pos - 1] == 'K':
-                        log_text += f"\tSUCCESS\n"
-                    else:
-                        log_text += f"\tFAIL\n"
-                # FAIL: k_pos not given
-                except:
-                    log_text += f"\tk_pos_{site} was not given\n"
-                    log_text += "\tFAIL\n"
-
-        # Align peptide to sequence, if peptide found more than once or not found
-        else:
-            try:
-                log_text += f"\tk_pos_{site} was given\n"
-                log_text += "\talign peptide to sequence\n"
-                k_pos = int(row[f"k_pos_{site}"])
-                new_pos = realign_pep_to_seq(seq, peptide, k_pos)
-                log_text += f"\tREPLACE: pos_{site}: {pep_pos} -> {new_pos}\n"
-                row[f"pos_{site}"] = new_pos
-                log_text += f"\t\tVERIFY: new residue is K: {seq[new_pos - 1] == 'K'}\n"
-                if seq[new_pos - 1] == 'K':
-                    log_text += f"\tSUCCESS\n"
-                else:
-                    log_text += f"\tFAIL\n"
-            except:
-                log_text += f"\tfound pep_{site} more than once or not even once in sequence\n"
-                log_text += "\talignment attempt failed\n"
-                log_text += "\tFAIL\n"
+                    except:
+                        log_text += "\talignment attempt failed\n"
+                        log_text += "\tFAIL\n"
 
     return row, log_text
 
 
-def realign_pep_to_seq(seq, peptide, k_pos):
-    # Align peptide to sequence and based on k_pos in peptide compute k_pos in sequence, return None if this fails
+def realign_pep_to_seq(seq, peptide, res_pos):
+    # Align peptide to sequence and based on res_pos in peptide compute res_pos in sequence, return None if this fails
     #
-    # input seq: str, peptide: str, k_pos: int
-    # return new_k_pos: int
+    # input seq: str, peptide: str, res_pos: int
+    # return new_res_pos: int
 
     # Set alignment parameters
     aligner = PairwiseAligner()
@@ -252,163 +253,166 @@ def realign_pep_to_seq(seq, peptide, k_pos):
     aligned_seq = str(alignment).split('\n')[0]
     aligned_pep = str(alignment).split('\n')[2]
 
-    # Find k_pos in aligned peptide
+    # Find res_pos in aligned peptide
     aligned_pep_i = -1
     aligned_pep_pos = 0
     for i, c in enumerate(aligned_pep):
         aligned_pep_i = i
         if c not in [' ', '-']:
             aligned_pep_pos += 1
-        if aligned_pep_pos == k_pos:
+        if aligned_pep_pos == res_pos:
             break
 
-    # Find k_pos in aligned sequence and compute according new_k_pos in unaligned sequence, return new_k_pos if
+    # Find res_pos in aligned sequence and compute according new_res_pos in unaligned sequence, return new_res_pos if
     # successful, else return None
     try:
         _ = aligned_seq[aligned_pep_i + 1]
-        new_k_pos = len(aligned_seq[:aligned_pep_i + 1].replace(' ', '').replace('-', ''))
-        if new_k_pos > 0:
+        new_res_pos = len(aligned_seq[:aligned_pep_i + 1].replace(' ', '').replace('-', ''))
+        if new_res_pos > 0:
             al_seq = str(alignment).split('\n')[1]
             print(f"\tAligned site (index: {aligned_pep_i}):\n"
                   f"\t\t{aligned_seq[aligned_pep_i]}\n"
                   f"\t\t{al_seq[aligned_pep_i]}\n"
                   f"\t\t{aligned_pep[aligned_pep_i]}")
-            return new_k_pos
+            return new_res_pos
         else:
             return None
     except IndexError:
         return None
 
 
-def create_duplicates(row, log_text):
+def create_duplicates(row, df_xl_res, log_text):
     # Check if peptides in datapoint occur multiple times in sequence, if so create dataset with possible permutations
     #
-    # input row: pd.Series, log_text: str
+    # input row: pd.Series, df_xl_res: pd.DataFrame, log_text: str
     # return new_datapoints: pd.DataFrame, log_text: str
 
     new_datapoints = []
 
     shift_a, \
-        shift_b = ('' for _ in range(2))
+        shift_b = (-1 for _ in range(2))
 
-    # Make sure that the crosslinked residue can be uniquely identified for pep_a
-    if ((row.pep_a.count('K') == 1) or row.k_pos_a.replace(' ', '')) and row.seq_a.count(row.pep_a) != 1:
-        # Find all positions of pep_a
-        pep_a_positions = [i for i in range(len(row.seq_a)) if row.seq_a[i:].startswith(row.pep_a)]
-        # Compute shift for pos_a
-        shift_a = row.pep_a.find('K') if row.pep_a.count('K') == 1 else int(row.k_pos_a) - 1
-        # Add old pos_a if not already in position set
-        old_pos_a = row.pos_a - shift_a - 1
-        if old_pos_a not in pep_a_positions:
-            pep_a_positions.append(old_pos_a)
-        pep_a_positions = sorted(pep_a_positions)
+    for _, dp in df_xl_res.iterrows():
+        # Only create new datapoints, if the current residue can be placed in multiple positions
+        if dp.pos == 0:
+            # Make sure that the crosslinked residue can be uniquely identified for pep_a
+            if ((row.pep_a.count(dp.res) == 1) or row.res_pos_a.replace(' ', '')) and row.seq_a.count(row.pep_a) != 1:
+                # Find all positions of pep_a
+                pep_a_positions = [i for i in range(len(row.seq_a)) if row.seq_a[i:].startswith(row.pep_a)]
+                # Compute shift for pos_a
+                shift_a = row.pep_a.find(dp.res) if row.pep_a.count(dp.res) == 1 else int(row.res_pos_a) - 1
+                # Add old pos_a if not already in position set
+                old_pos_a = row.pos_a - shift_a - 1
+                if old_pos_a not in pep_a_positions:
+                    pep_a_positions.append(old_pos_a)
+                pep_a_positions = sorted(pep_a_positions)
 
-    # Make sure that the crosslinked residue can be uniquely identified for pep_b
-    if ((row.pep_b.count('K') == 1) or row.k_pos_b) and row.seq_b.count(row.pep_b) != 1:
-        # Find all positions of pep_b
-        pep_b_positions = [i for i in range(len(row.seq_b)) if row.seq_b[i:].startswith(row.pep_b)]
-        # Compute shift for pos_b
-        shift_b = row.pep_b.find('K') if row.pep_b.count('K') == 1 else int(row.k_pos_b) - 1
-        # Add old pos_b if not already in position set
-        old_pos_b = row.pos_b - shift_b - 1
-        if old_pos_b not in pep_b_positions:
-            pep_b_positions.append(old_pos_b)
-        pep_b_positions = sorted(pep_b_positions)
+            # Make sure that the crosslinked residue can be uniquely identified for pep_b
+            if ((row.pep_b.count(dp.res) == 1) or row.res_pos_b) and row.seq_b.count(row.pep_b) != 1:
+                # Find all positions of pep_b
+                pep_b_positions = [i for i in range(len(row.seq_b)) if row.seq_b[i:].startswith(row.pep_b)]
+                # Compute shift for pos_b
+                shift_b = row.pep_b.find(dp.res) if row.pep_b.count(dp.res) == 1 else int(row.res_pos_b) - 1
+                # Add old pos_b if not already in position set
+                old_pos_b = row.pos_b - shift_b - 1
+                if old_pos_b not in pep_b_positions:
+                    pep_b_positions.append(old_pos_b)
+                pep_b_positions = sorted(pep_b_positions)
 
-    # Iterate through all possible peptide position permutations
-    ind = 1
-    if shift_a and shift_b:
-        total_count = len(pep_a_positions) * len(pep_b_positions)
-        for pos_a in pep_a_positions:
-            for pos_b in pep_b_positions:
-                # Create new datapoint and set up shifts
-                new_datapoint = row.copy()
-                new_pos_a = pos_a + shift_a + 1
-                new_pos_b = pos_b + shift_b + 1
+            # Iterate through all possible peptide position permutations
+            ind = 1
+            if shift_a != -1 and shift_b != -1:
+                total_count = len(pep_a_positions) * len(pep_b_positions)
+                for pos_a in pep_a_positions:
+                    for pos_b in pep_b_positions:
+                        # Create new datapoint and set up shifts
+                        new_datapoint = row.copy()
+                        new_pos_a = pos_a + shift_a + 1
+                        new_pos_b = pos_b + shift_b + 1
 
-                # If the new datapoint is not equal to the existing one
-                if (not ((row.pos_a == new_pos_a) and (row.pos_b == new_pos_b))) or \
-                        ((row.pep_a == row.pep_b) and (row.pos_b == new_pos_a) and (row.pos_a == new_pos_b)):
-                    log_text += f"\tcreate new datapoint ({ind} of {total_count}):\n"
-                    ind += 1
+                        # If the new datapoint is not equal to the existing one
+                        if (not ((row.pos_a == new_pos_a) and (row.pos_b == new_pos_b))) or \
+                                ((row.pep_a == row.pep_b) and (row.pos_b == new_pos_a) and (row.pos_a == new_pos_b)):
+                            log_text += f"\tcreate new datapoint ({ind} of {total_count}):\n"
+                            ind += 1
 
-                    # Verify new_pos_a
-                    log_text += f"\t\tpos_a: {row.pos_a} -> {new_pos_a}\n" \
-                                f"\t\tVERIFY: new residue is K: {row.seq_a[new_pos_a - 1] == 'K'}\n"
-                    if row.seq_a[new_pos_a - 1] == 'K':
-                        log_text += f"\t\t\tSUCCESS\n"
+                            # Verify new_pos_a
+                            log_text += f"\t\tpos_a: {row.pos_a} -> {new_pos_a}\n" \
+                                        f"\t\tVERIFY: new residue is {dp.res}: {row.seq_a[new_pos_a - 1] == dp.res}\n"
+                            if row.seq_a[new_pos_a - 1] == dp.res:
+                                log_text += f"\t\t\tSUCCESS\n"
+                            else:
+                                log_text += f"\t\t\tFAIL\n"
+                            new_datapoint.pos_a = new_pos_a
+
+                            # Verify new_pos_b
+                            log_text += f"\t\tpos_b: {row.pos_b} -> {new_pos_b}\n" \
+                                        f"\t\tVERIFY: new residue is {dp.res}: {row.seq_b[new_pos_b - 1] == dp.res}\n"
+                            if row.seq_b[new_pos_b - 1] == dp.res:
+                                log_text += f"\t\t\tSUCCESS\n"
+                            else:
+                                log_text += f"\t\t\tFAIL\n"
+                            new_datapoint.pos_b = new_pos_b
+
+                            new_datapoints.append(new_datapoint)
+                        else:
+                            log_text += f"\tdatapoint already in dataset ({ind} of {total_count})\n"
+                            ind += 1
+
+            elif shift_a != -1:
+                total_count = len(pep_a_positions)
+                for pos_a in pep_a_positions:
+                    # Create new datapoint and set up shifts
+                    new_datapoint = row.copy()
+                    new_pos_a = pos_a + shift_a + 1
+
+                    # If the new datapoint is not equal to the existing one
+                    if not (row.pos_a == new_pos_a):
+                        log_text += f"\tcreate new datapoint ({ind} of {total_count}):\n"
+                        ind += 1
+
+                        # Verify new_pos_a
+                        log_text += f"\t\tpos_a: {row.pos_a} -> {new_pos_a}\n" \
+                                    f"\t\tVERIFY: new residue is {dp.res}: {row.seq_a[new_pos_a - 1] == dp.res}\n"
+                        if row.seq_a[new_pos_a - 1] == dp.res:
+                            log_text += f"\t\t\tSUCCESS\n"
+                        else:
+                            log_text += f"\t\t\tFAIL\n"
+                        new_datapoint.pos_a = new_pos_a
+
+                        new_datapoints.append(new_datapoint)
                     else:
-                        log_text += f"\t\t\tFAIL\n"
-                    new_datapoint.pos_a = new_pos_a
+                        log_text += f"\tdatapoint already in dataset ({ind} of {total_count})\n"
+                        ind += 1
 
-                    # Verify new_pos_b
-                    log_text += f"\t\tpos_b: {row.pos_b} -> {new_pos_b}\n" \
-                                f"\t\tVERIFY: new residue is K: {row.seq_b[new_pos_b - 1] == 'K'}\n"
-                    if row.seq_b[new_pos_b - 1] == 'K':
-                        log_text += f"\t\t\tSUCCESS\n"
+            elif shift_b != -1:
+                total_count = len(pep_b_positions)
+                for pos_b in pep_b_positions:
+                    # Create new datapoint and set up shifts
+                    new_datapoint = row.copy()
+                    new_pos_b = pos_b + shift_b + 1
+
+                    # If the new datapoint is not equal to the existing one
+                    if not (row.pos_b == new_pos_b):
+                        log_text += f"\tcreate new datapoint ({ind} of {total_count}):\n"
+                        ind += 1
+
+                        # Verify new_pos_b
+                        log_text += f"\t\tpos_b: {row.pos_b} -> {new_pos_b}\n" \
+                                    f"\t\tVERIFY: new residue is {dp.res}: {row.seq_b[new_pos_b - 1] == dp.res}\n"
+                        if row.seq_b[new_pos_b - 1] == dp.res:
+                            log_text += f"\t\t\tSUCCESS\n"
+                        else:
+                            log_text += f"\t\t\tFAIL\n"
+                        new_datapoint.pos_b = new_pos_b
+
+                        new_datapoints.append(new_datapoint)
                     else:
-                        log_text += f"\t\t\tFAIL\n"
-                    new_datapoint.pos_b = new_pos_b
+                        log_text += f"\tdatapoint already in dataset ({ind} of {total_count})\n"
+                        ind += 1
 
-                    new_datapoints.append(new_datapoint)
-                else:
-                    log_text += f"\tdatapoint already in dataset ({ind} of {total_count})\n"
-                    ind += 1
-
-    elif shift_a:
-        total_count = len(pep_a_positions)
-        for pos_a in pep_a_positions:
-            # Create new datapoint and set up shifts
-            new_datapoint = row.copy()
-            new_pos_a = pos_a + shift_a + 1
-
-            # If the new datapoint is not equal to the existing one
-            if not (row.pos_a == new_pos_a):
-                log_text += f"\tcreate new datapoint ({ind} of {total_count}):\n"
-                ind += 1
-
-                # Verify new_pos_a
-                log_text += f"\t\tpos_a: {row.pos_a} -> {new_pos_a}\n" \
-                            f"\t\tVERIFY: new residue is K: {row.seq_a[new_pos_a - 1] == 'K'}\n"
-                if row.seq_a[new_pos_a - 1] == 'K':
-                    log_text += f"\t\t\tSUCCESS\n"
-                else:
-                    log_text += f"\t\t\tFAIL\n"
-                new_datapoint.pos_a = new_pos_a
-
-                new_datapoints.append(new_datapoint)
             else:
-                log_text += f"\tdatapoint already in dataset ({ind} of {total_count})\n"
-                ind += 1
-
-    elif shift_b:
-        total_count = len(pep_b_positions)
-        for pos_b in pep_b_positions:
-            # Create new datapoint and set up shifts
-            new_datapoint = row.copy()
-            new_pos_b = pos_b + shift_b + 1
-
-            # If the new datapoint is not equal to the existing one
-            if not (row.pos_b == new_pos_b):
-                log_text += f"\tcreate new datapoint ({ind} of {total_count}):\n"
-                ind += 1
-
-                # Verify new_pos_b
-                log_text += f"\t\tpos_b: {row.pos_b} -> {new_pos_b}\n" \
-                            f"\t\tVERIFY: new residue is K: {row.seq_b[new_pos_b - 1] == 'K'}\n"
-                if row.seq_b[new_pos_b - 1] == 'K':
-                    log_text += f"\t\t\tSUCCESS\n"
-                else:
-                    log_text += f"\t\t\tFAIL\n"
-                new_datapoint.pos_b = new_pos_b
-
-                new_datapoints.append(new_datapoint)
-            else:
-                log_text += f"\tdatapoint already in dataset ({ind} of {total_count})\n"
-                ind += 1
-
-    else:
-        log_text += f"\tattempt to create new datapoints for peptide copies in full protein sequence failed\n" \
-                    f"\tFAIL\n"
+                log_text += f"\tattempt to create new datapoints for peptide copies in full protein sequence failed\n" \
+                            f"\tFAIL\n"
 
     return pd.concat(new_datapoints, axis=1).transpose(), log_text

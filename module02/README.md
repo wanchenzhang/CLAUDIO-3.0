@@ -32,15 +32,15 @@
 ### Input
 This tool requires a CSV-file containing multiple observed cross-linking interactions. Two columns have to contain 
 UniProt IDs for each interacting residue, two columns the observed peptides for each interacting residue,
-two columns the crosslinked lysin's position within the full sequence (alternative: fill these with
-Nans, but add two columns with the lysin's positions in the respective peptides), two columns with the UniProt sequences,
+two columns the crosslinked residue's position within the full sequence (alternative: fill these with
+Nans, but add two columns with the residue's positions in the respective peptides), two columns with the UniProt sequences,
 and one column with the initial cross-link type estimation.\
 It is recommended to start the analysis of your dataset with [module01](https://github.com/KohlbacherLab/CLAUDIO/tree/main/module01),
 which will generate said CSV-file with the extension '.sqcs'. If you wish to skip this step though, or if you customized
 the output file used as input here, check this list to ensure that you can run this module:
 * file has to have the extension '.sqcs'
 * file is formatted like a normal CSV-file
-* file has columns "unip_id_a", "unip_id_b", "pep_a", "pep_b", "seq_a", "seq_b", "pos_a", "pos_b", "k_pos_a", "k_pos_b",
+* file has columns "unip_id_a", "unip_id_b", "pep_a", "pep_b", "seq_a", "seq_b", "pos_a", "pos_b", "res_pos_a", "res_pos_b",
 and "XL_type", each filled with information (in that order) of UniProt IDs [strings], peptides [strings], UniProt 
 sequences [strings], crosslinked residue positions in full UniProt sequences [integers], (alternative to normal 
 positions) positions of the crosslinked residue in the peptides [integers], and initial estimation of cross-link type 
@@ -62,7 +62,7 @@ histograms describing their resolutions and experimental methods, and one CSV-fi
 structural distance analysis, all pertaining the project's default dataset 
 ['liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv'](https://github.com/KohlbacherLab/CLAUDIO/blob/main/data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv).
 ```
-python3 claudio_structdi.py -i "c/user/documents/cross_links.csv -p "{'my_entry1': 'unip_id_a', 'my_entry2': 'unip_id_b', "peptide1": "pep_a", "peptide2": "pep_b", "position1": "pos_a", "position2": "pos_b", "k_pos1": "k_pos_a", "k_pos2": "k_pos_b", "gene1": "gene_a", "gene2": "gene_b", "Publication": "pub"}" -rt True -o "c/user/documents/outs"
+python3 claudio_structdi.py -i "c/user/documents/cross_links.csv -p "{'my_entry1': 'unip_id_a', 'my_entry2': 'unip_id_b', "peptide1": "pep_a", "peptide2": "pep_b", "position1": "pos_a", "position2": "pos_b", "k_pos1": "res_pos_a", "k_pos2": "res_pos_b", "gene1": "gene_a", "gene2": "gene_b", "Publication": "pub"}" -rt True -o "c/user/documents/outs"
 ```
 This will result in the respective outputs into the directory "c/user/documents/outs" for the placeholder 
 'cross_links.csv' using the temporary save files from the last execution (if this has not been run previously with the 

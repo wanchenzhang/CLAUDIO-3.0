@@ -1,6 +1,7 @@
 import click
 import time
 import sys
+import pandas as pd
 import os
 
 from module02.src_distance_reevaluation.io.read_uniprot_search_out import read_unipsearch_out
@@ -14,10 +15,11 @@ from module02.src_distance_reevaluation.algorithm.create_plots import create_his
 @click.option("-i", "--input-directory", default="data/out/structure_search")
 @click.option("-i2", "--input-filepath", default="data/out/unique_protein_list/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.sqcs_structdi.csv")
 @click.option("-t", "--search-tool", default="blastp")
+@click.option("-x", "--xl-residues", default="K,M:1")
 @click.option("-p", "--plddt-cutoff", default=70.0)
 @click.option("-o", "--output-directory", default="data/out/dist_reeval")
 @click.option("-tl", "--topolink-bin", default=None)
-def main(input_directory, input_filepath, search_tool, plddt_cutoff, output_directory, topolink_bin):
+def main(input_directory, input_filepath, search_tool, xl_residues, plddt_cutoff, output_directory, topolink_bin):
     print("Start intra interaction check\n")
     start_time = time.time()
 
@@ -36,14 +38,21 @@ def main(input_directory, input_filepath, search_tool, plddt_cutoff, output_dire
         topolink_bin += '/'
 
     # If parameters inputted by user valid
-    if inputs_valid(input_directory, input_filepath, search_tool, plddt_cutoff, output_directory, topolink_bin):
+    if inputs_valid(input_directory, input_filepath, search_tool, xl_residues, plddt_cutoff, output_directory,
+                    topolink_bin):
+        # Define dataset for crosslink residues including possible positions
+        df_xl_res = pd.DataFrame()
+        df_xl_res["res"] = [s.split(':')[0] for s in xl_residues.replace(';', ',').split(',')]
+        df_xl_res["pos"] = [int(s.split(':')[-1]) if s.split(':')[-1].isdigit() else 0
+                            for s in xl_residues.replace(';', ',').split(',')]
+
         # Read result from uniprot_search, e.g. sqcs-file
         print("Read peptide information from uniprot search results")
         data = read_unipsearch_out(input_filepath)
 
         # Search for site positions in pdb files (replace rcsb pdb with alphafold, if not able to find it there)
         print("Search site pos in pdb files (replace rcsb-pdb with alphafold-pdb if needed)")
-        data = search_site_pos_in_pdb(data)
+        data = search_site_pos_in_pdb(data, df_xl_res)
 
         # Compute distances of sites, and if distance calculation successful compute new xl_type
         print("Calculate presumed interaction site distances and evaluate interaction likelihood")
@@ -62,27 +71,37 @@ def main(input_directory, input_filepath, search_tool, plddt_cutoff, output_dire
     sys.exit()
 
 
-def inputs_valid(input_directory, input_filename, search_tool, plddt_cutoff, output_directory, topolink_bin):
+def inputs_valid(input_directory, input_filename, search_tool, xl_residues, plddt_cutoff, output_directory,
+                 topolink_bin):
     # check validity of inputted parameters
     #
-    # input input_directory: str, input_filename: str, search_tool: str, plddt_cutoff: float, output_directory: str,
-    # topolink_bin: str/None
+    # input input_directory: str, input_filename: str, search_tool: str, xl_residues: str, plddt_cutoff: float,
+    # output_directory: str, topolink_bin: str/None
     # return inputs_valid: bool
 
     if any([".pdb" in filename for filename in os.listdir(input_directory)]):
         if input_filename.endswith(".sqcs_structdi.csv"):
             if search_tool in ["blastp", "hhsearch"]:
-                # check whether plddt cutoff has valid value
+                # check whether xl_residues can be turned into a proper DataFrame, else return False
                 try:
-                    plddt_cutoff = float(plddt_cutoff)
-                    if 0 <= plddt_cutoff <= 100:
-                        return True
-                    else:
-                        print(f"pLDDT cutoff value should be in [0, 100] (given: {plddt_cutoff}).")
+                    df_xl_res = pd.DataFrame()
+                    df_xl_res["res"] = [s.split(':')[0] for s in xl_residues.replace(';', ',').split(',')]
+                    df_xl_res["pos"] = [int(s.split(':')[-1]) if s.split(':')[-1].isdigit() else 0
+                                        for s in xl_residues.replace(';', ',').split(',')]
+                    # check whether plddt cutoff has valid value
+                    try:
+                        plddt_cutoff = float(plddt_cutoff)
+                        if 0 <= plddt_cutoff <= 100:
+                            return True
+                        else:
+                            print(f"pLDDT cutoff value should be in [0, 100] (given: {plddt_cutoff}).")
+                    except:
+                        print(
+                            f"Value given for pLDDT cutoff should be possible to turn into a float "
+                            f"(given: {plddt_cutoff}).")
                 except:
-                    print(
-                        f"Value given for pLDDT cutoff should be possible to turn into a float "
-                        f"(given: {plddt_cutoff}).")
+                    print(f"Error! Could not properly parse xl_residues for accepted crosslinked residues "
+                          f"(given: {xl_residues}).")
             else:
                 print(f"Error! Invalid search tool! (given: {search_tool})")
         else:
