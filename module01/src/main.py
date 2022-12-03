@@ -67,14 +67,14 @@ def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, 
         df_xl_res["pos"] = [int(s.split(':')[-1]) if s.split(':')[-1].isdigit() else 0
                             for s in xl_residues.replace(';', ',').split(',')]
 
-        # Read input file: extract dataset, whether all datapoints are intra type interactions
+        # Read input file
         print("Read input")
-        data, intra_only = read_inputfile(input_filepath, projections)
+        data = read_inputfile(input_filepath, projections)
 
         # uniprot_search parameter is True actually perform a new search, else try to retrieve previous results
         # from temporary save file
         print("Retrieve UniProt sequences" if uniprot_search else "Retrieve UniProt sequences from temporary save")
-        data = do_uniprot_search(data, intra_only, filename) if uniprot_search \
+        data = do_uniprot_search(data, filename) if uniprot_search \
             else read_temp_search_save(data, filename)
 
         print("Check datapoints for inconsistencies")
@@ -83,13 +83,13 @@ def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, 
         print("Changes made to dataset written to log-file")
 
         # Write list of unique protein pairs and unique proteins overall
-        print("Write unique protein and protein pairs lists")
-        unique_pair_list, unique_proteins_list = create_list_of_unique_proteins(data, search_tool, blast_bin, blast_db,
-                                                                                hhsearch_bin, hhsearch_db, hhsearch_out)
+        print("Write unique proteins lists")
+        unique_proteins_list = create_list_of_unique_proteins(data, search_tool, blast_bin, blast_db, hhsearch_bin,
+                                                              hhsearch_db, hhsearch_out)
 
         # Write ouput csv
         print("Write output")
-        write_outputs(data, unique_pair_list, unique_proteins_list, intra_only, filename, output_directory)
+        write_outputs(data, unique_proteins_list, filename, output_directory)
 
     print(f"\nEnd script (Elapsed time: {round(time.time() - start_time, 2)}s)")
     print("===================================")

@@ -8,4 +8,4 @@ def read_unipsearch_out(input_filename):
     # return data: pd.DataFrame
 
     data = pd.read_csv(input_filename, index_col=0)
-    return data[data.XL_type == "intra"]
+    return data

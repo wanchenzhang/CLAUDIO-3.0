@@ -14,7 +14,7 @@ def retrieve_oligomeric_states(data):
     # container for already searched oligo-states
     known_oligo_states = []
 
-    data["oligo_states"] = data.apply(lambda x: get_oligo_state_from_swiss(x, known_oligo_states), axis=1)
+    data["swiss_model_homology"] = data.apply(lambda x: get_oligo_state_from_swiss(x, known_oligo_states), axis=1)
     return data
 
 
@@ -30,9 +30,9 @@ def get_oligo_state_from_swiss(data, known_oligo_states):
     known_unips = [x[0] for x in known_oligo_states]
 
     # if uniprot id not in already searched entries, do search in SWISS-MODEL
-    if not data['unip_id_a'] in known_unips:
+    if not data['unip_id'] in known_unips:
         # set json url with uniprot id up
-        url = f"{url}{data['unip_id_a']}.json"
+        url = f"{url}{data['unip_id']}.json"
 
         # repeat SWISS-MODEL calls for consistency (SWISS-MODEL has shown to inconsistently return empty API call
         # results)
@@ -55,8 +55,8 @@ def get_oligo_state_from_swiss(data, known_oligo_states):
         oligo_states = '_'.join(oligo_states)
 
         # add result to known oligomeric states
-        known_oligo_states.append((data['unip_id_a'], oligo_states))
+        known_oligo_states.append((data['unip_id'], oligo_states))
         return oligo_states
     # Else retrieve already known oligomeric state result from list
     else:
-        return known_oligo_states[known_unips.index(data['unip_id_a'])][1]
+        return known_oligo_states[known_unips.index(data['unip_id'])][1]

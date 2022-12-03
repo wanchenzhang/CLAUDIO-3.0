@@ -9,4 +9,4 @@ def read_in(input_filepath):
 
     data = pd.read_csv(input_filepath, index_col=0)
 
-    return data[data["XL_type"] == "intra"]
+    return data

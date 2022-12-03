@@ -12,6 +12,6 @@ def read_temp_search_save(data, filepath):
     project_path = project_path + '/' if project_path else ""
     tmp_filepath = f"{project_path}data/temp/uniprot_search/" \
                    f"{'.'.join(filepath.split('.')[:-1])}_srtmp.{filepath.split('.')[-1]}"
-    tmp_data = pd.read_csv(tmp_filepath)[["seq_a", "seq_b"]]
+    tmp_data = pd.read_csv(tmp_filepath)
 
     return pd.concat([data, tmp_data], axis=1)

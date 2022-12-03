@@ -3,11 +3,11 @@ import sys
 import pandas as pd
 
 
-def read_temp_file(data, search_tool, intra_only, temp_path):
+def read_temp_file(data, search_tool, temp_path):
     # read temporary save file containing earlier hhsearch or blastp search results and concatenate them to the dataset,
     # for quick reruns
     #
-    # input data: pd.DataFrame, search_tool: str, intra_only: bool, temp_path: str
+    # input data: pd.DataFrame, search_tool: str, temp_path: str
     # return read_temp_file: pd.DataFrame
 
     dataset, filename = data
@@ -17,8 +17,5 @@ def read_temp_file(data, search_tool, intra_only, temp_path):
     dataset["pdb_id"] = tmp_data["pdb_id"]
     dataset["chain"] = tmp_data["chain"]
     dataset["all_results"] = tmp_data["all_results"]
-    if not intra_only:
-        dataset["pdb_id_b"] = tmp_data["pdb_id_b"]
-        dataset["chain_b"] = tmp_data["chain_b"]
-        dataset["all_results_b"] = tmp_data["all_results_b"]
+
     return dataset.fillna('')

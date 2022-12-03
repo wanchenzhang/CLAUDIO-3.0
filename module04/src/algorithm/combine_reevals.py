@@ -19,7 +19,7 @@ def combine_inter_reevaluations(data, plddt_cutoff, linker_minimum, linker_maxim
     # new crosslink type based on evidence
     data["evidence"] = data.apply(lambda x: write_evidence(x, plddt_cutoff, linker_minimum, linker_maximum,
                                                            euclidean_strictness), axis=1)
-    data["final_XL_type"] = data.apply(lambda x: "inter" if x.evidence else "intra", axis=1)
+    data["XL_type"] = data.apply(lambda x: "inter" if x.evidence else "intra", axis=1)
     return data
 
 
@@ -36,8 +36,8 @@ def score_inter_potential(datapoint, plddt_cutoff, linker_minimum, linker_maximu
 
     # calculate distance argument of inter protein crosslink confidence score, if plddt included, which is True if entry
     # is not retrieved from AlphaFold or if both plddts surpass or are equal to the given cutoff
-    dist_argument = (not pd.isna(datapoint.eucl_dist_tplk)) and \
-                    (not pd.isna(datapoint.topo_dist_tplk)) and \
+    dist_argument = (not pd.isna(datapoint.eucl_dist)) and \
+                    (not pd.isna(datapoint.topo_dist)) and \
                     (datapoint.pLDDT_a == '-' or float(datapoint.pLDDT_a) >= plddt_cutoff) and \
                     (datapoint.pLDDT_b == '-' or float(datapoint.pLDDT_b) >= plddt_cutoff)
 
@@ -51,20 +51,20 @@ def score_inter_potential(datapoint, plddt_cutoff, linker_minimum, linker_maximu
             euclidean_linker_maximum = euclidean_linker_maximum if euclidean_linker_maximum > 0 else 0
 
             # calculate euclidean distance score
-            eucl_dist = datapoint.eucl_dist_tplk if datapoint.eucl_dist_tplk < distance_maximum else distance_maximum
+            eucl_dist = datapoint.eucl_dist if datapoint.eucl_dist < distance_maximum else distance_maximum
             raw_eucl_score = (eucl_dist - euclidean_linker_maximum) / (distance_maximum - euclidean_linker_maximum)
-            if datapoint.eucl_dist_tplk <= euclidean_linker_minimum:
+            if datapoint.eucl_dist <= euclidean_linker_minimum:
                 score += .25
-            elif datapoint.eucl_dist_tplk >= euclidean_linker_maximum:
+            elif datapoint.eucl_dist >= euclidean_linker_maximum:
                 score += raw_eucl_score * .25
 
         # calculate topological distance score
-        topo_dist = datapoint.topo_dist_tplk if datapoint.topo_dist_tplk < distance_maximum else distance_maximum
+        topo_dist = datapoint.topo_dist if datapoint.topo_dist < distance_maximum else distance_maximum
         raw_topo_score = (topo_dist - linker_maximum) / (distance_maximum - linker_maximum)
-        if datapoint.topo_dist_tplk <= linker_minimum:
+        if datapoint.topo_dist <= linker_minimum:
             # If the euclidean strictness is set to None the max score for topological is 0.5, else 0.25
             score += .25 if euclidean_strictness is not None else .5
-        elif datapoint.topo_dist_tplk >= linker_maximum:
+        elif datapoint.topo_dist >= linker_maximum:
             # If the euclidean strictness is set to None the max score for topological is 0.5, else 0.25
             score += raw_topo_score * .25 if euclidean_strictness is not None else raw_topo_score * .5
 
@@ -86,8 +86,8 @@ def write_evidence(datapoint, plddt_cutoff, linker_minimum, linker_maximum, eucl
 
     # calculate distance argument of inter protein crosslink confidence score, if plddt included, which is True if
     # entry is not retrieved from AlphaFold or if both plddts surpass or are equal to the given cutoff
-    dist_arg = (not pd.isna(datapoint.eucl_dist_tplk)) and \
-               (not pd.isna(datapoint.topo_dist_tplk)) and \
+    dist_arg = (not pd.isna(datapoint.eucl_dist)) and \
+               (not pd.isna(datapoint.topo_dist)) and \
                (datapoint.pLDDT_a == '-' or float(datapoint.pLDDT_a) >= plddt_cutoff) and \
                (datapoint.pLDDT_b == '-' or float(datapoint.pLDDT_b) >= plddt_cutoff)
 
@@ -101,17 +101,17 @@ def write_evidence(datapoint, plddt_cutoff, linker_minimum, linker_maximum, eucl
 
         # set boolean arguments whether euclidean distance is not in linker range, whether topological distance is
         # not in linker range, both distances are lower than minimum, and both distances are higher than maximum
-        e_dist_arg = (datapoint.eucl_dist_tplk <= euclidean_linker_minimum) or \
-                     (datapoint.eucl_dist_tplk >= euclidean_linker_maximum) \
+        e_dist_arg = (datapoint.eucl_dist <= euclidean_linker_minimum) or \
+                     (datapoint.eucl_dist >= euclidean_linker_maximum) \
             if euclidean_strictness is not None else False
-        t_dist_arg = (datapoint.topo_dist_tplk <= linker_minimum) or \
-                     (datapoint.topo_dist_tplk >= linker_maximum)
-        min_dist_arg = (datapoint.eucl_dist_tplk <= euclidean_linker_minimum) and \
-                       (datapoint.topo_dist_tplk <= linker_minimum) \
-            if euclidean_strictness is not None else datapoint.topo_dist_tplk <= linker_minimum
-        max_dist_arg = (datapoint.eucl_dist_tplk >= euclidean_linker_maximum) and \
-                       (datapoint.topo_dist_tplk >= linker_maximum) \
-            if euclidean_strictness is not None else datapoint.topo_dist_tplk >= linker_maximum
+        t_dist_arg = (datapoint.topo_dist <= linker_minimum) or \
+                     (datapoint.topo_dist >= linker_maximum)
+        min_dist_arg = (datapoint.eucl_dist <= euclidean_linker_minimum) and \
+                       (datapoint.topo_dist <= linker_minimum) \
+            if euclidean_strictness is not None else datapoint.topo_dist <= linker_minimum
+        max_dist_arg = (datapoint.eucl_dist >= euclidean_linker_maximum) and \
+                       (datapoint.topo_dist >= linker_maximum) \
+            if euclidean_strictness is not None else datapoint.topo_dist >= linker_maximum
 
     # write evidence for same peptide if residue positions are equal
     if datapoint.pos_a == datapoint.pos_b:
@@ -131,14 +131,14 @@ def write_evidence(datapoint, plddt_cutoff, linker_minimum, linker_maximum, eucl
                     elif max_dist_arg:
                         dist_evidence += "distances above range"
                 elif e_dist_arg:
-                    if datapoint.eucl_dist_tplk <= euclidean_linker_minimum:
+                    if datapoint.eucl_dist <= euclidean_linker_minimum:
                         dist_evidence += "only euclidean distance below range"
-                    elif datapoint.eucl_dist_tplk >= euclidean_linker_maximum:
+                    elif datapoint.eucl_dist >= euclidean_linker_maximum:
                         dist_evidence += "only euclidean distance above range"
                 elif t_dist_arg:
-                    if datapoint.topo_dist_tplk <= linker_minimum:
+                    if datapoint.topo_dist <= linker_minimum:
                         dist_evidence += "only topological distance below range"
-                    elif datapoint.topo_dist_tplk >= linker_maximum:
+                    elif datapoint.topo_dist >= linker_maximum:
                         dist_evidence += "only topological distance above range"
             else:
                 if t_dist_arg:

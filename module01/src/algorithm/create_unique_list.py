@@ -7,89 +7,37 @@ import os
 
 
 def create_list_of_unique_proteins(data, search_tool, blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out):
-    # create pandas dataframe of unique proteins depending on uniprot ids, and in the same way create list of unique
-    # protein interaction pairs
+    # create pandas dataframe of unique proteins depending on uniprot ids
     #
     # input data: pd.DataFrame, search_tool: str, blast_bin: str/None, blast_db: str, hhsearch_bin: str/None,
-    # hhsearch_db: str, hhsearch_out:str
-    # return unique_pair_list: pd.DataFrame, unique_proteins_list: pd.DataFrame
+    # hhsearch_db: str, hhsearch_out: str
+    # return unique_proteins_list: pd.DataFrame
 
-    # Create data container lists
-    unique_proteins, \
-        unique_pairs, \
-        unique_protein_indeces, \
-        unique_pair_indeces, \
-        unique_protein_counts, \
-        unique_pair_counts, \
-        unique_sequences = ([] for _ in range(7))
+    # Collect first rows in dataset of unique proteins
+    unique_protein_rows = [data[data.unip_id == protein].iloc[0] for protein in data.unip_id.unique()]
 
-    for i, row in data.iterrows():
-        pair = (row["unip_id_a"], row["unip_id_b"])
-        seqs = (row["seq_a"], row["seq_b"])
-
-        # Check if first protein of pair is a new protein, if so add them to list of unique proteins, add their index
-        # to list of unique protein indeces and set the respective count to 1, else just increase the counter by one
-        is_known_protein = pair[0] in unique_proteins
-        if not is_known_protein:
-            unique_proteins.append(pair[0])
-            unique_protein_indeces.append(i)
-            unique_protein_counts.append(1)
-            unique_sequences.append(seqs[0])
-        else:
-            unique_protein_counts[unique_proteins.index(pair[0])] += 1
-
-        # Check if second protein of pair is a new protein, if so add them to list of unique proteins, add their index
-        # to list of unique protein indeces and set the respective count to 1, else just increase the counter by one
-        is_known_protein = pair[1] in unique_proteins
-        if not is_known_protein:
-            unique_proteins.append(pair[1])
-            unique_protein_indeces.append(i)
-            unique_protein_counts.append(1)
-            unique_sequences.append(seqs[1])
-        elif pair[0] != pair[1]:
-            unique_protein_counts[unique_proteins.index(pair[1])] += 1
-
-        # Check if protein pair is a new pair (also check reverse tuple), if so add it to list of unique pairs, add
-        # its index to list of unique pair indeces and set the respective count to 1,
-        # else just increase the counter by one
-        is_known_pair = (pair in unique_pairs) or (reversed(pair) in unique_pairs)
-        if not is_known_pair:
-            unique_pairs.append(pair)
-            unique_pair_indeces.append(i)
-            unique_pair_counts.append(1)
-        else:
-            try:
-                unique_pair_counts[unique_pairs.index(pair)] += 1
-            except KeyError:
-                unique_pair_counts[unique_pairs.index(reversed(pair))] += 1
+    # Collect uniprot ids, indeces, sequences and counts of unique proteins
+    unique_proteins = data.unip_id.unique().tolist()
+    unique_protein_indeces = [row.name for row in unique_protein_rows]
+    unique_sequences = [row.seq for row in unique_protein_rows]
+    unique_protein_counts = [len(data[data.unip_id == protein].index) for protein in unique_proteins]
 
     # Apply uniprot search for information on unique proteins
     infos = search_uniprot_metadata(unique_proteins)
     # Apply blastp or hhsearch search for pdb entries on unique proteins by their sequences
     pdbs = search_pdb_entries(unique_proteins, unique_sequences, search_tool, blast_bin, blast_db, hhsearch_bin,
                               hhsearch_db, hhsearch_out)
-    # Retrieve pair (sequences and) pdb entries for unique pair list
-    _, pair_pdbs = get_pair_seqs_pdbs(unique_sequences, pdbs, unique_proteins, unique_pairs)
 
     # Collect information of unique proteins for final unique protein list dataset
     unique_proteins_list = pd.DataFrame()
-    unique_proteins_list["index"] = unique_protein_indeces
+    unique_proteins_list["Index"] = unique_protein_indeces
     for i, head in enumerate(infos[0][0].split('\t')):
         unique_proteins_list[head] = [info[1].split('\t')[i].replace('\"', '') for info in infos]
-    unique_proteins_list["pdb"] = pdbs
-    # unique_proteins_list["ostat"] = get_oligo_states(unique_proteins)
-    unique_proteins_list["count"] = unique_protein_counts
+    unique_proteins_list["Sequence"] = unique_sequences
+    unique_proteins_list["PDB"] = pdbs
+    unique_proteins_list["Count"] = unique_protein_counts
 
-    # Collect information of unique protein pairs for final unique protein pair list dataset
-    unique_pair_list = pd.DataFrame()
-    unique_pair_list["index"] = unique_pair_indeces
-    unique_pair_list["protein1"] = [x for x, _ in unique_pairs]
-    unique_pair_list["protein2"] = [x for _, x in unique_pairs]
-    unique_pair_list["pdb1"] = [x for x, _ in pair_pdbs]
-    unique_pair_list["pdb2"] = [x for _, x in pair_pdbs]
-    unique_pair_list["count"] = unique_pair_counts
-
-    return unique_pair_list, unique_proteins_list
+    return unique_proteins_list
 
 
 def search_uniprot_metadata(unique_proteins):
@@ -183,40 +131,3 @@ def search_pdb_entries(proteins, sequences, search_tool, blast_bin, blast_db, hh
     print()
 
     return pdbs
-
-
-def get_pair_seqs_pdbs(sequences, pdbs, unique_proteins, unique_pairs):
-    # match sequences and pdb ids of proteins from unique protein list to protein pairs in unique pair list
-    #
-    # input sequences: list(str), pdbs: list(str), unique_proteins: list(str), unique_pairs: list((str, str))
-    # return pair_sequences: list((str, str)), pair_pdbs: list((str, str))
-
-    # Create data container lists
-    pair_sequences, \
-        pair_pdbs = ([] for _ in range(2))
-
-    # Iterate over protein pairs
-    for pair in unique_pairs:
-        # Intialize targets
-        seq1, \
-            seq2, \
-            pdb1, \
-            pdb2 = ('' for _ in range(4))
-
-        # Iterate over sequences and pdb ids, if respective unique protein matches to either pair protein, save their
-        # sequence in pdb id
-        for i in range(len(unique_proteins)):
-            if pair[0] == unique_proteins[i]:
-                seq1 = sequences[i]
-                pdb1 = pdbs[i]
-            if pair[1] == unique_proteins[i]:
-                seq2 = sequences[i]
-                pdb2 = pdbs[i]
-            # If both sequences were found, e.g. the pair was fully discovered, append them to container lists, and
-            # skip to next iteration
-            if seq1 and seq2:
-                pair_sequences.append((seq1, seq2))
-                pair_pdbs.append((pdb1, pdb2))
-                break
-
-    return pair_sequences, pair_pdbs

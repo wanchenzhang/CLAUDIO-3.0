@@ -5,106 +5,114 @@ input_filepath = data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonred
 
 #2.column name projections (map your column names to this pipeline's)
 #type: string
-#ex.: {"your_pep1": "pep_a", "your_pep2": "pep_b", "your_pos1": "pos_a", "your_pos2": "pos_b", "your_k_pos1": "res_pos_a", "your_k_pos2": "res_pos_b", "your_entry1": "unip_id_a", "your_entry2": "unip_id_b", "your_gene1": "gene_a", "your_gene2": "gene_b", "your_publication": "pub"}
-projections = {"peptide1": "pep_a", "peptide2": "pep_b", "position1": "pos_a", "position2": "pos_b", "k_pos1": "res_pos_a", "k_pos2": "res_pos_b", "entry1": "unip_id_a", "entry2": "unip_id_b", "gene1": "gene_a", "gene2": "gene_b", "Publication": "pub"}
+#ex.: {"your_pep1": "pep_a", "your_pep2": "pep_b", "your_pos1": "pos_a", "your_pos2": "pos_b", "your_res_pos1": "res_pos_a", "your_res_pos2": "res_pos_b", "your_uniprot_entry_id": "unip_id"}
+projections = {"peptide1": "pep_a", "peptide2": "pep_b", "position1": "pos_a", "position2": "pos_b", "k_pos1": "res_pos_a", "k_pos2": "res_pos_b", "entry1": "unip_id"}
 
 #3.read some results from temporary save from previous run (overwritten each time)
 #type: boolean
 #ex.: True
 read_temps = False
 
-#4.search tool for structure search (either hhsearch or blastp)
+#4.tiny commaseperated list of possibly crosslinked residues, as one-letter-code symbols, by the crosslinker. Optionally
+#the user may add a ':' and an integer value after the symbol to indicate specific positions in the full protein
+#sequence. If you want to specify multiple possible positions for the same symbol you have to add them individually
+#(ex.: "M:1,M:2")
+#type: string
+#ex.: K,M:1 #for Disuccinimidyl suberate (DSS) linker
+K,M:1
+
+#5.search tool for structure search (either hhsearch or blastp)
 #type: string
 #ex.: blastp / hhsearch
 search_tool = blastp
 
-#5.e-value of structure search
+#6.e-value of structure search
 #type: float [0,1]
 #ex.: 0.3
 e_value = 0.00001
 
-#6.query identity of structure search
+#7.query identity of structure search
 #type: float [0,100]
 #ex.: 55.0
 query_id = 90.0
 
-#7.coverage of structure search
+#8.coverage of structure search
 #type: float [0,100]
 #ex.: 55.0
 coverage = 50.0
 
-#8.resolution cutoff value, for which structure files will be included if they are either equal or lower
+#9.resolution cutoff value, for which structure files will be included if they are either equal or lower
 #type: float [0,infty)
 #ex.: 5.0
 res_cutoff = 6.5
 
-#9.alphafold structure pLDDT cutoff value, for which structure distances will be included if they are either equal or
+#10.alphafold structure pLDDT cutoff value, for which structure distances will be included if they are either equal or
 #higher
 #type: float [0,100]
 #ex.: 55.0
 plddt_cutoff = 70.0
 
-#10.minimum of crosslinker range capability in angstrom (not included in accepted range)
+#11.minimum of crosslinker range capability in angstrom (not included in accepted range)
 #type: float [0,x]
 #ex.: 5.0
 linker_minimum = 0.0
 
-#11.maximum of crosslinker range capability in angstrom (included into accepted range)
+#12.maximum of crosslinker range capability in angstrom (included into accepted range)
 #type: float [x,infty)
 #ex.: 20.0
 linker_maximum = 35.0
 
-#12.strictness for euclidean distance, e.g. value substracted from euclidean distance in angstrom for confidence score
+#13.strictness for euclidean distance, e.g. value substracted from euclidean distance in angstrom for confidence score
 #calculation, or None if euclidean score is not to be included into the final scoring (in which case only the
 #topological distance and OPS analysis are included)
 #type: float [0,infty) / None
 #ex.: None
 euclidean_strictness = 5.0
 
-#13.distance maximum which, if surpassed, by either the topological or euclidean distance replaces its value for the
+#14.distance maximum which, if surpassed, by either the topological or euclidean distance replaces its value for the
 #confidence score (this ensures that outliers do not negatively impact the scoring)
 #type: float [0,infty)
 #ex.: 100.0
 distance_maximum = 50.0
 
-#14.inter protein crosslink confidence score cutoff
+#15.inter protein crosslink confidence score cutoff
 #type: float [0,1]
 #ex.: 0.1
 cutoff = 0.0
 
-#15.output directory for results
+#16.output directory for results
 #type: string
 #ex.: /home/me/desktop/my_outputs
 output_directory = data/out/full
 
-#16.binary directory in blast installation, or None if binary directory has been added to PATH variable (e.g. if blast
+#17.binary directory in blast installation, or None if binary directory has been added to PATH variable (e.g. if blast
 can be called from anywhere)
 #type: string / None
 #ex.: /home/me/desktop/ncbi-blast-2.13.0+/bin
 blast_bin = None
 
-#17.database directory for blast installation
+#18.database directory for blast installation
 #type: string
 #ex.: /home/me/desktop/ncbi-blast-2.13.0+/blastdb
 blast_db = $BLASTDB
 
-#18.binary directory in hh-suite installation, or None if binary directory has been added to PATH variable (e.g. if
+#19.binary directory in hh-suite installation, or None if binary directory has been added to PATH variable (e.g. if
 hhsearch can be called from anywhere)
 #type: string / None
 #ex.: /home/me/desktop/hh-suite-3.3.0/bin
 hhsearch_bin = None
 
-#19.database directory for hh-suite installation
+#20.database directory for hh-suite installation
 #type: string
 #ex.: /home/me/desktop/hh-suite-3.3.0/hhdb
 hhsearch_db = $HHDB
 
-#20.output directory for hhsearch results
+#21.output directory for hhsearch results
 #type: string
 #ex.: /home/me/desktop/hh-suite-3.3.0/hhout
 hhsearch_out = $HHOUT
 
-#21.binary directory in topolink installation, or None if binary directory has been added to PATH variable (e.g. if
+#22.binary directory in topolink installation, or None if binary directory has been added to PATH variable (e.g. if
 topolink can be called from anywhere)
 #type: string / None
 #ex.: /home/me/desktop/my_outputs

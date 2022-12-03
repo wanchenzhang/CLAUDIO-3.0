@@ -62,6 +62,12 @@ def main(input_directory, input_filepath, search_tool, xl_residues, plddt_cutoff
         print("Create distance histograms")
         create_histogram(data, input_filepath.split('/')[-1], output_directory)
 
+        # Drop temporary result columns
+        data.drop(["path", "pdb_method", "pdb_resolution", "eucl_dist"], axis=1, inplace=True)
+        # Rename certain result columns
+        data.rename(columns={"best_res_pdb_method": "pdb_method", "best_res_pdb_resolution": "pdb_resolution",
+                             "eucl_dist_tplk": "eucl_dist", "topo_dist_tplk": "topo_dist"}, inplace=True)
+
         # Overwrite previous outputfile of module02
         print("Overwrite outputfile")
         write_output(data, input_filepath)

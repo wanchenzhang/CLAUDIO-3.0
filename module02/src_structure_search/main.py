@@ -65,30 +65,30 @@ def main(input_filepath, do_structure_search, search_tool, e_value, query_id, co
 
         # Read dataset and add columns for results
         print("Read input")
-        data, intra_only = read_in(input_filepath)
+        data, filename = read_in(input_filepath)
 
         # If given variable do_structure_search is True perform new search, else retrieve results from earlier temporary
         # save file
         if do_structure_search:
             print(f"Perform {search_tool} search")
-            data = structure_search(data, search_tool, e_value, query_id, coverage, intra_only, temp_save_search_path,
+            data = structure_search(data, filename, search_tool, e_value, query_id, coverage, temp_save_search_path,
                                     blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out)
         else:
             print("Read from temporary save file")
-            data = read_temp_file(data, search_tool, intra_only, temp_save_search_path)
+            data = read_temp_file(data, search_tool, temp_save_search_path)
 
         # Download structure files from RCSB database into structures subdirectory, if search tool found a proper
         # result, else use uniprot ID in order to attempt retrieval of matching AlphaFold entry
         print("Download structures from RCSB database, or AlphaFold database if not found there")
         if not os.path.exists(f"{output_directory}structures"):
             os.mkdir(f"{output_directory}structures")
-        data = download_pdbs(data, search_tool, intra_only, res_cutoff, f"{output_directory}structures/")
+        data = download_pdbs(data, search_tool, res_cutoff, f"{output_directory}structures/")
 
-        # Drop result columns
-        data.drop("all_results" if intra_only else ["all_results", "all_results_b"], axis=1, inplace=True)
+        # Drop temporary result columns
+        data.drop(["all_results"], axis=1, inplace=True)
 
         # Write new output
-        write_output(data, input_filepath.split('/')[-1], output_directory)
+        write_output(data, filename, output_directory)
 
     print(f"\nEnd script (Elapsed time: {round(time.time() - start_time, 2)}s)")
     print("===================================")

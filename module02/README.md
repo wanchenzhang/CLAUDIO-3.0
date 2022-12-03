@@ -40,11 +40,10 @@ which will generate said CSV-file with the extension '.sqcs'. If you wish to ski
 the output file used as input here, check this list to ensure that you can run this module:
 * file has to have the extension '.sqcs'
 * file is formatted like a normal CSV-file
-* file has columns "unip_id_a", "unip_id_b", "pep_a", "pep_b", "seq_a", "seq_b", "pos_a", "pos_b", "res_pos_a", "res_pos_b",
-and "XL_type", each filled with information (in that order) of UniProt IDs [strings], peptides [strings], UniProt 
-sequences [strings], crosslinked residue positions in full UniProt sequences [integers], (alternative to normal 
-positions) positions of the crosslinked residue in the peptides [integers], and initial estimation of cross-link type 
-(e.g. if the UniProt IDs are the same "intra", else "inter") [strings].
+* file has columns "unip_id", "pep_a", "pep_b", "seq", "pos_a", "pos_b", "res_pos_a", "res_pos_b", 
+each filled with information (in that order) of UniProt IDs [strings], peptides [strings], UniProt sequences [strings], 
+crosslinked residue positions in full UniProt sequences [integers], and (alternative to normal positions) positions of 
+the crosslinked residue in the peptides [integers].
 
 ### Output
 This tool will return a directory full of pdb structure files, which were necessary for the computation, a CSV-file 
@@ -62,7 +61,7 @@ histograms describing their resolutions and experimental methods, and one CSV-fi
 structural distance analysis, all pertaining the project's default dataset 
 ['liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv'](https://github.com/KohlbacherLab/CLAUDIO/blob/main/data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv).
 ```
-python3 claudio_structdi.py -i "c/user/documents/cross_links.csv -p "{'my_entry1': 'unip_id_a', 'my_entry2': 'unip_id_b', "peptide1": "pep_a", "peptide2": "pep_b", "position1": "pos_a", "position2": "pos_b", "k_pos1": "res_pos_a", "k_pos2": "res_pos_b", "gene1": "gene_a", "gene2": "gene_b", "Publication": "pub"}" -rt True -o "c/user/documents/outs"
+python3 claudio_structdi.py -i "c/user/documents/cross_links.csv -p "{'my_entry1': 'unip_id', 'peptide1': 'pep_a', 'peptide2': 'pep_b', 'position1': 'pos_a', 'position2': 'pos_b', 'k_pos1': 'res_pos_a', 'k_pos2': 'res_pos_b'}" -rt True -o "c/user/documents/outs"
 ```
 This will result in the respective outputs into the directory "c/user/documents/outs" for the placeholder 
 'cross_links.csv' using the temporary save files from the last execution (if this has not been run previously with the 

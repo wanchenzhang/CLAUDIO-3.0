@@ -53,7 +53,7 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, linker_m
         print("Retrieve known oligomeric states from SWISS-MODEL")
         data = retrieve_oligomeric_states(data)
 
-        # data.oligo_states.fillna(value="", inplace=True) # TODO
+        # data.swiss_model_homology.fillna(value="", inplace=True) # TODO
 
         # Create inter score histogram
         print("Create inter score histogram")

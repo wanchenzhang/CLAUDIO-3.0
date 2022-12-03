@@ -7,8 +7,4 @@ liu18_schweppe17_linked_residues_intra_homo_2672_nonredundant = {"peptide1": "pe
                                                                  "position2": "pos_b",
                                                                  "k_pos1": "res_pos_a",
                                                                  "k_pos2": "res_pos_b",
-                                                                 "entry1": "unip_id_a",
-                                                                 "entry2": "unip_id_b",
-                                                                 "gene1": "gene_a",
-                                                                 "gene2": "gene_b",
-                                                                 "Publication": "pub"}
+                                                                 "entry1": "unip_id"}

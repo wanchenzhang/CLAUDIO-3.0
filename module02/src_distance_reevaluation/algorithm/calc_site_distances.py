@@ -121,9 +121,9 @@ def compute_dists_with_topolink(data, plddt_cutoff, topolink_bin):
                 try:
                     # observed LYS A 468 LYS A 457
                     # LINK: LYS A 457 CA LYS A 468 CA 11.814 12.568 YES 0.000 35.000 OK: FOUND 1 / 1 1 / 1 YY YY
-                    link_strs = [' '.join([Polypeptide.one_to_three(row['seq_a'][row['pos_a'] - 1]),
+                    link_strs = [' '.join([Polypeptide.one_to_three(row['seq'][row['pos_a'] - 1]),
                                            row['chain'], str(int(row['pdb_pos_a']))]),
-                                 ' '.join([Polypeptide.one_to_three(row['seq_b'][row['pos_b'] - 1]),
+                                 ' '.join([Polypeptide.one_to_three(row['seq'][row['pos_b'] - 1]),
                                            row['chain'], str(int(row['pdb_pos_b']))])]
                     if link_strs not in known_link_strs:
                         obs_str += f"  observed {' '.join(link_strs)}\n"

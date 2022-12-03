@@ -24,7 +24,7 @@ def double_check_data(data, filename, df_xl_res, output_directory):
         print(f"\r\t[{round(ind * 100 / data_len, 2)}%]", end='')
 
         # SUCCESS: Remove empty entry
-        if type(row["seq_a"]) != str:
+        if type(row["seq"]) != str:
             log_text += f"{i}: empty entry. will be removed\n"
             data.drop(i, inplace=True)
             log_text += "\tSUCCESS\n"
@@ -49,11 +49,11 @@ def double_check_data(data, filename, df_xl_res, output_directory):
             log_text += "\tREPLACE: Mo -> M\n"
 
         # ISSUE: Check if peptide is in full sequence as is (possible insertions are not considered)
-        if row["pep_a"] not in row["seq_a"]:
-            log_text += f"{i}_a: pep_a is not completely in full seq_a\n"
+        if row["pep_a"] not in row["seq"]:
+            log_text += f"{i}_a: pep_a is not completely in full seq\n"
             log_text += f"\tISSUE\n"
-        if row["pep_b"] not in row["seq_b"]:
-            log_text += f"{i}_b: pep_b is not completely in full seq_b\n"
+        if row["pep_b"] not in row["seq"]:
+            log_text += f"{i}_b: pep_b is not completely in full seq\n"
             log_text += f"\tISSUE\n"
 
         # Recompute residue positions for site a and b
@@ -64,12 +64,12 @@ def double_check_data(data, filename, df_xl_res, output_directory):
 
         # ISSUE: Check if peptide occurs multiple times in full sequence as is (possible insertions are not considered)
         pep_found_multiple_times = False
-        if row["seq_a"].count(row["pep_a"]) > 1:
-            log_text += f"{i}_a: pep_a was found more than once in full seq_a\n"
+        if row["seq"].count(row["pep_a"]) > 1:
+            log_text += f"{i}_a: pep_a was found more than once in full seq\n"
             log_text += f"\tISSUE\n"
             pep_found_multiple_times = True
-        if row["seq_b"].count(row["pep_b"]) > 1:
-            log_text += f"{i}_b: pep_b was found more than once in full seq_b\n"
+        if row["seq"].count(row["pep_b"]) > 1:
+            log_text += f"{i}_b: pep_b was found more than once in full seq\n"
             log_text += f"\tISSUE\n"
             pep_found_multiple_times = True
 
@@ -79,8 +79,8 @@ def double_check_data(data, filename, df_xl_res, output_directory):
             new_datapoints.append(datapoints)
 
         # If not in known interactions, save unip ids and positions in known interactions, else drop datapoint
-        interaction_info1 = [row["pos_a"], row["unip_id_a"], row["pos_b"], row["unip_id_b"]]
-        interaction_info2 = [row["pos_b"], row["unip_id_b"], row["pos_a"], row["unip_id_a"]]
+        interaction_info1 = [row["unip_id"], row["pos_a"], row["pos_b"]]
+        interaction_info2 = [row["unip_id"], row["pos_b"], row["pos_a"]]
         if not(interaction_info1 in known_inters) and not(interaction_info2 in known_inters):
             known_inters.append(interaction_info1)
             known_inters.append(interaction_info2)
@@ -121,7 +121,7 @@ def check_pep_pos(i, row, site, df_xl_res, log_text):
     # input i: int, row: pd.Series, site: str, df_xl_res: pd.DataFrame, log_text: str
     # return row: pd.Series, log_text: str
 
-    seq = row[f"seq_{site}"]
+    seq = row.seq
     pep_pos = int(row[f"pos_{site}"])
     peptide = row[f"pep_{site}"]
 
@@ -156,7 +156,7 @@ def check_pep_pos(i, row, site, df_xl_res, log_text):
                     else:
                         # Check if residue at specified position is the searched one
                         if dp.pos != 0:
-                            log_text += f"\tcheck {dp.res} at specified position (={dp.pos}) in seq_{site}\n"
+                            log_text += f"\tcheck {dp.res} at specified position (={dp.pos}) in seq\n"
                             log_text += f"\t\tVERIFY: new residue is {dp.res}: {seq[dp.pos - 1] == dp.res}\n"
                             if seq[dp.pos - 1] == dp.res:
                                 row[f"pos_{site}"] = dp.pos
@@ -296,9 +296,9 @@ def create_duplicates(row, df_xl_res, log_text):
         # Only create new datapoints, if the current residue can be placed in multiple positions
         if dp.pos == 0:
             # Make sure that the crosslinked residue can be uniquely identified for pep_a
-            if ((row.pep_a.count(dp.res) == 1) or row.res_pos_a.replace(' ', '')) and row.seq_a.count(row.pep_a) != 1:
+            if ((row.pep_a.count(dp.res) == 1) or row.res_pos_a.replace(' ', '')) and row.seq.count(row.pep_a) != 1:
                 # Find all positions of pep_a
-                pep_a_positions = [i for i in range(len(row.seq_a)) if row.seq_a[i:].startswith(row.pep_a)]
+                pep_a_positions = [i for i in range(len(row.seq)) if row.seq[i:].startswith(row.pep_a)]
                 # Compute shift for pos_a
                 shift_a = row.pep_a.find(dp.res) if row.pep_a.count(dp.res) == 1 else int(row.res_pos_a) - 1
                 # Add old pos_a if not already in position set
@@ -308,9 +308,9 @@ def create_duplicates(row, df_xl_res, log_text):
                 pep_a_positions = sorted(pep_a_positions)
 
             # Make sure that the crosslinked residue can be uniquely identified for pep_b
-            if ((row.pep_b.count(dp.res) == 1) or row.res_pos_b) and row.seq_b.count(row.pep_b) != 1:
+            if ((row.pep_b.count(dp.res) == 1) or row.res_pos_b) and row.seq.count(row.pep_b) != 1:
                 # Find all positions of pep_b
-                pep_b_positions = [i for i in range(len(row.seq_b)) if row.seq_b[i:].startswith(row.pep_b)]
+                pep_b_positions = [i for i in range(len(row.seq)) if row.seq[i:].startswith(row.pep_b)]
                 # Compute shift for pos_b
                 shift_b = row.pep_b.find(dp.res) if row.pep_b.count(dp.res) == 1 else int(row.res_pos_b) - 1
                 # Add old pos_b if not already in position set
@@ -338,8 +338,8 @@ def create_duplicates(row, df_xl_res, log_text):
 
                             # Verify new_pos_a
                             log_text += f"\t\tpos_a: {row.pos_a} -> {new_pos_a}\n" \
-                                        f"\t\tVERIFY: new residue is {dp.res}: {row.seq_a[new_pos_a - 1] == dp.res}\n"
-                            if row.seq_a[new_pos_a - 1] == dp.res:
+                                        f"\t\tVERIFY: new residue is {dp.res}: {row.seq[new_pos_a - 1] == dp.res}\n"
+                            if row.seq[new_pos_a - 1] == dp.res:
                                 log_text += f"\t\t\tSUCCESS\n"
                             else:
                                 log_text += f"\t\t\tFAIL\n"
@@ -347,8 +347,8 @@ def create_duplicates(row, df_xl_res, log_text):
 
                             # Verify new_pos_b
                             log_text += f"\t\tpos_b: {row.pos_b} -> {new_pos_b}\n" \
-                                        f"\t\tVERIFY: new residue is {dp.res}: {row.seq_b[new_pos_b - 1] == dp.res}\n"
-                            if row.seq_b[new_pos_b - 1] == dp.res:
+                                        f"\t\tVERIFY: new residue is {dp.res}: {row.seq[new_pos_b - 1] == dp.res}\n"
+                            if row.seq[new_pos_b - 1] == dp.res:
                                 log_text += f"\t\t\tSUCCESS\n"
                             else:
                                 log_text += f"\t\t\tFAIL\n"
@@ -373,8 +373,8 @@ def create_duplicates(row, df_xl_res, log_text):
 
                         # Verify new_pos_a
                         log_text += f"\t\tpos_a: {row.pos_a} -> {new_pos_a}\n" \
-                                    f"\t\tVERIFY: new residue is {dp.res}: {row.seq_a[new_pos_a - 1] == dp.res}\n"
-                        if row.seq_a[new_pos_a - 1] == dp.res:
+                                    f"\t\tVERIFY: new residue is {dp.res}: {row.seq[new_pos_a - 1] == dp.res}\n"
+                        if row.seq[new_pos_a - 1] == dp.res:
                             log_text += f"\t\t\tSUCCESS\n"
                         else:
                             log_text += f"\t\t\tFAIL\n"
@@ -399,8 +399,8 @@ def create_duplicates(row, df_xl_res, log_text):
 
                         # Verify new_pos_b
                         log_text += f"\t\tpos_b: {row.pos_b} -> {new_pos_b}\n" \
-                                    f"\t\tVERIFY: new residue is {dp.res}: {row.seq_b[new_pos_b - 1] == dp.res}\n"
-                        if row.seq_b[new_pos_b - 1] == dp.res:
+                                    f"\t\tVERIFY: new residue is {dp.res}: {row.seq[new_pos_b - 1] == dp.res}\n"
+                        if row.seq[new_pos_b - 1] == dp.res:
                             log_text += f"\t\t\tSUCCESS\n"
                         else:
                             log_text += f"\t\t\tFAIL\n"

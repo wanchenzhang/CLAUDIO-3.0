@@ -152,12 +152,12 @@ def compute_site_pos(i, data, site_id, pdb_uni_map, method, df_xl_res):
     # Extract pdb_id, chain_id and unip_id from data
     pdb_id = data["pdb_id"]
     chain_id = data["chain"]
-    unip_id = data[f"unip_id_{site_id}"]
+    unip_id = data["unip_id"]
     new_path = ''
     # Test whether specified position is accessible in uniprot sequence, if not return fail with i_error = 0
     try:
-        print(f"\n\tunip_pos:{data[f'pos_{site_id}']}, Acid at pos: {data[f'seq_{site_id}'][data[f'pos_{site_id}'] - 1]}"
-              f", fulfills residue criteria: {data[f'seq_{site_id}'][data[f'pos_{site_id}'] - 1] in df_xl_res.res.tolist()}")
+        print(f"\n\tunip_pos:{data[f'pos_{site_id}']}, Acid at pos: {data['seq'][data[f'pos_{site_id}'] - 1]}"
+              f", fulfills residue criteria: {data['seq'][data[f'pos_{site_id}'] - 1] in df_xl_res.res.tolist()}")
     except IndexError:
         print(f"\n\tIndexError with unip_pos: {data[f'pos_{site_id}']} (entry: {i}, unip_id: {unip_id})")
         return None, False, method, 0, '-', ''
@@ -212,7 +212,7 @@ def compute_site_pos(i, data, site_id, pdb_uni_map, method, df_xl_res):
                     pdb_seq += Polypeptide.three_to_one(res.get_resname())
                 except:
                     continue
-            unip_seq = data[f"seq_{site_id}"]
+            unip_seq = data["seq"]
             method = "realigning" if method != "alphafold" else "alphafold"
             if method == "realigning":
                 residue_pos = realign_unip_pos_in_pdb_seq(pdb_seq, unip_seq, data[f"pos_{site_id}"])
@@ -303,7 +303,7 @@ def compute_site_pos(i, data, site_id, pdb_uni_map, method, df_xl_res):
                   f"(entry: {i}, pdb: {pdb_id}:{chain_id})")
             return None, False, method, 5, '-', ''
         res_criteria = (resname in df_xl_res.res.tolist()) and \
-                       (resname == data[f'seq_{site_id}'][data[f'pos_{site_id}'] - 1])
+                       (resname == data['seq'][data[f'pos_{site_id}'] - 1])
         print(f"\tFinal residue is '{resname}' (thus res_criteria_{site_id}: {res_criteria})")
         # If residue criteria fulfilled return result
         if res_criteria:
