@@ -1,6 +1,6 @@
 # CLAUDIO 
 
-*CLAUDIO*, the Cross-linking data analysis tool utilizing structural distances and overlapping peptide sequences, allows
+*CLAUDIO*, the tool for "**C**ross-**l**inking **a**nalysis **u**sing **di**stances and **o**verlaps", allows
 for a methodical stepwise evaluation of cross-linking interaction types via in-depth analysis of structure and sequence 
 information. It returns structural restraints, which can be applied in structure predictions, and the input dataset
 extended by its analysis' results. 
@@ -17,58 +17,54 @@ Packages:
 * pandas
 * requests
 
-The packages may be installed individually:
-```
-pip install biopython
-```
-or all at once with the file [requirements.txt](https://github.com/KohlbacherLab/CLAUDIO/blob/main/requirements.txt):
+The packages may be installed all at once with the file [requirements.txt](https://github.com/KohlbacherLab/CLAUDIO/blob/main/requirements.txt):
 ```
 pip install -r requirements.txt
+```
+or individually:
+```
+pip install biopython
+pip install click
+pip install matplotlib
+pip install pandas
+pip install requests
 ```
 Note: Both approaches need to refer to the pip-installer associated to the python installation, that will be used to run
 the tool.
 
 ### External Tools
-This tool furthermore utilizes the following external softwares:
-* *Blast* (see [Installation Manual](https://www.ncbi.nlm.nih.gov/books/NBK52640/))
-* *HHsearch* (see [GitHub](https://github.com/soedinglab/hh-suite))
-* *TopoLink* (see [Installation Manual](http://leandro.iqm.unicamp.br/topolink/download.shtml))
+In order to run *CLAUDIO* you need to install the following external tools:
+* **Topolink** (for structural analysis)
+* **BLASTP** and/or **HHsearch** (for finding suitable protein structures (recommended: BLASTP))
 
-In order to run CLAUDIO installing BlastP or HHsearch, and TopoLink is required. This means you can choose to either 
-install:
-* *Blast* and *TopoLink*
-* *HHsearch* and *TopoLink*
-* *Blast*, *HHsearch* and *TopoLink*
+####Links to Installation Manuals
+* *Blast* (see [Installation Manual](https://www.ncbi.nlm.nih.gov/books/NBK52640/))
+  * For Blast, you also have to download the newest `pdbaa` database. You may do so by navigating into your 
+  Blast installation directory and running the following command:
+    ```
+    perl bin/update_blastdb.pl --passive --decompress pdbaa
+    ```
+    Hint: If you followed the Installation Manual (linked up top) to-the-letter, you may have added the variable
+    `$BLASTDB` to your paths. If so, you can use this variable instead of the full path in the input parameters of CLAUDIO.
+* *HHsearch* (see [GitHub](https://github.com/soedinglab/hh-suite))
+  * For HHsearch, you also have to download its newest `pdb70` database found 
+  [here](https://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/). 
+* *TopoLink* (see [Installation Manual](http://leandro.iqm.unicamp.br/topolink/download.shtml))
 
 To ease the execution of *CLAUDIO* you may want to ensure that these tools can be executed directly from your terminal 
 (e.g. add their respective `bin` directories to the `Path` variable of your OS). Otherwise, you must specify the
 location of the `bin` directories in the input parameters.
 
-**For Blast:**\
-If you installed Blast, you also have to download the newest `pdbaa` database. You may do so by navigating into your 
-Blast installation directory and running the following command:
-```
-perl bin/update_blastdb.pl --passive --decompress pdbaa
-```
-Hint: If you followed the Installation Manual (linked up top) to-the-letter, you may have added the variable `$BLASTDB`
-to your paths. If so, you can use this variable instead of the full path in the input parameters of CLAUDIO.
-
-**For HHsearch:**\
-If you installed HHsearch, you also have to download its newest `pdb70` database (from [here](https://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/)).
-
-**For TopoLink:**\
-No additional steps are necessary.
-
 ### Online connection
-CLAUDIO calls upon the API of a number of bioinformatic online databases ([UniProt](https://www.uniprot.org/), 
+*CLAUDIO* calls upon the API of a number of bioinformatic online databases ([UniProt](https://www.uniprot.org/), 
 [RCSB](https://www.rcsb.org/), [AlphaFold](https://alphafold.ebi.ac.uk/), and 
-[SWISS-MODEL](https://swissmodel.expasy.org/)) during most of its computations. This means it cannot be run offline.\
+[SWISS-MODEL](https://swissmodel.expasy.org/)) during its computations. This means it cannot be run offline.\
 It is furthermore recommended having a stable internet connection, as otherwise certain API calls may not be answered or
-lead to empty results. This of course, also necessitates the database's servers to be running properly as well. If 
+lead to empty results. This of course, also necessitates the database server's side to be running properly as well. If 
 errors or suspicious inconsistencies in the results persist due to this, you may want to try again later.
 
 ## Usage
-CLAUDIO consists of a total of 5 modules. Each module can be run independently as long as appropriate inputs can be 
+*CLAUDIO* consists of a total of 4 modules. Each module can be run independently as long as appropriate inputs are 
 delivered. For details on how to run the modules individually see their respective README-files.
 * [Module 01 - Unique protein (pair) listing tool](https://github.com/KohlbacherLab/CLAUDIO/blob/main/module01/README.md)
 * [Module 02 - Structural distance analysis tool](https://github.com/KohlbacherLab/CLAUDIO/blob/main/module02/README.md)
@@ -77,6 +73,9 @@ delivered. For details on how to run the modules individually see their respecti
 
 For details on how to run the **full** pipeline continue below.
 
+---
+---
+
 ## CLAUDIO - Full pipeline
 ### The CLI - Command Line Interface
 ```
@@ -84,14 +83,16 @@ For details on how to run the **full** pipeline continue below.
 
 -i,    --input-filepath,        path to inputfile,
                                 default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv"
--p,    --projections,           string which can be parsed as dictionary, containing the column names for the uniprot 
-                                entry columns (for naming convention see second example (Note: all values are 
-                                mandatory, only change the keys accordingly)),
-                                default=str(liu18_schweppe17_linked_residues_intra_homo_2672_nonredundant)
+-p,    --projections,           comma-separated list used to map the input dataset column names to the ones used by the 
+                                tool (for naming convention see second example (Note: all keys (values before the 
+                                colons) are mandatory, and have to be mapped correctly onto the respective columns in 
+                                the input dataset). The order does not matter here.),
+                                default="pep_a:peptide1,pep_b:peptide2,pos_a:position1,pos_b:position2,res_pos_a:k_pos1,res_pos_b:k_pos2,unip_id_a:entry1,unip_id_b:entry2"
 -rt,   --read-temps,            if the tool has been run before with the same input a temporary file was saved, which
                                 can be used to skip some of the steps, default=False
--x,    --xl-residues,           commaseperated one-letter-code residues, optional: add ':' after the one-letter-code 
-                                symbol of the residue in order to specify fulls equence position, default="K,M:1"
+-x,    --xl-residues,           comma-separated one-letter-code residues, optional: add ':' after the one-letter-code 
+                                symbol of the residue in order to specify full sequence position (either 1 for start, or 
+                                -1 for end position), default="K,M:1"
 -t,    --search-tool,           can be either "blastp" or "hhsearch", specifying the tool which should be used for pdb 
                                 search, default="blastp"
 -e,    --e-value,               e-value used in structure search, default=1e-5
@@ -134,10 +135,11 @@ input, which maps the column names of your dataset to the ones used in the tool.
 All parameters can be given in a configuration file (see example: [config.txt](https://github.com/KohlbacherLab/CLAUDIO/blob/main/config.txt)).
 
 ### Output
-This tool returns all the outputs listed in the other modules (see 
+This tool returns all the outputs listed in the modules (see 
 [module01](https://github.com/KohlbacherLab/CLAUDIO/tree/main/module01),
 [module02](https://github.com/KohlbacherLab/CLAUDIO/tree/main/module02),
-[module03](https://github.com/KohlbacherLab/CLAUDIO/tree/main/module03)).
+[module03](https://github.com/KohlbacherLab/CLAUDIO/tree/main/module03),
+[module04](https://github.com/KohlbacherLab/CLAUDIO/tree/main/module04)).
 Note: All CSV-file outputs pertaining the input dataset are summarized into a single one (marked with 
 '_final.csv'-extension), e.g. the output CSV-file of module01 ending with '.sqcs', of module02 ending with 
 '.sqcs_structdi.csv', and of module03 ending with '.sqcs_ops.csv' will be summarized here. 

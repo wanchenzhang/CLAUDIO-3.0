@@ -30,6 +30,14 @@ def double_check_data(data, filename, df_xl_res, output_directory):
             log_text += "\tSUCCESS\n"
             continue
 
+        # SUCCESS: Remove entry if uniprot ids are not equal
+        if row.unip_id_a != row.unip_id_b:
+            log_text += f"{i}: Uniprot IDs are not equal (e.g. two different proteins). Found: {row.unip_id_a} and " \
+                        f"{row.unip_id_b}.\n"
+            data.drop(i, inplace=True)
+            log_text += "\tSUCCESS\n"
+            continue
+
         # FAIL: Neither of the specified residues are in the peptide (wrong peptide, or faulty interaction found)
         if all(res not in row["pep_a"] for res in df_xl_res.res.tolist()):
             log_text += f"{i}_a: pep_a does not contain any of the specified residues!\n"
@@ -79,8 +87,8 @@ def double_check_data(data, filename, df_xl_res, output_directory):
             new_datapoints.append(datapoints)
 
         # If not in known interactions, save unip ids and positions in known interactions, else drop datapoint
-        interaction_info1 = [row["unip_id"], row["pos_a"], row["pos_b"]]
-        interaction_info2 = [row["unip_id"], row["pos_b"], row["pos_a"]]
+        interaction_info1 = [row["unip_id_a"], row["pos_a"], row["pos_b"]]
+        interaction_info2 = [row["unip_id_b"], row["pos_b"], row["pos_a"]]
         if not(interaction_info1 in known_inters) and not(interaction_info2 in known_inters):
             known_inters.append(interaction_info1)
             known_inters.append(interaction_info2)
@@ -112,6 +120,11 @@ def double_check_data(data, filename, df_xl_res, output_directory):
     with open(output_path, 'w') as log_f:
         log_f.write(log_text)
 
+    # Drop one of the uniprot id columns
+    data.rename(columns={"unip_id_a": "unip_id"}, inplace=True)
+    data.drop(["unip_id_b"], axis=1, inplace=True)
+    print(data.columns)
+
     return data
 
 
@@ -127,10 +140,26 @@ def check_pep_pos(i, row, site, df_xl_res, log_text):
 
     wrong_pos = False
     try:
-        # Check whether aminoacid at given position is one of the specified residues (position specific)
-        if not any((seq[pep_pos - 1] == dp.res) and (True if dp.pos == 0 else pep_pos == dp.pos)
-                   for _, dp in df_xl_res.iterrows()):
-            log_text += f"{i}_{site}: residue in peptide at pos_{site} is any of the specified residues.\n"
+        # Collect booleans whether aminoacid at given position is any of the residues with specified position
+        fits_specification = []
+        for _, dp in df_xl_res.iterrows():
+            # residue may be found anywhere in the peptide
+            if dp.pos == 0:
+                fits_position = True
+            # residue may be found at the start of the peptide
+            elif dp.pos == 1:
+                fits_position = dp.pos == pep_pos
+            # residue may be found at the end of the peptide
+            elif dp.pos == -1:
+                fits_position = dp.pos == pep_pos + (len(peptide) - 1)
+            else:
+                print("Error! Unforeseen value for residue position specification (this should not be able to "
+                      "happen here)!")
+                sys.exit()
+            fits_specification.append((seq[pep_pos - 1] == dp.res) and fits_position)
+        # Check whether aminoacid at given position is any of the residues with specified position
+        if not any(fits_specification):
+            log_text += f"{i}_{site}: residue in peptide at pos_{site} is not any of the specified residues.\n"
             wrong_pos = True
     except IndexError:
         # Catch given position out of bounds exception
@@ -157,10 +186,12 @@ def check_pep_pos(i, row, site, df_xl_res, log_text):
                         # Check if residue at specified position is the searched one
                         if dp.pos != 0:
                             log_text += f"\tcheck {dp.res} at specified position (={dp.pos}) in seq\n"
-                            log_text += f"\t\tVERIFY: new residue is {dp.res}: {seq[dp.pos - 1] == dp.res}\n"
-                            if seq[dp.pos - 1] == dp.res:
-                                row[f"pos_{site}"] = dp.pos
-                                log_text += f"\tREPLACE: pos_{site}: {pep_pos} -> {dp.pos}\n"
+                            log_text += f"\t\tVERIFY: new residue is {dp.res}: " \
+                                        f"{seq[0] == dp.res if dp.pos == 1 else seq[-1] == dp.res}\n"
+                            if seq[0] == dp.res if dp.pos == 1 else seq[-1] == dp.res:
+                                row[f"pos_{site}"] = dp.pos if dp.pos == 1 else pep_pos + (len(peptide) - 1)
+                                log_text += f"\tREPLACE: pos_{site}: {pep_pos} -> " \
+                                            f"{dp.pos if dp.pos == 1 else pep_pos + (len(peptide) - 1)}\n"
                                 log_text += f"\tSUCCESS\n"
                                 pos_replaced = True
                             else:

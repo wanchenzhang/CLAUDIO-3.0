@@ -3,7 +3,6 @@ import os
 import time
 import sys
 
-from module01.src.dict.default_projections import liu18_schweppe17_linked_residues_intra_homo_2672_nonredundant
 from module01.src.main import main as run_claudio_lists
 from module02.run_module02_intra import main as run_claudio_structdi
 from module03.src.main import main as run_claudio_ops
@@ -12,7 +11,7 @@ from module04.src.main import main as run_claudio_xl
 
 @click.command()
 @click.option("-i", "--input-filepath", default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv")
-@click.option("-p", "--projections", default=str(liu18_schweppe17_linked_residues_intra_homo_2672_nonredundant))
+@click.option("-p", "--projections", default="pep_a:peptide1,pep_b:peptide2,pos_a:position1,pos_b:position2,res_pos_a:k_pos1,res_pos_b:k_pos2,unip_id_a:entry1,unip_id_b:entry2")
 @click.option("-rt", "--read-temps", default=False)
 @click.option("-x", "--xl-residues", default="K,M:1")
 @click.option("-t", "--search-tool", default="blastp")

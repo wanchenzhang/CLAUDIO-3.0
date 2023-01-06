@@ -33,7 +33,7 @@ def search_uniprot(data):
     seqs = []
 
     # create list of unique uniprot ids
-    unip_ids = data.unip_id.unique().tolist()
+    unip_ids = data.unip_id_a.unique().tolist()
 
     # retrieve all possible uniprot sequences
     unip_search_results = []
@@ -49,7 +49,7 @@ def search_uniprot(data):
 
     ind = 0
     for _, row in data.iterrows():
-        id = row.unip_id
+        id = row.unip_id_a
         ind += 1
         print(f"\r\t[{round(ind * 100 / len(data.index), 2)}%]", end='')
         if pd.isna(id):

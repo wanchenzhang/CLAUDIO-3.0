@@ -2,10 +2,8 @@ import click
 import sys
 import os
 import time
-import ast
 import pandas as pd
 
-from module01.src.dict.default_projections import *
 from module01.src.io.read_in import read_inputfile
 from module01.src.io.read_temp import read_temp_search_save
 from module01.src.algorithm.uniprot_search import do_uniprot_search
@@ -16,7 +14,7 @@ from module01.src.io.write_out import write_outputs
 
 @click.command()
 @click.option("-i", "--input-filepath", default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv")
-@click.option("-p", "--projections", default=str(liu18_schweppe17_linked_residues_intra_homo_2672_nonredundant))
+@click.option("-p", "--projections", default="pep_a:peptide1,pep_b:peptide2,pos_a:position1,pos_b:position2,res_pos_a:k_pos1,res_pos_b:k_pos2,unip_id_a:entry1,unip_id_b:entry2")
 @click.option("-s", "--uniprot-search", default=True)
 @click.option("-x", "--xl-residues", default="K,M:1")
 @click.option("-t", "--search-tool", default="blastp")
@@ -59,7 +57,7 @@ def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, 
                     blast_db, hhsearch_bin, hhsearch_db, hhsearch_out):
         # Use projections to apply unified column names to input dataset
         # (for example see module01/src/dict/default_projections.py)
-        projections = ast.literal_eval(projections)
+        projections = {projection.split(':')[1]: projection.split(':')[0] for projection in projections.split(',')}
 
         # Define dataset for crosslink residues including possible positions
         df_xl_res = pd.DataFrame()
@@ -108,9 +106,9 @@ def inputs_valid(input_filepath, projections, uniprot_search, xl_residues, searc
     filename = input_filepath.split('/')[-1]
     # check whether an inputfile is specified
     if input_filepath:
-        try:
-            # check whether given dict can be read
-            ast.literal_eval(projections)
+        # check whether all necessary keys were given
+        if all(key in projections for key in ["pep_a", "pep_b", "pos_a", "pos_b", "res_pos_a", "res_pos_b", "unip_id_a",
+                                              "unip_id_b"]):
             # if uniprot_search False then check whether temporary save file exists, return False if it fails,
             # else continue
             if not uniprot_search:
@@ -127,7 +125,7 @@ def inputs_valid(input_filepath, projections, uniprot_search, xl_residues, searc
             try:
                 df_xl_res = pd.DataFrame()
                 df_xl_res["res"] = [s.split(':')[0] for s in xl_residues.replace(';', ',').split(',')]
-                df_xl_res["pos"] = [int(s.split(':')[-1]) if s.split(':')[-1].isdigit() else 0
+                df_xl_res["pos"] = [int(s.split(':')[-1]) if s.split(':')[-1] in ["-1", "1"] else 0
                                     for s in xl_residues.replace(';', ',').split(',')]
                 # check whether specified structure search tool is either blastp or hhsearch
                 if search_tool in ["blastp", "hhsearch"]:
@@ -137,8 +135,8 @@ def inputs_valid(input_filepath, projections, uniprot_search, xl_residues, searc
             except:
                 print(f"Error! Could not properly parse xl_residues for accepted crosslinked residues "
                       f"(given: {xl_residues}).")
-        except ValueError:
-            print(f"Error! Could not construct dictionary from value given for \"projections\" parameter (given: "
+        else:
+            print(f"Error! Could not find all necessary keys in \"projections\" parameter (given: "
                   f"{projections}).")
     else:
         print(f"Error! The parameter \"input-filepath\" was not given (given: {input_filepath}).")

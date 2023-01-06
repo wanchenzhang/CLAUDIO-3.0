@@ -3,23 +3,30 @@
 #ex.: /home/me/desktop/my_dataset.csv
 input_filepath = data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv
 
-#2.column name projections (map your column names to this pipeline's)
+#2.column name projections. A comma-separated list that maps your column names to this pipeline's. The values (strings
+#AFTER the colons) are YOUR dataset's column names, and the keys (strings BEFORE the colons) are the ones used in the
+#tool. The keys are mandatory and have to all be specified. The order does not matter here.
+#Mandatory keys: crosslinked peptide_a (pep_a), crosslinked peptide_b (pep_b), crosslinked residue position_a (pos_a),
+#crosslinked residue position_b (pos_b), position of crosslinked residue in peptide_a (res_pos_a), position of
+#crosslinked residue in peptide_b (res_pos_b), UniProt ID of protein belonging to peptide_a (unip_id_a), UniProt ID of
+#protein belonging to peptide_b (unip_id_b).
 #type: string
-#ex.: {"your_pep1": "pep_a", "your_pep2": "pep_b", "your_pos1": "pos_a", "your_pos2": "pos_b", "your_res_pos1": "res_pos_a", "your_res_pos2": "res_pos_b", "your_uniprot_entry_id": "unip_id"}
-projections = {"peptide1": "pep_a", "peptide2": "pep_b", "position1": "pos_a", "position2": "pos_b", "k_pos1": "res_pos_a", "k_pos2": "res_pos_b", "entry1": "unip_id"}
+#ex.: pep_a:peptide_a, pep_b:peptide_b, pos_a:position_a, pos_b:position_b, res_pos_a:residue_pos_in_peptide_a, res_pos_b:residue_pos_in_peptide_b, unip_id_a:entry_a, unip_id_b:entry_b
+projections = pep_a:peptide1, pep_b:peptide2, pos_a:position1, pos_b:position2, res_pos_a:k_pos1, res_pos_b:k_pos2, unip_id_a:entry1, unip_id_b:entry2
 
 #3.read some results from temporary save from previous run (overwritten each time)
 #type: boolean
 #ex.: True
 read_temps = False
 
-#4.tiny commaseperated list of possibly crosslinked residues, as one-letter-code symbols, by the crosslinker. Optionally
-#the user may add a ':' and an integer value after the symbol to indicate specific positions in the full protein
-#sequence. If you want to specify multiple possible positions for the same symbol you have to add them individually
-#(ex.: "M:1,M:2")
+#4.tiny comma-separated list of possibly crosslinked residues, as one-letter-code symbols, by the crosslinker.
+#Optionally the user may add a ':' and either 1 if the residue has to be at the N-terminus or -1 if the residue has to
+#be at the C-terminus. If you want to specify multiple possible positions for the same symbol you have to add them
+#individually (ex.: "M:1,M:-1"). If the user does not add either the aminoacid is presumed to be position unspecific and
+#may be accepted anywhere in the protein sequence.
 #type: string
 #ex.: K,M:1 #for Disuccinimidyl suberate (DSS) linker
-K,M:1
+xl_residues = K,M:1
 
 #5.search tool for structure search (either hhsearch or blastp)
 #type: string
@@ -86,7 +93,7 @@ cutoff = 0.0
 output_directory = data/out/full
 
 #17.binary directory in blast installation, or None if binary directory has been added to PATH variable (e.g. if blast
-can be called from anywhere)
+#can be called from anywhere)
 #type: string / None
 #ex.: /home/me/desktop/ncbi-blast-2.13.0+/bin
 blast_bin = None
@@ -97,7 +104,7 @@ blast_bin = None
 blast_db = $BLASTDB
 
 #19.binary directory in hh-suite installation, or None if binary directory has been added to PATH variable (e.g. if
-hhsearch can be called from anywhere)
+#hhsearch can be called from anywhere)
 #type: string / None
 #ex.: /home/me/desktop/hh-suite-3.3.0/bin
 hhsearch_bin = None
@@ -113,7 +120,7 @@ hhsearch_db = $HHDB
 hhsearch_out = $HHOUT
 
 #22.binary directory in topolink installation, or None if binary directory has been added to PATH variable (e.g. if
-topolink can be called from anywhere)
+#topolink can be called from anywhere)
 #type: string / None
 #ex.: /home/me/desktop/my_outputs
 topolink_bin = None

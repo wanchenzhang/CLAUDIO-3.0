@@ -6,16 +6,18 @@
 
 -i,    --input-filepath,        path to inputfile,
                                 default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv"
--p,    --projections,           string which can be parsed as dictionary, containing the column names for the uniprot 
-                                entry columns (for naming convention see second example (Note: "unip_id", "pep_a",
-                                "pep_b", "pos_a" and "pos_b" are mandatory)), 
-                                default=str(liu18_schweppe17_linked_residues_intra_homo_2370_nonredundant_unique)
+-p,    --projections,           comma-separated list used to map the input dataset column names to the ones used by the 
+                                tool (for naming convention see second example (Note: all keys (values before the 
+                                colons) are mandatory, and have to be mapped correctly onto the respective columns in 
+                                the input dataset). The order does not matter here.),
+                                default="pep_a:peptide1,pep_b:peptide2,pos_a:position1,pos_b:position2,res_pos_a:k_pos1,res_pos_b:k_pos2,unip_id_a:entry1,unip_id_b:entry2"
 -s,    --uniprot_search,        if the tool has been run before with the same input a temporary file was saved, which 
                                 can be used to retrieve the previouse results of the uniprot and structure searches. In 
                                 this case you can set uniprot_search=False and it will try to retrieve said temporary 
                                 save file, instead of rerunning the uniprot sequence search, default=False
 -x,    --xl-residues,           commaseperated one-letter-code residues, optional: add ':' after the one-letter-code 
-                                symbol of the residue in order to specify fulls equence position, default="K,M:1"
+                                symbol of the residue in order to specify full sequence position (either 1 for start, or 
+                                -1 for end position), default="K,M:1"
 -t,    --search-tool,           can be either "blastp" or "hhsearch", specifying the tool which should be used for pdb 
                                 search, default="blastp"
 -o,    --output-directory,      output directory for produced csv-files, default="data/out/unique_protein_list"
