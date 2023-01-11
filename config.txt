@@ -3,16 +3,17 @@
 #ex.: /home/me/desktop/my_dataset.csv
 input_filepath = data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv
 
-#2.column name projections. A comma-separated list that maps your column names to this pipeline's. The values (strings
-#AFTER the colons) are YOUR dataset's column names, and the keys (strings BEFORE the colons) are the ones used in the
-#tool. The keys are mandatory and have to all be specified. The order does not matter here.
-#Mandatory keys: crosslinked peptide_a (pep_a), crosslinked peptide_b (pep_b), crosslinked residue position_a (pos_a),
-#crosslinked residue position_b (pos_b), position of crosslinked residue in peptide_a (res_pos_a), position of
-#crosslinked residue in peptide_b (res_pos_b), UniProt ID of protein belonging to peptide_a (unip_id_a), UniProt ID of
-#protein belonging to peptide_b (unip_id_b).
+#2.column name projections. A comma-separated position-sensitive list that names the column names of the users dataset
+#containing the necessary information for the tool. The column names should contain and should be given in the following
+#order: crosslinked peptide_a, crosslinked peptide_b, crosslinked residue position_a, crosslinked residue position_b,
+#position of crosslinked residue in peptide_a, position of crosslinked residue in peptide_b, UniProt ID of protein
+#belonging to peptide_a, UniProt ID of protein belonging to peptide_b. Note: The positions of the crosslinked residue in
+#the peptides are information only accessed, if the given full sequence positions do not match into the retrieved
+#UniProt sequence. If the positions are confirmed you may simply create two substitute columns for the positions in the
+#peptides instead and leave them empty.
 #type: string
-#ex.: pep_a:peptide_a, pep_b:peptide_b, pos_a:position_a, pos_b:position_b, res_pos_a:residue_pos_in_peptide_a, res_pos_b:residue_pos_in_peptide_b, unip_id_a:entry_a, unip_id_b:entry_b
-projections = pep_a:peptide1, pep_b:peptide2, pos_a:position1, pos_b:position2, res_pos_a:k_pos1, res_pos_b:k_pos2, unip_id_a:entry1, unip_id_b:entry2
+#ex.: peptide_a,peptide_b,position_a,position_b,residue_pos_in_peptide_a,residue_pos_in_peptide_b,entry_a,entry_b
+projections = peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2
 
 #3.read some results from temporary save from previous run (overwritten each time)
 #type: boolean

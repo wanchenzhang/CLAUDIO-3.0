@@ -14,7 +14,7 @@ from module01.src.io.write_out import write_outputs
 
 @click.command()
 @click.option("-i", "--input-filepath", default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv")
-@click.option("-p", "--projections", default="pep_a:peptide1,pep_b:peptide2,pos_a:position1,pos_b:position2,res_pos_a:k_pos1,res_pos_b:k_pos2,unip_id_a:entry1,unip_id_b:entry2")
+@click.option("-p", "--projections", default="peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2")
 @click.option("-s", "--uniprot-search", default=True)
 @click.option("-x", "--xl-residues", default="K,M:1")
 @click.option("-t", "--search-tool", default="blastp")
@@ -57,7 +57,8 @@ def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, 
                     blast_db, hhsearch_bin, hhsearch_db, hhsearch_out):
         # Use projections to apply unified column names to input dataset
         # (for example see module01/src/dict/default_projections.py)
-        projections = {projection.split(':')[1]: projection.split(':')[0] for projection in projections.split(',')}
+        new_keys = ["pep_a", "pep_b", "pos_a", "pos_b", "res_pos_a", "res_pos_b", "unip_id_a", "unip_id_b"]
+        projections = {projections.split(',')[i]: new_keys[i] for i in range(len(new_keys))}
 
         # Define dataset for crosslink residues including possible positions
         df_xl_res = pd.DataFrame()
@@ -106,9 +107,8 @@ def inputs_valid(input_filepath, projections, uniprot_search, xl_residues, searc
     filename = input_filepath.split('/')[-1]
     # check whether an inputfile is specified
     if input_filepath:
-        # check whether all necessary keys were given
-        if all(key in projections for key in ["pep_a", "pep_b", "pos_a", "pos_b", "res_pos_a", "res_pos_b", "unip_id_a",
-                                              "unip_id_b"]):
+        # check whether the number of comma-separated values is acceptable
+        if len(projections.split(',')) == 8:
             # if uniprot_search False then check whether temporary save file exists, return False if it fails,
             # else continue
             if not uniprot_search:

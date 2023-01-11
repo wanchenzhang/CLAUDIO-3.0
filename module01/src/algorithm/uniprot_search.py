@@ -18,7 +18,7 @@ def do_uniprot_search(data, filename):
     project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
     project_path = project_path + '/' if project_path else ""
     temp_save_filepath = f"{project_path}data/temp/uniprot_search/" \
-                         f"{'.'.join(filename.split('.')[:-1])}_srtmp.{filename.split('.')[-1]}"
+                         f"{filename}_srtmp.csv"
     data[["seq"]].to_csv(temp_save_filepath, index=False)
 
     return data

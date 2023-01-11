@@ -6,11 +6,17 @@
 
 -i,    --input-filepath,        path to inputfile,
                                 default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv"
--p,    --projections,           comma-separated list used to map the input dataset column names to the ones used by the 
-                                tool (for naming convention see second example (Note: all keys (values before the 
-                                colons) are mandatory, and have to be mapped correctly onto the respective columns in 
-                                the input dataset). The order does not matter here.),
-                                default="pep_a:peptide1,pep_b:peptide2,pos_a:position1,pos_b:position2,res_pos_a:k_pos1,res_pos_b:k_pos2,unip_id_a:entry1,unip_id_b:entry2"
+-p,    --projections,           comma-separated position-sensitive list that names the column names of the users dataset
+                                containing the necessary information for the tool. The column names should contain and 
+                                should be given in the following order: crosslinked peptide_a, crosslinked peptide_b, 
+                                crosslinked residue position_a, crosslinked residue position_b, position of crosslinked 
+                                residue in peptide_a, position of crosslinked residue in peptide_b, UniProt ID of 
+                                protein belonging to peptide_a, UniProt ID of protein belonging to peptide_b.
+                                Note: The positions of the crosslinked residue in the peptides are information only 
+                                accessed, if the given full sequence positions do not match into the retrieved UniProt 
+                                sequence. If the positions are confirmed you may simply create two substitute columns 
+                                for the positions in the peptides instead and leave them empty.
+                                default="peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2"
 -s,    --uniprot_search,        if the tool has been run before with the same input a temporary file was saved, which 
                                 can be used to retrieve the previouse results of the uniprot and structure searches. In 
                                 this case you can set uniprot_search=False and it will try to retrieve said temporary 

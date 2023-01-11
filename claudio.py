@@ -11,7 +11,7 @@ from module04.src.main import main as run_claudio_xl
 
 @click.command()
 @click.option("-i", "--input-filepath", default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv")
-@click.option("-p", "--projections", default="pep_a:peptide1,pep_b:peptide2,pos_a:position1,pos_b:position2,res_pos_a:k_pos1,res_pos_b:k_pos2,unip_id_a:entry1,unip_id_b:entry2")
+@click.option("-p", "--projections", default="peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2")
 @click.option("-rt", "--read-temps", default=False)
 @click.option("-x", "--xl-residues", default="K,M:1")
 @click.option("-t", "--search-tool", default="blastp")
