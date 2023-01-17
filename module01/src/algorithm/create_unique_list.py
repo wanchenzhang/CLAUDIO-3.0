@@ -6,21 +6,37 @@ from io import StringIO
 import os
 
 
-def create_list_of_unique_proteins(data, search_tool, blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out):
+def create_list_of_unique_proteins(data, search_tool, intra_only, blast_bin, blast_db, hhsearch_bin, hhsearch_db,
+                                   hhsearch_out):
     # create pandas dataframe of unique proteins depending on uniprot ids
     #
-    # input data: pd.DataFrame, search_tool: str, blast_bin: str/None, blast_db: str, hhsearch_bin: str/None,
-    # hhsearch_db: str, hhsearch_out: str
+    # input data: pd.DataFrame, search_tool: str, intra_only: bool, blast_bin: str/None, blast_db: str,
+    # hhsearch_bin: str/None, hhsearch_db: str, hhsearch_out: str
     # return unique_proteins_list: pd.DataFrame
 
-    # Collect first rows in dataset of unique proteins
-    unique_protein_rows = [data[data.unip_id == protein].iloc[0] for protein in data.unip_id.unique()]
+    if intra_only:
+        # Collect first rows in dataset of unique proteins
+        unique_protein_rows = [data[data.unip_id == protein].iloc[0] for protein in data.unip_id.unique()]
 
-    # Collect uniprot ids, indeces, sequences and counts of unique proteins
-    unique_proteins = data.unip_id.unique().tolist()
-    unique_protein_indeces = [row.name for row in unique_protein_rows]
-    unique_sequences = [row.seq for row in unique_protein_rows]
-    unique_protein_counts = [len(data[data.unip_id == protein].index) for protein in unique_proteins]
+        # Collect uniprot ids, indeces, sequences and counts of unique proteins
+        unique_proteins = data.unip_id.unique().tolist()
+        unique_protein_indeces = [row.name for row in unique_protein_rows]
+        unique_sequences = [row.seq for row in unique_protein_rows]
+        unique_protein_counts = [len(data[data.unip_id == protein].index) for protein in unique_proteins]
+    else:
+        # Collect first rows in dataset of unique proteins
+        # print([data[(data.unip_id_a == protein)] for protein in (data.unip_id_a + data.unip_id_b).unique()])
+        unique_protein_rows = [data[(data.unip_id_a == protein) | (data.unip_id_b == protein)].iloc[0]
+                               for protein in pd.concat([data.unip_id_a, data.unip_id_b]).unique()]
+
+        # Collect uniprot ids, indeces, sequences and counts of unique proteins
+        unique_proteins = pd.concat([data.unip_id_a, data.unip_id_b]).unique().tolist()
+        unique_protein_indeces = [row.name for row in unique_protein_rows]
+        unique_sequences = [unique_protein_rows[i].seq_a
+                            if unique_protein_rows[i].unip_id_a == protein else unique_protein_rows[i].seq_b
+                            for i, protein in enumerate(unique_proteins)]
+        unique_protein_counts = [len(data[(data.unip_id_a == protein) | (data.unip_id_b == protein)].index)
+                                 for protein in unique_proteins]
 
     # Apply uniprot search for information on unique proteins
     infos = search_uniprot_metadata(unique_proteins)

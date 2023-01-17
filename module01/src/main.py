@@ -68,23 +68,23 @@ def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, 
 
         # Read input file
         print("Read input")
-        data = read_inputfile(input_filepath, projections)
+        data, intra_only = read_inputfile(input_filepath, projections)
 
         # uniprot_search parameter is True actually perform a new search, else try to retrieve previous results
         # from temporary save file
         print("Retrieve UniProt sequences" if uniprot_search else "Retrieve UniProt sequences from temporary save")
-        data = do_uniprot_search(data, filename) if uniprot_search \
+        data = do_uniprot_search(data, filename, intra_only) if uniprot_search \
             else read_temp_search_save(data, filename)
 
         print("Check datapoints for inconsistencies")
         # Check datapoints for inconsistencies and correct them if possible (creates logfile in the process)
-        data = double_check_data(data, filename, df_xl_res, output_directory)
+        data = double_check_data(data, filename, df_xl_res, intra_only, output_directory)
         print("Changes made to dataset written to log-file")
 
         # Write list of unique protein pairs and unique proteins overall
         print("Write unique proteins lists")
-        unique_proteins_list = create_list_of_unique_proteins(data, search_tool, blast_bin, blast_db, hhsearch_bin,
-                                                              hhsearch_db, hhsearch_out)
+        unique_proteins_list = create_list_of_unique_proteins(data, search_tool, intra_only, blast_bin, blast_db,
+                                                              hhsearch_bin, hhsearch_db, hhsearch_out)
 
         # Write ouput csv
         print("Write output")
