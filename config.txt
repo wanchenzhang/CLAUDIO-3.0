@@ -3,7 +3,12 @@
 #ex.: /home/me/desktop/my_dataset.csv
 input_filepath = data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv
 
-#2.column name projections. A comma-separated position-sensitive list that names the column names of the users dataset
+#2.output directory for results, if left empty all generated outputs will be added to the directory of the inputfile
+#type: string
+#ex.: /home/me/desktop/my_outputs
+output_directory = data/out/full
+
+#3.column name projections. A comma-separated position-sensitive list that names the column names of the users dataset
 #containing the necessary information for the tool. The column names should contain and should be given in the following
 #order: crosslinked peptide_a, crosslinked peptide_b, crosslinked residue position_a, crosslinked residue position_b,
 #position of crosslinked residue in peptide_a, position of crosslinked residue in peptide_b, UniProt ID of protein
@@ -15,12 +20,12 @@ input_filepath = data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonred
 #ex.: peptide_a,peptide_b,position_a,position_b,residue_pos_in_peptide_a,residue_pos_in_peptide_b,entry_a,entry_b
 projections = peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2
 
-#3.read some results from temporary save from previous run (overwritten each time)
+#4.read some results from temporary save from previous run (overwritten each time)
 #type: boolean
 #ex.: True
 read_temps = False
 
-#4.tiny comma-separated list of possibly crosslinked residues, as one-letter-code symbols, by the crosslinker.
+#5.tiny comma-separated list of possibly crosslinked residues, as one-letter-code symbols, by the crosslinker.
 #Optionally the user may add a ':' and either 1 if the residue has to be at the N-terminus or -1 if the residue has to
 #be at the C-terminus. If you want to specify multiple possible positions for the same symbol you have to add them
 #individually (ex.: "M:1,M:-1"). If the user does not add either the aminoacid is presumed to be position unspecific and
@@ -29,79 +34,74 @@ read_temps = False
 #ex.: K,M:1 #for Disuccinimidyl suberate (DSS) linker
 xl_residues = K,M:1
 
-#5.search tool for structure search (either hhsearch or blastp)
+#6.search tool for structure search (either hhsearch or blastp)
 #type: string
 #ex.: blastp / hhsearch
 search_tool = blastp
 
-#6.e-value of structure search
+#7.e-value of structure search
 #type: float [0,1]
 #ex.: 0.3
 e_value = 0.00001
 
-#7.query identity of structure search
+#8.query identity of structure search
 #type: float [0,100]
 #ex.: 55.0
 query_id = 90.0
 
-#8.coverage of structure search
+#9.coverage of structure search
 #type: float [0,100]
 #ex.: 55.0
 coverage = 50.0
 
-#9.resolution cutoff value, for which structure files will be included if they are either equal or lower
+#10.resolution cutoff value, for which structure files will be included if they are either equal or lower
 #type: float [0,infty)
 #ex.: 5.0
 res_cutoff = 6.5
 
-#10.alphafold structure pLDDT cutoff value, for which structure distances will be included if they are either equal or
+#11.alphafold structure pLDDT cutoff value, for which structure distances will be included if they are either equal or
 #higher
 #type: float [0,100]
 #ex.: 55.0
 plddt_cutoff = 70.0
 
-#11.minimum of crosslinker range capability in angstrom (not included in accepted range)
+#12.minimum of crosslinker range capability in angstrom (not included in accepted range)
 #type: float [0,x]
 #ex.: 5.0
 linker_minimum = 0.0
 
-#12.maximum of crosslinker range capability in angstrom (included into accepted range)
+#13.maximum of crosslinker range capability in angstrom (included into accepted range)
 #type: float [x,infty)
 #ex.: 20.0
 linker_maximum = 35.0
 
-#13.strictness for euclidean distance, e.g. value substracted from euclidean distance in angstrom for confidence score
+#14.strictness for euclidean distance, e.g. value substracted from euclidean distance in angstrom for confidence score
 #calculation, or None if euclidean score is not to be included into the final scoring (in which case only the
 #topological distance and OPS analysis are included)
 #type: float [0,infty) / None
 #ex.: None
-euclidean_strictness = 5.0
+euclidean_strictness = None
 
-#14.distance maximum which, if surpassed, by either the topological or euclidean distance replaces its value for the
+#15.distance maximum which, if surpassed, by either the topological or euclidean distance replaces its value for the
 #confidence score (this ensures that outliers do not negatively impact the scoring)
 #type: float [0,infty)
 #ex.: 100.0
 distance_maximum = 50.0
 
-#15.inter protein crosslink confidence score cutoff
+#16.inter protein crosslink confidence score cutoff
 #type: float [0,1]
 #ex.: 0.1
 cutoff = 0.0
 
-#16.output directory for results
-#type: string
-#ex.: /home/me/desktop/my_outputs
-output_directory = data/out/full
-
-#17.binary directory in blast installation, or None if binary directory has been added to PATH variable (e.g. if blast
-#can be called from anywhere)
+#17.binary directory in blast installation, or None if binary directory has been added to PATH variable (e.g. if blastp
+#can be called from anywhere (you may test this by running the following command on the terminal: "blastp -version"))
 #type: string / None
 #ex.: /home/me/desktop/ncbi-blast-2.13.0+/bin
 blast_bin = None
 
 #18.database directory for blast installation
 #type: string
-#ex.: /home/me/desktop/ncbi-blast-2.13.0+/blastdb
+#ex.: /home/me/desktop/ncbi-blast-2.13.0+/db
 blast_db = $BLASTDB
 
 #19.binary directory in hh-suite installation, or None if binary directory has been added to PATH variable (e.g. if
@@ -112,16 +112,16 @@ hhsearch_bin = None
 
 #20.database directory for hh-suite installation
 #type: string
-#ex.: /home/me/desktop/hh-suite-3.3.0/hhdb
+#ex.: /home/me/desktop/hh-suite-3.3.0/db
 hhsearch_db = $HHDB
 
 #21.output directory for hhsearch results
 #type: string
-#ex.: /home/me/desktop/hh-suite-3.3.0/hhout
+#ex.: /home/me/desktop/hh-suite-3.3.0/out
 hhsearch_out = $HHOUT
 
 #22.binary directory in topolink installation, or None if binary directory has been added to PATH variable (e.g. if
 #topolink can be called from anywhere)
 #type: string / None
-#ex.: /home/me/desktop/my_outputs
+#ex.: /home/me/desktop/topolink/bin
 topolink_bin = None

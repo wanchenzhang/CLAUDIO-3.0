@@ -2,24 +2,26 @@ import sys
 import pandas as pd
 
 
-def combine_inter_reevaluations(data, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,
+def combine_inter_reevaluations(data, intra_only, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,
                                 distance_maximum, cutoff):
     # combine distance and homo signal reevaluation, create score that represents inter interaction affinity (higher
     # value, higher affinity), and evidence for this type evaluation. Base new crosslink types on each individually.
     #
-    # input data: pd.DataFrame, plddt_cutoff: float, linker_minimum: float, linker_maximum: float,
+    # input data: pd.DataFrame, intra_only: bool, plddt_cutoff: float, linker_minimum: float, linker_maximum: float,
     # euclidean_strictness: float, distance_maximum: float, cutoff: float
     # return data: pd.DataFrame
 
     # new crosslink type based on score
     data["inter_score"] = data.apply(lambda x: score_inter_potential(x, plddt_cutoff, linker_minimum, linker_maximum,
                                                                      euclidean_strictness, distance_maximum), axis=1)
-    data["score_XL_type"] = data.apply(lambda x: "inter" if x.inter_score > cutoff else "intra", axis=1)
+    data["score_XL_type"] = data.apply(lambda x: "intra" if (intra_only or (x.unip_id_a == x.unip_id_b)) and
+                                                            (x.inter_score <= cutoff) else "inter", axis=1)
 
     # new crosslink type based on evidence
     data["evidence"] = data.apply(lambda x: write_evidence(x, plddt_cutoff, linker_minimum, linker_maximum,
                                                            euclidean_strictness), axis=1)
-    data["XL_type"] = data.apply(lambda x: "inter" if x.evidence else "intra", axis=1)
+    data["XL_type"] = data.apply(lambda x: "intra" if (intra_only or (x.unip_id_a == x.unip_id_b)) and
+                                                      (not x.evidence) else "inter", axis=1)
     return data
 
 

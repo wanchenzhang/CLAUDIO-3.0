@@ -26,11 +26,11 @@ def main(input_filepath, output_directory):
 
         # Read dataset and add columns for results
         print("Read input")
-        data = read_in(input_filepath)
+        data, intra_only = read_in(input_filepath)
 
         # Analyse homo signals
         print("Analyse homo signals")
-        data = analyse_homo_signals(data)
+        data = analyse_homo_signals(data, intra_only)
 
         # Create Homo-signal statistic histograms
         print("Create homo-signal histograms")

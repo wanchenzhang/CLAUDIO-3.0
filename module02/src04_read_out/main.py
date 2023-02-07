@@ -13,40 +13,23 @@ def main(input_filepath):
     print("Number of computed distances in dist column:", len(data.index) - num_of_nans)
     print(data.columns)
     print(data.head)
-    print(data.eucl_dist.values)
-    print(f"number computed eucl_dist: {len(data[~pd.isna(data.eucl_dist)].index)} of {len(data[data.path != '-'].index)}")
-    print(f"number fulfilled criteria: {len(data[data.res_criteria_fulfilled].index)} of {len(data[data.path != '-'].index)}")
-    print(f"number of unique proteins: {len(data[data.res_criteria_fulfilled]['unip_id'].unique())}")
+    print("e-dists:", data.eucl_dist.values)
+    print(f"number computed eucl_dist: {len(data[~pd.isna(data.eucl_dist)].index)} of {len(data[data.pdb_id != '-'].index)}")
+    print(f"number of unique proteins: {len(data['unip_id'].unique())}")
     print(f"number of new inter interactions: {len(data[data.XL_type == 'inter'].index)}")
     project_path = '/'.join(os.path.abspath(__file__).split('/')[:-3])
     project_path = project_path + '/' if project_path else ""
-    print(f"number of used methods:\n\talphafold:\n\t\ta:{len(data[data.method_a == 'alphafold'].index)}\n\t\t\t"
-          f"dist_true:{len(data[(data.method_a == 'alphafold') & (~pd.isna(data.eucl_dist))].index)}\n\t\t\t\t"
-          f"res_c_true:{len(data[(data.method_a == 'alphafold') & data.res_criteria_fulfilled].index)}\n\t\t"
-          f"b:{len(data[data.method_b == 'alphafold'].index)}\n\t\t\t"
-          f"dist_true:{len(data[(data.method_b == 'alphafold') & (~pd.isna(data.eucl_dist))].index)}\n\t\t\t\t"
-          f"res_c_true:{len(data[(data.method_b == 'alphafold') & data.res_criteria_fulfilled].index)}\n\t"
-          f"realigning:\n\t\ta:{len(data[data.method_a == 'realigning'].index)}\n\t\t\t"
-          f"dist_true:{len(data[(data.method_a == 'realigning') & (~pd.isna(data.eucl_dist))].index)}\n\t\t\t\t"
-          f"res_c_true:{len(data[(data.method_a == 'realigning') & data.res_criteria_fulfilled].index)}\n\t\t"
-          f"b:{len(data[data.method_b == 'realigning'].index)}\n\t\t\t"
-          f"dist_true:{len(data[(data.method_b == 'realigning') & (~pd.isna(data.eucl_dist))].index)}\n\t\t\t\t"
-          f"res_c_true:{len(data[(data.method_b == 'realigning') & data.res_criteria_fulfilled].index)}\n\t"
-          f"pdb_chain_uniprot:\n\t\ta:{len(data[data.method_a == 'pdb_chain_uniprot'].index)}\n\t\t\t"
-          f"dist_true:{len(data[(data.method_a == 'pdb_chain_uniprot') & (~pd.isna(data.eucl_dist))].index)}\n\t\t\t\t"
-          f"res_c_true:{len(data[(data.method_a == 'pdb_chain_uniprot') & data.res_criteria_fulfilled].index)}\n\t\t"
-          f"b:{len(data[data.method_a == 'pdb_chain_uniprot'].index)}\n\t\t\t"
-          f"dist_true:{len(data[(data.method_a == 'pdb_chain_uniprot') & (~pd.isna(data.eucl_dist))].index)}\n\t\t\t\t"
-          f"res_c_true:{len(data[(data.method_b == 'pdb_chain_uniprot') & data.res_criteria_fulfilled].index)}")
-    print(f"\n\nSuspicious datapoints:\n\talphafold + res_crit_false (total number = {len(data[(data.method_a == 'alphafold') & ~data.res_criteria_fulfilled].index)}):\n\t\t"
-          f"{data[(data.method_a == 'alphafold') & ~data.res_criteria_fulfilled][['unip_id', 'pdb_id', 'chain', 'method_a', 'pub', 'res_criteria_fulfilled', 'eucl_dist', 'XL_type']]}\n\t(publication + res_criteria_true)/publication:\n\t\t"
-          f"Schweppe et al. 2017: {round((len(data[(data.pub == 'Schweppe et al. 2017') & data.res_criteria_fulfilled].index) / (len(data[data.pub == 'Schweppe et al. 2017'].index))) * 100, 2)}%"
-          f"\n\t\tLiu et al. 2018: {round((len(data[(data.pub == 'Liu et al. 2018') & data.res_criteria_fulfilled].index) / (len(data[data.pub == 'Liu et al. 2018'].index))) * 100, 2)}%"
-          f"\n\tres_criteria unfullfilled (total number = {len(data[~data.res_criteria_fulfilled].index)}): {data[~data.res_criteria_fulfilled][['unip_id', 'pos_a', 'pos_b', 'res_crit_a', 'res_crit_b']]}"
-          f"\n\tNo distance computed (total number = {len(data[pd.isna(data.eucl_dist) & (data.path != '-')].index)}): {data[pd.isna(data.eucl_dist) & (data.path != '-')][['unip_id', 'pos_a', 'pos_b', 'eucl_dist']]}"
-          f"\n\tNot found in databases (total number = {len(data[(data.path == '-')].index)}): {data[(data.path == '-')][['unip_id']]}"
+    print(f"number of successes:\n\ta:{len(data.index)}\n\t\t"
+          f"dist_true:{len(data[~pd.isna(data.eucl_dist)].index)}\n\t"
+          f"b:{len(data.index)}\n\t\t"
+          f"dist_true:{len(data[~pd.isna(data.eucl_dist)].index)}")
+    print(f"\n\nSuspicious datapoints:\n\tpublication + pdb_id / publication:\n\t\t"
+          f"Schweppe et al. 2017: {round((len(data[(data.Publication == 'Schweppe et al. 2017') & (data.pdb_id != '-')].index) / (len(data[data.Publication == 'Schweppe et al. 2017'].index))) * 100, 2)}%"
+          f"\n\t\tLiu et al. 2018: {round((len(data[(data.Publication == 'Liu et al. 2018') & (data.pdb_id != '-')].index) / (len(data[data.Publication == 'Liu et al. 2018'].index))) * 100, 2)}%"
+          f"\n\tNo distance computed (total number = {len(data[pd.isna(data.eucl_dist) & (data.pdb_id != '-')].index)}): {data[pd.isna(data.eucl_dist) & (data.pdb_id != '-')][['unip_id', 'pos_a', 'pos_b', 'eucl_dist']]}"
+          f"\n\tNot found in databases (total number = {len(data[(data.pdb_id == '-')].index)}): {data[(data.pdb_id == '-')][['unip_id']]}"
           f"\n\tVery high distances (total number = {len(data[data.eucl_dist >= 100].index)}): {data[data.eucl_dist >= 100][['unip_id', 'eucl_dist']]}"
-          f"\n\tNo distance computed but res_crit_true (total number = {len(data[pd.isna(data.eucl_dist) & data.res_criteria_fulfilled].index)}): {data[pd.isna(data.eucl_dist) & data.res_criteria_fulfilled][['pdb_id', 'pos_a', 'pos_b', 'eucl_dist', 'res_criteria_fulfilled']]}"
+          f"\n\tNo distance computed but pdb_id found (total number = {len(data[pd.isna(data.eucl_dist) & ~(data.pdb_id == '-')].index)}): {data[pd.isna(data.eucl_dist) & (data.pdb_id != '-')][['pdb_id', 'pos_a', 'pos_b', 'eucl_dist']]}"
           f"\n\tVery low distances (total number = {len(data[(0 < data.eucl_dist) & (data.eucl_dist < 5)].index)}): {data[(0 < data.eucl_dist) & (data.eucl_dist < 5)][['unip_id', 'eucl_dist']]}")
     final_data = pd.read_csv(f'{project_path}data/out/full/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant_final.csv', index_col=0)
     homomers_path = f'{project_path}data/out/full/homomers'

@@ -7,15 +7,15 @@ extended by its analysis' results.
 
 ## Prerequisites
 ### Python
-This tool is written in python (v3.6) and has thus to be run with python 3.\
+This tool is written in python (v3.11) and has thus to be run with python 3.\
 It has the following requirements:
 
 Packages:
-* biopython
-* click
-* matplotlib
-* pandas
-* requests
+* biopython 1.79
+* click 8.1.3
+* matplotlib 3.6.3
+* pandas 1.5.3
+* requests 2.28.2
 
 The packages may be installed all at once with the file [requirements.txt](https://github.com/KohlbacherLab/CLAUDIO/blob/main/requirements.txt):
 ```
@@ -23,11 +23,11 @@ pip install -r requirements.txt
 ```
 or individually:
 ```
-pip install biopython
-pip install click
-pip install matplotlib
-pip install pandas
-pip install requests
+pip install biopython==1.79
+pip install click==8.1.3
+pip install matplotlib==3.6.3
+pip install pandas==1.5.3
+pip install requests==2.28.2
 ```
 Note: Both approaches need to refer to the pip-installer associated to the python installation, that will be used to run
 the tool.
@@ -44,8 +44,9 @@ In order to run *CLAUDIO* you need to install the following external tools:
     ```
     perl bin/update_blastdb.pl --passive --decompress pdbaa
     ```
-    Hint: If you followed the Installation Manual (linked up top) to-the-letter, you may have added the variable
-    `$BLASTDB` to your paths. If so, you can use this variable instead of the full path in the input parameters of CLAUDIO.
+    Hint: If you followed the Installation Manual (linked up top) to-the-letter, you may have added the environmental 
+    variable `$BLASTDB` to your paths. If so, you can use this variable instead of the full path in the input parameters
+    of CLAUDIO.
 * *HHsearch* (see [GitHub](https://github.com/soedinglab/hh-suite))
   * For HHsearch, you also have to download its newest `pdb70` database found 
   [here](https://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/). 

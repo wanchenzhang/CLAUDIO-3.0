@@ -42,28 +42,28 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, linker_m
 
         # Read inputs
         print("Read inputs")
-        data = read_inputs(input_filepath, input_filepath2)
+        data, intra_only = read_inputs(input_filepath, input_filepath2)
 
         # Combine results of both reevaluations
         print("Combine results of both reevaluations")
-        data = combine_inter_reevaluations(data, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,
-                                           distance_maximum, cutoff)
+        data = combine_inter_reevaluations(data, intra_only, plddt_cutoff, linker_minimum, linker_maximum,
+                                           euclidean_strictness, distance_maximum, cutoff)
 
         # Retrieve known oligomeric states from SWISS-MODEL
         print("Retrieve known oligomeric states from SWISS-MODEL")
-        data = retrieve_oligomeric_states(data)
+        data = retrieve_oligomeric_states(data, intra_only)
 
-        # data.swiss_model_homology.fillna(value="", inplace=True) # TODO
+        # data.swiss_model_homology.fillna(value="", inplace=True) # TODO: oligomeric states undeteministic
 
         # Create inter score histogram
         print("Create inter score histogram")
         filename = input_filepath.split('/')[-1].split('.')[0]
-        create_histograms(data, filename, cutoff, output_directory)
+        create_histograms(data, intra_only, filename, cutoff, output_directory)
 
         # Write final csv containing all computed information, fastas for alphafold and protein-specific csv with
         # interaction restraints
         print("Write outputs")
-        write_outputs(data, filename, output_directory)
+        write_outputs(data, intra_only, filename, output_directory)
 
     print(f"\nEnd script (Elapsed time: {round(time.time() - start_time, 2)}s)")
     print("===================================")
@@ -79,9 +79,9 @@ def inputs_valid(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, 
     # return inputs_valid: bool
 
     # check whether outputfile from distance-based reevauation is specified
-    if input_filepath.endswith(".sqcs_structdi.csv"):# or True: #TODO
+    if input_filepath.endswith(".sqcs_structdi.csv"):# or True: #TODO: oligomeric states undeteministic
         # check whether outputfile from homo-signal-based reevauation is specified
-        if input_filepath2.endswith(".sqcs_ops.csv"):# or True: #TODO
+        if input_filepath2.endswith(".sqcs_ops.csv"):# or True: #TODO: oligomeric states undeteministic
             # check whether plddt cutoff has valid value
             try:
                 plddt_cutoff = float(plddt_cutoff)

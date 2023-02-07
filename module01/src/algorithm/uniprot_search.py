@@ -49,7 +49,7 @@ def search_uniprot(data, already_searched={}, site='a'):
             url = f"https://rest.uniprot.org/uniprotkb/search?format=fasta&query={id}"
             try:
                 result = [''.join(x.split('\n')[1:]) for x in r.get(url).text.split('>') if x]
-            except ConnectionError as e:
+            except (r.exceptions.Timeout, ConnectionError) as e:
                 print("No connection to UniProt API possible. Please try again later.")
                 print(e)
                 sys.exit()

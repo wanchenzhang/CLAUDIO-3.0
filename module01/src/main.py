@@ -82,7 +82,7 @@ def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, 
         print("Changes made to dataset written to log-file")
 
         # Write list of unique protein pairs and unique proteins overall
-        print("Write unique proteins lists")
+        print("Create unique protein and protein pair lists")
         unique_proteins_list = create_list_of_unique_proteins(data, search_tool, intra_only, blast_bin, blast_db,
                                                               hhsearch_bin, hhsearch_db, hhsearch_out)
 

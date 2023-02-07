@@ -30,14 +30,6 @@ def double_check_data(data, filename, df_xl_res, intra_only, output_directory):
             log_text += "\tSUCCESS\n"
             continue
 
-        # # SUCCESS: Remove entry if uniprot ids are not equal
-        # if row.unip_id_a != row.unip_id_b:
-        #     log_text += f"{i}: Uniprot IDs are not equal (e.g. two different proteins). Found: {row.unip_id_a} and " \
-        #                 f"{row.unip_id_b}.\n"
-        #     data.drop(i, inplace=True)
-        #     log_text += "\tSUCCESS\n"
-        #     continue
-
         # FAIL: Neither of the specified residues are in the peptide (wrong peptide, or faulty interaction found)
         if all(res not in row["pep_a"] for res in df_xl_res.res.tolist()):
             log_text += f"{i}_a: pep_a does not contain any of the specified residues!\n"

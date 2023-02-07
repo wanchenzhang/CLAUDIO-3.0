@@ -48,15 +48,15 @@ def main(input_directory, input_filepath, search_tool, xl_residues, plddt_cutoff
 
         # Read result from uniprot_search, e.g. sqcs-file
         print("Read peptide information from uniprot search results")
-        data = read_unipsearch_out(input_filepath)
+        data, intra_only = read_unipsearch_out(input_filepath)
 
         # Search for site positions in pdb files (replace rcsb pdb with alphafold, if not able to find it there)
         print("Search site pos in pdb files (replace rcsb-pdb with alphafold-pdb if needed)")
-        data = search_site_pos_in_pdb(data, df_xl_res)
+        data = search_site_pos_in_pdb(data, df_xl_res, intra_only)
 
         # Compute distances of sites, and if distance calculation successful compute new xl_type
         print("Calculate presumed interaction site distances and evaluate interaction likelihood")
-        data = calculate_site_dists(data, plddt_cutoff, topolink_bin)
+        data = calculate_site_dists(data, plddt_cutoff, intra_only, topolink_bin)
 
         # Plot histograms of distances
         print("Create distance histograms")

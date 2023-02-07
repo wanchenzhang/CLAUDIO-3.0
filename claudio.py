@@ -22,7 +22,7 @@ from module04.src.main import main as run_claudio_xl
 @click.option("-pc", "--plddt-cutoff", default=70.0)
 @click.option("-lmin", "--linker-minimum", default=0.0)
 @click.option("-lmax", "--linker-maximum", default=35.0)
-@click.option("-es", "--euclidean-strictness", default=5.0)
+@click.option("-es", "--euclidean-strictness", default=None)
 @click.option("-dm", "--distance-maximum", default=50.0)
 @click.option("-ct", "--cutoff", default=0.0)
 @click.option("-o", "--output-directory", default="data/out/full")

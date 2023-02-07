@@ -1,14 +1,15 @@
 import os
 import sys
+import time
 
 import requests as r
 
 
-def download_pdbs(dataset, search_tool, res_cutoff, output_directory):
+def download_pdbs(dataset, search_tool, intra_only, res_cutoff, output_directory):
     # Download pdb files either from RCSB or AlphaFold database (depending on earlier hhsearch or blastp search) into
     # output directory
     #
-    # input dataset: pd.DataFrame, search_tool: str, res_cutoff: float, output_directory:str
+    # input dataset: pd.DataFrame, search_tool: str, intra_only: bool, res_cutoff: float, output_directory:str
     # return dataset: pd.DataFrame
 
     # clear output directory of old pdb file results
@@ -18,11 +19,13 @@ def download_pdbs(dataset, search_tool, res_cutoff, output_directory):
     # Download pdb files for each datapoint
     for i, row in dataset.iterrows():
         # Iterate over results
-        for j, res in enumerate((row['all_results'] + ' ').split(' ')):
+        for j, res in enumerate((row["all_results"] + ' ').split(' ')):
             # If an entry was found in the rcsb database, download from there
             pdb_id = res.split('_')[0]
             chain = res.split('_')[1] if pdb_id else '-'
-            a_pdb = ''
+            if not intra_only:
+                chain_b = res.split('_')[2] if pdb_id else '-'
+            pdb_file = ''
             if pdb_id:
                 # Create custom pdb filename
                 filename = f"{output_directory}{search_tool}_{pdb_id}.pdb"
@@ -30,38 +33,34 @@ def download_pdbs(dataset, search_tool, res_cutoff, output_directory):
                 # If no similar pdb was already downloaded, then download
                 if filename not in dataset["path"]:
                     # Download pdb as str text
-                    a_URL = f"https://files.rcsb.org/download/{pdb_id}.pdb"
-                    a_pdb = ''.join(r.post(a_URL).text)
-                    # If ordinary download call fails attempt .cif call (for mmCIF file)
-                    if a_pdb.startswith("<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">"):
-                        a_URL = f"https://files.rcsb.org/download/{pdb_id}.cif"
-                        a_pdb = ''.join(r.post(a_URL).text)
-
-            # If no entry was found, attempt download from alphafold database instead
-            else:
-                # Create custom alphafold pdb filename
-                pdb_id = f"af{row['unip_id']}"
-                chain = 'A'
-                filename = f"{output_directory}{search_tool}_{pdb_id}.pdb"
-
-                # If no similar pdb was already downloaded, then download
-                if filename not in dataset["path"]:
-                    # Download pdb as str text
-                    a_URL = f"https://alphafold.ebi.ac.uk/files/AF-{row['unip_id']}-F1-model_v1.pdb"
-                    try:
-                        a_pdb = r.get(a_URL).text
-                    except ConnectionError as e:
-                        print("No connection to AlphaFold API possible. Please try again later.")
-                        print(e)
-                        sys.exit()
-                    # If no pdb retrieved from alphafold set filename to None, else save pdb with custom filename
-                    if "NoSuchKey" in a_pdb:
+                    url = f"https://files.rcsb.org/download/{pdb_id}.pdb"
+                    pdb_file = download_pdb_from_db(url, 0, 5)
+                    if pdb_file is None:
+                        pdb_file = ''
                         filename = '-'
                         pdb_id = '-'
                         chain = '-'
+                        if not intra_only:
+                            chain_b = '-'
+            # If no entry was found, attempt download from alphafold database instead, if it is an intra crosslink
+            else:
+                if intra_only or row["unip_id_a"] == row["unip_id_b"]:
+                    # Create custom alphafold pdb filename
+                    pdb_id = f"af{row['unip_id' if intra_only else 'unip_id_a']}"
+                    chain = 'A'
+                    if not intra_only:
+                        chain_b = 'A'
+                    filename = f"{output_directory}{search_tool}_{pdb_id}.pdb"
+
+                    # If no similar pdb was already downloaded, then download
+                    if filename not in dataset["path"]:
+                        # Download pdb as str text
+                        url = f"https://alphafold.ebi.ac.uk/files/AF-"\
+                              f"{row['unip_id' if intra_only else 'unip_id_a']}-F1-model_v1.pdb"
+                        pdb_file = download_pdb_from_db(url, 0, 5)
 
             # Check whether method and resolution are accepted, return respective bool, method and resolution
-            method_a_accepted, method_a, resolution_a = accept_resolution_method(a_pdb, pdb_id, res_cutoff)
+            method_a_accepted, method_a, resolution_a = accept_resolution_method(pdb_file, pdb_id, res_cutoff)
 
             # Save method and resolution for best structure search result
             if j == 0:
@@ -73,7 +72,11 @@ def download_pdbs(dataset, search_tool, res_cutoff, output_directory):
             if method_a_accepted:
                 # Update pdb_id and chain in dataset
                 dataset.loc[i, "pdb_id"] = pdb_id
-                dataset.loc[i, "chain"] = chain
+                if intra_only:
+                    dataset.loc[i, "chain"] = chain
+                else:
+                    dataset.loc[i, "chain_a"] = chain
+                    dataset.loc[i, "chain_b"] = chain_b
                 # Add filename to paths
                 dataset.loc[i, "path"] = filename
                 # Add method and resolution to dataset
@@ -82,7 +85,7 @@ def download_pdbs(dataset, search_tool, res_cutoff, output_directory):
 
                 # Save pdb text to new pdb file with custom name
                 with open(filename, 'w') as f:
-                    f.write(a_pdb)
+                    f.write(pdb_file)
                 break
 
         ind += 1
@@ -102,6 +105,40 @@ def clear_output_dir(search_tool, output_directory):
     pdb_files = [x for x in os.listdir(output_directory) if x.endswith(".pdb") and x.startswith(search_tool)]
     for f in pdb_files:
         os.remove(f"{output_directory}{f}")
+
+
+def download_pdb_from_db(url, i_try, max_try):
+    # Attempt pdb download from online database, either as .pdb- or .cif-file. If this fails retry until max retry is
+    # reached.
+    #
+    # input url: str, i_try: int, max_try: int
+    # output pdb_file: str/None
+    try:
+        if url.startswith("https://files.rcsb.org/"):
+            # Attempt regular .pdb call from RCSB database
+            pdb_file = ''.join(r.post(url).text)
+            # If ordinary download call fails attempt .cif call (for mmCIF file)
+            if pdb_file.startswith("<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">"):
+                cif_url = f"{'.'.join(url.split('.')[:-1])}.cif"
+                pdb_file = ''.join(r.post(cif_url).text)
+            return pdb_file
+        else:
+            # Attempt .pdb call from AlphaFold database
+            pdb_file = r.get(url).text
+            return pdb_file
+    # Retry on timeout if not reached max_try already, else return None
+    except (r.exceptions.Timeout, TimeoutError):
+        if i_try == max_try:
+            return None
+        else:
+            time.sleep(1)
+            return download_pdb_from_db(url, i_try + 1, max_try)
+    # Break execution if no connection to database possible
+    except ConnectionError as e:
+        print(f"No connection to {'RCSB' if url.startswith('https://files.rcsb.org/') else 'AlphaFold'} API possible. "
+              f"Please try again later.")
+        print(e)
+        sys.exit()
 
 
 def accept_resolution_method(pdb, pdb_id, res_cutoff):

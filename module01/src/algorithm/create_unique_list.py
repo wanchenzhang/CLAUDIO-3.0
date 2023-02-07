@@ -75,7 +75,7 @@ def search_uniprot_metadata(unique_proteins):
         urllib = f"https://rest.uniprot.org/uniprotkb/search?query={protein}&format=tsv"
         try:
             info = r.get(urllib).text.split('\n')
-        except ConnectionError as e:
+        except (r.exceptions.Timeout, ConnectionError) as e:
             print("No connection to UniProt API possible. Please try again later.")
             print(e)
             sys.exit()

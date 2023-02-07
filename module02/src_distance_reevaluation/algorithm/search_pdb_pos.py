@@ -6,13 +6,13 @@ import os
 import sys
 
 
-def search_site_pos_in_pdb(data, df_xl_res):
+def search_site_pos_in_pdb(data, df_xl_res, intra_only):
     # search for site positions in pdb, extend input dataset by res_criteria, e.g. whether the found
     # sites satisfy the criteria of being the specified residue, the method used to find the sites in the structure
     # file, in case said method was alphafold the pLDDT, e.g. confidence, value, and download new alphafold pdb into
     # directory, if needed
     #
-    # input data: pd.DataFrame, df_xl_res: pd.DataFrame
+    # input data: pd.DataFrame, df_xl_res: pd.DataFrame, intra_only: bool
     # return data: pd.DataFrame
 
     # Read shift file given by EMBL-EBI database (see: https://www.ebi.ac.uk/pdbe/docs/sifts/quick.html) for rcsb files
@@ -53,27 +53,32 @@ def search_site_pos_in_pdb(data, df_xl_res):
             pLDDTs[0].append('-')
             pLDDTs[1].append('-')
         else:
+            xl_type = "intra" if intra_only or row["unip_id_a"] == row["unip_id_b"] else "inter"
             # Search site_a in structure file
             pdb_pos_a, res_criteria_a, method_a, i_error_a, pLDDT_a, new_path = \
-                compute_site_pos(i, row, 'a', pdb_uni_map, "", df_xl_res)
+                compute_site_pos(i, row, 'a', xl_type, pdb_uni_map, "", df_xl_res)
             # If method used for site_a is alphafold, set method for set_b to alphafold as well
             method_b = "" if method_a != "alphafold" else "alphafold"
 
             # Search site_b in structure file
             pdb_pos_b, res_criteria_b, method_b, i_error_b, pLDDT_b, new_path = \
-                compute_site_pos(i, row, 'b', pdb_uni_map, method_b, df_xl_res)
+                compute_site_pos(i, row, 'b', xl_type, pdb_uni_map, method_b, df_xl_res)
 
             # If method for site_b was alphafold, but not for site_a, search site_a again with alphafold method
             # specified this time
             if method_b == "alphafold" and method_a != "alphafold":
                 pdb_pos_a, res_criteria_a, method_a, i_error_a, pLDDT_a, new_path = \
-                    compute_site_pos(i, row, 'a', pdb_uni_map, "alphafold", df_xl_res)
+                    compute_site_pos(i, row, 'a', xl_type, pdb_uni_map, "alphafold", df_xl_res)
 
             # Replace path if alphafold file was downloaded instead
-            if new_path:
+            if new_path and xl_type == "intra":
                 data.loc[i, "path"] = new_path
-                data.loc[i, "chain"] = 'A'
-                data.loc[i, "pdb_id"] = new_path.split('_')[-2]
+                if intra_only:
+                    data.loc[i, "chain"] = 'A'
+                else:
+                    data.loc[i, "chain_a"] = 'A'
+                    data.loc[i, "chain_b"] = 'A'
+                data.loc[i, "pdb_id"] = new_path.split('_')[-1].split('.')[0]
                 data.loc[i, "pdb_method"] = "ALPHAFOLD"
                 data.loc[i, "pdb_resolution"] = "ALPHAFOLD"
 
@@ -143,21 +148,23 @@ def search_site_pos_in_pdb(data, df_xl_res):
     return data
 
 
-def compute_site_pos(i, data, site_id, pdb_uni_map, method, df_xl_res):
+def compute_site_pos(i, data, site_id, xl_type, pdb_uni_map, method, df_xl_res):
     # Search site in structure file and return threedimensional position
     #
-    # input i: int, data: pd.Series, site_id: int, pdb_uni_map: pd.DataFrame, method: str, df_xl_res: pd.DataFrame
+    # input i: int, data: pd.Series, site_id: int, xl_type: str, pdb_uni_map: pd.DataFrame, method: str,
+    # df_xl_res: pd.DataFrame
     # return pdb_pos: int, res_criteria: bool, method: str, i_error: int, pLDDT: float, new_path_a: str
 
     # Extract pdb_id, chain_id and unip_id from data
     pdb_id = data["pdb_id"]
-    chain_id = data["chain"]
-    unip_id = data["unip_id"]
+    chain_id = data["chain" if xl_type == "intra" else f"chain_{site_id}"]
+    unip_id = data["unip_id" if xl_type == "intra" else f"unip_id_{site_id}"]
+    unip_seq = data["seq" if xl_type == "intra" else f"seq_{site_id}"]
     new_path = ''
     # Test whether specified position is accessible in uniprot sequence, if not return fail with i_error = 0
     try:
-        print(f"\n\tunip_pos:{data[f'pos_{site_id}']}, Acid at pos: {data['seq'][data[f'pos_{site_id}'] - 1]}"
-              f", fulfills residue criteria: {data['seq'][data[f'pos_{site_id}'] - 1] in df_xl_res.res.tolist()}")
+        print(f"\n\tunip_pos:{data[f'pos_{site_id}']}, Acid at pos: {unip_seq[data[f'pos_{site_id}'] - 1]} , fulfills "
+              f"residue criteria: {unip_seq[data[f'pos_{site_id}'] - 1] in df_xl_res.res.tolist()}")
     except IndexError:
         print(f"\n\tIndexError with unip_pos: {data[f'pos_{site_id}']} (entry: {i}, unip_id: {unip_id})")
         return None, False, method, 0, '-', ''
@@ -203,25 +210,25 @@ def compute_site_pos(i, data, site_id, pdb_uni_map, method, df_xl_res):
             shift = None
 
         # If shift computation failed, attempt realigning pdb sequence to uniprot sequence; If alphafold is specified as
-        # method already completly replace current structure model with new downloaded alphafold structure
+        # method already completely replace current structure model with new downloaded alphafold structure
         if shift is None or method == "alphafold":
-            # Attempt realigning if method not alphafold
+            unip_seq = data['seq' if xl_type == "intra" else f'seq_{site_id}']
+            method = "realigning" if method != "alphafold" else "alphafold"
             pdb_seq = ''
             for res in chain.get_list():
                 try:
                     pdb_seq += Polypeptide.three_to_one(res.get_resname())
                 except:
                     continue
-            unip_seq = data["seq"]
-            method = "realigning" if method != "alphafold" else "alphafold"
             if method == "realigning":
+                # Attempt realigning if method not alphafold
                 residue_pos = realign_unip_pos_in_pdb_seq(pdb_seq, unip_seq, data[f"pos_{site_id}"])
             else:
                 residue_pos = None
 
             # If method alphafold or realingment attempt failed, replace with rcsb structure alphafold structure
             # and continue with method = "alphafold"
-            if residue_pos is None or method == "alphafold":
+            if (residue_pos is None or method == "alphafold") and xl_type == "intra":
                 print(f"\tSelf computed res pos ({unip_id}, {data[f'pos_{site_id}']}): {residue_pos}\n"
                       f"\tThis position is not in range of the pdb_seq!")
                 print("\tAttempt replacement alphafold download.")
@@ -240,10 +247,15 @@ def compute_site_pos(i, data, site_id, pdb_uni_map, method, df_xl_res):
                               f"{Polypeptide.three_to_one(chain.__getitem__(residue_pos).get_resname())}).")
                     except:
                         pass
+            # Elif residue position was not found and inter crosslink, as no replacement is possible means this position
+            # cannot be retrieved
+            elif residue_pos is None and xl_type == "inter":
+                return None, False, method, 4, '-', ''
             # Else print computed position by realigning and continue with method = "realigning"
             else:
                 print(f"\tSelf computed res pos ({unip_id}, {data[f'pos_{site_id}']}): {residue_pos}, "
-                      f"fulfills residue criteria: {pdb_seq[residue_pos - 1] in df_xl_res.res.tolist()}:{pdb_seq[residue_pos - 1]}")
+                      f"fulfills residue criteria: {pdb_seq[residue_pos - 1] in df_xl_res.res.tolist()}:"
+                      f"{pdb_seq[residue_pos - 1]}")
         # Else print position given by shift file and continue with method = "pdb_chain_uniprot"
         else:
             method = "pdb_chain_uniprot"
@@ -280,20 +292,26 @@ def compute_site_pos(i, data, site_id, pdb_uni_map, method, df_xl_res):
         resseq_ids = [int(res.__repr__().split('=')[2].split(' ')[0]) for res in chain.get_list()]
         print(f"\t\t\tsearched pos: {residue_pos}, actual interval: ({min(resseq_ids)}, {max(resseq_ids)})")
 
-        print("\tAttempt replacement alphafold download.")
-        chain, new_path = replacement_alphafold_download(unip_id, data["path"])
-        if chain is None:
-            print(f"\tReplacement alphafold download attempt returned an error ({unip_id} probably not found in "
-                  f"database).\n\t\t\t(entry: {i}, unip: {unip_id}, pdb: {pdb_id}:{chain_id})")
-            return None, False, method, 4, '-', ''
+        if xl_type == "intra":
+            print("\tAttempt replacement alphafold download.")
+            chain, new_path = replacement_alphafold_download(unip_id, data["path"])
+            if chain is None:
+                print(f"\tReplacement alphafold download attempt returned an error ({unip_id} probably not found in "
+                      f"database).\n\t\t\t(entry: {i}, unip: {unip_id}, pdb: {pdb_id}:{chain_id})")
+                return None, False, method, 4, '-', ''
+            else:
+                res = chain.__getitem__(residue_pos)
+                try:
+                    print(f"\tReplacement attempt successful (new residue: {Polypeptide.three_to_one(res.get_resname())}).")
+                except:
+                    pass
         else:
-            res = chain.__getitem__(residue_pos)
-            try:
-                print(f"\tReplacement attempt successful (new residue: {Polypeptide.three_to_one(res.get_resname())}).")
-            except:
-                pass
-    # Check whether residue criteria is fulfilled, if not attempt final alphafold replacement; Check whether a valid CB is
-    # accessible for specified residue, else return fail with i_error = 6
+            # Cannot find residue at position and no alphafold replacement possible with inter crosslink
+            print(f"\tWarning! Cannot find residue at position and no alphafold replacement possible for inter "
+                  f"crosslink (pos={residue_pos}).\n\t\t\t(entry: {i}, pdb: {pdb_id}:{chain_id})")
+            return None, False, method, 4, '-', ''
+    # Check whether residue criteria is fulfilled, if not attempt final alphafold replacement; Check whether a valid CB
+    # is accessible for specified residue, else return fail with i_error = 6
     try:
         # Check whether specified residue has valid name, else return fail with i_error = 5
         try:
@@ -303,7 +321,7 @@ def compute_site_pos(i, data, site_id, pdb_uni_map, method, df_xl_res):
                   f"(entry: {i}, pdb: {pdb_id}:{chain_id})")
             return None, False, method, 5, '-', ''
         res_criteria = (resname in df_xl_res.res.tolist()) and \
-                       (resname == data['seq'][data[f'pos_{site_id}'] - 1])
+                       (resname == data['seq' if xl_type == "intra" else f'seq_{site_id}'][data[f'pos_{site_id}'] - 1])
         print(f"\tFinal residue is '{resname}' (thus res_criteria_{site_id}: {res_criteria})")
         # If residue criteria fulfilled return result
         if res_criteria:
@@ -314,28 +332,34 @@ def compute_site_pos(i, data, site_id, pdb_uni_map, method, df_xl_res):
             except:
                 pass
         # Else attempt final alphafold replacement, if this fails return fail with i_error = 4
-        print("\tAttempt replacement alphafold download.")
-        chain, new_path = replacement_alphafold_download(unip_id, data["path"])
-        if chain is None:
-            print(f"\tReplacement alphafold download attempt returned an error ({unip_id} probably not found in "
-                  f"database).\n\t\t\t(entry: {i}, unip: {unip_id}, pdb: {pdb_id}:{chain_id})")
-            return None, False, method, 4, '-', ''
+        if xl_type == "intra":
+            print("\tAttempt replacement alphafold download.")
+            chain, new_path = replacement_alphafold_download(unip_id, data["path"])
+            if chain is None:
+                print(f"\tReplacement alphafold download attempt returned an error ({unip_id} probably not found in "
+                      f"database).\n\t\t\t(entry: {i}, unip: {unip_id}, pdb: {pdb_id}:{chain_id})")
+                return None, False, method, 4, '-', ''
+            else:
+                # Check whether specified residue by alphafold has valid name, else return fail with i_error = 5
+                try:
+                    method = "alphafold"
+                    residue_pos = data[f"pos_{site_id}"]
+                    res = chain.__getitem__(residue_pos)
+                    print(f"\tReplacement attempt successful "
+                          f"(new residue: {Polypeptide.three_to_one(res.get_resname())}).")
+                    resname = Polypeptide.three_to_one(res.get_resname())
+                    res_criteria = resname in df_xl_res.res.tolist()
+                    print(f"\tFinal residue is '{resname}' (thus res_criteria_{site_id}: {res_criteria})")
+                    return int(res.get_id()[1]), res_criteria, method, -1, res["CB"].get_bfactor(), new_path
+                except:
+                    print(f"\tWarning! Got non-aminoacid at residue position ({res.get_resname()}).\n\t\t\t"
+                          f"(entry: {i}, pdb: {pdb_id}:{chain_id})")
+                    return None, False, method, 5, '-', ''
         else:
-            # Check whether specified residue by alphafold has valid name, else return fail with i_error = 5
-            try:
-                method = "alphafold"
-                residue_pos = data[f"pos_{site_id}"]
-                res = chain.__getitem__(residue_pos)
-                print(f"\tReplacement attempt successful "
-                      f"(new residue: {Polypeptide.three_to_one(res.get_resname())}).")
-                resname = Polypeptide.three_to_one(res.get_resname())
-                res_criteria = resname in df_xl_res.res.tolist()
-                print(f"\tFinal residue is '{resname}' (thus res_criteria_{site_id}: {res_criteria})")
-                return int(res.get_id()[1]), res_criteria, method, -1, res["CB"].get_bfactor(), new_path
-            except:
-                print(f"\tWarning! Got non-aminoacid at residue position ({res.get_resname()}).\n\t\t\t"
-                      f"(entry: {i}, pdb: {pdb_id}:{chain_id})")
-                return None, False, method, 5, '-', ''
+            # Wrong residue and no alphafold replacement possible with inter crosslink
+            print(f"\tWarning! Wrong residue at position and no alphafold replacement possible for inter crosslink "
+                  f"({res.get_resname()}).\n\t\t\t(entry: {i}, pdb: {pdb_id}:{chain_id})")
+            return None, False, method, 4, '-', ''
     except:
         print(f"\tWarning! No C-beta found ({res.get_resname()}).\n\t\t\t"
               f"(entry: {i}, pdb: {pdb_id}:{chain_id})")
@@ -428,13 +452,16 @@ def replacement_alphafold_download(unip_id, path):
     # input unip_id: str, path: str
     # return chain: Bio.PDB.Chain, new_path: str
 
-    #ex.: data/out/structure_search/blastp_6G2J.pdb
-    new_path = f"{'_'.join(path.split('_')[:-2])}_af{unip_id}.pdb"
+    # ex.: data/out/structure_search/blastp_6G2J.pdb
+    new_path = f"{'_'.join(path.split('_')[:-1])}_af{unip_id}.pdb"
+
     if not os.path.exists(new_path):
         URL = f"https://alphafold.ebi.ac.uk/files/AF-{unip_id}-F1-model_v1.pdb"
         with open(new_path, 'w') as f:
             try:
                 f.write(r.get(URL).text)
+            except r.exceptions.Timeout:
+                pass
             except ConnectionError as e:
                 print("No connection to AlphaFold API possible. Please try again later.")
                 print(e)
