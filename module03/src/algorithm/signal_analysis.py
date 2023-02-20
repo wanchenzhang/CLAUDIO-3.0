@@ -1,4 +1,4 @@
-import pandas as pd
+from utils.utils import *
 
 
 def analyse_homo_signals(data, intra_only):
@@ -21,7 +21,8 @@ def compute_interaction_adj(data_row, intra_only):
     # return compute_interaction_dist: float
 
     if intra_only or data_row["unip_id_a"] == data_row["unip_id_b"]:
-        adjacency = 1 - (abs(int(data_row["pos_a"]) - int(data_row["pos_b"])) / len(data_row["seq"]))
+        adjacency = 1 - (abs(int(data_row["pos_a"]) - int(data_row["pos_b"])) /
+                         len(data_row["seq" if intra_only else "seq_a"]))
         return round_self(adjacency, 3)
     # If proteins of sites are not the same, no overlap can be computed
     else:
@@ -41,8 +42,9 @@ def compute_interaction_overlap(data_row, intra_only):
         else:
             site1 = 'a' if data_row["pos_a"] < data_row["pos_b"] else 'b'
             site2 = 'a' if data_row["pos_a"] > data_row["pos_b"] else 'b'
-            seq, pep_a, pep_b, pos_a, pos_b = (data_row["seq"], data_row[f"pep_{site1}"], data_row[f"pep_{site2}"],
-                                               int(data_row[f"pos_{site1}"]) - 1, int(data_row[f"pos_{site2}"]) - 1)
+            seq, pep_a, pep_b, pos_a, pos_b = (data_row["seq" if intra_only else "seq_a"], data_row[f"pep_{site1}"],
+                                               data_row[f"pep_{site2}"], int(data_row[f"pos_{site1}"]) - 1,
+                                               int(data_row[f"pos_{site2}"]) - 1)
 
             # save indices of residues in peptides between/including interacting residues
             seq_a_inds = [ind for ind in range(seq.find(pep_a), seq.find(pep_a) + len(pep_a)) if ind >= pos_a]
@@ -60,21 +62,3 @@ def compute_interaction_overlap(data_row, intra_only):
     # If proteins of sites are not the same, no overlap can be computed
     else:
         return float("Nan")
-
-
-def round_self(value, decimals):
-    # simple decimal rounding function (python by itself has a tendency to round fragmented with the buit-in function)
-    #
-    # input value: float, decimals: int
-    # return rounded_value: float/int
-
-    # If decimal less than 1, the resulting value will be an integer
-    if pd.isna(value):
-        return float("Nan")
-    if decimals < 1:
-        rounded_value = int(int((value * (10 ** decimals)) + .5) / (10 ** decimals))
-        return rounded_value
-    # Else, the resulting value will be a float
-    else:
-        rounded_value = int((value * (10 ** decimals)) + .5) / (10 ** decimals)
-        return rounded_value

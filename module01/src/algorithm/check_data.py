@@ -1,13 +1,14 @@
 import sys
-
-import pandas as pd
 from Bio.Align import PairwiseAligner
 
+from utils.utils import *
 
-def double_check_data(data, filename, df_xl_res, intra_only, output_directory):
+
+def double_check_data(data, filename, df_xl_res, intra_only, output_directory, verbose_level):
     # Check given datapoints and correct it, if possible/needed
     #
-    # input data: pd.DataFrame, filename: str, df_xl_res: pd.DataFrame, intra_only: bool, output_directory: str
+    # input data: pd.DataFrame, filename: str, df_xl_res: pd.DataFrame, intra_only: bool, output_directory: str,
+    # verbose_level: int
     # return data: pd.DataFrame
 
     log_text = ''
@@ -21,7 +22,8 @@ def double_check_data(data, filename, df_xl_res, intra_only, output_directory):
     new_datapoints = []
 
     for i, row in data.iterrows():
-        print(f"\r\t[{round(ind * 100 / data_len, 2)}%]", end='')
+        verbose_print(f"\r\t[{round_self(ind * 100 / data_len, 2)}%]", 1, verbose_level, end='')
+        ind += 1
 
         # SUCCESS: Remove empty entry
         if (type(row["seq"]) != str) if intra_only else ((type(row["seq_a"]) != str) and (type(row["seq_b"]) != str)):
@@ -57,8 +59,8 @@ def double_check_data(data, filename, df_xl_res, intra_only, output_directory):
             log_text += f"\tISSUE\n"
 
         # Recompute residue positions for site a and b
-        row, log_text = check_pep_pos(i, row, 'a', df_xl_res, intra_only, log_text)
-        row, log_text = check_pep_pos(i, row, 'b', df_xl_res, intra_only, log_text)
+        row, log_text = check_pep_pos(i, row, 'a', df_xl_res, intra_only, log_text, verbose_level)
+        row, log_text = check_pep_pos(i, row, 'b', df_xl_res, intra_only, log_text, verbose_level)
         # Update row
         data.loc[i, :] = row
 
@@ -93,9 +95,8 @@ def double_check_data(data, filename, df_xl_res, intra_only, output_directory):
                     log_text += "\tSUCCESS\n"
                     break
 
-        ind += 1
-        print(f"\r\t[{round(ind * 100 / data_len, 2)}%]", end='')
-    print()
+        verbose_print(f"\r\t[{round_self(ind * 100 / data_len, 2)}%]", 1, verbose_level, end='')
+    verbose_print("", 1, verbose_level)
 
     # Add aforementioned possible variations to the end of the dataset (*)
     for dp in new_datapoints:
@@ -105,7 +106,8 @@ def double_check_data(data, filename, df_xl_res, intra_only, output_directory):
                 f"\tFAILS: {log_text.count('FAIL')}\n" \
                 f"\tSUCCESSES: {log_text.count('SUCCESS')}\n" \
                 f"\tISSUES: {log_text.count('ISSUE')}\n" \
-                f"\tDUPLICATES: {log_text.count('DUPLICATE')}"
+                f"\tDUPLICATES: {log_text.count('DUPLICATE')}\n" \
+                f"\tCREATED: {log_text.count('CREATED')}"
 
     # Save logfile
     output_path = f"{output_directory}{filename}.log"
@@ -120,10 +122,11 @@ def double_check_data(data, filename, df_xl_res, intra_only, output_directory):
     return data
 
 
-def check_pep_pos(i, row, site, df_xl_res, intra_only, log_text):
+def check_pep_pos(i, row, site, df_xl_res, intra_only, log_text, verbose_level):
     # Check given positions and correct it, if possible/needed
     #
-    # input i: int, row: pd.Series, site: str, df_xl_res: pd.DataFrame, intra_only: bool, log_text: str
+    # input i: int, row: pd.Series, site: str, df_xl_res: pd.DataFrame, intra_only: bool, log_text: str,
+    # verbose_level: int
     # return row: pd.Series, log_text: str
 
     seq = row.seq if intra_only else row[f"seq_{site}"]
@@ -232,33 +235,35 @@ def check_pep_pos(i, row, site, df_xl_res, intra_only, log_text):
                 # If position has not been replaced yet
                 if not pos_replaced:
                     log_text += f"\tfound pep_{site} more than once or not even once in sequence\n"
-                    res_pos = int(row[f"res_pos_{site}"])
-                    log_text += f"\tres_pos_{site} was given\n"
-                    log_text += "\talign peptide to sequence\n"
-                    new_pos = realign_pep_to_seq(seq, peptide, res_pos)
-                    if new_pos is None:
-                        print(seq)
-                        print(peptide)
-                        print(dp.res)
-                        log_text += f"\talignment attempt failed for residue '{dp.res}'\n"
-                        log_text += "\tFAIL\n"
-                    else:
-                        log_text += f"\t\tVERIFY: new residue is '{dp.res}': {seq[new_pos - 1] == dp.res}\n"
-                        if seq[new_pos - 1] == dp.res:
-                            row[f"pos_{site}"] = new_pos
-                            log_text += f"\tREPLACE: pos_{site}: {pep_pos} -> {new_pos}\n"
-                            log_text += f"\tSUCCESS\n"
-                            pos_replaced = True
+                    try:
+                        res_pos = int(row[f"res_pos_{site}"])
+                        log_text += f"\tres_pos_{site} was given\n"
+                        log_text += "\talign peptide to sequence\n"
+                        new_pos = realign_pep_to_seq(seq, peptide, res_pos, verbose_level)
+                        if new_pos is None:
+                            log_text += f"\talignment attempt failed for residue '{dp.res}'\n"
+                            log_text += "\tFAIL\n"
                         else:
-                            log_text += f"\tFAIL\n"
+                            log_text += f"\t\tVERIFY: new residue is '{dp.res}': {seq[new_pos - 1] == dp.res}\n"
+                            if seq[new_pos - 1] == dp.res:
+                                row[f"pos_{site}"] = new_pos
+                                log_text += f"\tREPLACE: pos_{site}: {pep_pos} -> {new_pos}\n"
+                                log_text += f"\tSUCCESS\n"
+                                pos_replaced = True
+                            else:
+                                log_text += f"\tFAIL\n"
+                    # FAIL: res_pos not given
+                    except:
+                        log_text += f"\tres_pos_{site} was not given\n"
+                        log_text += "\tFAIL\n"
 
     return row, log_text
 
 
-def realign_pep_to_seq(seq, peptide, res_pos):
+def realign_pep_to_seq(seq, peptide, res_pos, verbose_level):
     # Align peptide to sequence and based on res_pos in peptide compute res_pos in sequence, return None if this fails
     #
-    # input seq: str, peptide: str, res_pos: int
+    # input seq: str, peptide: str, res_pos: int, verbose_level: int
     # return new_res_pos: int
 
     # Set alignment parameters
@@ -275,7 +280,7 @@ def realign_pep_to_seq(seq, peptide, res_pos):
         alignment = aligner.align(seq, peptide)[0]
     except ValueError:
         return None
-    print(f"\tAlignment:\n{alignment}")
+    verbose_print(f"\tAlignment:\n{alignment}", 2, verbose_level)
     aligned_seq = str(alignment).split('\n')[0]
     aligned_pep = str(alignment).split('\n')[2]
 
@@ -296,10 +301,10 @@ def realign_pep_to_seq(seq, peptide, res_pos):
         new_res_pos = len(aligned_seq[:aligned_pep_i + 1].replace(' ', '').replace('-', ''))
         if new_res_pos > 0:
             al_seq = str(alignment).split('\n')[1]
-            print(f"\tAligned site (index: {aligned_pep_i}):\n"
-                  f"\t\t{aligned_seq[aligned_pep_i]}\n"
-                  f"\t\t{al_seq[aligned_pep_i]}\n"
-                  f"\t\t{aligned_pep[aligned_pep_i]}")
+            verbose_print(f"\tAligned site (index: {aligned_pep_i}):\n"
+                          f"\t\t{aligned_seq[aligned_pep_i]}\n"
+                          f"\t\t{al_seq[aligned_pep_i]}\n"
+                          f"\t\t{aligned_pep[aligned_pep_i]}", 2, verbose_level)
             return new_res_pos
         else:
             return None
@@ -373,7 +378,7 @@ def create_duplicates(row, df_xl_res, intra_only, log_text):
                             log_text += f"\t\tpos_a: {row.pos_a} -> {new_pos_a}\n" \
                                         f"\t\tVERIFY: new residue is '{dp.res}': {seq_a[new_pos_a - 1] == dp.res}\n"
                             if seq_a[new_pos_a - 1] == dp.res:
-                                log_text += f"\t\t\tSUCCESS\n"
+                                log_text += f"\t\t\tCREATED\n"
                             else:
                                 log_text += f"\t\t\tFAIL\n"
                             new_datapoint.pos_a = new_pos_a
@@ -408,7 +413,7 @@ def create_duplicates(row, df_xl_res, intra_only, log_text):
                         log_text += f"\t\tpos_a: {row.pos_a} -> {new_pos_a}\n" \
                                     f"\t\tVERIFY: new residue is '{dp.res}': {seq_a[new_pos_a - 1] == dp.res}\n"
                         if seq_a[new_pos_a - 1] == dp.res:
-                            log_text += f"\t\t\tSUCCESS\n"
+                            log_text += f"\t\t\tCREATED\n"
                         else:
                             log_text += f"\t\t\tFAIL\n"
                         new_datapoint.pos_a = new_pos_a
@@ -434,7 +439,7 @@ def create_duplicates(row, df_xl_res, intra_only, log_text):
                         log_text += f"\t\tpos_b: {row.pos_b} -> {new_pos_b}\n" \
                                     f"\t\tVERIFY: new residue is '{dp.res}': {seq_b[new_pos_b - 1] == dp.res}\n"
                         if seq_b[new_pos_b - 1] == dp.res:
-                            log_text += f"\t\t\tSUCCESS\n"
+                            log_text += f"\t\t\tCREATED\n"
                         else:
                             log_text += f"\t\t\tFAIL\n"
                         new_datapoint.pos_b = new_pos_b

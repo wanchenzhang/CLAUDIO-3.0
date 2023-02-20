@@ -1,3 +1,6 @@
+########################################################################################################################
+## INPUT AND OUTPUT
+########################################################################################################################
 #1.filepath to dataset
 #type: string
 #ex.: /home/me/desktop/my_dataset.csv
@@ -6,7 +9,7 @@ input_filepath = data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonred
 #2.output directory for results, if left empty all generated outputs will be added to the directory of the inputfile
 #type: string
 #ex.: /home/me/desktop/my_outputs
-output_directory = data/out/full
+output_directory = data/out/full/
 
 #3.column name projections. A comma-separated position-sensitive list that names the column names of the users dataset
 #containing the necessary information for the tool. The column names should contain and should be given in the following
@@ -17,15 +20,51 @@ output_directory = data/out/full
 #UniProt sequence. If the positions are confirmed you may simply create two substitute columns for the positions in the
 #peptides instead and leave them empty.
 #type: string
-#ex.: peptide_a,peptide_b,position_a,position_b,residue_pos_in_peptide_a,residue_pos_in_peptide_b,entry_a,entry_b
+#ex.: peptide_a,peptide_b,position_a,position_b,residue_pos_in_pep_a,residue_pos_in_pep_b,UniProt_ID_a,UniProt_ID_b
 projections = peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2
 
-#4.read some results from temporary save from previous run (overwritten each time)
-#type: boolean
-#ex.: True
-read_temps = False
 
-#5.tiny comma-separated list of possibly crosslinked residues, as one-letter-code symbols, by the crosslinker.
+########################################################################################################################
+## EXTERNAL TOOL PATHS
+########################################################################################################################
+#4.binary directory in blast installation, or None if binary directory has been added to PATH variable (e.g. if blastp
+#can be called from anywhere (you may test this by running the following command on the terminal: "blastp -version"))
+#type: string / None
+#ex.: /home/me/desktop/ncbi-blast-2.13.0+/bin
+blast_bin = None
+
+#5.database directory for blast installation
+#type: string
+#ex.: /home/me/desktop/ncbi-blast-2.13.0+/db
+blast_db = $HOME/BLAST/db
+
+#6.binary directory in hh-suite installation, or None if binary directory has been added to PATH variable (e.g. if
+#hhsearch can be called from anywhere)
+#type: string / None
+#ex.: /home/me/desktop/hh-suite-3.3.0/bin
+hhsearch_bin = None
+
+#7.database directory for hh-suite installation
+#type: string
+#ex.: /home/me/desktop/hh-suite-3.3.0/db
+hhsearch_db = $HHDB
+
+#8.output directory for hhsearch results
+#type: string
+#ex.: /home/me/desktop/hh-suite-3.3.0/out
+hhsearch_out = $HHOUT
+
+#9.binary directory in topolink installation, or None if binary directory has been added to PATH variable (e.g. if
+#topolink can be called from anywhere)
+#type: string / None
+#ex.: /home/me/desktop/topolink/bin
+topolink_bin = None
+
+
+########################################################################################################################
+## XL-EXPERIMENT SPECIFICATIONS
+########################################################################################################################
+#10.tiny comma-separated list of possibly crosslinked residues, as one-letter-code symbols, by the crosslinker.
 #Optionally the user may add a ':' and either 1 if the residue has to be at the N-terminus or -1 if the residue has to
 #be at the C-terminus. If you want to specify multiple possible positions for the same symbol you have to add them
 #individually (ex.: "M:1,M:-1"). If the user does not add either the aminoacid is presumed to be position unspecific and
@@ -34,94 +73,108 @@ read_temps = False
 #ex.: K,M:1 #for Disuccinimidyl suberate (DSS) linker
 xl_residues = K,M:1
 
-#6.search tool for structure search (either hhsearch or blastp)
-#type: string
-#ex.: blastp / hhsearch
-search_tool = blastp
-
-#7.e-value of structure search
-#type: float [0,1]
-#ex.: 0.3
-e_value = 0.00001
-
-#8.query identity of structure search
-#type: float [0,100]
-#ex.: 55.0
-query_id = 90.0
-
-#9.coverage of structure search
-#type: float [0,100]
-#ex.: 55.0
-coverage = 50.0
-
-#10.resolution cutoff value, for which structure files will be included if they are either equal or lower
-#type: float [0,infty)
-#ex.: 5.0
-res_cutoff = 6.5
-
-#11.alphafold structure pLDDT cutoff value, for which structure distances will be included if they are either equal or
-#higher
-#type: float [0,100]
-#ex.: 55.0
-plddt_cutoff = 70.0
-
-#12.minimum of crosslinker range capability in angstrom (not included in accepted range)
+#11.minimum of crosslinker range capability in angstrom (not included in accepted range)
 #type: float [0,x]
 #ex.: 5.0
-linker_minimum = 0.0
+linker_minimum = 5.0
 
-#13.maximum of crosslinker range capability in angstrom (included into accepted range)
+#12.maximum of crosslinker range capability in angstrom (included into accepted range)
 #type: float [x,infty)
 #ex.: 20.0
 linker_maximum = 35.0
 
-#14.strictness for euclidean distance, e.g. value substracted from euclidean distance in angstrom for confidence score
+
+########################################################################################################################
+## STRUCTURE SEARCH AND SELECTION PARAMETERS
+########################################################################################################################
+#13.search tool for structure search (either hhsearch or blastp)
+#type: string
+#ex.: blastp / hhsearch
+search_tool = blastp
+
+#14.e-value of structure search
+#type: float [0,1]
+#ex.: 0.3
+e_value = 0.00001
+
+#15.query identity of structure search
+#type: float [0,100]
+#ex.: 55.0
+query_id = 90.0
+
+#16.coverage of structure search
+#type: float [0,100]
+#ex.: 55.0
+coverage = 50.0
+
+#17.resolution cutoff value, for which structure files will be included if they are either equal or lower for structure
+#selection
+#type: float [0,infty)
+#ex.: 5.0
+res_cutoff = 6.5
+
+
+########################################################################################################################
+## ADVANCED SETTINGS
+########################################################################################################################
+#################################################
+## READ TEMP-SAVES
+#################################################
+#18.read some results from temporary save from previous run (overwritten each time)
+#type: boolean
+#ex.: True
+read_temps = False
+
+#################################################
+## ALPHAFOLD CONFIDENCE CUTOFF
+#################################################
+#19.alphafold structure pLDDT cutoff value, for which structure distances will be included if the involved residue atoms
+#have an either equal or higher position prediction confidence
+#type: float [0,100]
+#ex.: 55.0
+plddt_cutoff = 70.0
+
+#################################################
+## COMPUTE EXPERIMENTAL SCORING
+#################################################
+#20.boolean, for whether experimental scoring and resulting XL-type evluations should be computed and appended to result
+#dataset
+#type: boolean
+#ex.: True
+compute_scoring = False
+
+#################################################
+## VERBOSE LEVEL
+#################################################
+#21.verbose level value:
+#       0: no outputs at all will be written to the commandline
+#       1: write tool inits and passed time
+#       2: write progressbars (where implemented)
+#       3: write alignments during data processing, and write extra information on process results
+#       4: write alignments during uniprot to pdb position translation
+#       5: write verfications during uniprot to pdb position translation
+#type: int
+#ex.: 0
+verbose_level = 3
+
+#################################################
+## EXPERIMENTAL SCORING PARAMETERS (ONLY ACTIVE IF #20=compute_scoring is set to True)
+#################################################
+#22.strictness for euclidean distance, e.g. value substracted from euclidean distance in angstrom for confidence score
 #calculation, or None if euclidean score is not to be included into the final scoring (in which case only the
 #topological distance and OPS analysis are included)
 #type: float [0,infty) / None
 #ex.: None
 euclidean_strictness = None
 
-#15.distance maximum which, if surpassed, by either the topological or euclidean distance replaces its value for the
+#23.distance maximum which, if surpassed, by either the topological or euclidean distance replaces its value for the
 #confidence score (this ensures that outliers do not negatively impact the scoring)
 #type: float [0,infty)
 #ex.: 100.0
 distance_maximum = 50.0
 
-#16.inter protein crosslink confidence score cutoff
+#24.inter protein crosslink confidence score cutoff
 #type: float [0,1]
 #ex.: 0.1
 cutoff = 0.0
-
-#17.binary directory in blast installation, or None if binary directory has been added to PATH variable (e.g. if blastp
-#can be called from anywhere (you may test this by running the following command on the terminal: "blastp -version"))
-#type: string / None
-#ex.: /home/me/desktop/ncbi-blast-2.13.0+/bin
-blast_bin = None
-
-#18.database directory for blast installation
-#type: string
-#ex.: /home/me/desktop/ncbi-blast-2.13.0+/db
-blast_db = $BLASTDB
-
-#19.binary directory in hh-suite installation, or None if binary directory has been added to PATH variable (e.g. if
-#hhsearch can be called from anywhere)
-#type: string / None
-#ex.: /home/me/desktop/hh-suite-3.3.0/bin
-hhsearch_bin = None
-
-#20.database directory for hh-suite installation
-#type: string
-#ex.: /home/me/desktop/hh-suite-3.3.0/db
-hhsearch_db = $HHDB
-
-#21.output directory for hhsearch results
-#type: string
-#ex.: /home/me/desktop/hh-suite-3.3.0/out
-hhsearch_out = $HHOUT
-
-#22.binary directory in topolink installation, or None if binary directory has been added to PATH variable (e.g. if
-#topolink can be called from anywhere)
-#type: string / None
-#ex.: /home/me/desktop/topolink/bin
-topolink_bin = None
+#################################################

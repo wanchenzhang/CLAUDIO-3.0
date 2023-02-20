@@ -10,6 +10,8 @@ from module02.src_distance_reevaluation.algorithm.calc_site_distances import cal
 from module02.src_distance_reevaluation.io.write_out import write_output
 from module02.src_distance_reevaluation.algorithm.create_plots import create_histogram
 
+from utils.utils import *
+
 
 @click.command()
 @click.option("-i", "--input-directory", default="data/out/structure_search")
@@ -19,8 +21,10 @@ from module02.src_distance_reevaluation.algorithm.create_plots import create_his
 @click.option("-p", "--plddt-cutoff", default=70.0)
 @click.option("-o", "--output-directory", default="data/out/dist_reeval")
 @click.option("-tl", "--topolink-bin", default=None)
-def main(input_directory, input_filepath, search_tool, xl_residues, plddt_cutoff, output_directory, topolink_bin):
-    print("Start intra interaction check\n")
+@click.option("-v", "--verbose-level", default=3)
+def main(input_directory, input_filepath, search_tool, xl_residues, plddt_cutoff, output_directory, topolink_bin,
+         verbose_level):
+    verbose_print("Start intra interaction check", 0, verbose_level)
     start_time = time.time()
 
     output_directory = output_directory if output_directory else '/'.join(input_filepath.split('/')[:-1])
@@ -39,7 +43,7 @@ def main(input_directory, input_filepath, search_tool, xl_residues, plddt_cutoff
 
     # If parameters inputted by user valid
     if inputs_valid(input_directory, input_filepath, search_tool, xl_residues, plddt_cutoff, output_directory,
-                    topolink_bin):
+                    topolink_bin, verbose_level):
         # Define dataset for crosslink residues including possible positions
         df_xl_res = pd.DataFrame()
         df_xl_res["res"] = [s.split(':')[0] for s in xl_residues.replace(';', ',').split(',')]
@@ -47,19 +51,20 @@ def main(input_directory, input_filepath, search_tool, xl_residues, plddt_cutoff
                             for s in xl_residues.replace(';', ',').split(',')]
 
         # Read result from uniprot_search, e.g. sqcs-file
-        print("Read peptide information from uniprot search results")
+        verbose_print("Read peptide information from uniprot search results", 0, verbose_level)
         data, intra_only = read_unipsearch_out(input_filepath)
 
         # Search for site positions in pdb files (replace rcsb pdb with alphafold, if not able to find it there)
-        print("Search site pos in pdb files (replace rcsb-pdb with alphafold-pdb if needed)")
-        data = search_site_pos_in_pdb(data, df_xl_res, intra_only)
+        verbose_print("Search site pos in pdb files (replace rcsb-pdb with alphafold-pdb if needed)", 0, verbose_level)
+        data = search_site_pos_in_pdb(data, df_xl_res, intra_only, verbose_level)
 
         # Compute distances of sites, and if distance calculation successful compute new xl_type
-        print("Calculate presumed interaction site distances and evaluate interaction likelihood")
-        data = calculate_site_dists(data, plddt_cutoff, intra_only, topolink_bin)
+        verbose_print("Calculate presumed interaction site distances and evaluate interaction likelihood", 0,
+                      verbose_level)
+        data = calculate_site_dists(data, plddt_cutoff, intra_only, topolink_bin, verbose_level)
 
         # Plot histograms of distances
-        print("Create distance histograms")
+        verbose_print("Create distance histograms", 0, verbose_level)
         create_histogram(data, input_filepath.split('/')[-1], output_directory)
 
         # Drop temporary result columns
@@ -70,20 +75,20 @@ def main(input_directory, input_filepath, search_tool, xl_residues, plddt_cutoff
                              "eucl_dist_tplk": "eucl_dist", "topo_dist_tplk": "topo_dist"}, inplace=True)
 
         # Overwrite previous outputfile of module02
-        print("Overwrite outputfile")
+        verbose_print("Overwrite outputfile", 0, verbose_level)
         write_output(data, input_filepath)
 
-    print(f"\nEnd script (Elapsed time: {round(time.time() - start_time, 2)}s)")
-    print("===================================")
+    verbose_print(f"\nEnd script (Elapsed time: {round_self(time.time() - start_time, 2)}s)", 0, verbose_level)
+    verbose_print("===================================", 0, verbose_level)
     sys.exit()
 
 
 def inputs_valid(input_directory, input_filename, search_tool, xl_residues, plddt_cutoff, output_directory,
-                 topolink_bin):
+                 topolink_bin, verbose_level):
     # check validity of inputted parameters
     #
     # input input_directory: str, input_filename: str, search_tool: str, xl_residues: str, plddt_cutoff: float,
-    # output_directory: str, topolink_bin: str/None
+    # output_directory: str, topolink_bin: str/None, verbose_level: int
     # return inputs_valid: bool
 
     if any([".pdb" in filename for filename in os.listdir(input_directory)]):

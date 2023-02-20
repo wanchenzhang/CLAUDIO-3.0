@@ -11,6 +11,8 @@ from module01.src.algorithm.check_data import double_check_data
 from module01.src.algorithm.create_unique_list import create_list_of_unique_proteins
 from module01.src.io.write_out import write_outputs
 
+from utils.utils import *
+
 
 @click.command()
 @click.option("-i", "--input-filepath", default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv")
@@ -24,9 +26,10 @@ from module01.src.io.write_out import write_outputs
 @click.option("-hh", "--hhsearch-bin", default=None)
 @click.option("-hhdb", "--hhsearch-db", default="$HHDB")
 @click.option("-hhout", "--hhsearch-out", default="$HHOUT")
+@click.option("-v", "--verbose-level", default=3)
 def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, output_directory, blast_bin, blast_db,
-         hhsearch_bin, hhsearch_db, hhsearch_out):
-    print("Start Unique Protein List Tool")
+         hhsearch_bin, hhsearch_db, hhsearch_out, verbose_level):
+    verbose_print("Start Unique Protein List Tool", 0, verbose_level)
     start_time = time.time()
 
     filename = '.'.join(input_filepath.split('/')[-1].split('.')[:-1])
@@ -54,7 +57,7 @@ def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, 
 
     # If parameters inputted by user valid
     if inputs_valid(input_filepath, projections, uniprot_search, xl_residues, search_tool, output_directory, blast_bin,
-                    blast_db, hhsearch_bin, hhsearch_db, hhsearch_out):
+                    blast_db, hhsearch_bin, hhsearch_db, hhsearch_out, verbose_level):
         # Use projections to apply unified column names to input dataset
         # (for example see module01/src/dict/default_projections.py)
         new_keys = ["pep_a", "pep_b", "pos_a", "pos_b", "res_pos_a", "res_pos_b", "unip_id_a", "unip_id_b"]
@@ -67,41 +70,42 @@ def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, 
                             for s in xl_residues.replace(';', ',').split(',')]
 
         # Read input file
-        print("Read input")
+        verbose_print("Read input", 0, verbose_level)
         data, intra_only = read_inputfile(input_filepath, projections)
 
         # uniprot_search parameter is True actually perform a new search, else try to retrieve previous results
         # from temporary save file
-        print("Retrieve UniProt sequences" if uniprot_search else "Retrieve UniProt sequences from temporary save")
-        data = do_uniprot_search(data, filename, intra_only) if uniprot_search \
+        verbose_print("Retrieve UniProt sequences" if uniprot_search else
+                      "Retrieve UniProt sequences from temporary save", 0, verbose_level)
+        data = do_uniprot_search(data, filename, intra_only, verbose_level) if uniprot_search \
             else read_temp_search_save(data, filename)
 
-        print("Check datapoints for inconsistencies")
         # Check datapoints for inconsistencies and correct them if possible (creates logfile in the process)
-        data = double_check_data(data, filename, df_xl_res, intra_only, output_directory)
-        print("Changes made to dataset written to log-file")
+        verbose_print("Check datapoints for inconsistencies", 0, verbose_level)
+        data = double_check_data(data, filename, df_xl_res, intra_only, output_directory, verbose_level)
+        verbose_print("Changes made to dataset written to log-file", 0, verbose_level)
 
         # Write list of unique protein pairs and unique proteins overall
-        print("Create unique protein and protein pair lists")
+        verbose_print("Create unique protein list", 0, verbose_level)
         unique_proteins_list = create_list_of_unique_proteins(data, search_tool, intra_only, blast_bin, blast_db,
-                                                              hhsearch_bin, hhsearch_db, hhsearch_out)
+                                                              hhsearch_bin, hhsearch_db, hhsearch_out, verbose_level)
 
         # Write ouput csv
-        print("Write output")
-        write_outputs(data, unique_proteins_list, filename, output_directory)
+        verbose_print("Write output", 0, verbose_level)
+        write_outputs(data, unique_proteins_list, filename, output_directory, verbose_level)
 
-    print(f"\nEnd script (Elapsed time: {round(time.time() - start_time, 2)}s)")
-    print("===================================")
+    verbose_print(f"\nEnd script (Elapsed time: {round_self(time.time() - start_time, 2)}s)", 0, verbose_level)
+    verbose_print("===================================", 0, verbose_level)
     sys.exit()
 
 
 def inputs_valid(input_filepath, projections, uniprot_search, xl_residues, search_tool, output_directory, blast_bin,
-                 blast_db, hhsearch_bin, hhsearch_db, hhsearch_out):
+                 blast_db, hhsearch_bin, hhsearch_db, hhsearch_out, verbose_level):
     # check validity of inputted parameters
     #
     # input input_filepath: str, projections: str, uniprot_search: bool, xl_residues: str, search_tool: str,
     # output_directory: str, blast_bin: str/None, blast_db: str, hhsearch_bin: str/None, hhsearch_db: str,
-    # hhsearch_out: str
+    # hhsearch_out: str, verbose_level: int
     # return inputs_valid: bool
 
     filename = input_filepath.split('/')[-1]

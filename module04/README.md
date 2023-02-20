@@ -2,7 +2,7 @@
 
 ### The CLI - Command Line Interface
 ```
-> python3 claudio_xl.py [-i <filepath>] [-i2 <filepath>] [-p <float>] [-lmin <float>] [-lmax <float>] [-es <float>] [-dm <float] [-c <float>] [-o <directorypath>]
+> python3 claudio_xl.py [-i <filepath>] [-i2 <filepath>] [-p <float>] [-lmin <float>] [-lmax <float>] [-es <float>] [-dm <float] [-c <float>] [-o <directorypath>] [-s <True/False>] [-v <int>]
 
 -i,   --input-filepath,         path to outputfile of structural distance analysis,
                                 default="data/out/dist_reeval/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv.sqcs.csv"
@@ -19,6 +19,15 @@
 -c,   --cutoff,                 float value used as confidence score cutoff, if surpassed, the linker type will be set 
                                 to inter, default=0.0  
 -o,   --output-directory,       output directory for produced csv-files, default="data/out/new_inter/"
+-s,    --compute-scoring,       boolean, for whether experimental scoring and resulting XL-type evluations should be 
+                                computed and appended to result dataset, default=False
+-v,    --verbose-level,         verbose level value, default=3:
+                                    0: no outputs at all will be written to the commandline
+                                    1: write tool inits and passed time
+                                    2: write progressbars (where implemented)
+                                    3: write alignments during data processing, and write extra information on process results
+                                    4: write alignments during uniprot to pdb position translation
+                                    5: write verfications during uniprot to pdb position translation
 ```
 
 ### Input

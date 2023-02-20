@@ -9,20 +9,24 @@ from module04.src.algorithm.retrieve_oligo_state import retrieve_oligomeric_stat
 from module04.src.algorithm.create_histo import create_histograms
 from module04.src.io.write_outs import write_outputs
 
+from utils.utils import *
+
 
 @click.command()
 @click.option("-i", "--input-filepath", default="data/out/dist_reeval/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.sqcs_structdi.csv")
 @click.option("-i2", "--input-filepath2", default="data/out/homo_signal/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.sqcs_ops.csv")
 @click.option("-p", "--plddt-cutoff", default=70.0)
-@click.option("-lmin", "--linker-minimum", default=0.0)
+@click.option("-lmin", "--linker-minimum", default=5.0)
 @click.option("-lmax", "--linker-maximum", default=35.0)
 @click.option("-es", "--euclidean-strictness", default=None)
 @click.option("-dm", "--distance-maximum", default=50.0)
 @click.option("-c", "--cutoff", default=0.0)
 @click.option("-o", "--output-directory", default="data/out/new_inter/")
+@click.option("-s", "--compute-scoring", default=False)
+@click.option("-v", "--verbose-level", default=3)
 def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,
-         distance_maximum, cutoff, output_directory):
-    print("Start New Inter Interaction Analysis")
+         distance_maximum, cutoff, output_directory, compute_scoring, verbose_level):
+    verbose_print("Start New Inter Interaction Analysis", 0, verbose_level)
     start_time = time.time()
 
     output_directory = output_directory if output_directory else '/'.join(input_filepath.split('/')[:-1])
@@ -31,7 +35,7 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, linker_m
 
     # If parameters inputted by user valid
     if inputs_valid(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,
-                    distance_maximum, cutoff, output_directory):
+                    distance_maximum, cutoff, output_directory, compute_scoring, verbose_level):
         plddt_cutoff = float(plddt_cutoff)
         linker_minimum = float(linker_minimum)
         linker_maximum = float(linker_maximum)
@@ -39,49 +43,49 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, linker_m
             if euclidean_strictness != "None" and euclidean_strictness is not None else None
         distance_maximum = float(distance_maximum)
         cutoff = float(cutoff)
+        filename = input_filepath.split('/')[-1].split('.')[0]
 
         # Read inputs
-        print("Read inputs")
+        verbose_print("Read inputs", 0, verbose_level)
         data, intra_only = read_inputs(input_filepath, input_filepath2)
 
         # Combine results of both reevaluations
-        print("Combine results of both reevaluations")
+        verbose_print("Combine results of both reevaluations", 0, verbose_level)
         data = combine_inter_reevaluations(data, intra_only, plddt_cutoff, linker_minimum, linker_maximum,
-                                           euclidean_strictness, distance_maximum, cutoff)
+                                           euclidean_strictness, distance_maximum, cutoff, compute_scoring)
 
         # Retrieve known oligomeric states from SWISS-MODEL
-        print("Retrieve known oligomeric states from SWISS-MODEL")
-        data = retrieve_oligomeric_states(data, intra_only)
-
-        # data.swiss_model_homology.fillna(value="", inplace=True) # TODO: oligomeric states undeteministic
+        verbose_print("Retrieve known oligomeric states from SWISS-MODEL", 0, verbose_level)
+        data = retrieve_oligomeric_states(data, intra_only, verbose_level)
 
         # Create inter score histogram
-        print("Create inter score histogram")
-        filename = input_filepath.split('/')[-1].split('.')[0]
-        create_histograms(data, intra_only, filename, cutoff, output_directory)
+        if compute_scoring:
+            verbose_print("Create score histogram", 0, verbose_level)
+            create_histograms(data, intra_only, filename, cutoff, output_directory)
 
         # Write final csv containing all computed information, fastas for alphafold and protein-specific csv with
         # interaction restraints
-        print("Write outputs")
+        verbose_print("Write outputs", 0, verbose_level)
         write_outputs(data, intra_only, filename, output_directory)
 
-    print(f"\nEnd script (Elapsed time: {round(time.time() - start_time, 2)}s)")
-    print("===================================")
+    verbose_print(f"\nEnd script (Elapsed time: {round_self(time.time() - start_time, 2)}s)", 0, verbose_level)
+    verbose_print("===================================", 0, verbose_level)
     sys.exit()
 
 
 def inputs_valid(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,
-         distance_maximum, cutoff, output_directory):
+                 distance_maximum, cutoff, output_directory, compute_scoring, verbose_level):
     # check validity of inputted parameters
     #
     # input input_filepath: str, input_filepath2: str, plddt_cutoff: float, linker_minimum: float,
-    # linker_maximum: float, euclidean_strictness: float, distance_maximum: float, cutoff: float, output_directory: str
+    # linker_maximum: float, euclidean_strictness: float, distance_maximum: float, cutoff: float, output_directory: str,
+    # compute_scoring: bool, verbose_level: int
     # return inputs_valid: bool
 
     # check whether outputfile from distance-based reevauation is specified
-    if input_filepath.endswith(".sqcs_structdi.csv"):# or True: #TODO: oligomeric states undeteministic
+    if input_filepath.endswith(".sqcs_structdi.csv"):
         # check whether outputfile from homo-signal-based reevauation is specified
-        if input_filepath2.endswith(".sqcs_ops.csv"):# or True: #TODO: oligomeric states undeteministic
+        if input_filepath2.endswith(".sqcs_ops.csv"):
             # check whether plddt cutoff has valid value
             try:
                 plddt_cutoff = float(plddt_cutoff)

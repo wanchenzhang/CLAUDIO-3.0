@@ -1,18 +1,19 @@
 import os
 from io import StringIO
-import pandas as pd
-import numpy as np
+
+
+from utils.utils import *
 
 
 def structure_search(data, filename, search_tool, e_value, query_id, coverage, intra_only, temp_path, blast_bin,
-                     blast_db, hhsearch_bin, hhsearch_db, hhsearch_out):
+                     blast_db, hhsearch_bin, hhsearch_db, hhsearch_out, verbose_level):
     # Perform either hhsearch or blastp search for any unique uniprot entry in rcsb database and retrieve the best
     # results, and save all entries for which no sufficient result was returned to retrieve these from alphafold
     # database later
     #
     # input data: pd.DataFrame, filename: str, search_tool: str, e_value: float, query_id: float, coverage: float,
     # intra_only: bool, temp_path: str, blast_bin: str/None, blast_db: str, hhsearch_bin: str/None, hhsearch_db: str,
-    # hhsearch_out: str
+    # hhsearch_out: str, verbose_level: int
     # return dataset: pd.DataFrame
 
     # Container lists for search results
@@ -80,8 +81,8 @@ def structure_search(data, filename, search_tool, e_value, query_id, coverage, i
             else:
                 not_found.append(i)
         ind += 1
-        print(f"\r\t[{round(ind * 100 / len(data.index), 2)}%]", end='')
-    print()
+        verbose_print(f"\r\t[{round_self(ind * 100 / len(data.index), 2)}%]", 1, verbose_level, end='')
+    verbose_print("", 1, verbose_level)
 
     # Save results to temporary save file
     marker_string = f"_{search_tool}_bltmp."
@@ -94,12 +95,12 @@ def structure_search(data, filename, search_tool, e_value, query_id, coverage, i
     # Print ids of entries which were not found in rcsb database (will be retrieved from alphafold database instead)
     if intra_only:
         not_found_proteins = data.loc[not_found].unip_id.unique()
-        print(f"\tProteins which yielded no results from RCSB database (will be retrieved from AlphaFold "
-              f"(n = {len(not_found_proteins)})): {not_found_proteins}")
+        verbose_print(f"\tProteins which yielded no results from RCSB database (will be retrieved from AlphaFold "
+                      f"(n = {len(not_found_proteins)})): {not_found_proteins}", 2, verbose_level)
     elif not data[data.unip_id_a == data.unip_id_b].empty:
-        not_found_proteins = pd.concat(data.loc[not_found].unip_id_a, data.loc[not_found].unip_id_b).unique()
-        print(f"\tProteins which yielded no results from RCSB database (will be retrieved from AlphaFold "
-              f"(n = {len(not_found_proteins)})): {not_found_proteins}")
+        not_found_proteins = pd.concat([data.loc[not_found].unip_id_a, data.loc[not_found].unip_id_b]).unique()
+        verbose_print(f"\tProteins which yielded no results from RCSB database (will be retrieved from AlphaFold "
+                      f"(n = {len(not_found_proteins)})): {not_found_proteins}", 2, verbose_level)
 
     return data
 

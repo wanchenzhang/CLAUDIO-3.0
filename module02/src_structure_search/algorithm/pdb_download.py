@@ -1,15 +1,19 @@
 import os
+import socket
 import sys
 import time
-
 import requests as r
 
 
-def download_pdbs(dataset, search_tool, intra_only, res_cutoff, output_directory):
+from utils.utils import *
+
+
+def download_pdbs(dataset, search_tool, intra_only, res_cutoff, output_directory, verbose_level):
     # Download pdb files either from RCSB or AlphaFold database (depending on earlier hhsearch or blastp search) into
     # output directory
     #
-    # input dataset: pd.DataFrame, search_tool: str, intra_only: bool, res_cutoff: float, output_directory:str
+    # input dataset: pd.DataFrame, search_tool: str, intra_only: bool, res_cutoff: float, output_directory: str,
+    # verbose_level: int
     # return dataset: pd.DataFrame
 
     # clear output directory of old pdb file results
@@ -84,13 +88,14 @@ def download_pdbs(dataset, search_tool, intra_only, res_cutoff, output_directory
                 dataset.loc[i, "pdb_resolution"] = resolution_a
 
                 # Save pdb text to new pdb file with custom name
-                with open(filename, 'w') as f:
-                    f.write(pdb_file)
+                if not os.path.exists(filename):
+                    with open(filename, 'w') as f:
+                        f.write(pdb_file)
                 break
 
         ind += 1
-        print(f"\r\t[{round(ind * 100 / len(dataset.index), 2)}%]", end='')
-    print()
+        verbose_print(f"\r\t[{round_self(ind * 100 / len(dataset.index), 2)}%]", 1, verbose_level, end='')
+    verbose_print("", 1, verbose_level)
 
     return dataset
 
@@ -134,7 +139,7 @@ def download_pdb_from_db(url, i_try, max_try):
             time.sleep(1)
             return download_pdb_from_db(url, i_try + 1, max_try)
     # Break execution if no connection to database possible
-    except ConnectionError as e:
+    except (ConnectionError, socket.gaierror) as e:
         print(f"No connection to {'RCSB' if url.startswith('https://files.rcsb.org/') else 'AlphaFold'} API possible. "
               f"Please try again later.")
         print(e)

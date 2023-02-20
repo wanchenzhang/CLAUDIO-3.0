@@ -1,23 +1,27 @@
-import pandas as pd
 from Bio.PDB import Polypeptide, PDBParser, MMCIFParser, Select, PDBIO
 import numpy as np
 import warnings
 import os
 
+from utils.utils import *
+
 warnings.filterwarnings("ignore")
 
 
-def calculate_site_dists(data, plddt_cutoff, intra_only, topolink_bin):
+def calculate_site_dists(data, plddt_cutoff, intra_only, topolink_bin, verbose_level):
     # calculate distances between interaction sites, and extend input dataset by res_criteria, e.g. whether the found
     # sites satisfy the criteria of being the specified residue, the method used to find the sites in the structure
     # file, in case said method was alphafold the pLDDT, e.g. confidence, value and finally the computed distances
     #
-    # input data: pd.DataFrame, plddt_cutoff: float, intra_only: bool, topolink_bin: str/None
+    # input data: pd.DataFrame, plddt_cutoff: float, intra_only: bool, topolink_bin: str/None, verbose_level: int
     # return data: pd.DataFrame
 
     # Self-compute euclidean distances in structures
     self_eucl_dists = []
+    ind = 0
     for i, row in data.iterrows():
+        verbose_print(f"\r\t[{round_self((ind * 100) / len(data.index), 2)}%]", 1, verbose_level, end='')
+
         # If both pdb positions were found, compute euclidean distance and add it to distances, else add Nan
         if (not pd.isna(row["pdb_pos_a"])) and (not pd.isna(row["pdb_pos_b"])):
             # Set boolean for whether pLDDT cutoff is unfulfilled if the used method was alphafold
@@ -74,20 +78,24 @@ def calculate_site_dists(data, plddt_cutoff, intra_only, topolink_bin):
         else:
             self_eucl_dists.append(float("Nan"))
 
+        ind += 1
+        verbose_print(f"\r\t[{round_self((ind * 100) / len(data.index), 2)}%]", 1, verbose_level, end='')
+    verbose_print("", 1, verbose_level)
+
     # Add self-computed euclidean distances to dataset
     data["eucl_dist"] = [round_self(dist, 3) for dist in self_eucl_dists]
     # Compute euclidean and topological distance of interacting residues with topolink and add them all to the dataset
-    data = compute_dists_with_topolink(data, plddt_cutoff, intra_only, topolink_bin)
+    data = compute_dists_with_topolink(data, plddt_cutoff, intra_only, topolink_bin, verbose_level)
 
     return data
 
 
-def compute_dists_with_topolink(data, plddt_cutoff, intra_only, topolink_bin):
+def compute_dists_with_topolink(data, plddt_cutoff, intra_only, topolink_bin, verbose_level):
     # compute euclidean and topological distances between residues utilizing topolink software, also saves logs of
     # topolink computation into temporary folder "data/temp/dist_reeval" (careful: contents of this folder will be fully
     # deleted each time this script is executed
     #
-    # input data: pd.DataFrame, plddt_cutoff: float, intra_only: bool, topolink_bin: str/None
+    # input data: pd.DataFrame, plddt_cutoff: float, intra_only: bool, topolink_bin: str/None, verbose_level: int
     # return data: pd.DataFrame
 
     toplink_dists = []
@@ -102,7 +110,7 @@ def compute_dists_with_topolink(data, plddt_cutoff, intra_only, topolink_bin):
 
     # Iterate over unique structures
     for structure in sorted(data["path"].unique()):
-        print(f"\r\t[{round((ind * 100) / len(data['path'].unique()), 2)}%]", end='')
+        verbose_print(f"\r\t[{round_self((ind * 100) / len(data['path'].unique()), 2)}%]", 1, verbose_level, end='')
 
         # subselect only interactions belonging to structure
         subset = data[data["path"] == structure]
@@ -216,8 +224,8 @@ def compute_dists_with_topolink(data, plddt_cutoff, intra_only, topolink_bin):
                 toplink_dists.append((data_index, float('Nan'), float('Nan')))
 
         ind += 1
-        print(f"\r\t[{round((ind * 100) / len(data['path'].unique()), 2)}%]", end='')
-    print()
+        verbose_print(f"\r\t[{round_self((ind * 100) / len(data['path'].unique()), 2)}%]", 1, verbose_level, end='')
+    verbose_print("", 1, verbose_level)
 
     # Initialize topolink columns for euclidean and topological distances
     data["eucl_dist_tplk"] = float("Nan")
@@ -265,21 +273,3 @@ def isolate_pdb_chain(path, chain_ids):
     io.save(new_path, ChainSelect())
 
     return new_path
-
-
-def round_self(value, decimals):
-    # simple decimal rounding function (python by itself has a tendency to round fragmented with the buit-in function)
-    #
-    # input value: float, decimals: int
-    # return rounded_value: float/int
-
-    # If decimal less than 1, the resulting value will be an integer
-    if pd.isna(value):
-        return float("Nan")
-    if decimals < 1:
-        rounded_value = int(int((value * (10 ** decimals)) + .5) / (10 ** decimals))
-        return rounded_value
-    # Else, the resulting value will be a float
-    else:
-        rounded_value = int((value * (10 ** decimals)) + .5) / (10 ** decimals)
-        return rounded_value

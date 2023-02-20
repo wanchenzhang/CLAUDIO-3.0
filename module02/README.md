@@ -2,7 +2,7 @@
 
 ### The CLI - Command Line Interface
 ```
-> python3 claudio_structdi.py [-i <filepath>] [-rt <True/False>] [-t <"blastp"/"hhsearch">] [-pc <float>] [-e <float>] [-qi <float>] [-c <float>] [-r <float>] [-o <directorypath>] [-bl <directorypath>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-hhout <directorypath>] [-tl <directorypath>]
+> python3 claudio_structdi.py [-i <filepath>] [-rt <True/False>] [-t <"blastp"/"hhsearch">] [-pc <float>] [-e <float>] [-qi <float>] [-c <float>] [-r <float>] [-o <directorypath>] [-bl <directorypath>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-hhout <directorypath>] [-tl <directorypath>] [-v <int>]
 
 -i,    --input-filepath,        path to inputfile,
                                 default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv"
@@ -26,7 +26,14 @@
 -hhdb, --hhsearch-db,           database directory for hh-suite installation, default="$HHDB"
 -hhout,--hhsearch-out,          output directory for hhsearch results, default="$HHOUT"
 -tl,   --topolink-bin,          binary directory in topolink installation, or None if binary directory has been added to
-                                PATH variable (e.g. if topolink can be called from anywhere), default=None)
+                                PATH variable (e.g. if topolink can be called from anywhere), default=None
+-v,    --verbose-level,         verbose level value, default=3:
+                                    0: no outputs at all will be written to the commandline
+                                    1: write tool inits and passed time
+                                    2: write progressbars (where implemented)
+                                    3: write alignments during data processing, and write extra information on process results
+                                    4: write alignments during uniprot to pdb position translation
+                                    5: write verfications during uniprot to pdb position translation
 ```
 
 ### Input

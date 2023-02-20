@@ -22,8 +22,9 @@ from module02.src_distance_reevaluation.main import main as run_distance_analysi
 @click.option("-hhdb", "--hhsearch-db", default="$HHDB")
 @click.option("-hhout", "--hhsearch-out", default="$HHOUT")
 @click.option("-tl", "--topolink-bin", default=None)
+@click.option("-v", "--verbose-level", default=3)
 def main(input_filepath, read_temps, search_tool, plddt_cutoff, e_value, query_id, coverage, res_cutoff,
-         output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out, topolink_bin):
+         output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out, topolink_bin, verbose_level):
 
     if not output_directory.endswith('/'):
         output_directory += '/'
@@ -33,13 +34,13 @@ def main(input_filepath, read_temps, search_tool, plddt_cutoff, e_value, query_i
         run_structure_search(["-i", input_filepath, "-s", not read_temps, "-t", search_tool,
                               "-e", e_value, "-q", query_id, "-c", coverage, "-r", res_cutoff, "-o", output_directory,
                               "-bl", blast_bin, "-bldb", blast_db, "-hh", hhsearch_bin, "-hhdb", hhsearch_db, "-hhout",
-                              hhsearch_out])
+                              hhsearch_out, "-v", verbose_level])
     except SystemExit:
         pass
     try:
         run_distance_analysis(["-i", f"{output_directory}structures",
                                "-i2", f"{output_directory}{filename}_structdi.csv", "-t", search_tool,
-                               "-p", plddt_cutoff, "-o", output_directory, "-tl", topolink_bin])
+                               "-p", plddt_cutoff, "-o", output_directory, "-tl", topolink_bin, "-v", verbose_level])
     except SystemExit:
         pass
 

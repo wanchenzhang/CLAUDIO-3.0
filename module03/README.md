@@ -2,11 +2,18 @@
 
 ### The CLI - Command Line Interface
 ```
-> python3 claudio_ops.py [-i <filepath>] [-o <directorypath>] 
+> python3 claudio_ops.py [-i <filepath>] [-o <directorypath>] [-v <int>] 
 
 -i,   --input-filepath,         path to inputfile,
                                 default="data/out/unique_protein_list/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv.sqcs"
 -o,   --output-directory,       output directory for produced csv-files, default="data/out/homo_signal/"
+-v,    --verbose-level,         verbose level value, default=3:
+                                    0: no outputs at all will be written to the commandline
+                                    1: write tool inits and passed time
+                                    2: write progressbars (where implemented)
+                                    3: write alignments during data processing, and write extra information on process results
+                                    4: write alignments during uniprot to pdb position translation
+                                    5: write verfications during uniprot to pdb position translation
 ```
 
 ### Input

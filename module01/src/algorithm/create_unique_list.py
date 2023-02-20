@@ -1,17 +1,18 @@
+import socket
 import sys
-
-import pandas as pd
 import requests as r
 from io import StringIO
 import os
 
+from utils.utils import *
+
 
 def create_list_of_unique_proteins(data, search_tool, intra_only, blast_bin, blast_db, hhsearch_bin, hhsearch_db,
-                                   hhsearch_out):
+                                   hhsearch_out, verbose_level):
     # create pandas dataframe of unique proteins depending on uniprot ids
     #
     # input data: pd.DataFrame, search_tool: str, intra_only: bool, blast_bin: str/None, blast_db: str,
-    # hhsearch_bin: str/None, hhsearch_db: str, hhsearch_out: str
+    # hhsearch_bin: str/None, hhsearch_db: str, hhsearch_out: str, verbose_level: int
     # return unique_proteins_list: pd.DataFrame
 
     if intra_only:
@@ -39,16 +40,25 @@ def create_list_of_unique_proteins(data, search_tool, intra_only, blast_bin, bla
                                  for protein in unique_proteins]
 
     # Apply uniprot search for information on unique proteins
-    infos = search_uniprot_metadata(unique_proteins)
+    infos = search_uniprot_metadata(unique_proteins, verbose_level)
     # Apply blastp or hhsearch search for pdb entries on unique proteins by their sequences
     pdbs = search_pdb_entries(unique_proteins, unique_sequences, search_tool, blast_bin, blast_db, hhsearch_bin,
-                              hhsearch_db, hhsearch_out)
+                              hhsearch_db, hhsearch_out, verbose_level)
 
     # Collect information of unique proteins for final unique protein list dataset
     unique_proteins_list = pd.DataFrame()
     unique_proteins_list["Index"] = unique_protein_indeces
     for i, head in enumerate(infos[0][0].split('\t')):
-        unique_proteins_list[head] = [info[1].split('\t')[i].replace('\"', '') for info in infos]
+        try:
+            unique_proteins_list[head] = [info[1].split('\t')[i].replace('\"', '') for info in infos]
+        except:
+            print(head)
+            for info in infos:
+                try:
+                    _ = info[1].split('\t')[i].replace('\"', '')
+                except:
+                    print(info)
+                    sys.exit()
     unique_proteins_list["Sequence"] = unique_sequences
     unique_proteins_list["PDB"] = pdbs
     unique_proteins_list["Count"] = unique_protein_counts
@@ -56,10 +66,10 @@ def create_list_of_unique_proteins(data, search_tool, intra_only, blast_bin, bla
     return unique_proteins_list
 
 
-def search_uniprot_metadata(unique_proteins):
+def search_uniprot_metadata(unique_proteins, verbose_level):
     # retrieve full sequences and info from uniprot database by given entries
     #
-    # input unique_proteins: list(str)
+    # input unique_proteins: list(str), verbose_level: int
     # return infos: list(list(str))
 
     # Create data container lists
@@ -68,32 +78,32 @@ def search_uniprot_metadata(unique_proteins):
     ind = 1
     # Iterate over proteins (proteins = uniprot ids)
     for protein in unique_proteins:
-        print(f"\r\t[{round(ind * 100 / len(unique_proteins), 2)}%]", end='')
+        verbose_print(f"\r\t[{round_self(ind * 100 / len(unique_proteins), 2)}%]", 1, verbose_level, end='')
         ind += 1
 
         # Retrieve uniprot information on protein
         urllib = f"https://rest.uniprot.org/uniprotkb/search?query={protein}&format=tsv"
         try:
             info = r.get(urllib).text.split('\n')
-        except (r.exceptions.Timeout, ConnectionError) as e:
+        except (r.exceptions.Timeout, ConnectionError, socket.gaierror) as e:
             print("No connection to UniProt API possible. Please try again later.")
             print(e)
             sys.exit()
 
         # Add information and sequence to container lists
         infos.append(info)
-    print()
+    verbose_print("", 1, verbose_level)
 
     return infos
 
 
 def search_pdb_entries(proteins, sequences, search_tool, blast_bin, blast_db, hhsearch_bin, hhsearch_db,
-                       hhsearch_out):
+                       hhsearch_out, verbose_level):
     # use either hhsearch or blastp as search tool on protein sequence in order to retrieve matching pdb id, if no
     # result was found add an alphafold entry id instead (id: af<uniprot_id>_A)
     #
     # input proteins: list(str), sequences: list(str), search_tool: str, blast_bin: str/None, blast_db: str,
-    # hhsearch_bin: str/None, hhsearch_db: str, hhsearch_out: str
+    # hhsearch_bin: str/None, hhsearch_db: str, hhsearch_out: str, verbose_level: int
     # return pdbs: list(str)
 
     # Create data container list
@@ -102,8 +112,7 @@ def search_pdb_entries(proteins, sequences, search_tool, blast_bin, blast_db, hh
     ind = 1
     # Iterate over proteins (proteins = uniprot ids)
     for i, protein in enumerate(proteins):
-        print(f"\r\t[{round(ind * 100 / len(proteins), 2)}%]", end='')
-        ind += 1
+        verbose_print(f"\r\t[{round_self(ind * 100 / len(proteins), 2)}%]", 1, verbose_level, end='')
 
         # Create temporary fasta file at data/temp/unique_protein_list for commandline application in search tools
         project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
@@ -144,6 +153,7 @@ def search_pdb_entries(proteins, sequences, search_tool, blast_bin, blast_db, hh
             pdbs.append(res)
         else:
             pdbs.append(f"af{protein}_A")
-    print()
+        ind += 1
+    verbose_print("", 1, verbose_level)
 
     return pdbs

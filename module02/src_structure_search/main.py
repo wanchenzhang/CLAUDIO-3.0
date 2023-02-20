@@ -10,6 +10,8 @@ from module02.src_structure_search.io.read_temp import read_temp_file
 from module02.src_structure_search.algorithm.pdb_download import download_pdbs
 from module02.src_structure_search.io.write_out import write_output
 
+from utils.utils import *
+
 
 @click.command()
 @click.option("-i", "--input-filepath", default="data/out/unique_protein_list/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.sqcs")
@@ -25,9 +27,10 @@ from module02.src_structure_search.io.write_out import write_output
 @click.option("-hh", "--hhsearch-bin", default=None)
 @click.option("-hhdb", "--hhsearch-db", default="$HHDB")
 @click.option("-hhout", "--hhsearch-out", default="$HHOUT")
+@click.option("-v", "--verbose-level", default=3)
 def main(input_filepath, do_structure_search, search_tool, e_value, query_id, coverage, res_cutoff, output_directory,
-         blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out):
-    print("Start structure search")
+         blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out, verbose_level):
+    verbose_print("Start structure search", 0, verbose_level)
     start_time = time.time()
 
     project_path = '/'.join(os.path.abspath(__file__).split('/')[:-3])
@@ -57,32 +60,34 @@ def main(input_filepath, do_structure_search, search_tool, e_value, query_id, co
 
     # If parameters inputted by user valid
     if inputs_valid(input_filepath, do_structure_search, search_tool, e_value, query_id, coverage, res_cutoff,
-                    output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out):
+                    output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out, verbose_level):
         e_value = float(e_value)
         query_id = float(query_id)
         coverage = float(coverage)
         res_cutoff = float(res_cutoff)
 
         # Read dataset and add columns for results
-        print("Read input")
+        verbose_print("Read input", 0, verbose_level)
         data, filename, intra_only = read_in(input_filepath)
 
         # If given variable do_structure_search is True perform new search, else retrieve results from earlier temporary
         # save file
         if do_structure_search:
-            print(f"Perform {search_tool} search")
+            verbose_print(f"Perform {search_tool} search", 0, verbose_level)
             data = structure_search(data, filename, search_tool, e_value, query_id, coverage, intra_only,
-                                    temp_save_search_path, blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out)
+                                    temp_save_search_path, blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out,
+                                    verbose_level)
         else:
-            print("Read from temporary save file")
+            verbose_print("Read from temporary save file", 0, verbose_level)
             data = read_temp_file(data, filename, search_tool, intra_only, temp_save_search_path)
 
         # Download structure files from RCSB database into structures subdirectory, if search tool found a proper
         # result, else use uniprot ID in order to attempt retrieval of matching AlphaFold entry
-        print("Download structures from RCSB database, or AlphaFold database if not found there")
+        verbose_print("Download structures from RCSB database, or AlphaFold database if not found there", 0,
+                      verbose_level)
         if not os.path.exists(f"{output_directory}structures"):
             os.mkdir(f"{output_directory}structures")
-        data = download_pdbs(data, search_tool, intra_only, res_cutoff, f"{output_directory}structures/")
+        data = download_pdbs(data, search_tool, intra_only, res_cutoff, f"{output_directory}structures/", verbose_level)
 
         # Drop temporary result columns
         data.drop(["all_results"], axis=1, inplace=True)
@@ -90,18 +95,18 @@ def main(input_filepath, do_structure_search, search_tool, e_value, query_id, co
         # Write new output
         write_output(data, filename, output_directory)
 
-    print(f"\nEnd script (Elapsed time: {round(time.time() - start_time, 2)}s)")
-    print("===================================")
+    verbose_print(f"\nEnd script (Elapsed time: {round_self(time.time() - start_time, 2)}s)", 0, verbose_level)
+    verbose_print("===================================", 0, verbose_level)
     sys.exit()
 
 
 def inputs_valid(input_filepath, do_structure_search, search_tool, e_value, query_id, coverage, res_cutoff,
-                 output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out):
+                 output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out, verbose_level):
     # check validity of inputted parameters
     #
     # input input_filepath: str, do_structure_search: bool, search_tool: str, e_value: float, query_id: float,
     # coverage: float, res_cutoff: float, output_directory: str, blast_bin: str/None, blast_db: str,
-    # hhsearch_bin: str/None, hhsearch_db: str, hhsearch_out:str
+    # hhsearch_bin: str/None, hhsearch_db: str, hhsearch_out:str, verbose_level: int
     # return inputs_valid: bool
 
     # check whether an inputfile with the extension .sqcs is specified
