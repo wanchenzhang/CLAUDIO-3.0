@@ -78,14 +78,15 @@ def search_uniprot_metadata(unique_proteins, verbose_level):
     ind = 1
     # Iterate over proteins (proteins = uniprot ids)
     for protein in unique_proteins:
-        verbose_print(f"\r\t[{round_self(ind * 100 / len(unique_proteins), 2)}%]", 1, verbose_level, end='')
+        verbose_print(f"\r\tMetadata search:[{round_self(ind * 100 / len(unique_proteins), 2)}%]", 1, verbose_level,
+                      end='')
         ind += 1
 
         # Retrieve uniprot information on protein
         urllib = f"https://rest.uniprot.org/uniprotkb/search?query={protein}&format=tsv"
         try:
             info = r.get(urllib).text.split('\n')
-        except (r.exceptions.Timeout, ConnectionError, socket.gaierror) as e:
+        except (r.exceptions.Timeout, ConnectionError, socket.gaierror, r.exceptions.ConnectionError) as e:
             print("No connection to UniProt API possible. Please try again later.")
             print(e)
             sys.exit()
@@ -112,7 +113,7 @@ def search_pdb_entries(proteins, sequences, search_tool, blast_bin, blast_db, hh
     ind = 1
     # Iterate over proteins (proteins = uniprot ids)
     for i, protein in enumerate(proteins):
-        verbose_print(f"\r\t[{round_self(ind * 100 / len(proteins), 2)}%]", 1, verbose_level, end='')
+        verbose_print(f"\r\tStructure search:[{round_self(ind * 100 / len(proteins), 2)}%]", 1, verbose_level, end='')
 
         # Create temporary fasta file at data/temp/unique_protein_list for commandline application in search tools
         project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
@@ -127,7 +128,7 @@ def search_pdb_entries(proteins, sequences, search_tool, blast_bin, blast_db, hh
         # Depending on given string either perform blastp or hhsearch
         if search_tool == "blastp":
             blast_call = "blastp" if blast_bin is None else f"{blast_bin}blastp"
-            cmd = f"{blast_call} -query {temp_path}tmp.fasta -db {blast_db}pdbaa -evalue 1e-5 -max_target_seqs 20 " \
+            cmd = f"{blast_call} -query {temp_path}tmp.fasta -db {blast_db}pdbaa -evalue 1e-5 " \
                   f"-outfmt \"6 delim=, saccver pident qcovs evalue\""
             res = pd.read_csv(StringIO(os.popen(cmd).read()),
                               sep=',',

@@ -481,7 +481,7 @@ def replacement_alphafold_download(unip_id, path):
                 f.write(r.get(URL).text)
             except r.exceptions.Timeout:
                 pass
-            except (ConnectionError, socket.gaierror) as e:
+            except (ConnectionError, socket.gaierror, r.exceptions.ConnectionError) as e:
                 print("No connection to AlphaFold API possible. Please try again later.")
                 print(e)
                 sys.exit()

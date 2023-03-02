@@ -26,7 +26,7 @@ def double_check_data(data, filename, df_xl_res, intra_only, output_directory, v
         ind += 1
 
         # SUCCESS: Remove empty entry
-        if (type(row["seq"]) != str) if intra_only else ((type(row["seq_a"]) != str) and (type(row["seq_b"]) != str)):
+        if (type(row["seq"]) != str) if intra_only else ((type(row["seq_a"]) != str) or (type(row["seq_b"]) != str)):
             log_text += f"{i}: empty entry. will be removed\n"
             data.drop(i, inplace=True)
             log_text += "\tSUCCESS\n"
@@ -81,15 +81,12 @@ def double_check_data(data, filename, df_xl_res, intra_only, output_directory, v
             new_datapoints.append(datapoints)
 
         # If not in known interactions, save unip ids and positions in known interactions, else drop datapoint
-        interaction_info1 = [row["unip_id_a"], row["pos_a"], row["pos_b"]]
-        interaction_info2 = [row["unip_id_b"], row["pos_b"], row["pos_a"]]
-        if not(interaction_info1 in known_inters) and not(interaction_info2 in known_inters):
-            known_inters.append(interaction_info1)
-            known_inters.append(interaction_info2)
+        interaction_info = sorted([row["unip_id_a"], row["unip_id_b"], str(row["pos_a"]), str(row["pos_b"])])
+        if interaction_info not in [x for _, x in known_inters]:
+            known_inters.append((i, interaction_info))
         else:
-            for known_inter in known_inters:
-                if (interaction_info1 == known_inter) or (interaction_info2 == known_inter):
-                    known_i = known_inter[0]
+            for known_i, known_inter in known_inters:
+                if interaction_info == known_inter:
                     log_text += f"{i}: entry is a DUPLICATE (see entry {known_i}). will be removed\n"
                     data.drop(i, inplace=True)
                     log_text += "\tSUCCESS\n"

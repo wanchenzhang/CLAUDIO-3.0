@@ -125,7 +125,7 @@ def perform_search(data, site, search_tool, e_value, query_id, coverage, temp_pa
         if search_tool == "blastp":
             blast_call = "blastp" if blast_bin is None else f"{blast_bin}blastp"
             command = f"{blast_call} -query {temp_path}tmp.fasta -db {blast_db}pdbaa -evalue {e_value} " \
-                      f"-max_target_seqs 20 -outfmt \"6 delim=, saccver pident qcovs evalue\""
+                      f"-outfmt \"6 delim=, saccver pident qcovs evalue\""
             res = pd.read_csv(StringIO(os.popen(command).read()), sep=',', names=["pdb", "ident", "cov", "eval"],
                               dtype={"pdb": str, "ident": float, "cov": float, "eval": float})
             best_result = res[(res["ident"] >= query_id) & (res["cov"] >= coverage)]

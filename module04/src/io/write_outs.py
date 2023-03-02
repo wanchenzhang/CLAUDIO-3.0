@@ -60,7 +60,7 @@ def write_outputs(data, intra_only, filename, output_directory):
             if intra_only:
                 unip_arg = data.unip_id == unip_id
             elif row.unip_id_a == row.unip_id_b:
-                unip_arg = True
+                unip_arg = data.unip_id_a == unip_id
             else:
                 unip_arg = ((data.unip_id_a == unip_id.split('_')[0]) & (data.unip_id_b == unip_id.split('_')[1])) | \
                            ((data.unip_id_a == unip_id.split('_')[1]) & (data.unip_id_b == unip_id.split('_')[0]))

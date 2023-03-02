@@ -1,6 +1,6 @@
 from alpine
 
-# set root and move to $HOME
+# set root
 USER root
 
 # install and setup Blastp
@@ -51,10 +51,8 @@ ENV HHOUT=$HOME/hhsuite-3.3.0-AVX2-Linux/hhout
 ENTRYPOINT ["python3", "claudio.py"]                            # full pipeline
 ENTRYPOINT ["python3", "claudio_lists.py"]                      # module01
 ENTRYPOINT ["python3", "claudio_structdi.py"]                   # module02
-ENTRYPOINT ["python3", "ops_analysis.py"]                       # module03
+ENTRYPOINT ["python3", "claudio_ops.py"]                        # module03
 ENTRYPOINT ["python3", "claudio_xl.py"]                         # module04
 
-ENTRYPOINT ["python3", "claudio_mod02_01.py"]                   # module02.1
-ENTRYPOINT ["python3", "claudio_mod02_02.py"]                   # module02.2
-ENTRYPOINT ["python3", "claudio_mod02_03.py"]                   # module02.3
-ENTRYPOINT ["python3", "read_out.py"]                           # return some results from module02.3 (testing purposes)
+ENTRYPOINT ["python3", "claudio_mod02_struct.py"]               # module02.1
+ENTRYPOINT ["python3", "claudio_mod02_di.py"]                   # module02.2

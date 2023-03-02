@@ -125,7 +125,7 @@ def download_pdb_from_db(url, i_try, max_try):
             # If ordinary download call fails attempt .cif call (for mmCIF file)
             if pdb_file.startswith("<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">"):
                 cif_url = f"{'.'.join(url.split('.')[:-1])}.cif"
-                pdb_file = ''.join(r.post(cif_url).text)
+                pdb_file = ''.join(r.post(cif_url, timeout=1).text)
             return pdb_file
         else:
             # Attempt .pdb call from AlphaFold database
@@ -139,7 +139,7 @@ def download_pdb_from_db(url, i_try, max_try):
             time.sleep(1)
             return download_pdb_from_db(url, i_try + 1, max_try)
     # Break execution if no connection to database possible
-    except (ConnectionError, socket.gaierror) as e:
+    except (ConnectionError, socket.gaierror, r.exceptions.ConnectionError) as e:
         print(f"No connection to {'RCSB' if url.startswith('https://files.rcsb.org/') else 'AlphaFold'} API possible. "
               f"Please try again later.")
         print(e)

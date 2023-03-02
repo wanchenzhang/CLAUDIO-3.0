@@ -903,7 +903,7 @@
 		VERIFY: new residue is 'K': True
 	REPLACE: pos_b: 995 -> 999
 	SUCCESS
-1481: entry is a DUPLICATE (see entry Q60597). will be removed
+1481: entry is a DUPLICATE (see entry 211). will be removed
 	SUCCESS
 1482_a: residue in peptide at pos_a is not any of the specified residues.
 	found pep_a exactly once in full sequence
@@ -1158,7 +1158,7 @@
 		VERIFY: new residue is 'K': True
 	REPLACE: pos_b: 171 -> 249
 	SUCCESS
-1523: entry is a DUPLICATE (see entry Q8CAQ8). will be removed
+1523: entry is a DUPLICATE (see entry 673). will be removed
 	SUCCESS
 1524_a: residue in peptide at pos_a is not any of the specified residues.
 	found pep_a exactly once in full sequence
@@ -1215,7 +1215,7 @@
 		VERIFY: new residue is 'K': True
 	REPLACE: pos_b: 190 -> 268
 	SUCCESS
-1527: entry is a DUPLICATE (see entry Q8CAQ8). will be removed
+1527: entry is a DUPLICATE (see entry 614). will be removed
 	SUCCESS
 1528_a: residue in peptide at pos_a is not any of the specified residues.
 	found pep_a exactly once in full sequence
@@ -1243,7 +1243,7 @@
 		VERIFY: new residue is 'K': True
 	REPLACE: pos_b: 203 -> 281
 	SUCCESS
-1529: entry is a DUPLICATE (see entry Q8CAQ8). will be removed
+1529: entry is a DUPLICATE (see entry 51). will be removed
 	SUCCESS
 1530_a: residue in peptide at pos_a is not any of the specified residues.
 	found pep_a exactly once in full sequence
@@ -1258,7 +1258,7 @@
 		VERIFY: new residue is 'K': True
 	REPLACE: pos_b: 306 -> 384
 	SUCCESS
-1530: entry is a DUPLICATE (see entry Q8CAQ8). will be removed
+1530: entry is a DUPLICATE (see entry 379). will be removed
 	SUCCESS
 1531_a: residue in peptide at pos_a is not any of the specified residues.
 	found pep_a exactly once in full sequence
@@ -1272,7 +1272,7 @@
 		VERIFY: new residue is 'K': True
 	REPLACE: pos_b: 203 -> 281
 	SUCCESS
-1531: entry is a DUPLICATE (see entry Q8CAQ8). will be removed
+1531: entry is a DUPLICATE (see entry 520). will be removed
 	SUCCESS
 1532_a: residue in peptide at pos_a is not any of the specified residues.
 	found pep_a exactly once in full sequence
@@ -1313,7 +1313,7 @@
 		VERIFY: new residue is 'K': True
 	REPLACE: pos_b: 207 -> 285
 	SUCCESS
-1534: entry is a DUPLICATE (see entry Q8CAQ8). will be removed
+1534: entry is a DUPLICATE (see entry 418). will be removed
 	SUCCESS
 1535_a: residue in peptide at pos_a is not any of the specified residues.
 	found pep_a exactly once in full sequence
@@ -1357,7 +1357,7 @@
 		VERIFY: new residue is 'K': True
 	REPLACE: pos_b: 363 -> 441
 	SUCCESS
-1537: entry is a DUPLICATE (see entry Q8CAQ8). will be removed
+1537: entry is a DUPLICATE (see entry 501). will be removed
 	SUCCESS
 1538_a: residue in peptide at pos_a is not any of the specified residues.
 	found pep_a exactly once in full sequence
@@ -1373,7 +1373,7 @@
 		VERIFY: new residue is 'K': True
 	REPLACE: pos_b: 227 -> 305
 	SUCCESS
-1538: entry is a DUPLICATE (see entry Q8CAQ8). will be removed
+1538: entry is a DUPLICATE (see entry 302). will be removed
 	SUCCESS
 1539_a: residue in peptide at pos_a is not any of the specified residues.
 	found pep_a exactly once in full sequence
@@ -1389,7 +1389,7 @@
 		VERIFY: new residue is 'K': True
 	REPLACE: pos_b: 264 -> 342
 	SUCCESS
-1539: entry is a DUPLICATE (see entry Q8CAQ8). will be removed
+1539: entry is a DUPLICATE (see entry 741). will be removed
 	SUCCESS
 1540_a: residue in peptide at pos_a is not any of the specified residues.
 	found pep_a exactly once in full sequence
@@ -1738,7 +1738,7 @@
 		VERIFY: new residue is 'K': True
 	REPLACE: pos_b: 96 -> 109
 	SUCCESS
-1828: entry is a DUPLICATE (see entry Q60932). will be removed
+1828: entry is a DUPLICATE (see entry 208). will be removed
 	SUCCESS
 1829_a: residue in peptide at pos_a is not any of the specified residues.
 	found pep_a exactly once in full sequence
@@ -2487,7 +2487,7 @@
 		VERIFY: new residue is 'K': True
 	REPLACE: pos_b: 78 -> 77
 	SUCCESS
-2277: entry is a DUPLICATE (see entry P35486). will be removed
+2277: entry is a DUPLICATE (see entry 1066). will be removed
 	SUCCESS
 2285_a: Found 'Mo' in pep_a.
 	REPLACE: Mo -> M

@@ -18,7 +18,7 @@ def do_uniprot_search(data, filename, intra_only, verbose_level):
         data["seq"], _ = search_uniprot(data, verbose_level)
     else:
         data["seq_a"], search_result_dict = search_uniprot(data, verbose_level, site='a')
-        data["seq_b"], _ = search_uniprot(data, search_result_dict, verbose_level, 'b')
+        data["seq_b"], _ = search_uniprot(data, verbose_level, already_searched=search_result_dict, site='b')
 
     # save results in temporary save file (can be used on rerun, instead of searching results again)
     project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
@@ -58,10 +58,10 @@ def search_uniprot(data, verbose_level, already_searched={}, site='a'):
                     already_searched[id] = result
                 # else print error message and raise ValueError
                 else:
-                    verbose_print(f"\tWarning! UniProt API call failed for UniProt_ID={id}.\n\tReturned message: {url_return_text}",
-                                  2, verbose_level)
+                    verbose_print(f"\tWarning! UniProt API call failed for UniProt_ID={id}.\n\tReturned message: "
+                                  f"{url_return_text}", 2, verbose_level)
                     already_searched[id] = None
-            except (r.exceptions.Timeout, ConnectionError, socket.gaierror) as e:
+            except (r.exceptions.Timeout, ConnectionError, socket.gaierror, r.exceptions.ConnectionError) as e:
                 print("No connection to UniProt API possible. Please try again later.")
                 print(e)
                 sys.exit()
@@ -73,8 +73,8 @@ def search_uniprot(data, verbose_level, already_searched={}, site='a'):
     for _, row in data.iterrows():
         id = row[f"unip_id_{site}"]
         ind += 1
-        verbose_print(f"\r\t[{round_self(ind * 100 / len(data.index), 2)}%]", 1, verbose_level, end='')
-        if pd.isna(id) or already_searched[id] is None:
+        verbose_print(f"\r\tSite_{site}:[{round_self(ind * 100 / len(data.index), 2)}%]", 1, verbose_level, end='')
+        if pd.isna(id) or already_searched[id] is None or not already_searched[id]:
             seqs.append(float('nan'))
         else:
             result = already_searched[id]

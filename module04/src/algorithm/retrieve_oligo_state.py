@@ -40,8 +40,9 @@ def get_oligo_state_from_swiss(data, intra_only, known_ostates, i_iteration, ver
 
     # progressbar
     ind, full_i = i_iteration
-    i_iteration[0] = ind + 1
+    ind += 1
     verbose_print(f"\r\t[{round_self((ind * 100) / full_i, 2)}%]", 1, verbose_level, end='')
+    i_iteration[0] = ind
 
     base_url = "https://swissmodel.expasy.org/repository/uniprot/"
 
@@ -61,17 +62,23 @@ def get_oligo_state_from_swiss(data, intra_only, known_ostates, i_iteration, ver
                 try:
                     try:
                         list_of_states = {structure["template"].split('.')[0]: structure["oligo-state"]
-                                          for structure in ast.literal_eval(r.get(url).text)["result"]["structures"]}
+                                          for structure in
+                                          ast.literal_eval(
+                                              r.get(url).text.replace("null", "None")
+                                          )["result"]["structures"]}
                         # add time skip to limit the rate of calls per second
                         # (see: https://swissmodel.expasy.org/docs/help, Modelling API)
                         time.sleep(DOWNLOAD_RATE_LIMITER_IN_SECONDS)
-                    except KeyError as e:
+                    except KeyError:
                         print("Warning! Received 'Exceeding rate limit'-error from SWISS API. "
                               "Download speed will be reduced.")
                         DOWNLOAD_RATE_LIMITER_IN_SECONDS += .1
+                    except ValueError:
+                        raise ValueError(f"Error! Result json by Swiss-model could not be properly parsed as "
+                                         f"dictionary.\nReceived: {r.get(url).text}")
                 except r.exceptions.Timeout:
                     pass
-                except (ConnectionError, socket.gaierror) as e:
+                except (ConnectionError, socket.gaierror, r.exceptions.ConnectionError) as e:
                     print("No connection to SWISS-MODEL API possible. Please try again later.")
                     print(e)
                     sys.exit()

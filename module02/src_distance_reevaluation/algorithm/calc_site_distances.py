@@ -163,6 +163,7 @@ def compute_dists_with_topolink(data, plddt_cutoff, intra_only, topolink_bin, ve
         topo_in = []
         project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
         project_path = project_path + '/' if project_path else ""
+        # TODO: linktype line specification
         for line in open(f"{project_path}data/in/topolink_inputfile.inp", 'r').readlines():
             if line.startswith("linkdir"):
                 topo_in.append(f"linkdir {project_path}data/temp/dist_reeval")

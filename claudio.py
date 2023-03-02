@@ -29,7 +29,7 @@ from utils.utils import *
 @click.option("-ct", "--cutoff", default=0.0)
 @click.option("-o", "--output-directory", default="data/out/full")
 @click.option("-bl", "--blast-bin", default=None)
-@click.option("-bldb", "--blast-db", default="$BLASTDB")
+@click.option("-bldb", "--blast-db", default="$HOME/BLAST/db")
 @click.option("-hh", "--hhsearch-bin", default=None)
 @click.option("-hhdb", "--hhsearch-db", default="$HHDB")
 @click.option("-hhout", "--hhsearch-out", default="$HHOUT")
@@ -94,11 +94,10 @@ def main(input_filepath, projections, read_temps, xl_residues, search_tool, e_va
                         "-i2", f"{output_directory}{filename}.sqcs_ops.csv", "-p", plddt_cutoff, "-lmin", linker_minimum,
                         "-lmax", linker_maximum, "-es", euclidean_strictness, "-dm", distance_maximum, "-c", cutoff,
                         "-o", output_directory, "-s", compute_scoring, "-v", verbose_level])
-
+    except SystemExit:
         os.remove(f"{output_directory}{filename}.sqcs")
         os.remove(f"{output_directory}{filename}.sqcs_structdi.csv")
         os.remove(f"{output_directory}{filename}.sqcs_ops.csv")
-    except SystemExit:
         pass
 
     verbose_print(f"\nEnd full CLAUDIO pipeline execution (Total elapsed time: "
