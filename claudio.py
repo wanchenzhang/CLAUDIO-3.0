@@ -15,7 +15,7 @@ from utils.utils import *
 @click.option("-i", "--input-filepath", default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv")
 @click.option("-p", "--projections", default="peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2")
 @click.option("-rt", "--read-temps", default=False)
-@click.option("-x", "--xl-residues", default="K,M:1")
+@click.option("-x", "--xl-residues", default="K,M:N:1")
 @click.option("-t", "--search-tool", default="blastp")
 @click.option("-e", "--e-value", default=1e-5)
 @click.option("-qi", "--query-id", default=90.0)
@@ -82,9 +82,10 @@ def main(input_filepath, projections, read_temps, xl_residues, search_tool, e_va
     # Run Module02
     try:
         run_claudio_structdi(["-i", f"{output_directory}{filename}.sqcs", "-rt", read_temps, "-t", search_tool,
-                              "-pc", plddt_cutoff, "-e", e_value, "-qi", query_id, "-c", coverage, "-r", res_cutoff,
-                              "-o", output_directory, "-bl", blast_bin, "-bldb", blast_db, "-hh", hhsearch_bin,
-                              "-hhdb", hhsearch_db, "-hhout", hhsearch_out, "-tl", topolink_bin, "-v", verbose_level])
+                              "-x", xl_residues, "-pc", plddt_cutoff, "-e", e_value, "-qi", query_id, "-c", coverage,
+                              "-r", res_cutoff, "-o", output_directory, "-bl", blast_bin, "-bldb", blast_db,
+                              "-hh", hhsearch_bin, "-hhdb", hhsearch_db, "-hhout", hhsearch_out, "-tl", topolink_bin,
+                              "-v", verbose_level])
     except SystemExit:
         pass
 
@@ -156,7 +157,7 @@ def read_config(path, args):
 
         # Check whether already given args have default value
         defaults = ["data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv",
-                    "peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2", False, "K,M:1", "blastp",
+                    "peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2", False, "K,M:N:1", "blastp",
                     1e-5, 90.0, 50.0, 6.5, 70.0, 0.0, 35.0, None, 50.0, 0.0, "data/out/full", None, "$BLASTDB", None,
                     "$HHDB", "$HHOUT", None, False, 3]
 

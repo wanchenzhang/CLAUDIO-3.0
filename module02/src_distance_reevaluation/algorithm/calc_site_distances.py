@@ -8,19 +8,20 @@ from utils.utils import *
 warnings.filterwarnings("ignore")
 
 
-def calculate_site_dists(data, plddt_cutoff, intra_only, topolink_bin, verbose_level):
+def calculate_site_dists(data, df_xl_res, plddt_cutoff, intra_only, topolink_bin, verbose_level):
     # calculate distances between interaction sites, and extend input dataset by res_criteria, e.g. whether the found
     # sites satisfy the criteria of being the specified residue, the method used to find the sites in the structure
     # file, in case said method was alphafold the pLDDT, e.g. confidence, value and finally the computed distances
     #
-    # input data: pd.DataFrame, plddt_cutoff: float, intra_only: bool, topolink_bin: str/None, verbose_level: int
+    # input data: pd.DataFrame, df_xl_res: pd.DataFrame, plddt_cutoff: float, intra_only: bool, topolink_bin: str/None,
+    # verbose_level: int
     # return data: pd.DataFrame
 
     # Self-compute euclidean distances in structures
     self_eucl_dists = []
     ind = 0
     for i, row in data.iterrows():
-        verbose_print(f"\r\t[{round_self((ind * 100) / len(data.index), 2)}%]", 1, verbose_level, end='')
+        verbose_print(f"\r\tSelf:[{round_self((ind * 100) / len(data.index), 2)}%]", 1, verbose_level, end='')
 
         # If both pdb positions were found, compute euclidean distance and add it to distances, else add Nan
         if (not pd.isna(row["pdb_pos_a"])) and (not pd.isna(row["pdb_pos_b"])):
@@ -71,7 +72,9 @@ def calculate_site_dists(data, plddt_cutoff, intra_only, topolink_bin, verbose_l
                     res_a = chain_a.__getitem__(int(row["pdb_pos_a"]))
                     res_b = chain_b.__getitem__(int(row["pdb_pos_b"]))
                     try:
-                        eucl_dist = np.sqrt(np.sum((res_a["CB"].get_coord() - res_b["CB"].get_coord()) ** 2))
+                        atom_a = df_xl_res[df_xl_res.res == Polypeptide.three_to_one(res_a.get_resname())].atom.iloc[0]
+                        atom_b = df_xl_res[df_xl_res.res == Polypeptide.three_to_one(res_b.get_resname())].atom.iloc[0]
+                        eucl_dist = np.sqrt(np.sum((res_a[atom_a].get_coord() - res_b[atom_b].get_coord()) ** 2))
                         self_eucl_dists.append(eucl_dist)
                     except:
                         self_eucl_dists.append(float("Nan"))
@@ -79,23 +82,24 @@ def calculate_site_dists(data, plddt_cutoff, intra_only, topolink_bin, verbose_l
             self_eucl_dists.append(float("Nan"))
 
         ind += 1
-        verbose_print(f"\r\t[{round_self((ind * 100) / len(data.index), 2)}%]", 1, verbose_level, end='')
+        verbose_print(f"\r\tSelf:[{round_self((ind * 100) / len(data.index), 2)}%]", 1, verbose_level, end='')
     verbose_print("", 1, verbose_level)
 
     # Add self-computed euclidean distances to dataset
     data["eucl_dist"] = [round_self(dist, 3) for dist in self_eucl_dists]
     # Compute euclidean and topological distance of interacting residues with topolink and add them all to the dataset
-    data = compute_dists_with_topolink(data, plddt_cutoff, intra_only, topolink_bin, verbose_level)
+    data = compute_dists_with_topolink(data, df_xl_res, plddt_cutoff, intra_only, topolink_bin, verbose_level)
 
     return data
 
 
-def compute_dists_with_topolink(data, plddt_cutoff, intra_only, topolink_bin, verbose_level):
+def compute_dists_with_topolink(data, df_xl_res, plddt_cutoff, intra_only, topolink_bin, verbose_level):
     # compute euclidean and topological distances between residues utilizing topolink software, also saves logs of
     # topolink computation into temporary folder "data/temp/dist_reeval" (careful: contents of this folder will be fully
     # deleted each time this script is executed
     #
-    # input data: pd.DataFrame, plddt_cutoff: float, intra_only: bool, topolink_bin: str/None, verbose_level: int
+    # input data: pd.DataFrame, df_xl_res: pd.DataFrame, plddt_cutoff: float, intra_only: bool, topolink_bin: str/None,
+    # verbose_level: int
     # return data: pd.DataFrame
 
     toplink_dists = []
@@ -104,13 +108,15 @@ def compute_dists_with_topolink(data, plddt_cutoff, intra_only, topolink_bin, ve
     # delete contents in temporary save
     project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
     project_path = project_path + '/' if project_path else ""
-    files = [f"{project_path}data/temp/dist_reeval/{f}" for f in os.listdir(f"{project_path}/data/temp/dist_reeval/")]
+    files = [f"{project_path}data/temp/dist_reeval/{f}" for f in os.listdir(f"{project_path}/data/temp/dist_reeval/")
+             if f != '_.txt']
     for f in files:
         os.remove(f)
 
     # Iterate over unique structures
     for structure in sorted(data["path"].unique()):
-        verbose_print(f"\r\t[{round_self((ind * 100) / len(data['path'].unique()), 2)}%]", 1, verbose_level, end='')
+        verbose_print(f"\r\tTopoLink:[{round_self((ind * 100) / len(data['path'].unique()), 2)}%]", 1, verbose_level,
+                      end='')
 
         # subselect only interactions belonging to structure
         subset = data[data["path"] == structure]
@@ -163,14 +169,23 @@ def compute_dists_with_topolink(data, plddt_cutoff, intra_only, topolink_bin, ve
         topo_in = []
         project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
         project_path = project_path + '/' if project_path else ""
-        # TODO: linktype line specification
-        for line in open(f"{project_path}data/in/topolink_inputfile.inp", 'r').readlines():
+        for line in [l for l in open(f"{project_path}data/in/topolink_inputfile.inp", 'r').readlines()
+                     if not l.startswith('#')]:
             if line.startswith("linkdir"):
-                topo_in.append(f"linkdir {project_path}data/temp/dist_reeval")
+                topo_in.append(f"linkdir {project_path}data/temp/dist_reeval\n")
             elif line.startswith("structure"):
-                topo_in.append(f"structure {structure}")
+                topo_in.append(f"structure {structure}\n")
             elif line.startswith("  observed"):
                 topo_in.append(obs_str)
+            elif line.startswith("  linktype"):
+                # "  linktype   MET     all      1       N           LYS     all     all       CB        35"
+                for i, row_a in df_xl_res.iterrows():
+                    for _, row_b in df_xl_res.iloc[i:].iterrows():
+                        type_str = ' '.join(["  linktype",
+                                             Polypeptide.one_to_three(row_a.res), "all", "all", row_a.atom,
+                                             Polypeptide.one_to_three(row_b.res), "all", "all", row_b.atom,
+                                             "35"])
+                        topo_in.append(type_str + '\n')
             else:
                 topo_in.append(line)
         topo_in = ''.join(topo_in)
@@ -192,10 +207,11 @@ def compute_dists_with_topolink(data, plddt_cutoff, intra_only, topolink_bin, ve
         for link_result in link_results:
             for i, obs_ind in enumerate(obs_inds):
                 data_index, link_strs, _ = obs_ind
-                # Check whether first link string of observation is in result, and check whether second is in result
-                # (after removing the first string)
-                if (link_strs[0] + " CB" in link_result) and \
-                        (link_strs[1] + " CB" in link_result.replace(link_strs[0] + " CB", '')):
+                # Check whether any possible first link string of observation is in result, and check whether any
+                # possible second is in result (after removing the first string)
+                if any([(link_strs[0] + f" {atom_a}" in link_result) and
+                        (link_strs[1] + f" {atom_b}" in link_result.replace(link_strs[0] + f" {atom_a}", ''))
+                        for atom_a in df_xl_res.atom for atom_b in df_xl_res.atom]):
                     tplk_eucl = link_result.split(' ')[9]
                     tplk_topo = link_result.split(' ')[10]
                     # Check whether both distances computed by topolink did not pass the threshold,
@@ -225,7 +241,8 @@ def compute_dists_with_topolink(data, plddt_cutoff, intra_only, topolink_bin, ve
                 toplink_dists.append((data_index, float('Nan'), float('Nan')))
 
         ind += 1
-        verbose_print(f"\r\t[{round_self((ind * 100) / len(data['path'].unique()), 2)}%]", 1, verbose_level, end='')
+        verbose_print(f"\r\tTopoLink:[{round_self((ind * 100) / len(data['path'].unique()), 2)}%]", 1, verbose_level,
+                      end='')
     verbose_print("", 1, verbose_level)
 
     # Initialize topolink columns for euclidean and topological distances

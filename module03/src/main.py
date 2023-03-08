@@ -1,9 +1,6 @@
 import click
-import os
 import sys
 import time
-import ast
-import pandas as pd
 
 from module03.src.io.read_in import read_in
 from module03.src.algorithm.signal_analysis import analyse_homo_signals

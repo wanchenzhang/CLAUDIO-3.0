@@ -344,7 +344,7 @@ def compute_site_pos(i, data, site_id, xl_type, intra_only, pdb_uni_map, method,
             try:
                 _ = res["CB"]
                 return int(res.get_id()[1]), res_criteria, method, -1,\
-                       res["CB"].get_bfactor() if method == "alphafold" else '-', new_path
+                    res["CB"].get_bfactor() if method == "alphafold" else '-', new_path
             except:
                 pass
         # Else attempt final alphafold replacement, if this fails return fail with i_error = 4

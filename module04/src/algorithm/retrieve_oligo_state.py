@@ -56,6 +56,7 @@ def get_oligo_state_from_swiss(data, intra_only, known_ostates, i_iteration, ver
             # repeat SWISS-MODEL calls for consistency (SWISS-MODEL has shown to inconsistently return empty or only
             # partial API call results)
             ostates = []
+            num_fails = 0
             for _ in range(NUMBER_OF_CALL_REPEATS):
                 list_of_states = {}
                 # use get-request, retrieve all known multimer complexes, isolate homomeric oligomer-states into list
@@ -67,26 +68,43 @@ def get_oligo_state_from_swiss(data, intra_only, known_ostates, i_iteration, ver
                                               r.get(url).text.replace("null", "None")
                                           )["result"]["structures"]}
                         # add time skip to limit the rate of calls per second
-                        # (see: https://swissmodel.expasy.org/docs/help, Modelling API)
+                        # (see: https://swissmodel.expasy.org/docs/help#modelling_api)
                         time.sleep(DOWNLOAD_RATE_LIMITER_IN_SECONDS)
                     except KeyError:
-                        print("Warning! Received 'Exceeding rate limit'-error from SWISS API. "
-                              "Download speed will be reduced.")
+                        print(f"Warning! Received 'Exceeding rate limit'-error from SWISS API. "
+                              f"Download speed will be reduced for Uniprot entry: {unip_id}.")
                         DOWNLOAD_RATE_LIMITER_IN_SECONDS += .1
                     except ValueError:
-                        raise ValueError(f"Error! Result json by Swiss-model could not be properly parsed as "
-                                         f"dictionary.\nReceived: {r.get(url).text}")
+                        if num_fails == NUMBER_OF_CALL_REPEATS:
+                            raise ValueError(f"Error! Result json by Swiss-model could not be properly parsed as "
+                                             f"dictionary for Uniprot entry: {unip_id}.\nReceived: {r.get(url).text}")
                 except r.exceptions.Timeout:
                     pass
-                except (ConnectionError, socket.gaierror, r.exceptions.ConnectionError) as e:
-                    print("No connection to SWISS-MODEL API possible. Please try again later.")
-                    print(e)
-                    sys.exit()
+                except (ConnectionError, socket.gaierror, r.exceptions.ConnectionError, ValueError) as e:
+                    if num_fails == NUMBER_OF_CALL_REPEATS:
+                        print(f"No connection to SWISS-MODEL API possible for Uniprot entry: {unip_id}. "
+                              f"Please try again later.")
+                        print(e)
+                        pass
+                    else:
+                        num_fails += 1
                 ostates.append(list_of_states)
 
             # Add resulting oligomeric states to list of known, if results not empty
             if ostates:
-                ostates = {key: pd.unique([repeat[key] for repeat in ostates]).tolist() for key in ostates[0].keys()}
+                # Ensure that missing data on repeats do not cause disturbances, by filling empty slots with "monomer"
+                unique_keys = []
+                for ostate in ostates:
+                    for key in ostate.keys():
+                        if key not in unique_keys:
+                            unique_keys.append(key)
+                for ostate in ostates:
+                    if not all([key in ostate.keys() for key in unique_keys]):
+                        for key in [key for key in unique_keys if key not in ostate.keys()]:
+                            ostate[key] = ["monomer"]
+
+                # Collect unique ostates of repeats
+                ostates = {key: pd.unique([repeat[key] for repeat in ostates]).tolist() for key in unique_keys}
 
                 # add result to known oligomeric states
                 known_ostates[unip_id] = ostates

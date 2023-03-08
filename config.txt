@@ -65,13 +65,19 @@ topolink_bin = None
 ## XL-EXPERIMENT SPECIFICATIONS
 ########################################################################################################################
 #10.tiny comma-separated list of possibly crosslinked residues, as one-letter-code symbols, by the crosslinker.
-#Optionally the user may add a ':' and either 1 if the residue has to be at the N-terminus or -1 if the residue has to
-#be at the C-terminus. If you want to specify multiple possible positions for the same symbol you have to add them
-#individually (ex.: "M:1,M:-1"). If the user does not add either the aminoacid is presumed to be position unspecific and
-#may be accepted anywhere in the protein sequence.
+#Optionally the user may optionally add two colon-symbols, if they wish to specify the position of the residue in the
+#sequence and/or the atom in the residue used for the distance computation. After the first colon-symbol they may place
+#the atom type for the distance computation, e.g. 'CB', 'CA', or 'N', etc. (ex.: "K:CB:0"). If no value is set here 'CB'
+#will be used by default. After the second colon-symbol they may place one of three position values: 0 if the residue
+#may occur anywhere in the protein, 1 if the residue has to be at the N-terminus, or -1 if the residue has to be at the
+#C-terminus. If you want to specify multiple possible positions for the same symbol you have to add them
+#individually (ex.: "M::1,M::-1"). By default, 0 is set here, e.g. the residue may be placed anywhere.
+#Note: If the position or the atom type is specified there have to be two colon-symbols (ex.: "K,M:1" will not be
+#accepted as input). You can leave the respective specification empty though, if you wish to use the default here (ex.:
+#"K::1" is equal to "K:CB:1", "M:N:0" is equal to "M:N:", "K:CB:0" is equal to "K::" and also to just "K").
 #type: string
-#ex.: K,M:1 #for Disuccinimidyl suberate (DSS) linker
-xl_residues = K,M:1
+#ex.: K,M:N:1 #for Disuccinimidyl suberate (DSS) linker
+xl_residues = K,M:N:1
 
 #11.minimum of crosslinker range capability in angstrom (not included in accepted range)
 #type: float [0,x]
@@ -107,8 +113,8 @@ query_id = 90.0
 #ex.: 55.0
 coverage = 50.0
 
-#17.resolution cutoff value, for which structure files will be included if they are either equal or lower for structure
-#selection
+#17.resolution cutoff value, for which structure files will be included if they are either equal or lower during
+#structure selection
 #type: float [0,infty)
 #ex.: 5.0
 res_cutoff = 6.5
@@ -120,7 +126,8 @@ res_cutoff = 6.5
 #################################################
 ## READ TEMP-SAVES
 #################################################
-#18.read some results from temporary save from previous run (overwritten each time)
+#18.read some results from temporary save from previous run (overwritten each time). Note: Ensure that this is called
+#with the exact same parameters as the previous run. It might otherwise lead to unforseen issues.
 #type: boolean
 #ex.: True
 read_temps = False

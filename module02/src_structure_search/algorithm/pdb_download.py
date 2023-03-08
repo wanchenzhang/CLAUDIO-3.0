@@ -133,17 +133,18 @@ def download_pdb_from_db(url, i_try, max_try):
             return pdb_file
     # Retry on timeout if not reached max_try already, else return None
     except (r.exceptions.Timeout, TimeoutError):
-        if i_try == max_try:
+        if i_try >= max_try:
             return None
         else:
             time.sleep(1)
             return download_pdb_from_db(url, i_try + 1, max_try)
     # Break execution if no connection to database possible
     except (ConnectionError, socket.gaierror, r.exceptions.ConnectionError) as e:
-        print(f"No connection to {'RCSB' if url.startswith('https://files.rcsb.org/') else 'AlphaFold'} API possible. "
-              f"Please try again later.")
-        print(e)
-        sys.exit()
+        if i_try == max_try:
+            print(f"No connection to {'RCSB' if url.startswith('https://files.rcsb.org/') else 'AlphaFold'} API possible. "
+                  f"Please try again later.")
+            print(e)
+        return download_pdb_from_db(url, i_try + 1, max_try)
 
 
 def accept_resolution_method(pdb, pdb_id, res_cutoff):

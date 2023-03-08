@@ -114,9 +114,10 @@ For details on how to run the **full** pipeline continue below.
 -hhout,--hhsearch-out,          output directory for hhsearch results, default="$HHOUT"
 -tl,   --topolink-bin,          binary directory in topolink installation, or None if binary directory has been added to
                                 PATH variable (e.g. if topolink can be called from anywhere), default=None
--x,    --xl-residues,           comma-separated one-letter-code residues, optional: add ':' after the one-letter-code 
-                                symbol of the residue in order to specify full sequence position (either 1 for start, or 
-                                -1 for end position), default="K,M:1"
+-x,    --xl-residues,           comma-separated one-letter-code residues, optional: add two ':' after the 
+                                one-letter-code symbol of the residue in order to specify full sequence position 
+                                (either 1 for start, or -1 for end position) and/or the atom used for the distance
+                                computation, default="K,M:N:1"
 -lmin, --linker-minimum,        float value used as minimal crosslinker range in angstrom, default=5.0
 -lmax, --linker-maximum,        float value used as maximal crosslinker range in angstrom, default=35.0
 -t,    --search-tool,           can be either "blastp" or "hhsearch", specifying the tool which should be used for pdb 

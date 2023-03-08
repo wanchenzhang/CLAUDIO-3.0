@@ -10,6 +10,7 @@ from module02.src_distance_reevaluation.main import main as run_distance_analysi
 @click.option("-i", "--input-filepath", default="data/out/unique_protein_list/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.sqcs")
 @click.option("-rt", "--read-temps", default=False)
 @click.option("-t", "--search-tool", default="blastp")
+@click.option("-x", "--xl-residues", default="K,M:N:1")
 @click.option("-pc", "--plddt-cutoff", default=70.0)
 @click.option("-e", "--e-value", default=1e-5)
 @click.option("-qi", "--query-id", default=90.0)
@@ -23,7 +24,7 @@ from module02.src_distance_reevaluation.main import main as run_distance_analysi
 @click.option("-hhout", "--hhsearch-out", default="$HHOUT")
 @click.option("-tl", "--topolink-bin", default=None)
 @click.option("-v", "--verbose-level", default=3)
-def main(input_filepath, read_temps, search_tool, plddt_cutoff, e_value, query_id, coverage, res_cutoff,
+def main(input_filepath, read_temps, search_tool, xl_residues, plddt_cutoff, e_value, query_id, coverage, res_cutoff,
          output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out, topolink_bin, verbose_level):
 
     if not output_directory.endswith('/'):
@@ -40,7 +41,8 @@ def main(input_filepath, read_temps, search_tool, plddt_cutoff, e_value, query_i
     try:
         run_distance_analysis(["-i", f"{output_directory}structures",
                                "-i2", f"{output_directory}{filename}_structdi.csv", "-t", search_tool,
-                               "-p", plddt_cutoff, "-o", output_directory, "-tl", topolink_bin, "-v", verbose_level])
+                               "-x", xl_residues, "-p", plddt_cutoff, "-o", output_directory, "-tl", topolink_bin,
+                               "-v", verbose_level])
     except SystemExit:
         pass
 

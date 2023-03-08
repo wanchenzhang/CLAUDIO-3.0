@@ -11,6 +11,10 @@
                                 default=False
 -t,    --search-tool,           can be either "blastp" or "hhsearch", specifying the tool which should be used for pdb 
                                 search, default="blastp"
+-x,    --xl-residues,           comma-separated one-letter-code residues, optional: add two ':' after the 
+                                one-letter-code symbol of the residue in order to specify full sequence position 
+                                (either 1 for start, or -1 for end position) and/or the atom used for the distance
+                                computation, default="K,M:N:1"
 -pc,   --plddt-cutoff,          float value used as cutoff for alphafold structure prediction confidences (plddt), 
                                 default=70.0
 -e,    --e-value,               e-value used in structure search, default=1e-5

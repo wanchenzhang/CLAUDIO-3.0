@@ -1,7 +1,6 @@
 import click
 import time
 import sys
-import pandas as pd
 import os
 
 from module02.src_distance_reevaluation.io.read_uniprot_search_out import read_unipsearch_out
@@ -17,7 +16,7 @@ from utils.utils import *
 @click.option("-i", "--input-directory", default="data/out/structure_search")
 @click.option("-i2", "--input-filepath", default="data/out/unique_protein_list/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.sqcs_structdi.csv")
 @click.option("-t", "--search-tool", default="blastp")
-@click.option("-x", "--xl-residues", default="K,M:1")
+@click.option("-x", "--xl-residues", default="K,M:N:1")
 @click.option("-p", "--plddt-cutoff", default=70.0)
 @click.option("-o", "--output-directory", default="data/out/dist_reeval")
 @click.option("-tl", "--topolink-bin", default=None)
@@ -44,11 +43,8 @@ def main(input_directory, input_filepath, search_tool, xl_residues, plddt_cutoff
     # If parameters inputted by user valid
     if inputs_valid(input_directory, input_filepath, search_tool, xl_residues, plddt_cutoff, output_directory,
                     topolink_bin, verbose_level):
-        # Define dataset for crosslink residues including possible positions
-        df_xl_res = pd.DataFrame()
-        df_xl_res["res"] = [s.split(':')[0] for s in xl_residues.replace(';', ',').split(',')]
-        df_xl_res["pos"] = [int(s.split(':')[-1]) if s.split(':')[-1].isdigit() else 0
-                            for s in xl_residues.replace(';', ',').split(',')]
+        # Define dataset for crosslink residues including possible positions and atom types
+        df_xl_res = build_xl_dataset(xl_residues)
 
         # Read result from uniprot_search, e.g. sqcs-file
         verbose_print("Read peptide information from uniprot search results", 0, verbose_level)
@@ -61,7 +57,7 @@ def main(input_directory, input_filepath, search_tool, xl_residues, plddt_cutoff
         # Compute distances of sites, and if distance calculation successful compute new xl_type
         verbose_print("Calculate presumed interaction site distances and evaluate interaction likelihood", 0,
                       verbose_level)
-        data = calculate_site_dists(data, plddt_cutoff, intra_only, topolink_bin, verbose_level)
+        data = calculate_site_dists(data, df_xl_res, plddt_cutoff, intra_only, topolink_bin, verbose_level)
 
         # Plot histograms of distances
         verbose_print("Create distance histograms", 0, verbose_level)
@@ -96,10 +92,9 @@ def inputs_valid(input_directory, input_filename, search_tool, xl_residues, pldd
             if search_tool in ["blastp", "hhsearch"]:
                 # check whether xl_residues can be turned into a proper DataFrame, else return False
                 try:
-                    df_xl_res = pd.DataFrame()
-                    df_xl_res["res"] = [s.split(':')[0] for s in xl_residues.replace(';', ',').split(',')]
-                    df_xl_res["pos"] = [int(s.split(':')[-1]) if s.split(':')[-1].isdigit() else 0
-                                        for s in xl_residues.replace(';', ',').split(',')]
+                    if build_xl_dataset(xl_residues) is None:
+                        return False
+
                     # check whether plddt cutoff has valid value
                     try:
                         plddt_cutoff = float(plddt_cutoff)

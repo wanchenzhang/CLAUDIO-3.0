@@ -21,9 +21,10 @@
                                 can be used to retrieve the previouse results of the uniprot and structure searches. In 
                                 this case you can set uniprot_search=False and it will try to retrieve said temporary 
                                 save file, instead of rerunning the uniprot sequence search, default=False
--x,    --xl-residues,           commaseperated one-letter-code residues, optional: add ':' after the one-letter-code 
-                                symbol of the residue in order to specify full sequence position (either 1 for start, or 
-                                -1 for end position), default="K,M:1"
+-x,    --xl-residues,           comma-separated one-letter-code residues, optional: add two ':' after the 
+                                one-letter-code symbol of the residue in order to specify full sequence position 
+                                (either 1 for start, or -1 for end position) and/or the atom used for the distance
+                                computation, default="K,M:N:1"
 -t,    --search-tool,           can be either "blastp" or "hhsearch", specifying the tool which should be used for pdb 
                                 search, default="blastp"
 -o,    --output-directory,      output directory for produced csv-files, default="data/out/unique_protein_list"

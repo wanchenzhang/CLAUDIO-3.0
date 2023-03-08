@@ -2,7 +2,6 @@ import click
 import sys
 import os
 import time
-import pandas as pd
 
 from module01.src.io.read_in import read_inputfile
 from module01.src.io.read_temp import read_temp_search_save
@@ -18,7 +17,7 @@ from utils.utils import *
 @click.option("-i", "--input-filepath", default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv")
 @click.option("-p", "--projections", default="peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2")
 @click.option("-s", "--uniprot-search", default=True)
-@click.option("-x", "--xl-residues", default="K,M:1")
+@click.option("-x", "--xl-residues", default="K,M:N:1")
 @click.option("-t", "--search-tool", default="blastp")
 @click.option("-o", "--output-directory", default="data/out/unique_protein_list")
 @click.option("-bl", "--blast-bin", default=None)
@@ -63,11 +62,8 @@ def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, 
         new_keys = ["pep_a", "pep_b", "pos_a", "pos_b", "res_pos_a", "res_pos_b", "unip_id_a", "unip_id_b"]
         projections = {projections.split(',')[i]: new_keys[i] for i in range(len(new_keys))}
 
-        # Define dataset for crosslink residues including possible positions
-        df_xl_res = pd.DataFrame()
-        df_xl_res["res"] = [s.split(':')[0] for s in xl_residues.replace(';', ',').split(',')]
-        df_xl_res["pos"] = [int(s.split(':')[-1]) if s.split(':')[-1].isdigit() else 0
-                            for s in xl_residues.replace(';', ',').split(',')]
+        # Define dataset for crosslink residues including possible positions and atom types
+        df_xl_res = build_xl_dataset(xl_residues)
 
         # Read input file
         verbose_print("Read input", 0, verbose_level)
@@ -75,8 +71,7 @@ def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, 
 
         # uniprot_search parameter is True actually perform a new search, else try to retrieve previous results
         # from temporary save file
-        verbose_print("Retrieve UniProt sequences" if uniprot_search else
-                      "Retrieve UniProt sequences from temporary save", 0, verbose_level)
+        verbose_print("Retrieve UniProt sequences" + '' if uniprot_search else " from temporary save", 0, verbose_level)
         data = do_uniprot_search(data, filename, intra_only, verbose_level) if uniprot_search \
             else read_temp_search_save(data, filename)
 
@@ -127,10 +122,9 @@ def inputs_valid(input_filepath, projections, uniprot_search, xl_residues, searc
                     return False
             # check whether xl_residues can be turned into a proper DataFrame, else return False
             try:
-                df_xl_res = pd.DataFrame()
-                df_xl_res["res"] = [s.split(':')[0] for s in xl_residues.replace(';', ',').split(',')]
-                df_xl_res["pos"] = [int(s.split(':')[-1]) if s.split(':')[-1] in ["-1", "1"] else 0
-                                    for s in xl_residues.replace(';', ',').split(',')]
+                if build_xl_dataset(xl_residues) is None:
+                    return False
+
                 # check whether specified structure search tool is either blastp or hhsearch
                 if search_tool in ["blastp", "hhsearch"]:
                     return True
