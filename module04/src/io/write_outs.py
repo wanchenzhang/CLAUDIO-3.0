@@ -24,7 +24,7 @@ def write_outputs(data, intra_only, filename, output_directory):
 
         # only write new result files if results for uniprot entry were not written yet
         if (unip_id not in already_written) and (row.XL_type == "inter"):
-            is_intra = intra_only or row.unip_id_a == row.unip_id_b
+            is_intra = intra_only or (row.unip_id_a == row.unip_id_b)
 
             output_subdirectory = f"{output_homo_dir}/{unip_id}" if is_intra else f"{output_hetero_dir}/{unip_id}"
             if not os.path.exists(output_subdirectory):
@@ -58,13 +58,18 @@ def write_outputs(data, intra_only, filename, output_directory):
 
             # write all interactions for current uniprot id into a csv
             if intra_only:
-                unip_arg = data.unip_id == unip_id
+                unip_arg = (data.unip_id == unip_id)
             elif row.unip_id_a == row.unip_id_b:
-                unip_arg = data.unip_id_a == unip_id
+                unip_arg = (data.unip_id_a == unip_id) & (data.unip_id_b == unip_id)
             else:
                 unip_arg = ((data.unip_id_a == unip_id.split('_')[0]) & (data.unip_id_b == unip_id.split('_')[1])) | \
-                           ((data.unip_id_a == unip_id.split('_')[1]) & (data.unip_id_b == unip_id.split('_')[0]))
-            data[unip_arg][['pos_a', 'pos_b', 'swiss_model_homology', 'XL_type']]\
+                            ((data.unip_id_a == unip_id.split('_')[1]) & (data.unip_id_b == unip_id.split('_')[0]))
+
+            data[unip_arg][['pdb_id', 'chain_a', 'chain_b', 'pdb_pos_a', 'pdb_pos_b', 'pos_a', 'pos_b',
+                            'swiss_model_homology', 'XL_type'] if not intra_only else ['pdb_id', 'chain', 'pdb_pos_a',
+                                                                                       'pdb_pos_b', 'pos_a', 'pos_b',
+                                                                                       'swiss_model_homology',
+                                                                                       'XL_type']]\
                 .to_csv(f"{output_subdirectory}/{unip_id}_{row.swiss_model_homology}.csv", index=False)
 
             # add uniprot id to list of already finished results

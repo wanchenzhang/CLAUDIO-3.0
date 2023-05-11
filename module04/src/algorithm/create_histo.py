@@ -2,39 +2,81 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def create_histograms(data, intra_only, filename, cutoff, output_directory):
-    # create histograms for inter scores
+def create_histograms(data, intra_only, filename, cutoff, compute_scoring, output_directory):
+    # create histograms for inter scores, and pie charts for final validation results
     #
-    # input data: pd.DataFrame, intra_only: bool, filename: str, output_directory: str
+    # input data: pd.DataFrame, intra_only: bool, filename: str, compute_scoring: bool, output_directory: str
     # no return
 
-    if intra_only:
-        inter_data = data[data.inter_score > cutoff][["inter_score"]]
-    else:
-        inter_data = data[(data.inter_score > cutoff) & (data.unip_id_a == data.unip_id_b)][["inter_score"]]
-    if not inter_data.empty:
-        label = "experimental confidence score for intra crosslinks (" \
-                + "$n_{>cutoff}$" + f" = {sum(inter_data.inter_score > cutoff)})"
-        bins = np.array(list(range(11))) * .1
-        bin_centers = np.diff(bins) * .5 + bins[:-1]
+    colors = ["#9ACE9A", "#464444"]
+    if compute_scoring:
+        if intra_only:
+            inter_data = data[data.inter_score > cutoff][["inter_score"]]
+        else:
+            inter_data = data[(data.inter_score > cutoff) & (data.unip_id_a == data.unip_id_b)][["inter_score"]]
+        if not inter_data.empty:
+            label = "experimental confidence score for intra crosslinks (" \
+                    + "$n_{>cutoff}$" + f" = {sum(inter_data.inter_score > cutoff)})"
+            bins = np.array(list(range(11))) * .1
+            bin_centers = np.diff(bins) * .5 + bins[:-1]
+            plt.figure(figsize=(6.5, 6), constrained_layout=True)
+            known_xy = []
+            freq, _, _ = plt.hist(inter_data, bins=bins, color=colors[0], label=label)
+            for fr, x in zip(freq, bin_centers):
+                height = int(fr)
+                y = height
+                if x in [val for val, _ in known_xy]:
+                    known_y = known_xy[[val for val, _ in known_xy].index(x)][1]
+                    rad = int(round(max(int(f) for f in freq) / 40) + 1)
+                    if y in range(known_y - rad, known_y + rad + 1) and y != known_y:
+                        y = known_y - rad if y <= known_y else known_y + rad
+                plt.annotate(str(height) if height > 0 else '', xy=(x, y), xytext=(0, .2), textcoords="offset points",
+                             ha="center", va="bottom")
+                known_xy.append((x, y))
+            plt.xlabel(f"score")
+            plt.ylabel("frequency")
+            x_labels = [f"{x:.1f}" for x in bins]
+            plt.xticks(bins, x_labels)
+            plt.title(f"Inter Interaction Score (Reclassification cutoff = {cutoff})")
+            plt.legend()
+            plt.savefig(f"{output_directory}{filename}_inter_score.png")
+
+            # Clear figure
+            plt.clf()
+
+    charts_strs = ["intra"]
+    data1 = data.copy() if intra_only else data[data.unip_id_a == data.unip_id_b].copy()
+    data_sets = [[len(data1[(data1.pdb_id == '-') & (data1.XL_type == "intra")].index),
+                  len(data1[(data1.pdb_id != '-') & (data1.XL_type == "intra")].index),
+                  len(data1[(data1.XL_type == "inter") & (data1.swiss_model_homology != '')].index),
+                  len(data1[(data1.XL_type == "inter") & (data1.swiss_model_homology == '')].index)]]
+    label_sets = [["remains intra (no structure found)", "remains intra (structure found)",
+                   "homology reference found", "new lead"]]
+    color_sets = [["#464444", "#FFCC00", "#9ACE9A", "lightblue"]]
+    if not intra_only:
+        charts_strs.append("inter")
+        data2 = data[data.unip_id_a != data.unip_id_b].copy()
+        data_sets.append([len(data2[data2.pdb_id == '-'].index),
+                          len(data2[(data2.pdb_id != '-') & (np.isnan(data2.topo_dist))]),
+                          len(data2[(data2.pdb_id != '-') & (~np.isnan(data2.topo_dist)) & (data2.evidence != '')].index),
+                          len(data2[(data2.pdb_id != '-') & (~np.isnan(data2.topo_dist)) & (data2.evidence == '')].index)])
+        label_sets.append(["no structure found", "not validated (structure found)", "reference structure found",
+                           "new lead"])
+        color_sets.append(["#464444", "red", "#9ACE9A", "lightblue"])
+
+    for charts_str, dataset, labels, colors in zip(charts_strs, data_sets, label_sets, color_sets):
         plt.figure(figsize=(6.5, 6), constrained_layout=True)
-        known_xy = []
-        freq, _, _ = plt.hist(inter_data, bins=bins, alpha=.3, label=label)
-        for fr, x in zip(freq, bin_centers):
-            height = int(fr)
-            y = height
-            if x in [val for val, _ in known_xy]:
-                known_y = known_xy[[val for val, _ in known_xy].index(x)][1]
-                rad = int(round(max(int(f) for f in freq) / 40) + 1)
-                if y in range(known_y - rad, known_y + rad + 1) and y != known_y:
-                    y = known_y - rad if y <= known_y else known_y + rad
-            plt.annotate(str(height) if height > 0 else '', xy=(x, y), xytext=(0, .2), textcoords="offset points",
-                         ha="center", va="bottom")
-            known_xy.append((x, y))
-        plt.xlabel(f"score")
-        plt.ylabel("frequency")
-        x_labels = [f"{x:.1f}" for x in bins]
-        plt.xticks(bins, x_labels)
-        plt.title(f"Inter Interaction Score (Reclassification cutoff = {cutoff})")
-        plt.legend()
-        plt.savefig(f"{output_directory}{filename}_inter_score.png")
+
+        def percentages(pct, all_vals):
+            abs_val = int(np.round(pct / 100 * np.sum(all_vals)))
+            return f"{pct:.1f}%\n(n={abs_val})" if abs_val > 0 else ''
+
+        wedges, _, autos = plt.pie(dataset, autopct=lambda x: percentages(x, dataset),
+                                   colors=colors, textprops=dict(weight="bold"))
+        autos[0].set_color('w')
+        plt.legend(wedges, labels)
+        plt.title(f"Final distribution of {charts_str} cross-links (n={sum(dataset)})")
+        plt.savefig(f"{output_directory}{filename}_validated_{charts_str}.png")
+
+        # Clear figure
+        plt.clf()

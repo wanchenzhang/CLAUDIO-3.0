@@ -65,7 +65,7 @@ topolink_bin = None
 ## XL-EXPERIMENT SPECIFICATIONS
 ########################################################################################################################
 #10.tiny comma-separated list of possibly crosslinked residues, as one-letter-code symbols, by the crosslinker.
-#Optionally the user may optionally add two colon-symbols, if they wish to specify the position of the residue in the
+#Optionally the user may add two colon-symbols, if they wish to specify the position of the residue in the
 #sequence and/or the atom in the residue used for the distance computation. After the first colon-symbol they may place
 #the atom type for the distance computation, e.g. 'CB', 'CA', or 'N', etc. (ex.: "K:CB:0"). If no value is set here 'CB'
 #will be used by default. After the second colon-symbol they may place one of three position values: 0 if the residue

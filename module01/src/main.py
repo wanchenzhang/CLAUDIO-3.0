@@ -85,6 +85,9 @@ def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, 
         unique_proteins_list = create_list_of_unique_proteins(data, search_tool, intra_only, blast_bin, blast_db,
                                                               hhsearch_bin, hhsearch_db, hhsearch_out, verbose_level)
 
+        # Clean dataset for output
+        data = clean_dataset(data)
+
         # Write ouput csv
         verbose_print("Write output", 0, verbose_level)
         write_outputs(data, unique_proteins_list, filename, output_directory, verbose_level)

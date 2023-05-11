@@ -12,6 +12,8 @@ from module02.src_distance_reevaluation.main import main as run_distance_analysi
 @click.option("-t", "--search-tool", default="blastp")
 @click.option("-x", "--xl-residues", default="K,M:N:1")
 @click.option("-pc", "--plddt-cutoff", default=70.0)
+@click.option("-lmin", "--linker-minimum", default=5.0)
+@click.option("-lmax", "--linker-maximum", default=35.0)
 @click.option("-e", "--e-value", default=1e-5)
 @click.option("-qi", "--query-id", default=90.0)
 @click.option("-c", "--coverage", default=50.0)
@@ -24,8 +26,9 @@ from module02.src_distance_reevaluation.main import main as run_distance_analysi
 @click.option("-hhout", "--hhsearch-out", default="$HHOUT")
 @click.option("-tl", "--topolink-bin", default=None)
 @click.option("-v", "--verbose-level", default=3)
-def main(input_filepath, read_temps, search_tool, xl_residues, plddt_cutoff, e_value, query_id, coverage, res_cutoff,
-         output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out, topolink_bin, verbose_level):
+def main(input_filepath, read_temps, search_tool, xl_residues, plddt_cutoff, linker_minimum, linker_maximum, e_value,
+         query_id, coverage, res_cutoff, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out,
+         topolink_bin, verbose_level):
 
     if not output_directory.endswith('/'):
         output_directory += '/'
@@ -41,7 +44,8 @@ def main(input_filepath, read_temps, search_tool, xl_residues, plddt_cutoff, e_v
     try:
         run_distance_analysis(["-i", f"{output_directory}structures",
                                "-i2", f"{output_directory}{filename}_structdi.csv", "-t", search_tool,
-                               "-x", xl_residues, "-p", plddt_cutoff, "-o", output_directory, "-tl", topolink_bin,
+                               "-x", xl_residues, "-p", plddt_cutoff, "-lmin", linker_minimum, "-lmax", linker_maximum,
+                               "-o", output_directory, "-tl", topolink_bin,
                                "-v", verbose_level])
     except SystemExit:
         pass

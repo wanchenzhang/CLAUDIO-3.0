@@ -12,10 +12,11 @@ def create_homo_signal_histograms(data, filename, output_directory):
     # adjacency histogram
     adj_data = data["homo_adjacency"].copy()
     adj_data = adj_data[~np.isnan(adj_data)]
+    colors = ["#9ACE9A", "#464444"]
     if not adj_data.empty:
         bins = [round(x * 0.1, 1) for x in range(11)]
         plt.figure(figsize=(6.5, 6), constrained_layout=True)
-        freq, _, _ = plt.hist(adj_data, bins=bins, alpha=.3)
+        freq, _, _ = plt.hist(adj_data, bins=bins, color=colors[0])
         plt.xlabel(f"relative adjacency")
         bin_centers = np.diff(bins) * .5 + bins[:-1]
         for fr, x in zip(freq, bin_centers):
@@ -38,7 +39,7 @@ def create_homo_signal_histograms(data, filename, output_directory):
     if not overl_data.empty:
         bins = [round(x * 0.1, 1) for x in range(11)]
         plt.figure(figsize=(6.5, 6), constrained_layout=True)
-        freq, _, _ = plt.hist(overl_data, bins=bins, alpha=.3)
+        freq, _, _ = plt.hist(overl_data, bins=bins, color=colors[0])
         bin_centers = np.diff(bins) * .5 + bins[:-1]
         for fr, x in zip(freq, bin_centers):
             height = int(fr)
@@ -55,12 +56,15 @@ def create_homo_signal_histograms(data, filename, output_directory):
         plt.clf()
 
     # histogram of peptide overlaps between/including interacting residues
-    overl_data_bool = data["homo_pep_overl"].copy()
+    if "unip_id" in data.columns:
+        overl_data_bool = data["homo_pep_overl"].copy()
+    else:
+        overl_data_bool = data[data.unip_id_a == data.unip_id_b]["homo_pep_overl"].copy()
     overl_data_bool = overl_data_bool[~np.isnan(overl_data_bool)]
     if not overl_data_bool.empty:
         bins = [0, .5,  1]
         plt.figure(figsize=(6.5, 6), constrained_layout=True)
-        freq, _, _ = plt.hist(overl_data_bool.astype(int), bins=bins, alpha=.3)
+        freq, _, _ = plt.hist(overl_data_bool.astype(int), bins=bins, color=colors[0])
         bin_centers = np.diff(bins) * .5 + bins[:-1]
         for fr, x in zip(freq, bin_centers):
             height = int(fr)
@@ -69,5 +73,30 @@ def create_homo_signal_histograms(data, filename, output_directory):
         plt.ylabel("frequency")
         x_labels = [False, True]
         plt.xticks(bin_centers, x_labels)
-        plt.title("Boolean distinction whether peptides overlap or not")
+        plt.title("Boolean distinction whether peptides overlap or not (intra-links only)")
         plt.savefig(f"{output_directory}{filename}_pep_ovl.png")
+
+        # Clear figure
+        plt.clf()
+
+    # pie chart of peptide overlaps between/including interacting residues
+    if "unip_id" in data.columns:
+        overl_data_bool = data["homo_pep_overl"].copy()
+    else:
+        overl_data_bool = data[data.unip_id_a == data.unip_id_b]["homo_pep_overl"].copy()
+    if not overl_data_bool.empty:
+        data = [len(overl_data_bool[overl_data_bool].index),
+                len(overl_data_bool[~overl_data_bool].index)]
+        labels = ["overlap found", "no overlap"]
+        plt.figure(figsize=(6.5, 6), constrained_layout=True)
+
+        def percentages(pct, all_vals):
+            abs_val = int(np.round(pct / 100 * np.sum(all_vals)))
+            return f"{pct:.1f}%\n(n={abs_val})"
+
+        wedges, _, autos = plt.pie(data, autopct=lambda x: percentages(x, data),
+                                   colors=colors, textprops=dict(weight="bold"))
+        autos[1].set_color('w')
+        plt.legend(wedges, labels)
+        plt.title("Boolean distinction whether peptides overlap or not (intra-links only)")
+        plt.savefig(f"{output_directory}{filename}_pep_ovl_pie.png")

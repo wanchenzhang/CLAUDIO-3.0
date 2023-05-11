@@ -17,76 +17,77 @@ def calculate_site_dists(data, df_xl_res, plddt_cutoff, intra_only, topolink_bin
     # verbose_level: int
     # return data: pd.DataFrame
 
-    # Self-compute euclidean distances in structures
-    self_eucl_dists = []
-    ind = 0
-    for i, row in data.iterrows():
-        verbose_print(f"\r\tSelf:[{round_self((ind * 100) / len(data.index), 2)}%]", 1, verbose_level, end='')
+    # # Self-compute euclidean distances in structures
+    # self_eucl_dists = []
+    # ind = 0
+    # for i, row in data.iterrows():
+    #     verbose_print(f"\r\tSelf:[{round_self((ind * 100) / len(data.index), 2)}%]", 1, verbose_level, end='')
+    #
+    #     # If both pdb positions were found, compute euclidean distance and add it to distances, else add Nan
+    #     if (not pd.isna(row["pdb_pos_a"])) and (not pd.isna(row["pdb_pos_b"])):
+    #         # Set boolean for whether pLDDT cutoff is unfulfilled if the used method was alphafold
+    #         plddt_unfulfilled = (row["method_a"] == "alphafold") and \
+    #                             ((float(row["pLDDT_a"]) < plddt_cutoff) or (float(row["pLDDT_b"]) < plddt_cutoff))
+    #         # If no structure file given for interaction or residue criteria fulfilled or pLDDT unfulfilled,
+    #         # add Nan to distances
+    #         if row["path"] == '-' or not row["res_criteria_fulfilled"] or plddt_unfulfilled:
+    #             self_eucl_dists.append(float("Nan"))
+    #         # Else load structure (either with normal PDBParser or MMCIFParser)
+    #         else:
+    #             try:
+    #                 chains = PDBParser().get_structure('', row["path"]).get_list()[0].get_list()
+    #             except:
+    #                 chains = MMCIFParser().get_structure('', row["path"]).get_list()[0].get_list()
+    #             # If used method is alphafold, the required chain is always A (e.g. the first in the structure)
+    #             if row["method_a"] == "alphafold":
+    #                 chain_a = chains[0]
+    #                 chain_b = chains[0]
+    #                 chain_a_found = True
+    #                 chain_b_found = True
+    #             # Else search for matching chain by chain_id
+    #             else:
+    #                 chain_a_found = False
+    #                 chain_b_found = False
+    #                 for c in chains:
+    #                     if c.__repr__().split('=')[1][0] == row["chain" if intra_only else "chain_a"]:
+    #                         chain_a = c
+    #                         chain_a_found = True
+    #                         if intra_only:
+    #                             chain_b = c
+    #                             chain_b_found = True
+    #                             break
+    #                         elif chain_b_found:
+    #                             break
+    #                     if not intra_only and c.__repr__().split('=')[1][0] == row["chain_b"]:
+    #                         chain_b = c
+    #                         chain_b_found = True
+    #                         if chain_a_found:
+    #                             break
+    #
+    #             # If chains were not successfully found add Nan to distances
+    #             if not (chain_a_found and chain_b_found):
+    #                 self_eucl_dists.append(float("Nan"))
+    #             # Else try accessing coordinates to compute euclidean distance
+    #             else:
+    #                 res_a = chain_a.__getitem__(int(row["pdb_pos_a"]))
+    #                 res_b = chain_b.__getitem__(int(row["pdb_pos_b"]))
+    #                 try:
+    #                     atom_a = df_xl_res[df_xl_res.res == Polypeptide.three_to_one(res_a.get_resname())].atom.iloc[0]
+    #                     atom_b = df_xl_res[df_xl_res.res == Polypeptide.three_to_one(res_b.get_resname())].atom.iloc[0]
+    #                     eucl_dist = np.sqrt(np.sum((res_a[atom_a].get_coord() - res_b[atom_b].get_coord()) ** 2))
+    #                     self_eucl_dists.append(eucl_dist)
+    #                 except:
+    #                     self_eucl_dists.append(float("Nan"))
+    #     else:
+    #         self_eucl_dists.append(float("Nan"))
+    #
+    #     ind += 1
+    #     verbose_print(f"\r\tSelf:[{round_self((ind * 100) / len(data.index), 2)}%]", 1, verbose_level, end='')
+    # verbose_print("", 1, verbose_level)
+    #
+    # # Add self-computed euclidean distances to dataset
+    # data["eucl_dist"] = [round_self(dist, 3) for dist in self_eucl_dists]
 
-        # If both pdb positions were found, compute euclidean distance and add it to distances, else add Nan
-        if (not pd.isna(row["pdb_pos_a"])) and (not pd.isna(row["pdb_pos_b"])):
-            # Set boolean for whether pLDDT cutoff is unfulfilled if the used method was alphafold
-            plddt_unfulfilled = (row["method_a"] == "alphafold") and \
-                                ((float(row["pLDDT_a"]) < plddt_cutoff) or (float(row["pLDDT_b"]) < plddt_cutoff))
-            # If no structure file given for interaction or residue criteria fulfilled or pLDDT unfulfilled,
-            # add Nan to distances
-            if row["path"] == '-' or not row["res_criteria_fulfilled"] or plddt_unfulfilled:
-                self_eucl_dists.append(float("Nan"))
-            # Else load structure (either with normal PDBParser or MMCIFParser)
-            else:
-                try:
-                    chains = PDBParser().get_structure('', row["path"]).get_list()[0].get_list()
-                except:
-                    chains = MMCIFParser().get_structure('', row["path"]).get_list()[0].get_list()
-                # If used method is alphafold, the required chain is always A (e.g. the first in the structure)
-                if row["method_a"] == "alphafold":
-                    chain_a = chains[0]
-                    chain_b = chains[0]
-                    chain_a_found = True
-                    chain_b_found = True
-                # Else search for matching chain by chain_id
-                else:
-                    chain_a_found = False
-                    chain_b_found = False
-                    for c in chains:
-                        if c.__repr__().split('=')[1][0] == row["chain" if intra_only else "chain_a"]:
-                            chain_a = c
-                            chain_a_found = True
-                            if intra_only:
-                                chain_b = c
-                                chain_b_found = True
-                                break
-                            elif chain_b_found:
-                                break
-                        if not intra_only and c.__repr__().split('=')[1][0] == row["chain_b"]:
-                            chain_b = c
-                            chain_b_found = True
-                            if chain_a_found:
-                                break
-
-                # If chains were not successfully found add Nan to distances
-                if not (chain_a_found and chain_b_found):
-                    self_eucl_dists.append(float("Nan"))
-                # Else try accessing coordinates to compute euclidean distance
-                else:
-                    res_a = chain_a.__getitem__(int(row["pdb_pos_a"]))
-                    res_b = chain_b.__getitem__(int(row["pdb_pos_b"]))
-                    try:
-                        atom_a = df_xl_res[df_xl_res.res == Polypeptide.three_to_one(res_a.get_resname())].atom.iloc[0]
-                        atom_b = df_xl_res[df_xl_res.res == Polypeptide.three_to_one(res_b.get_resname())].atom.iloc[0]
-                        eucl_dist = np.sqrt(np.sum((res_a[atom_a].get_coord() - res_b[atom_b].get_coord()) ** 2))
-                        self_eucl_dists.append(eucl_dist)
-                    except:
-                        self_eucl_dists.append(float("Nan"))
-        else:
-            self_eucl_dists.append(float("Nan"))
-
-        ind += 1
-        verbose_print(f"\r\tSelf:[{round_self((ind * 100) / len(data.index), 2)}%]", 1, verbose_level, end='')
-    verbose_print("", 1, verbose_level)
-
-    # Add self-computed euclidean distances to dataset
-    data["eucl_dist"] = [round_self(dist, 3) for dist in self_eucl_dists]
     # Compute euclidean and topological distance of interacting residues with topolink and add them all to the dataset
     data = compute_dists_with_topolink(data, df_xl_res, plddt_cutoff, intra_only, topolink_bin, verbose_level)
 
@@ -255,9 +256,9 @@ def compute_dists_with_topolink(data, df_xl_res, plddt_cutoff, intra_only, topol
         data.loc[index, "eucl_dist_tplk"] = round_self(eucl_dist, 3)
         data.loc[index, "topo_dist_tplk"] = round_self(top_dist, 3)
 
-    # Fill topolink distances with zero, if self-computed distance is zero
-    data["eucl_dist_tplk"] = data.apply(lambda x: 0.0 if x.eucl_dist == 0 else x.eucl_dist_tplk, axis=1)
-    data["topo_dist_tplk"] = data.apply(lambda x: 0.0 if x.eucl_dist == 0 else x.topo_dist_tplk, axis=1)
+    # Fill topolink distances with zero, if positions equal
+    data["eucl_dist_tplk"] = data.apply(lambda x: 0.0 if x.pos_a == x.pos_b else x.eucl_dist_tplk, axis=1)
+    data["topo_dist_tplk"] = data.apply(lambda x: 0.0 if x.pos_a == x.pos_b else x.topo_dist_tplk, axis=1)
 
     return data
 

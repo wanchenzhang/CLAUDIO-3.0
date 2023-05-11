@@ -119,7 +119,7 @@ def search_pdb_entries(proteins, sequences, search_tool, blast_bin, blast_db, hh
         project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
         project_path = project_path + '/' if project_path else ""
         temp_path = f"{project_path}data/temp/unique_protein_list/"
-        with open(f"{temp_path}tmp.fasta", 'w') as tmp_file:
+        with open(f"{temp_path}tmp{i}.fasta", 'w') as tmp_file:
             tmp_file.write(f">Name\n{sequences[i]}\n")
 
         # Initialize result as False
@@ -128,7 +128,7 @@ def search_pdb_entries(proteins, sequences, search_tool, blast_bin, blast_db, hh
         # Depending on given string either perform blastp or hhsearch
         if search_tool == "blastp":
             blast_call = "blastp" if blast_bin is None else f"{blast_bin}blastp"
-            cmd = f"{blast_call} -query {temp_path}tmp.fasta -db {blast_db}pdbaa -evalue 1e-5 " \
+            cmd = f"{blast_call} -query {temp_path}tmp{i}.fasta -db {blast_db}pdbaa -evalue 1e-5 " \
                   f"-outfmt \"6 delim=, saccver pident qcovs evalue\""
             res = pd.read_csv(StringIO(os.popen(cmd).read()),
                               sep=',',
@@ -143,7 +143,7 @@ def search_pdb_entries(proteins, sequences, search_tool, blast_bin, blast_db, hh
                 res = res.iloc[0, :]["pdb"]
         elif search_tool == "hsearch":
             hhearch_call = "hhsearch" if hhsearch_bin is None else f"{hhsearch_bin}hhsearch"
-            cmd = f"{hhearch_call} -i {temp_path}tmp.fasta -d {hhsearch_db}pdb70 -e 1e-5 -qid 90 -cov 50 -blasttab " \
+            cmd = f"{hhearch_call} -i {temp_path}tmp{i}.fasta -d {hhsearch_db}pdb70 -e 1e-5 -qid 90 -cov 50 -blasttab " \
                   f"{hhsearch_out} -v 0 -cpu 20"
             os.system(cmd)
             # Open hhsearch output (Note: hhsearch outs cannot be retrieved from the commandline, as it is the case with

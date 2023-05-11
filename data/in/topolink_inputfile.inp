@@ -24,7 +24,7 @@ experiment DSS
   # Possible types of cross-links and maximum distances
   #        ResType  Chain  ResNum   AtomType    ResType  Chain  ResNum   AtomType  MaxDist
   linktype   MET     all      1       N           LYS     all     all       CB        35
-  linktype   LYS     all     all      CB          LYS     all     all       CB        35
+#  linktype   LYS     all     all      CB          LYS     all     all       CB        35
 
   observed LYS A  17  MET A  1
 

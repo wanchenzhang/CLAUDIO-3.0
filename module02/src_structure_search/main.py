@@ -7,6 +7,7 @@ from module02.src_structure_search.io.read_input import read_in
 from module02.src_structure_search.algorithm.structure_search import structure_search
 from module02.src_structure_search.io.read_temp import read_temp_file
 from module02.src_structure_search.algorithm.pdb_download import download_pdbs
+from module02.src_structure_search.algorithm.chain_copies import create_ident_chain_copies
 from module02.src_structure_search.io.write_out import write_output
 
 from utils.utils import *
@@ -88,8 +89,9 @@ def main(input_filepath, do_structure_search, search_tool, e_value, query_id, co
             os.mkdir(f"{output_directory}structures")
         data = download_pdbs(data, search_tool, intra_only, res_cutoff, f"{output_directory}structures/", verbose_level)
 
-        # Drop temporary result columns
-        data.drop(["all_results"], axis=1, inplace=True)
+        if not intra_only:
+            # Create copy datapoints with marked indeces for alternative but identical chains
+            data = create_ident_chain_copies(data)
 
         # Write new output
         write_output(data, filename, output_directory)

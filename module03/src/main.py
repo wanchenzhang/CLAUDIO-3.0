@@ -32,6 +32,9 @@ def main(input_filepath, output_directory, verbose_level):
         verbose_print("Analyse homo signals", 0, verbose_level)
         data = analyse_homo_signals(data, intra_only)
 
+        # Clean dataset for output
+        data = clean_dataset(data)
+
         # Create Homo-signal statistic histograms
         verbose_print("Create homo-signal histograms", 0, verbose_level)
         create_homo_signal_histograms(data, input_filepath.split('/')[-1], output_directory)

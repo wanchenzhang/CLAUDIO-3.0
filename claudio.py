@@ -82,10 +82,10 @@ def main(input_filepath, projections, read_temps, xl_residues, search_tool, e_va
     # Run Module02
     try:
         run_claudio_structdi(["-i", f"{output_directory}{filename}.sqcs", "-rt", read_temps, "-t", search_tool,
-                              "-x", xl_residues, "-pc", plddt_cutoff, "-e", e_value, "-qi", query_id, "-c", coverage,
-                              "-r", res_cutoff, "-o", output_directory, "-bl", blast_bin, "-bldb", blast_db,
-                              "-hh", hhsearch_bin, "-hhdb", hhsearch_db, "-hhout", hhsearch_out, "-tl", topolink_bin,
-                              "-v", verbose_level])
+                              "-x", xl_residues, "-pc", plddt_cutoff, "-lmin", linker_minimum, "-lmax", linker_maximum,
+                              "-e", e_value, "-qi", query_id, "-c", coverage, "-r", res_cutoff, "-o", output_directory,
+                              "-bl", blast_bin, "-bldb", blast_db, "-hh", hhsearch_bin, "-hhdb", hhsearch_db,
+                              "-hhout", hhsearch_out, "-tl", topolink_bin, "-v", verbose_level])
     except SystemExit:
         pass
 
@@ -96,9 +96,10 @@ def main(input_filepath, projections, read_temps, xl_residues, search_tool, e_va
                         "-lmax", linker_maximum, "-es", euclidean_strictness, "-dm", distance_maximum, "-c", cutoff,
                         "-o", output_directory, "-s", compute_scoring, "-v", verbose_level])
     except SystemExit:
-        os.remove(f"{output_directory}{filename}.sqcs")
-        os.remove(f"{output_directory}{filename}.sqcs_structdi.csv")
-        os.remove(f"{output_directory}{filename}.sqcs_ops.csv")
+        if os.path.exists(f"{output_directory}{filename}_final.csv"):
+            os.remove(f"{output_directory}{filename}.sqcs")
+            os.remove(f"{output_directory}{filename}.sqcs_structdi.csv")
+            os.remove(f"{output_directory}{filename}.sqcs_ops.csv")
         pass
 
     verbose_print(f"\nEnd full CLAUDIO pipeline execution (Total elapsed time: "

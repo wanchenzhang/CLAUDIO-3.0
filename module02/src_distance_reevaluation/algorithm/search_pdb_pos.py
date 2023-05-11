@@ -1,4 +1,5 @@
 import socket
+import time
 
 from Bio.PDB import Polypeptide, PDBParser, MMCIFParser
 from Bio.Align import PairwiseAligner
@@ -44,6 +45,8 @@ def search_site_pos_in_pdb(data, df_xl_res, intra_only, verbose_level):
         verbose_print(f"\r\t[{round_self((ind * 100) / len(data.index), 2)}%]", 1, verbose_level, end='')
         # If saved path is not '-' perform site distance calculation, else append values to list containers indicating
         # a fail here
+        if "path" not in row.index: #TODO
+            time.sleep(10000)
         both_pdbs_found = row["path"] != '-'
         if not both_pdbs_found:
             pdb_pos_as.append(None)

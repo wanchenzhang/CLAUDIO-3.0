@@ -2,7 +2,7 @@
 
 ### The CLI - Command Line Interface
 ```
-> python3 claudio_structdi.py [-i <filepath>] [-rt <True/False>] [-t <"blastp"/"hhsearch">] [-pc <float>] [-e <float>] [-qi <float>] [-c <float>] [-r <float>] [-o <directorypath>] [-bl <directorypath>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-hhout <directorypath>] [-tl <directorypath>] [-v <int>]
+> python3 claudio_structdi.py [-i <filepath>] [-rt <True/False>] [-t <"blastp"/"hhsearch">] [-pc <float>] [-lmin <float>] [-lmax <float>] [-e <float>] [-qi <float>] [-c <float>] [-r <float>] [-o <directorypath>] [-bl <directorypath>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-hhout <directorypath>] [-tl <directorypath>] [-v <int>]
 
 -i,    --input-filepath,        path to inputfile,
                                 default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv"
@@ -17,6 +17,8 @@
                                 computation, default="K,M:N:1"
 -pc,   --plddt-cutoff,          float value used as cutoff for alphafold structure prediction confidences (plddt), 
                                 default=70.0
+-lmin, --linker-minimum,        float value used as minimal crosslinker range in angstrom, default=5.0
+-lmax, --linker-maximum,        float value used as maximal crosslinker range in angstrom, default=35.0
 -e,    --e-value,               e-value used in structure search, default=1e-5
 -qi,   --query-id,              query identity used in structure search, default=90.0
 -c,    --coverage,              coverage used in structure search, default=50.0

@@ -18,11 +18,13 @@ from utils.utils import *
 @click.option("-t", "--search-tool", default="blastp")
 @click.option("-x", "--xl-residues", default="K,M:N:1")
 @click.option("-p", "--plddt-cutoff", default=70.0)
+@click.option("-lmin", "--linker-minimum", default=5.0)
+@click.option("-lmax", "--linker-maximum", default=35.0)
 @click.option("-o", "--output-directory", default="data/out/dist_reeval")
 @click.option("-tl", "--topolink-bin", default=None)
 @click.option("-v", "--verbose-level", default=3)
-def main(input_directory, input_filepath, search_tool, xl_residues, plddt_cutoff, output_directory, topolink_bin,
-         verbose_level):
+def main(input_directory, input_filepath, search_tool, xl_residues, plddt_cutoff, linker_minimum, linker_maximum,
+         output_directory, topolink_bin, verbose_level):
     verbose_print("Start intra interaction check", 0, verbose_level)
     start_time = time.time()
 
@@ -59,16 +61,12 @@ def main(input_directory, input_filepath, search_tool, xl_residues, plddt_cutoff
                       verbose_level)
         data = calculate_site_dists(data, df_xl_res, plddt_cutoff, intra_only, topolink_bin, verbose_level)
 
+        # Clean dataset for output
+        data = clean_dataset(data)
+
         # Plot histograms of distances
         verbose_print("Create distance histograms", 0, verbose_level)
-        create_histogram(data, input_filepath.split('/')[-1], output_directory)
-
-        # Drop temporary result columns
-        data.drop(["path", "pdb_method", "pdb_resolution", "eucl_dist", "res_criteria_fulfilled", "res_crit_a",
-                   "res_crit_b", "method_a", "method_b"], axis=1, inplace=True)
-        # Rename certain result columns
-        data.rename(columns={"best_res_pdb_method": "pdb_method", "best_res_pdb_resolution": "pdb_resolution",
-                             "eucl_dist_tplk": "eucl_dist", "topo_dist_tplk": "topo_dist"}, inplace=True)
+        create_histogram(data, input_filepath.split('/')[-1], output_directory, linker_minimum, linker_maximum)
 
         # Overwrite previous outputfile of module02
         verbose_print("Overwrite outputfile", 0, verbose_level)

@@ -26,9 +26,9 @@ def download_pdbs(dataset, search_tool, intra_only, res_cutoff, output_directory
         for j, res in enumerate((row["all_results"] + ' ').split(' ')):
             # If an entry was found in the rcsb database, download from there
             pdb_id = res.split('_')[0]
-            chain = res.split('_')[1] if pdb_id else '-'
+            chain = '_'.join(res.split('|')[0].split('_')[1:]) if pdb_id else '-'
             if not intra_only:
-                chain_b = res.split('_')[2] if pdb_id else '-'
+                chain_b = '_'.join(res.split('|')[1].split('_')[1:]) if pdb_id else '-'
             pdb_file = ''
             if pdb_id:
                 # Create custom pdb filename
@@ -62,18 +62,25 @@ def download_pdbs(dataset, search_tool, intra_only, res_cutoff, output_directory
                         url = f"https://alphafold.ebi.ac.uk/files/AF-"\
                               f"{row['unip_id' if intra_only else 'unip_id_a']}-F1-model_v1.pdb"
                         pdb_file = download_pdb_from_db(url, 0, 5)
+                        if pdb_file is None:
+                            pdb_file = ''
+                            filename = '-'
+                            pdb_id = '-'
+                            chain = '-'
+                            if not intra_only:
+                                chain_b = '-'
 
             # Check whether method and resolution are accepted, return respective bool, method and resolution
-            method_a_accepted, method_a, resolution_a = accept_resolution_method(pdb_file, pdb_id, res_cutoff)
+            method_accepted, method, resolution = accept_resolution_method(pdb_file, pdb_id, res_cutoff)
 
             # Save method and resolution for best structure search result
             if j == 0:
                 # Add method and resolution to dataset
-                dataset.loc[i, "best_res_pdb_method"] = method_a
-                dataset.loc[i, "best_res_pdb_resolution"] = resolution_a
+                dataset.loc[i, "best_res_pdb_method"] = method
+                dataset.loc[i, "best_res_pdb_resolution"] = resolution
 
             # Stop Iteration of results if result gets accepted
-            if method_a_accepted:
+            if method_accepted:
                 # Update pdb_id and chain in dataset
                 dataset.loc[i, "pdb_id"] = pdb_id
                 if intra_only:
@@ -84,11 +91,11 @@ def download_pdbs(dataset, search_tool, intra_only, res_cutoff, output_directory
                 # Add filename to paths
                 dataset.loc[i, "path"] = filename
                 # Add method and resolution to dataset
-                dataset.loc[i, "pdb_method"] = method_a
-                dataset.loc[i, "pdb_resolution"] = resolution_a
+                dataset.loc[i, "pdb_method"] = method
+                dataset.loc[i, "pdb_resolution"] = resolution
 
                 # Save pdb text to new pdb file with custom name
-                if not os.path.exists(filename):
+                if (not os.path.exists(filename)) and (pdb_file is not None):
                     with open(filename, 'w') as f:
                         f.write(pdb_file)
                 break
@@ -130,7 +137,10 @@ def download_pdb_from_db(url, i_try, max_try):
         else:
             # Attempt .pdb call from AlphaFold database
             pdb_file = r.get(url).text
-            return pdb_file
+            if "<Error><Code>NoSuchKey</Code><Message>The specified key does not exist.</Message></Error>" in pdb_file:
+                return None
+            else:
+                return pdb_file
     # Retry on timeout if not reached max_try already, else return None
     except (r.exceptions.Timeout, TimeoutError):
         if i_try >= max_try:
@@ -141,8 +151,8 @@ def download_pdb_from_db(url, i_try, max_try):
     # Break execution if no connection to database possible
     except (ConnectionError, socket.gaierror, r.exceptions.ConnectionError) as e:
         if i_try == max_try:
-            print(f"No connection to {'RCSB' if url.startswith('https://files.rcsb.org/') else 'AlphaFold'} API possible. "
-                  f"Please try again later.")
+            print(f"No connection to {'RCSB' if url.startswith('https://files.rcsb.org/') else 'AlphaFold'}"
+                  f" API possible. Please try again later.")
             print(e)
         return download_pdb_from_db(url, i_try + 1, max_try)
 
