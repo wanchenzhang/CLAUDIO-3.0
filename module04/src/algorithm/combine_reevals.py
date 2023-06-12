@@ -1,12 +1,12 @@
 from utils.utils import *
 
 
-def combine_inter_reevaluations(data, intra_only, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,
+def combine_inter_reevaluations(data, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,
                                 distance_maximum, cutoff, compute_scoring):
     # combine distance and homo signal reevaluation, create score that represents inter interaction affinity (higher
     # value, higher affinity), and evidence for this type evaluation. Base new crosslink types on each individually.
     #
-    # input data: pd.DataFrame, intra_only: bool, plddt_cutoff: float, linker_minimum: float, linker_maximum: float,
+    # input data: pd.DataFrame, plddt_cutoff: float, linker_minimum: float, linker_maximum: float,
     # euclidean_strictness: float, distance_maximum: float, cutoff: float, compute_scoring: bool
     # return data: pd.DataFrame
 
@@ -19,7 +19,7 @@ def combine_inter_reevaluations(data, intra_only, plddt_cutoff, linker_minimum, 
         )
         data["score_XL_type"] = data.apply(
             lambda x: "intra"
-            if (intra_only or (x.unip_id_a == x.unip_id_b)) and (x.inter_score <= cutoff) else "inter", axis=1
+            if (x.unip_id_a == x.unip_id_b) and (x.inter_score <= cutoff) else "inter", axis=1
         )
 
     # new crosslink type based on evidence
@@ -29,8 +29,12 @@ def combine_inter_reevaluations(data, intra_only, plddt_cutoff, linker_minimum, 
         ), axis=1
     )
     data["XL_type"] = data.apply(
-        lambda x: "intra" if (intra_only or (x.unip_id_a == x.unip_id_b)) and (not x.evidence) else "inter", axis=1
+        lambda x: "intra" if (x.unip_id_a == x.unip_id_b) and
+                             (x.chain_a == x.chain_b) and
+                             (not x.evidence)
+        else "inter", axis=1
     )
+    data["XL_confirmed"] = data.apply(lambda x: (not pd.isna(x.topo_dist)) or x.homo_pep_overl, axis=1)
     return data
 
 
@@ -125,12 +129,16 @@ def write_evidence(datapoint, plddt_cutoff, linker_minimum, linker_maximum, eucl
             if euclidean_strictness is not None else datapoint.topo_dist >= linker_maximum
 
     # write evidence for same peptide if residue positions are equal
-    if datapoint.pos_a == datapoint.pos_b:
+    if (datapoint.pos_a == datapoint.pos_b) and \
+            (datapoint.unip_id_a == datapoint.unip_id_b) and \
+            (datapoint.chain_a == datapoint.chain_b):
         evidence += "same peptide"
     # else write split ops and dist evidence
     else:
         ops_evidence = ""
-        if datapoint.homo_pep_overl:
+        if datapoint.homo_pep_overl and \
+                (datapoint.unip_id_a == datapoint.unip_id_b) and \
+                (datapoint.chain_a == datapoint.chain_b):
             ops_evidence += "peptides overlap" if datapoint.homo_pep_overl else ""
 
         dist_evidence = ""
@@ -165,3 +173,18 @@ def write_evidence(datapoint, plddt_cutoff, linker_minimum, linker_maximum, eucl
             evidence += dist_evidence
     evidence += '\''
     return evidence if evidence != "\'\'" else ""
+
+
+def def_xl_type(datapoint):
+    # combine distance and homo signal reevaluation, create evidence string
+    #
+    # input datapoint: pd.Series, plddt_cutoff: float, linker_minimum: float, linker_maximum: float,
+    # euclidean_strictness: float
+    # return evidence: str
+
+    if (datapoint.unip_id_a == datapoint.unip_id_b) and (not datapoint.evidence):
+        return_str = "intra"
+    else:
+        return_str = "inter"
+
+    return return_str

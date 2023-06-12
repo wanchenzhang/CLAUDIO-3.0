@@ -47,14 +47,9 @@ hhsearch_bin = None
 #7.database directory for hh-suite installation
 #type: string
 #ex.: /home/me/desktop/hh-suite-3.3.0/db
-hhsearch_db = $HHDB
+hhsearch_db = $HOME/HHSUITE/db
 
-#8.output directory for hhsearch results
-#type: string
-#ex.: /home/me/desktop/hh-suite-3.3.0/out
-hhsearch_out = $HHOUT
-
-#9.binary directory in topolink installation, or None if binary directory has been added to PATH variable (e.g. if
+#8.binary directory in topolink installation, or None if binary directory has been added to PATH variable (e.g. if
 #topolink can be called from anywhere)
 #type: string / None
 #ex.: /home/me/desktop/topolink/bin
@@ -64,7 +59,7 @@ topolink_bin = None
 ########################################################################################################################
 ## XL-EXPERIMENT SPECIFICATIONS
 ########################################################################################################################
-#10.tiny comma-separated list of possibly crosslinked residues, as one-letter-code symbols, by the crosslinker.
+#9.tiny comma-separated list of possibly crosslinked residues, as one-letter-code symbols, by the crosslinker.
 #Optionally the user may add two colon-symbols, if they wish to specify the position of the residue in the
 #sequence and/or the atom in the residue used for the distance computation. After the first colon-symbol they may place
 #the atom type for the distance computation, e.g. 'CB', 'CA', or 'N', etc. (ex.: "K:CB:0"). If no value is set here 'CB'
@@ -79,12 +74,12 @@ topolink_bin = None
 #ex.: K,M:N:1 #for Disuccinimidyl suberate (DSS) linker
 xl_residues = K,M:N:1
 
-#11.minimum of crosslinker range capability in angstrom (not included in accepted range)
+#10.minimum of crosslinker range capability in angstrom (not included in accepted range)
 #type: float [0,x]
 #ex.: 5.0
 linker_minimum = 5.0
 
-#12.maximum of crosslinker range capability in angstrom (included into accepted range)
+#11.maximum of crosslinker range capability in angstrom (included into accepted range)
 #type: float [x,infty)
 #ex.: 20.0
 linker_maximum = 35.0
@@ -93,27 +88,27 @@ linker_maximum = 35.0
 ########################################################################################################################
 ## STRUCTURE SEARCH AND SELECTION PARAMETERS
 ########################################################################################################################
-#13.search tool for structure search (either hhsearch or blastp)
+#12.search tool for structure search (either hhsearch or blastp)
 #type: string
 #ex.: blastp / hhsearch
 search_tool = blastp
 
-#14.e-value of structure search
+#13.e-value of structure search
 #type: float [0,1]
 #ex.: 0.3
 e_value = 0.00001
 
-#15.query identity of structure search
+#14.query identity of structure search
 #type: float [0,100]
 #ex.: 55.0
 query_id = 90.0
 
-#16.coverage of structure search
+#15.coverage of structure search
 #type: float [0,100]
 #ex.: 55.0
 coverage = 50.0
 
-#17.resolution cutoff value, for which structure files will be included if they are either equal or lower during
+#16.resolution cutoff value, for which structure files will be included if they are either equal or lower during
 #structure selection
 #type: float [0,infty)
 #ex.: 5.0
@@ -126,7 +121,7 @@ res_cutoff = 6.5
 #################################################
 ## READ TEMP-SAVES
 #################################################
-#18.read some results from temporary save from previous run (overwritten each time). Note: Ensure that this is called
+#17.read some results from temporary save from previous run (overwritten each time). Note: Ensure that this is called
 #with the exact same parameters as the previous run. It might otherwise lead to unforseen issues.
 #type: boolean
 #ex.: True
@@ -135,7 +130,7 @@ read_temps = False
 #################################################
 ## ALPHAFOLD CONFIDENCE CUTOFF
 #################################################
-#19.alphafold structure pLDDT cutoff value, for which structure distances will be included if the involved residue atoms
+#18.alphafold structure pLDDT cutoff value, for which structure distances will be included if the involved residue atoms
 #have an either equal or higher position prediction confidence
 #type: float [0,100]
 #ex.: 55.0
@@ -144,7 +139,7 @@ plddt_cutoff = 70.0
 #################################################
 ## COMPUTE EXPERIMENTAL SCORING
 #################################################
-#20.boolean, for whether experimental scoring and resulting XL-type evluations should be computed and appended to result
+#19.boolean, for whether experimental scoring and resulting XL-type evluations should be computed and appended to result
 #dataset
 #type: boolean
 #ex.: True
@@ -153,34 +148,34 @@ compute_scoring = False
 #################################################
 ## VERBOSE LEVEL
 #################################################
-#21.verbose level value:
+#20.verbose level value:
 #       0: no outputs at all will be written to the commandline
 #       1: write tool inits and passed time
 #       2: write progressbars (where implemented)
-#       3: write alignments during data processing, and write extra information on process results
-#       4: write alignments during uniprot to pdb position translation
+#       3: write extra information on process results
+#       4: write alignments during data processing and uniprot to pdb position translation
 #       5: write verfications during uniprot to pdb position translation
 #type: int
 #ex.: 0
 verbose_level = 3
 
 #################################################
-## EXPERIMENTAL SCORING PARAMETERS (ONLY ACTIVE IF #20=compute_scoring is set to True)
+## EXPERIMENTAL SCORING PARAMETERS (ONLY ACTIVE IF #19=compute_scoring is set to True)
 #################################################
-#22.strictness for euclidean distance, e.g. value substracted from euclidean distance in angstrom for confidence score
+#21.strictness for euclidean distance, e.g. value substracted from euclidean distance in angstrom for confidence score
 #calculation, or None if euclidean score is not to be included into the final scoring (in which case only the
 #topological distance and OPS analysis are included)
 #type: float [0,infty) / None
 #ex.: None
 euclidean_strictness = None
 
-#23.distance maximum which, if surpassed, by either the topological or euclidean distance replaces its value for the
+#22.distance maximum which, if surpassed, by either the topological or euclidean distance replaces its value for the
 #confidence score (this ensures that outliers do not negatively impact the scoring)
 #type: float [0,infty)
 #ex.: 100.0
 distance_maximum = 50.0
 
-#24.inter protein crosslink confidence score cutoff
+#23.inter protein crosslink confidence score cutoff
 #type: float [0,1]
 #ex.: 0.1
 cutoff = 0.0

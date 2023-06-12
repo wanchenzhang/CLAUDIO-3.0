@@ -50,16 +50,16 @@ def main(input_directory, input_filepath, search_tool, xl_residues, plddt_cutoff
 
         # Read result from uniprot_search, e.g. sqcs-file
         verbose_print("Read peptide information from uniprot search results", 0, verbose_level)
-        data, intra_only = read_unipsearch_out(input_filepath)
+        data = read_unipsearch_out(input_filepath)
 
         # Search for site positions in pdb files (replace rcsb pdb with alphafold, if not able to find it there)
         verbose_print("Search site pos in pdb files (replace rcsb-pdb with alphafold-pdb if needed)", 0, verbose_level)
-        data = search_site_pos_in_pdb(data, df_xl_res, intra_only, verbose_level)
+        data = search_site_pos_in_pdb(data, df_xl_res, verbose_level)
 
         # Compute distances of sites, and if distance calculation successful compute new xl_type
         verbose_print("Calculate presumed interaction site distances and evaluate interaction likelihood", 0,
                       verbose_level)
-        data = calculate_site_dists(data, df_xl_res, plddt_cutoff, intra_only, topolink_bin, verbose_level)
+        data = calculate_site_dists(data, df_xl_res, plddt_cutoff, topolink_bin, verbose_level)
 
         # Clean dataset for output
         data = clean_dataset(data)

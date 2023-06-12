@@ -47,28 +47,28 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, linker_m
 
         # Read inputs
         verbose_print("Read inputs", 0, verbose_level)
-        data, intra_only = read_inputs(input_filepath, input_filepath2)
+        data = read_inputs(input_filepath, input_filepath2)
 
         # Combine results of both reevaluations
         verbose_print("Combine results of both reevaluations", 0, verbose_level)
-        data = combine_inter_reevaluations(data, intra_only, plddt_cutoff, linker_minimum, linker_maximum,
+        data = combine_inter_reevaluations(data, plddt_cutoff, linker_minimum, linker_maximum,
                                            euclidean_strictness, distance_maximum, cutoff, compute_scoring)
 
         # Retrieve known oligomeric states from SWISS-MODEL
         verbose_print("Retrieve known oligomeric states from SWISS-MODEL", 0, verbose_level)
-        data = retrieve_oligomeric_states(data, intra_only, verbose_level)
+        data = retrieve_oligomeric_states(data, verbose_level)
 
         # Clean dataset for output
         data = clean_dataset(data)
 
         # Create inter score histogram
         verbose_print("Create score histogram", 0, verbose_level)
-        create_histograms(data, intra_only, filename, cutoff, compute_scoring, output_directory)
+        create_histograms(data, filename, cutoff, compute_scoring, output_directory)
 
         # Write final csv containing all computed information, fastas for alphafold and protein-specific csv with
         # interaction restraints
         verbose_print("Write outputs", 0, verbose_level)
-        write_outputs(data, intra_only, filename, output_directory)
+        write_outputs(data, filename, compute_scoring, output_directory)
 
     verbose_print(f"\nEnd script (Elapsed time: {round_self(time.time() - start_time, 2)}s)", 0, verbose_level)
     verbose_print("===================================", 0, verbose_level)

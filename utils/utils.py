@@ -88,7 +88,7 @@ def clean_dataset(data):
 
     # Drop specified data columns
     for drop_col in ["all_results", "path", "best_res_pdb_method", "best_res_pdb_resolution", "eucl_dist",
-                     "res_criteria_fulfilled", "res_crit_a", "res_crit_b", "method_a", "method_b"]:
+                     "res_criteria_fulfilled", "res_crit_a", "res_crit_b", "method_a", "method_b", "is_interfaced"]:
         if drop_col in data.columns:
             data = data.drop(drop_col, axis=1)
 
@@ -122,15 +122,17 @@ def clean_dataset(data):
             already_checked = ([] for _ in range(2))
         for i, row in data.iterrows():
             if ('_' in str(i)) and (i not in already_checked):
-                multi_chain_criteria = (data.pos_a == row.pos_a) & (data.pos_b == row.pos_b) & \
-                                       (data.pep_a == row.pep_a) & (data.pep_b == row.pep_b) & \
-                                       ((data.res_pos_a == row.res_pos_a) |
-                                        (pd.isna(data.res_pos_a) & pd.isna(row.res_pos_a))) & \
-                                       ((data.res_pos_b == row.res_pos_b) |
-                                        (pd.isna(data.res_pos_b) & pd.isna(row.res_pos_b)))
+                multi_chain_criteria = (data.unip_id_a == row.unip_id_a) & \
+                                       (data.unip_id_b == row.unip_id_b) & \
+                                       ((data.pos_a == row.pos_a) | (pd.isna(data.pos_a) & pd.isna(row.pos_a))) & \
+                                       ((data.pos_b == row.pos_b) | (pd.isna(data.pos_b) & pd.isna(row.pos_b))) & \
+                                       (data.pep_a == row.pep_a) & \
+                                       (data.pep_b == row.pep_b)
                 multi_chain_set = data[multi_chain_criteria]
-                if not multi_chain_set[data.evidence == ''].empty:
-                    drop_indeces.extend(list(multi_chain_set[data.evidence != ''].index))
+                if not multi_chain_set[multi_chain_set.XL_confirmed].empty:
+                    drop_indeces.extend(list(multi_chain_set[~multi_chain_set.XL_confirmed].index))
+                    if not multi_chain_set[multi_chain_set.XL_confirmed & (multi_chain_set.evidence == '')].empty:
+                        drop_indeces.extend(list(multi_chain_set[multi_chain_set.evidence != ''].index))
                 already_checked.extend(list(multi_chain_set.index))
         data = data.drop(index=drop_indeces)
 

@@ -2,7 +2,7 @@
 
 ### The CLI - Command Line Interface
 ```
-> python3 claudio_lists.py [-i <filepath>] [-p <"projection_dict">] [-s <True/False>] [-t <"blastp"/"hhsearch">] [-o <directorypath>] [-bl <directorypath>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-hhout <directorypath>] [-v <int>]
+> python3 claudio_lists.py [-i <filepath>] [-p <"projection_dict">] [-s <True/False>] [-t <"blastp"/"hhsearch">] [-o <directorypath>] [-bl <directorypath>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-v <int>]
 
 -i,    --input-filepath,        path to inputfile,
                                 default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv"
@@ -34,7 +34,6 @@
 -hh,   --hhsearch-bin,          binary directory in hh-suite installation, or None if binary directory has been added to
                                 PATH variable (e.g. if hhsearch can be called from anywhere), default=None
 -hhdb, --hhsearch-db,           database directory for hh-suite installation, default="$HHDB"
--hhout,--hhsearch-out,          output directory for hhsearch results, default="$HHOUT"
 -v,    --verbose-level,         verbose level value, default=3:
                                     0: no outputs at all will be written to the commandline
                                     1: write tool inits and passed time

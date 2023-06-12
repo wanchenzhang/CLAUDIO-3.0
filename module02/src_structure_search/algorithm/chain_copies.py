@@ -2,7 +2,7 @@ import sys
 
 import pandas as pd
 
-MAX_NUM_COPIES = 500
+MAX_NUM_COPIES = 10**8
 
 
 def create_ident_chain_copies(data):
@@ -16,8 +16,7 @@ def create_ident_chain_copies(data):
     print(f"Creating datapoints for multiple chain options: {num_before}", end='')
 
     # Annotate identical chains, and replace multi-chain notation into single
-    intra_only = "unip_id" in data.columns
-    data = data.apply(lambda x: annotate_multi_chain_dps(x, intra_only, new_data_infos), axis=1)
+    data = data.apply(lambda x: annotate_multi_chain_dps(x, new_data_infos), axis=1)
 
     # Create datapoints off of annotated multi-chains
     for new_data_info in new_data_infos:
@@ -39,26 +38,26 @@ def create_ident_chain_copies(data):
             if count == MAX_NUM_COPIES:
                 break
 
-    # Add new datapoints to dataset
-    new_datapoints = pd.concat(new_datapoints, axis=1).transpose()
-    data = pd.concat([data, new_datapoints])
-    print(f" -> {len(data.index)} datapoints (number of new datapoints: {len(data.index) - num_before})")
+    if new_datapoints:
+        # Add new datapoints to dataset
+        new_datapoints = pd.concat(new_datapoints, axis=1).transpose()
+        data = pd.concat([data, new_datapoints])
+        print(f" -> {len(data.index)} datapoints (number of new datapoints: {len(data.index) - num_before})")
 
     return data
 
 
-def annotate_multi_chain_dps(data_row, intra_only, new_data_infos):
+def annotate_multi_chain_dps(data_row, new_data_infos):
     # Annotate options if multiple chains were found, if so furthermore replace this with the first option
     #
-    # input: data_row: pd.DataSeries, intra_only: bool, new_data_infos: list(tuple(pd.DataSeries, str, str))
+    # input: data_row: pd.DataSeries, new_data_infos: list(tuple(pd.DataSeries, str, str))
     # return data: pd.DataFrame
 
-    if (not intra_only) and (data_row.unip_id_a != data_row.unip_id_b):
-        chain_a_opts = '_' in data_row.chain_a
-        chain_b_opts = '_' in data_row.chain_b
-        if (chain_a_opts or chain_b_opts) and (len(data_row.pdb_id) == 4):
-            new_data_infos.append((data_row.copy(), data_row.chain_a, data_row.chain_b))
+    chain_a_opts = '_' in data_row.chain_a
+    chain_b_opts = '_' in data_row.chain_b
+    if (chain_a_opts or chain_b_opts) and (len(data_row.pdb_id) == 4):
+        new_data_infos.append((data_row.copy(), data_row.chain_a, data_row.chain_b))
 
-            data_row.chain_a = data_row.chain_a.split('_')[0]
-            data_row.chain_b = data_row.chain_b.split('_')[0]
+        data_row.chain_a = data_row.chain_a.split('_')[0]
+        data_row.chain_b = data_row.chain_b.split('_')[0]
     return data_row

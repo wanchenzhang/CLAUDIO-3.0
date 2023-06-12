@@ -6,17 +6,20 @@ from Bio.Align import PairwiseAligner
 import requests as r
 import os
 import sys
+import numpy as np
 
 from utils.utils import *
 
+_MAX_INTERFACE_DISTANCE = 50
 
-def search_site_pos_in_pdb(data, df_xl_res, intra_only, verbose_level):
+
+def search_site_pos_in_pdb(data, df_xl_res, verbose_level):
     # search for site positions in pdb, extend input dataset by res_criteria, e.g. whether the found
     # sites satisfy the criteria of being the specified residue, the method used to find the sites in the structure
     # file, in case said method was alphafold the pLDDT, e.g. confidence, value, and download new alphafold pdb into
     # directory, if needed
     #
-    # input data: pd.DataFrame, df_xl_res: pd.DataFrame, intra_only: bool, verbose_level: int
+    # input data: pd.DataFrame, df_xl_res: pd.DataFrame, verbose_level: int
     # return data: pd.DataFrame
 
     # Read shift file given by EMBL-EBI database (see: https://www.ebi.ac.uk/pdbe/docs/sifts/quick.html) for rcsb files
@@ -30,7 +33,8 @@ def search_site_pos_in_pdb(data, df_xl_res, intra_only, verbose_level):
     ind = 0
     pdb_pos_as,\
         pdb_pos_bs,\
-        res_criteria = ([] for _ in range(3))
+        res_criteria,\
+        is_interfaced = ([] for _ in range(4))
     res_crit_site_specific, \
         methods, \
         pLDDTs = ([[], []] for _ in range(3))
@@ -58,33 +62,31 @@ def search_site_pos_in_pdb(data, df_xl_res, intra_only, verbose_level):
             methods[1].append('')
             pLDDTs[0].append('-')
             pLDDTs[1].append('-')
+            is_interfaced.append(False)
         else:
-            xl_type = "intra" if intra_only or row["unip_id_a"] == row["unip_id_b"] else "inter"
+            xl_type = "intra" if row["unip_id_a"] == row["unip_id_b"] else "inter"
             # Search site_a in structure file
-            pdb_pos_a, res_criteria_a, method_a, i_error_a, pLDDT_a, new_path = \
-                compute_site_pos(i, row, 'a', xl_type, intra_only, pdb_uni_map, "", df_xl_res, verbose_level)
+            pdb_pos_a, res_criteria_a, method_a, i_error_a, pLDDT_a, new_path, atom_coord_a = \
+                compute_site_pos(i, row, 'a', xl_type, pdb_uni_map, "", df_xl_res, verbose_level)
             # If method used for site_a is alphafold, set method for set_b to alphafold as well
             method_b = "" if method_a != "alphafold" else "alphafold"
 
             # Search site_b in structure file
-            pdb_pos_b, res_criteria_b, method_b, i_error_b, pLDDT_b, new_path = \
-                compute_site_pos(i, row, 'b', xl_type, intra_only, pdb_uni_map, method_b, df_xl_res, verbose_level)
+            pdb_pos_b, res_criteria_b, method_b, i_error_b, pLDDT_b, new_path, atom_coord_b = \
+                compute_site_pos(i, row, 'b', xl_type, pdb_uni_map, method_b, df_xl_res, verbose_level)
 
             # If method for site_b was alphafold, but not for site_a, search site_a again with alphafold method
             # specified this time
             if method_b == "alphafold" and method_a != "alphafold":
-                pdb_pos_a, res_criteria_a, method_a, i_error_a, pLDDT_a, new_path = \
-                    compute_site_pos(i, row, 'a', xl_type, intra_only, pdb_uni_map, "alphafold", df_xl_res,
+                pdb_pos_a, res_criteria_a, method_a, i_error_a, pLDDT_a, new_path, atom_coord_a = \
+                    compute_site_pos(i, row, 'a', xl_type, pdb_uni_map, "alphafold", df_xl_res,
                                      verbose_level)
 
             # Replace path if alphafold file was downloaded instead
             if new_path and xl_type == "intra":
                 data.loc[i, "path"] = new_path
-                if intra_only:
-                    data.loc[i, "chain"] = 'A'
-                else:
-                    data.loc[i, "chain_a"] = 'A'
-                    data.loc[i, "chain_b"] = 'A'
+                data.loc[i, "chain_a"] = 'A'
+                data.loc[i, "chain_b"] = 'A'
                 data.loc[i, "pdb_id"] = new_path.split('_')[-1].split('.')[0]
                 data.loc[i, "pdb_method"] = "ALPHAFOLD"
                 data.loc[i, "pdb_resolution"] = "ALPHAFOLD"
@@ -99,6 +101,12 @@ def search_site_pos_in_pdb(data, df_xl_res, intra_only, verbose_level):
             res_crit_site_specific[0].append(res_criteria_a)
             res_crit_site_specific[1].append(res_criteria_b)
             res_criteria.append(res_criteria_a and res_criteria_b)
+
+            if atom_coord_a is not None and atom_coord_b is not None:
+                interface_distance = np.sqrt(np.sum((atom_coord_a - atom_coord_b) ** 2))
+                is_interfaced.append(interface_distance <= _MAX_INTERFACE_DISTANCE)
+            else:
+                is_interfaced.append(False)
 
             # Increase counters for performance/success statistics
             true_res_crits[0] += 1 if res_criteria_a else 0
@@ -155,22 +163,24 @@ def search_site_pos_in_pdb(data, df_xl_res, intra_only, verbose_level):
     data["method_b"] = methods[1]
     data["pLDDT_a"] = pLDDTs[0]
     data["pLDDT_b"] = pLDDTs[1]
+    data["is_interfaced"] = is_interfaced
 
     return data
 
 
-def compute_site_pos(i, data, site_id, xl_type, intra_only, pdb_uni_map, method, df_xl_res, verbose_level):
+def compute_site_pos(i, data, site_id, xl_type, pdb_uni_map, method, df_xl_res, verbose_level):
     # Search site in structure file and return threedimensional position
     #
-    # input i: int, data: pd.Series, site_id: int, xl_type: str, intra_only: str, pdb_uni_map: pd.DataFrame,
+    # input i: int, data: pd.Series, site_id: int, xl_type: str, pdb_uni_map: pd.DataFrame,
     # method: str, df_xl_res: pd.DataFrame, verbose_level: int
-    # return pdb_pos: int, res_criteria: bool, method: str, i_error: int, pLDDT: float, new_path_a: str
+    # return pdb_pos: int, res_criteria: bool, method: str, i_error: int, pLDDT: float, new_path_a: str,
+    # atom_coord: [float, float, float]/None
 
     # Extract pdb_id, chain_id and unip_id from data
     pdb_id = data["pdb_id"]
-    chain_id = data["chain" if intra_only else f"chain_{site_id}"]
-    unip_id = data["unip_id" if intra_only else f"unip_id_{site_id}"]
-    unip_seq = data["seq" if intra_only else f"seq_{site_id}"]
+    chain_id = data[f"chain_{site_id}"]
+    unip_id = data[f"unip_id_{site_id}"]
+    unip_seq = data[f"seq_{site_id}"]
     new_path = ''
     # Test whether specified position is accessible in uniprot sequence, if not return fail with i_error = 0
     try:
@@ -180,7 +190,7 @@ def compute_site_pos(i, data, site_id, xl_type, intra_only, pdb_uni_map, method,
     except IndexError:
         verbose_print(f"\n\tIndexError with unip_pos: {data[f'pos_{site_id}']} (entry: {i}, unip_id: {unip_id})", 4,
                       verbose_level)
-        return None, False, method, 0, '-', ''
+        return None, False, method, 0, '-', '', None
 
     # Parse structure file with normal PDBParser, if exception thrown use MMCIFParser
     try:
@@ -194,7 +204,7 @@ def compute_site_pos(i, data, site_id, xl_type, intra_only, pdb_uni_map, method,
     except:
         verbose_print(f"\tWarning! No model in pdb: \"chains = models[0].get_list()\".\n\t\t\t(entry: {i}, pdb: "
                       f"{pdb_id}:{chain_id})", 2, verbose_level)
-        return None, False, method, 1, '-', ''
+        return None, False, method, 1, '-', '', None
 
     # If chain_id was unspecified by structure search tool, e.g. chain_id == '-', use first(/only) chain in structure
     # file, else search for chain with matching id
@@ -210,7 +220,7 @@ def compute_site_pos(i, data, site_id, xl_type, intra_only, pdb_uni_map, method,
         # If specified chain id was not found, return fail with i_error = 2
         if not chain_found:
             verbose_print(f"\tWarning! Chain ID was not found in pdb file ({pdb_id}:{chain_id}).", 2, verbose_level)
-            return None, False, method, 2, '-', ''
+            return None, False, method, 2, '-', '', None
 
     # If pdb is from rcsb database (indicated by len(id) <= 4), try computing uniprot to pdb index shift via EMBL-EBI
     # shift file (pdb_chain_uniprot.csv)
@@ -251,7 +261,7 @@ def compute_site_pos(i, data, site_id, xl_type, intra_only, pdb_uni_map, method,
                     verbose_print(f"\tReplacement alphafold download attempt returned an error ({unip_id} probably not "
                                   f"found in database).\n\t\t\t(entry: {i}, unip: {unip_id}, pdb: {pdb_id}:{chain_id})",
                                   2, verbose_level)
-                    return None, False, method, 4, '-', ''
+                    return None, False, method, 4, '-', '', None
                 else:
                     method = "alphafold"
                     residue_pos = data[f"pos_{site_id}"]
@@ -264,7 +274,7 @@ def compute_site_pos(i, data, site_id, xl_type, intra_only, pdb_uni_map, method,
             # Elif residue position was not found and inter crosslink, as no replacement is possible means this position
             # cannot be retrieved
             elif residue_pos is None and xl_type == "inter":
-                return None, False, method, 4, '-', ''
+                return None, False, method, 4, '-', '', None
             # Else print computed position by realigning and continue with method = "realigning"
             else:
                 verbose_print(f"\tSelf computed res pos ({unip_id}, {data[f'pos_{site_id}']}): {residue_pos}, "
@@ -316,7 +326,7 @@ def compute_site_pos(i, data, site_id, xl_type, intra_only, pdb_uni_map, method,
                 verbose_print(f"\tReplacement alphafold download attempt returned an error ({unip_id} probably not "
                               f"found in database).\n\t\t\t(entry: {i}, unip: {unip_id}, pdb: {pdb_id}:{chain_id})", 2,
                               verbose_level)
-                return None, False, method, 4, '-', ''
+                return None, False, method, 4, '-', '', None
             else:
                 res = chain.__getitem__(residue_pos)
                 try:
@@ -329,7 +339,7 @@ def compute_site_pos(i, data, site_id, xl_type, intra_only, pdb_uni_map, method,
             verbose_print(f"\tWarning! Cannot find residue at position and no alphafold replacement possible for inter "
                           f"crosslink (pos={residue_pos}).\n\t\t\t(entry: {i}, pdb: {pdb_id}:{chain_id})", 2,
                           verbose_level)
-            return None, False, method, 4, '-', ''
+            return None, False, method, 4, '-', '', None
     # Check whether residue criteria is fulfilled, if not attempt final alphafold replacement; Check whether a valid CB
     # is accessible for specified residue, else return fail with i_error = 6
     try:
@@ -339,7 +349,7 @@ def compute_site_pos(i, data, site_id, xl_type, intra_only, pdb_uni_map, method,
         except:
             verbose_print(f"\tWarning! Got non-aminoacid at residue position ({res.get_resname()}).\n\t\t\t"
                           f"(entry: {i}, pdb: {pdb_id}:{chain_id})", 2, verbose_level)
-            return None, False, method, 5, '-', ''
+            return None, False, method, 5, '-', '', None
         res_criteria = (resname in df_xl_res.res.tolist()) and (resname == unip_seq[data[f'pos_{site_id}'] - 1])
         verbose_print(f"\tFinal residue is '{resname}' (thus res_criteria_{site_id}: {res_criteria})", 4, verbose_level)
         # If residue criteria fulfilled return result
@@ -347,7 +357,7 @@ def compute_site_pos(i, data, site_id, xl_type, intra_only, pdb_uni_map, method,
             try:
                 _ = res["CB"]
                 return int(res.get_id()[1]), res_criteria, method, -1,\
-                    res["CB"].get_bfactor() if method == "alphafold" else '-', new_path
+                    res["CB"].get_bfactor() if method == "alphafold" else '-', new_path, res["CB"].get_coord()
             except:
                 pass
         # Else attempt final alphafold replacement, if this fails return fail with i_error = 4
@@ -358,7 +368,7 @@ def compute_site_pos(i, data, site_id, xl_type, intra_only, pdb_uni_map, method,
                 verbose_print(f"\tReplacement alphafold download attempt returned an error ({unip_id} probably not "
                               f"found in database).\n\t\t\t(entry: {i}, unip: {unip_id}, pdb: {pdb_id}:{chain_id})", 2,
                               verbose_level)
-                return None, False, method, 4, '-', ''
+                return None, False, method, 4, '-', '', None
             else:
                 # Check whether specified residue by alphafold has valid name, else return fail with i_error = 5
                 try:
@@ -371,21 +381,22 @@ def compute_site_pos(i, data, site_id, xl_type, intra_only, pdb_uni_map, method,
                     res_criteria = resname in df_xl_res.res.tolist()
                     verbose_print(f"\tFinal residue is '{resname}' (thus res_criteria_{site_id}: {res_criteria})", 4,
                                   verbose_level)
-                    return int(res.get_id()[1]), res_criteria, method, -1, res["CB"].get_bfactor(), new_path
+                    return int(res.get_id()[1]), res_criteria, method, -1, res["CB"].get_bfactor(), new_path, \
+                        res["CB"].get_coord()
                 except:
                     verbose_print(f"\tWarning! Got non-aminoacid at residue position ({res.get_resname()}).\n\t\t\t"
                                   f"(entry: {i}, pdb: {pdb_id}:{chain_id})", 2, verbose_level)
-                    return None, False, method, 5, '-', ''
+                    return None, False, method, 5, '-', '', None
         else:
             # Wrong residue and no alphafold replacement possible with inter crosslink
             verbose_print(f"\tWarning! Wrong residue at position and no alphafold replacement possible for inter "
                           f"crosslink ({res.get_resname()}).\n\t\t\t(entry: {i}, pdb: {pdb_id}:{chain_id})", 2,
                           verbose_level)
-            return None, False, method, 4, '-', ''
+            return None, False, method, 4, '-', '', None
     except:
         verbose_print(f"\tWarning! No C-beta found ({res.get_resname()}).\n\t\t\t"
                       f"(entry: {i}, pdb: {pdb_id}:{chain_id})", 2, verbose_level)
-        return None, False, method, 6, '-', ''
+        return None, False, method, 6, '-', '', None
 
 
 def compute_pdb_uniprot_shift(pdb_uni_map_entry):

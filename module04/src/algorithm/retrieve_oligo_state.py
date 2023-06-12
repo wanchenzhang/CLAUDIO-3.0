@@ -7,10 +7,10 @@ import ast
 from utils.utils import *
 
 
-def retrieve_oligomeric_states(data, intra_only, verbose_level):
+def retrieve_oligomeric_states(data, verbose_level):
     # retrieve oligomeric states known for each uniprot entry and add them to the dataset as a string
     #
-    # input data: pd.DataFrame, intra_only: bool, verbose_level: int
+    # input data: pd.DataFrame, verbose_level: int
     # return data: pd.DataFrame
 
     # container for already searched oligo-states
@@ -19,7 +19,7 @@ def retrieve_oligomeric_states(data, intra_only, verbose_level):
     iteration_counter = [0, len(data.index)]
     data["swiss_model_homology"] = data.apply(
         lambda x: get_oligo_state_from_swiss(
-            x, intra_only, known_ostates, iteration_counter, verbose_level
+            x, known_ostates, iteration_counter, verbose_level
         ), axis=1
     )
     verbose_print("", 1, verbose_level)
@@ -27,11 +27,11 @@ def retrieve_oligomeric_states(data, intra_only, verbose_level):
     return data
 
 
-def get_oligo_state_from_swiss(data, intra_only, known_ostates, i_iteration, verbose_level):
+def get_oligo_state_from_swiss(data, known_ostates, i_iteration, verbose_level):
     # access SWISS-MODEL for given datapoint's uniprot id, if not previously encountered, else retrieve known result
     # from known_unips
     #
-    # input data: pd.Series, intra_only: bool, known_ostates: dict(str: list(str))), i_iteration: tuple(int, int),
+    # input data: pd.Series, known_ostates: dict(str: list(str))), i_iteration: tuple(int, int),
     # verbose_level: int
     # return oligo_states: str
 
@@ -46,7 +46,7 @@ def get_oligo_state_from_swiss(data, intra_only, known_ostates, i_iteration, ver
 
     base_url = "https://swissmodel.expasy.org/repository/uniprot/"
 
-    unip_ids = [data['unip_id']] if intra_only else [data['unip_id_a'], data['unip_id_b']]
+    unip_ids = [data['unip_id_a'], data['unip_id_b']]
 
     # if uniprot id not in already searched entries, do search in SWISS-MODEL
     for unip_id in unip_ids:
@@ -110,9 +110,9 @@ def get_oligo_state_from_swiss(data, intra_only, known_ostates, i_iteration, ver
                 known_ostates[unip_id] = ostates
 
     # return homo-oligomer states if intra crosslink
-    if intra_only or data['unip_id_a'] == data['unip_id_b']:
+    if data['unip_id_a'] == data['unip_id_b']:
         unique_ostates = sorted(pd.unique([state for _, states in
-                                           known_ostates[data['unip_id'] if intra_only else data['unip_id_a']].items()
+                                           known_ostates[data['unip_id_a']].items()
                                            for state in states]).tolist())
         unique_ostates = [state.replace('-', '') for state in unique_ostates if state not in ["heteromer", "monomer"]]
         return '_'.join(unique_ostates)

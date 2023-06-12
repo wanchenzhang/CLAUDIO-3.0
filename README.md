@@ -89,7 +89,7 @@ For details on how to run the **full** pipeline continue below.
 ## CLAUDIO - Full pipeline
 ### The CLI - Command Line Interface
 ```
-> python3 claudio.py [-i <filepath>] [-o <directorypath/"">] [-p <"comma-separated str">] [-bl <directorypath/None>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-hhout <directorypath>] [-tl <directorypath>] [-x <comma-separated str>] [-lmin <float>] [-lmax <float>] [-t <"blastp"/"hhsearch">] [-e <float] [-qi <float>] [-cv <float>] [-r <float>] [-rt <True/False>] [-pc <float>] [-s <True/False>] [-v <int>] [-es <float>] [-dm <float>] [-ct <float>] [-c <filepath>] 
+> python3 claudio.py [-i <filepath>] [-o <directorypath/"">] [-p <"comma-separated str">] [-bl <directorypath/None>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-tl <directorypath>] [-x <comma-separated str>] [-lmin <float>] [-lmax <float>] [-t <"blastp"/"hhsearch">] [-e <float] [-qi <float>] [-cv <float>] [-r <float>] [-rt <True/False>] [-pc <float>] [-s <True/False>] [-v <int>] [-es <float>] [-dm <float>] [-ct <float>] [-c <filepath>] 
 
 -i,    --input-filepath,        path to inputfile,
                                 default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv"
@@ -111,7 +111,6 @@ For details on how to run the **full** pipeline continue below.
 -hh,   --hhsearch-bin,          binary directory in hh-suite installation, or None if binary directory has been added to
                                 PATH variable (e.g. if hhsearch can be called from anywhere), default=None
 -hhdb, --hhsearch-db,           database directory for hh-suite installation, default="$HHDB"
--hhout,--hhsearch-out,          output directory for hhsearch results, default="$HHOUT"
 -tl,   --topolink-bin,          binary directory in topolink installation, or None if binary directory has been added to
                                 PATH variable (e.g. if topolink can be called from anywhere), default=None
 -x,    --xl-residues,           comma-separated one-letter-code residues, optional: add two ':' after the 
@@ -162,8 +161,7 @@ as input, which maps the column names of your dataset to the ones used in the to
 3. You need to specify the paths to the local external tool installations (BLASTP, HHsearch, and TopoLink).
 The parameters for this are "-bl / --blast-bin" for the binary directory of blast, "-bldb / --blast-db" for the database
 directory containing the *pdbaa* database files, "-hh / -hhsearch-bin" for the binary directory of HHsearch, 
-"-hhdb / --hhsearch-db" for the directory containing the *pdb70* database files, "-hhout / --hhsearch-out" for the 
-directory where HHsearch's results shall be outputted, and "-tl / --topolink-bin" for the binary directory of TopoLink.\
+"-hhdb / --hhsearch-db" for the directory containing the *pdb70* database files, and "-tl / --topolink-bin" for the binary directory of TopoLink.\
 *Note:* If you only installed and only intend to use BLASTP for example, setting the parameters for HHsearch are not 
 necessary (and vice-versa).
 4. Make sure you customize the settings pertaining the cross-linking experiments specifications, e.g. 

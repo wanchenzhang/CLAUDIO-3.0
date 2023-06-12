@@ -2,18 +2,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def create_histograms(data, intra_only, filename, cutoff, compute_scoring, output_directory):
+def create_histograms(data, filename, cutoff, compute_scoring, output_directory):
     # create histograms for inter scores, and pie charts for final validation results
     #
-    # input data: pd.DataFrame, intra_only: bool, filename: str, compute_scoring: bool, output_directory: str
+    # input data: pd.DataFrame, filename: str, compute_scoring: bool, output_directory: str
     # no return
 
     colors = ["#9ACE9A", "#464444"]
     if compute_scoring:
-        if intra_only:
-            inter_data = data[data.inter_score > cutoff][["inter_score"]]
-        else:
-            inter_data = data[(data.inter_score > cutoff) & (data.unip_id_a == data.unip_id_b)][["inter_score"]]
+        inter_data = data[(data.inter_score > cutoff) & (data.unip_id_a == data.unip_id_b)][["inter_score"]]
         if not inter_data.empty:
             label = "experimental confidence score for intra crosslinks (" \
                     + "$n_{>cutoff}$" + f" = {sum(inter_data.inter_score > cutoff)})"
@@ -44,23 +41,26 @@ def create_histograms(data, intra_only, filename, cutoff, compute_scoring, outpu
             # Clear figure
             plt.clf()
 
-    charts_strs = ["intra"]
-    data1 = data.copy() if intra_only else data[data.unip_id_a == data.unip_id_b].copy()
-    data_sets = [[len(data1[(data1.pdb_id == '-') & (data1.XL_type == "intra")].index),
-                  len(data1[(data1.pdb_id != '-') & (data1.XL_type == "intra")].index),
-                  len(data1[(data1.XL_type == "inter") & (data1.swiss_model_homology != '')].index),
-                  len(data1[(data1.XL_type == "inter") & (data1.swiss_model_homology == '')].index)]]
-    label_sets = [["remains intra (no structure found)", "remains intra (structure found)",
-                   "homology reference found", "new lead"]]
-    color_sets = [["#464444", "#FFCC00", "#9ACE9A", "lightblue"]]
-    if not intra_only:
+    charts_strs, data_sets, label_sets, color_sets = ([] for _ in range(4))
+    intra_data = data[data.unip_id_a == data.unip_id_b].copy()
+    inter_data = data[data.unip_id_a != data.unip_id_b].copy()
+
+    if not intra_data.empty:
+        charts_strs.append("intra")
+        data_sets.append([len(intra_data[(intra_data.pdb_id == '-') & (intra_data.XL_type == "intra")].index),
+                          len(intra_data[(intra_data.pdb_id != '-') & (intra_data.XL_type == "intra")].index),
+                          len(intra_data[(intra_data.XL_type == "inter") & (intra_data.swiss_model_homology != '')].index),
+                          len(intra_data[(intra_data.XL_type == "inter") & (intra_data.swiss_model_homology == '')].index)])
+        label_sets.append(["remains intra (no structure found)", "remains intra (structure found)",
+                           "homology reference found", "new lead"])
+        color_sets.append(["#464444", "#FFCC00", "#9ACE9A", "lightblue"])
+    if not inter_data.empty:
         charts_strs.append("inter")
-        data2 = data[data.unip_id_a != data.unip_id_b].copy()
-        data_sets.append([len(data2[data2.pdb_id == '-'].index),
-                          len(data2[(data2.pdb_id != '-') & (np.isnan(data2.topo_dist))]),
-                          len(data2[(data2.pdb_id != '-') & (~np.isnan(data2.topo_dist)) & (data2.evidence != '')].index),
-                          len(data2[(data2.pdb_id != '-') & (~np.isnan(data2.topo_dist)) & (data2.evidence == '')].index)])
-        label_sets.append(["no structure found", "not validated (structure found)", "reference structure found",
+        data_sets.append([len(inter_data[inter_data.pdb_id == '-'].index),
+                          len(inter_data[(inter_data.pdb_id != '-') & (np.isnan(inter_data.topo_dist))]),
+                          len(inter_data[(inter_data.pdb_id != '-') & (~np.isnan(inter_data.topo_dist)) & (inter_data.evidence == '')].index),
+                          len(inter_data[(inter_data.pdb_id != '-') & (~np.isnan(inter_data.topo_dist)) & (inter_data.evidence != '')].index)])
+        label_sets.append(["no structure found", "not analyzed (structure found)", "reference structure found",
                            "new lead"])
         color_sets.append(["#464444", "red", "#9ACE9A", "lightblue"])
 

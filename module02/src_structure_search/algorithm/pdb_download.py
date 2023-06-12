@@ -8,11 +8,11 @@ import requests as r
 from utils.utils import *
 
 
-def download_pdbs(dataset, search_tool, intra_only, res_cutoff, output_directory, verbose_level):
+def download_pdbs(dataset, search_tool, res_cutoff, output_directory, verbose_level):
     # Download pdb files either from RCSB or AlphaFold database (depending on earlier hhsearch or blastp search) into
     # output directory
     #
-    # input dataset: pd.DataFrame, search_tool: str, intra_only: bool, res_cutoff: float, output_directory: str,
+    # input dataset: pd.DataFrame, search_tool: str, res_cutoff: float, output_directory: str,
     # verbose_level: int
     # return dataset: pd.DataFrame
 
@@ -27,8 +27,7 @@ def download_pdbs(dataset, search_tool, intra_only, res_cutoff, output_directory
             # If an entry was found in the rcsb database, download from there
             pdb_id = res.split('_')[0]
             chain = '_'.join(res.split('|')[0].split('_')[1:]) if pdb_id else '-'
-            if not intra_only:
-                chain_b = '_'.join(res.split('|')[1].split('_')[1:]) if pdb_id else '-'
+            chain_b = '_'.join(res.split('|')[1].split('_')[1:]) if pdb_id else '-'
             pdb_file = ''
             if pdb_id:
                 # Create custom pdb filename
@@ -44,31 +43,28 @@ def download_pdbs(dataset, search_tool, intra_only, res_cutoff, output_directory
                         filename = '-'
                         pdb_id = '-'
                         chain = '-'
-                        if not intra_only:
-                            chain_b = '-'
+                        chain_b = '-'
             # If no entry was found, attempt download from alphafold database instead, if it is an intra crosslink
             else:
-                if intra_only or row["unip_id_a"] == row["unip_id_b"]:
+                if row["unip_id_a"] == row["unip_id_b"]:
                     # Create custom alphafold pdb filename
-                    pdb_id = f"af{row['unip_id' if intra_only else 'unip_id_a']}"
+                    pdb_id = f"af{row['unip_id_a']}"
                     chain = 'A'
-                    if not intra_only:
-                        chain_b = 'A'
+                    chain_b = 'A'
                     filename = f"{output_directory}{search_tool}_{pdb_id}.pdb"
 
                     # If no similar pdb was already downloaded, then download
                     if filename not in dataset["path"]:
                         # Download pdb as str text
                         url = f"https://alphafold.ebi.ac.uk/files/AF-"\
-                              f"{row['unip_id' if intra_only else 'unip_id_a']}-F1-model_v1.pdb"
+                              f"{row['unip_id_a']}-F1-model_v1.pdb"
                         pdb_file = download_pdb_from_db(url, 0, 5)
                         if pdb_file is None:
                             pdb_file = ''
                             filename = '-'
                             pdb_id = '-'
                             chain = '-'
-                            if not intra_only:
-                                chain_b = '-'
+                            chain_b = '-'
 
             # Check whether method and resolution are accepted, return respective bool, method and resolution
             method_accepted, method, resolution = accept_resolution_method(pdb_file, pdb_id, res_cutoff)
@@ -83,11 +79,8 @@ def download_pdbs(dataset, search_tool, intra_only, res_cutoff, output_directory
             if method_accepted:
                 # Update pdb_id and chain in dataset
                 dataset.loc[i, "pdb_id"] = pdb_id
-                if intra_only:
-                    dataset.loc[i, "chain"] = chain
-                else:
-                    dataset.loc[i, "chain_a"] = chain
-                    dataset.loc[i, "chain_b"] = chain_b
+                dataset.loc[i, "chain_a"] = chain
+                dataset.loc[i, "chain_b"] = chain_b
                 # Add filename to paths
                 dataset.loc[i, "path"] = filename
                 # Add method and resolution to dataset

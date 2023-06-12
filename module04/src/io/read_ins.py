@@ -5,14 +5,14 @@ def read_inputs(file1, file2):
     # read results of both reevaluations, return combined dataset
     #
     # input file1: str, file2: str
-    # return data: pd.DataFrame, intra_only: bool
+    # return data: pd.DataFrame
 
     data1 = pd.read_csv(file1, index_col=0)
     data2 = pd.read_csv(file2, index_col=0)
     data = merge_datasets(data1, data2)
-    intra_only = all([x not in data.columns for x in ["unip_id_a", "unip_id_b", "seq_a", "seq_b"]])
+    data.loc[data.homo_pep_overl & (data.chain_a != data.chain_b), "homo_pep_overl"] = False
 
-    return data, intra_only
+    return data
 
 
 def merge_datasets(df1, df2):

@@ -24,10 +24,9 @@ from utils.utils import *
 @click.option("-bldb", "--blast-db", default="$BLASTDB")
 @click.option("-hh", "--hhsearch-bin", default=None)
 @click.option("-hhdb", "--hhsearch-db", default="$HHDB")
-@click.option("-hhout", "--hhsearch-out", default="$HHOUT")
 @click.option("-v", "--verbose-level", default=3)
 def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, output_directory, blast_bin, blast_db,
-         hhsearch_bin, hhsearch_db, hhsearch_out, verbose_level):
+         hhsearch_bin, hhsearch_db, verbose_level):
     verbose_print("Start Unique Protein List Tool", 0, verbose_level)
     start_time = time.time()
 
@@ -51,12 +50,10 @@ def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, 
         hhsearch_bin += '/'
     if not hhsearch_db.endswith('/'):
         hhsearch_db += '/'
-    if not hhsearch_out.endswith('/'):
-        hhsearch_out += '/'
 
     # If parameters inputted by user valid
     if inputs_valid(input_filepath, projections, uniprot_search, xl_residues, search_tool, output_directory, blast_bin,
-                    blast_db, hhsearch_bin, hhsearch_db, hhsearch_out, verbose_level):
+                    blast_db, hhsearch_bin, hhsearch_db, verbose_level):
         # Use projections to apply unified column names to input dataset
         # (for example see module01/src/dict/default_projections.py)
         new_keys = ["pep_a", "pep_b", "pos_a", "pos_b", "res_pos_a", "res_pos_b", "unip_id_a", "unip_id_b"]
@@ -67,23 +64,23 @@ def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, 
 
         # Read input file
         verbose_print("Read input", 0, verbose_level)
-        data, intra_only = read_inputfile(input_filepath, projections)
+        data = read_inputfile(input_filepath, projections)
 
         # uniprot_search parameter is True actually perform a new search, else try to retrieve previous results
         # from temporary save file
         verbose_print("Retrieve UniProt sequences" + '' if uniprot_search else " from temporary save", 0, verbose_level)
-        data = do_uniprot_search(data, filename, intra_only, verbose_level) if uniprot_search \
+        data = do_uniprot_search(data, filename, verbose_level) if uniprot_search \
             else read_temp_search_save(data, filename)
 
         # Check datapoints for inconsistencies and correct them if possible (creates logfile in the process)
         verbose_print("Check datapoints for inconsistencies", 0, verbose_level)
-        data = double_check_data(data, filename, df_xl_res, intra_only, output_directory, verbose_level)
+        data = double_check_data(data, filename, df_xl_res, output_directory, verbose_level)
         verbose_print("Changes made to dataset written to log-file", 0, verbose_level)
 
         # Write list of unique protein pairs and unique proteins overall
         verbose_print("Create unique protein list", 0, verbose_level)
-        unique_proteins_list = create_list_of_unique_proteins(data, search_tool, intra_only, blast_bin, blast_db,
-                                                              hhsearch_bin, hhsearch_db, hhsearch_out, verbose_level)
+        unique_proteins_list = create_list_of_unique_proteins(data, search_tool, blast_bin, blast_db, hhsearch_bin,
+                                                              hhsearch_db, verbose_level)
 
         # Clean dataset for output
         data = clean_dataset(data)
@@ -98,12 +95,12 @@ def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, 
 
 
 def inputs_valid(input_filepath, projections, uniprot_search, xl_residues, search_tool, output_directory, blast_bin,
-                 blast_db, hhsearch_bin, hhsearch_db, hhsearch_out, verbose_level):
+                 blast_db, hhsearch_bin, hhsearch_db, verbose_level):
     # check validity of inputted parameters
     #
     # input input_filepath: str, projections: str, uniprot_search: bool, xl_residues: str, search_tool: str,
     # output_directory: str, blast_bin: str/None, blast_db: str, hhsearch_bin: str/None, hhsearch_db: str,
-    # hhsearch_out: str, verbose_level: int
+    # verbose_level: int
     # return inputs_valid: bool
 
     filename = input_filepath.split('/')[-1]

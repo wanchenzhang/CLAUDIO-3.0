@@ -32,15 +32,13 @@ from utils.utils import *
 @click.option("-bldb", "--blast-db", default="$HOME/BLAST/db")
 @click.option("-hh", "--hhsearch-bin", default=None)
 @click.option("-hhdb", "--hhsearch-db", default="$HHDB")
-@click.option("-hhout", "--hhsearch-out", default="$HHOUT")
 @click.option("-tl", "--topolink-bin", default=None)
 @click.option("-s", "--compute-scoring", default=False)
 @click.option("-v", "--verbose-level", default=3)
 @click.option("-c", "--config", default='')
 def main(input_filepath, projections, read_temps, xl_residues, search_tool, e_value, query_id, coverage, res_cutoff,
          plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness, distance_maximum, cutoff, output_directory,
-         blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out, topolink_bin, compute_scoring, verbose_level,
-         config):
+         blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin, compute_scoring, verbose_level, config):
     verbose_print("Start full CLAUDIO pipeline", 0, verbose_level)
     verbose_print("===================================", 0, verbose_level)
     start_time = time.time()
@@ -50,11 +48,11 @@ def main(input_filepath, projections, read_temps, xl_residues, search_tool, e_va
         verbose_print("Configuration file given, ignore other inputs", 0, verbose_level)
         args = [input_filepath, projections, read_temps, xl_residues, search_tool, e_value, query_id, coverage,
                 res_cutoff, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness, distance_maximum,
-                cutoff, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out, topolink_bin,
-                compute_scoring, verbose_level]
+                cutoff, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin, compute_scoring,
+                verbose_level]
         input_filepath, projections, read_temps, xl_residues, search_tool, e_value, query_id, coverage, res_cutoff, \
             plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness, distance_maximum, cutoff, \
-            output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, hhsearch_out, topolink_bin, \
+            output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin, \
             compute_scoring, verbose_level \
             = read_config(config, args)
 
@@ -67,7 +65,7 @@ def main(input_filepath, projections, read_temps, xl_residues, search_tool, e_va
     try:
         run_claudio_lists(["-i", input_filepath, "-p", projections, "-s", not read_temps, "-x", xl_residues,
                            "-t", search_tool, "-o", output_directory, "-bl", blast_bin, "-bldb", blast_db,
-                           "-hh", hhsearch_bin, "-hhdb", hhsearch_db, "-hhout", hhsearch_out, "-v", verbose_level])
+                           "-hh", hhsearch_bin, "-hhdb", hhsearch_db, "-v", verbose_level])
     except SystemExit:
         pass
     if not os.path.exists(f"{output_directory}{filename}.sqcs"):
@@ -85,7 +83,7 @@ def main(input_filepath, projections, read_temps, xl_residues, search_tool, e_va
                               "-x", xl_residues, "-pc", plddt_cutoff, "-lmin", linker_minimum, "-lmax", linker_maximum,
                               "-e", e_value, "-qi", query_id, "-c", coverage, "-r", res_cutoff, "-o", output_directory,
                               "-bl", blast_bin, "-bldb", blast_db, "-hh", hhsearch_bin, "-hhdb", hhsearch_db,
-                              "-hhout", hhsearch_out, "-tl", topolink_bin, "-v", verbose_level])
+                              "-tl", topolink_bin, "-v", verbose_level])
     except SystemExit:
         pass
 
@@ -118,7 +116,7 @@ def read_config(path, args):
     # e_value: float, query_id: float, coverage: float, res_cutoff: float, plddt_cutoff: float, linker_minimum: float,
     # linker_maximum: float, euclidean_strictness: float/None, distance_maximum: float, cutoff: float,
     # output_directory: str, blast_bin: str/None, blast_db: str, hhsearch_bin: str/None, hhsearch_db: str,
-    # hhsearch_out: str, topolink_bin: str, compute_scoring: bool, verbose_level: int
+    # topolink_bin: str, compute_scoring: bool, verbose_level: int
 
     with open(path, 'r') as f:
         config_content = f.read()
@@ -127,8 +125,8 @@ def read_config(path, args):
         line_markers = ["input_filepath=", "projections=", "read_temps=", "xl_residues=", "search_tool=", "e_value=",
                         "query_id=", "coverage=", "res_cutoff=", "plddt_cutoff=", "linker_minimum=", "linker_maximum=",
                         "euclidean_strictness=", "distance_maximum=", "cutoff=", "output_directory=",
-                        "blast_bin=", "blast_db=", "hhsearch_bin=", "hhsearch_db=", "hhsearch_out=", "topolink_bin=",
-                        "compute_scoring=", "verbose_level="]
+                        "blast_bin=", "blast_db=", "hhsearch_bin=", "hhsearch_db=", "topolink_bin=", "compute_scoring=",
+                        "verbose_level="]
         config_params = {marker: l[len(marker):] for marker in line_markers for l in input_lines
                          if l.startswith(marker)}
 
@@ -160,7 +158,7 @@ def read_config(path, args):
         defaults = ["data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv",
                     "peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2", False, "K,M:N:1", "blastp",
                     1e-5, 90.0, 50.0, 6.5, 70.0, 0.0, 35.0, None, 50.0, 0.0, "data/out/full", None, "$BLASTDB", None,
-                    "$HHDB", "$HHOUT", None, False, 3]
+                    "$HHDB", None, False, 3]
 
         # define dicts using line markers as keys, for aguments and default values
         defaults = {marker: defaults[i] for i, marker in enumerate(line_markers)}

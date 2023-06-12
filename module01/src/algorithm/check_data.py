@@ -4,10 +4,10 @@ from Bio.Align import PairwiseAligner
 from utils.utils import *
 
 
-def double_check_data(data, filename, df_xl_res, intra_only, output_directory, verbose_level):
+def double_check_data(data, filename, df_xl_res, output_directory, verbose_level):
     # Check given datapoints and correct it, if possible/needed
     #
-    # input data: pd.DataFrame, filename: str, df_xl_res: pd.DataFrame, intra_only: bool, output_directory: str,
+    # input data: pd.DataFrame, filename: str, df_xl_res: pd.DataFrame, output_directory: str,
     # verbose_level: int
     # return data: pd.DataFrame
 
@@ -26,7 +26,7 @@ def double_check_data(data, filename, df_xl_res, intra_only, output_directory, v
         ind += 1
 
         # SUCCESS: Remove empty entry
-        if (type(row["seq"]) != str) if intra_only else ((type(row["seq_a"]) != str) or (type(row["seq_b"]) != str)):
+        if (type(row["seq_a"]) != str) or (type(row["seq_b"]) != str):
             log_text += f"{i}: empty entry. will be removed\n"
             data.drop(i, inplace=True)
             log_text += "\tSUCCESS\n"
@@ -51,33 +51,33 @@ def double_check_data(data, filename, df_xl_res, intra_only, output_directory, v
             log_text += "\tREPLACE: Mo -> M\n"
 
         # ISSUE: Check if peptide is in full sequence as is (possible insertions are not considered)
-        if (row["pep_a"] not in row["seq"]) if intra_only else (row["pep_a"] not in row["seq_a"]):
-            log_text += f"{i}_a: pep_a is not completely in full seq{'' if intra_only else '_a'}\n"
+        if row["pep_a"] not in row["seq_a"]:
+            log_text += f"{i}_a: pep_a is not completely in full seq_a\n"
             log_text += f"\tISSUE\n"
-        if (row["pep_b"] not in row["seq"]) if intra_only else (row["pep_b"] not in row["seq_b"]):
-            log_text += f"{i}_b: pep_b is not completely in full seq{'' if intra_only else '_b'}\n"
+        if row["pep_b"] not in row["seq_b"]:
+            log_text += f"{i}_b: pep_b is not completely in full seq_b\n"
             log_text += f"\tISSUE\n"
 
         # Recompute residue positions for site a and b
-        row, log_text = check_pep_pos(i, row, 'a', df_xl_res, intra_only, log_text, verbose_level)
-        row, log_text = check_pep_pos(i, row, 'b', df_xl_res, intra_only, log_text, verbose_level)
+        row, log_text = check_pep_pos(i, row, 'a', df_xl_res, log_text, verbose_level)
+        row, log_text = check_pep_pos(i, row, 'b', df_xl_res, log_text, verbose_level)
         # Update row
         data.loc[i, :] = row
 
         # ISSUE: Check if peptide occurs multiple times in full sequence as is (possible insertions are not considered)
         pep_found_multiple_times = False
-        if (row["seq"].count(row["pep_a"]) if intra_only else row["seq_a"].count(row["pep_a"])) > 1:
-            log_text += f"{i}_a: pep_a was found more than once in full seq{'' if intra_only else '_a'}\n"
+        if row["seq_a"].count(row["pep_a"]) > 1:
+            log_text += f"{i}_a: pep_a was found more than once in full seq_a\n"
             log_text += f"\tISSUE\n"
             pep_found_multiple_times = True
-        if (row["seq"].count(row["pep_b"]) if intra_only else row["seq_b"].count(row["pep_b"])) > 1:
-            log_text += f"{i}_b: pep_b was found more than once in full seq{'' if intra_only else '_b'}\n"
+        if row["seq_b"].count(row["pep_b"]) > 1:
+            log_text += f"{i}_b: pep_b was found more than once in full seq_b\n"
             log_text += f"\tISSUE\n"
             pep_found_multiple_times = True
 
         # If any peptide was found multiple times, create possible variations (add them later (*))
         if pep_found_multiple_times:
-            datapoints, log_text = create_duplicates(row, df_xl_res, intra_only, log_text)
+            datapoints, log_text = create_duplicates(row, df_xl_res, log_text)
             new_datapoints.append(datapoints)
 
         # If not in known interactions, save unip ids and positions in known interactions, else drop datapoint
@@ -111,22 +111,17 @@ def double_check_data(data, filename, df_xl_res, intra_only, output_directory, v
     with open(output_path, 'w') as log_f:
         log_f.write(log_text)
 
-    # Drop one of the uniprot id columns, if intra crosslinks only
-    if intra_only:
-        data.rename(columns={"unip_id_a": "unip_id"}, inplace=True)
-        data.drop(["unip_id_b"], axis=1, inplace=True)
-
     return data
 
 
-def check_pep_pos(i, row, site, df_xl_res, intra_only, log_text, verbose_level):
+def check_pep_pos(i, row, site, df_xl_res, log_text, verbose_level):
     # Check given positions and correct it, if possible/needed
     #
-    # input i: int, row: pd.Series, site: str, df_xl_res: pd.DataFrame, intra_only: bool, log_text: str,
+    # input i: int, row: pd.Series, site: str, df_xl_res: pd.DataFrame, log_text: str,
     # verbose_level: int
     # return row: pd.Series, log_text: str
 
-    seq = row.seq if intra_only else row[f"seq_{site}"]
+    seq = row[f"seq_{site}"]
     pep_pos = int(row[f"pos_{site}"])
     peptide = row[f"pep_{site}"]
 
@@ -277,7 +272,7 @@ def realign_pep_to_seq(seq, peptide, res_pos, verbose_level):
         alignment = aligner.align(seq, peptide)[0]
     except ValueError:
         return None
-    verbose_print(f"\tAlignment:\n{alignment}", 2, verbose_level)
+    verbose_print(f"\tAlignment:\n{alignment}", 3, verbose_level)
     aligned_seq = str(alignment).split('\n')[0]
     aligned_pep = str(alignment).split('\n')[2]
 
@@ -309,10 +304,10 @@ def realign_pep_to_seq(seq, peptide, res_pos, verbose_level):
         return None
 
 
-def create_duplicates(row, df_xl_res, intra_only, log_text):
+def create_duplicates(row, df_xl_res, log_text):
     # Check if peptides in datapoint occur multiple times in sequence, if so create dataset with possible permutations
     #
-    # input row: pd.Series, df_xl_res: pd.DataFrame, intra_only: bool, log_text: str
+    # input row: pd.Series, df_xl_res: pd.DataFrame, log_text: str
     # return new_datapoints: pd.DataFrame, log_text: str
 
     new_datapoints = []
@@ -322,11 +317,8 @@ def create_duplicates(row, df_xl_res, intra_only, log_text):
 
     for _, dp in df_xl_res.iterrows():
         # set sequences
-        if intra_only:
-            seq_a = seq_b = row.seq
-        else:
-            seq_a = row.seq_a
-            seq_b = row.seq_b
+        seq_a = row.seq_a
+        seq_b = row.seq_b
 
         # Only create new datapoints, if the current residue can be placed in multiple positions
         if dp.pos == 0:
