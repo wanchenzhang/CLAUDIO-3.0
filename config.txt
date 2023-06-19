@@ -122,7 +122,7 @@ res_cutoff = 6.5
 ## READ TEMP-SAVES
 #################################################
 #17.read some results from temporary save from previous run (overwritten each time). Note: Ensure that this is called
-#with the exact same parameters as the previous run. It might otherwise lead to unforseen issues.
+#with the exact same parameters as the previous run. It might otherwise lead to unforeseen issues.
 #type: boolean
 #ex.: True
 read_temps = False

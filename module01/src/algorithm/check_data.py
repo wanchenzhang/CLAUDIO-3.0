@@ -27,9 +27,9 @@ def double_check_data(data, filename, df_xl_res, output_directory, verbose_level
 
         # SUCCESS: Remove empty entry
         if (type(row["seq_a"]) != str) or (type(row["seq_b"]) != str):
-            log_text += f"{i}: empty entry. will be removed\n"
+            log_text += f"{i}: empty entry. will be dropped\n"
             data.drop(i, inplace=True)
-            log_text += "\tSUCCESS\n"
+            log_text += "\tREMOVE\n"
             continue
 
         # FAIL: Neither of the specified residues are in the peptide (wrong peptide, or faulty interaction found)
@@ -101,6 +101,7 @@ def double_check_data(data, filename, df_xl_res, output_directory, verbose_level
 
     log_text += f"\n======================================================================\nFinal result:\n" \
                 f"\tFAILS: {log_text.count('FAIL')}\n" \
+                f"\tREMOVES: {log_text.count('REMOVE')}\n" \
                 f"\tSUCCESSES: {log_text.count('SUCCESS')}\n" \
                 f"\tISSUES: {log_text.count('ISSUE')}\n" \
                 f"\tDUPLICATES: {log_text.count('DUPLICATE')}\n" \

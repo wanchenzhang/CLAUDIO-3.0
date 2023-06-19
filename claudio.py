@@ -45,7 +45,7 @@ def main(input_filepath, projections, read_temps, xl_residues, search_tool, e_va
 
     # If configuration file given, ignore(/overwrite) all other parameters
     if config:
-        verbose_print("Configuration file given, ignore other inputs", 0, verbose_level)
+        verbose_print("Configuration file given", 0, verbose_level)
         args = [input_filepath, projections, read_temps, xl_residues, search_tool, e_value, query_id, coverage,
                 res_cutoff, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness, distance_maximum,
                 cutoff, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin, compute_scoring,

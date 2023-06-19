@@ -81,16 +81,13 @@ def compute_dists_with_topolink(data, df_xl_res, plddt_cutoff, topolink_bin, ver
                     # observed LYS A 468 LYS A 457
                     # LINK: LYS A 457 CA LYS A 468 CA 11.814 12.568 YES 0.000 35.000 OK: FOUND 1 / 1 1 / 1 YY YY
                     link_strs = [
-                        ' '.join([Polypeptide.one_to_three(row['seq_a'][row['pos_a'] - 1]),
-                                  row['chain_a'], str(int(row['pdb_pos_a']))]),
-                        ' '.join([Polypeptide.one_to_three(row['seq_b'][row['pos_b'] - 1]),
-                                  row['chain_b'], str(int(row['pdb_pos_b']))])]
+                        ' '.join([Polypeptide.one_to_three(row['seq_a'][row['pos_a'] - 1]), row['chain_a'], str(int(row['pdb_pos_a']))]),
+                        ' '.join([Polypeptide.one_to_three(row['seq_b'][row['pos_b'] - 1]), row['chain_b'], str(int(row['pdb_pos_b']))])]
                     if link_strs not in known_link_strs:
                         obs_str += f"  observed {' '.join(link_strs)}\n"
                         obs_inds.append((i, link_strs, False))
                         known_link_strs.append(link_strs)
-                        known_link_strs.append([link_strs[3], link_strs[4], link_strs[5],
-                                                link_strs[0], link_strs[1], link_strs[2]])
+                        known_link_strs.append([link_strs[1], link_strs[0]])
                 except:
                     continue
 
@@ -196,7 +193,7 @@ def compute_dists_with_topolink(data, df_xl_res, plddt_cutoff, topolink_bin, ver
 
 
 def isolate_pdb_chain(path, chain_ids):
-    # isolate chain with interaction and write only this chain to pdb
+    # isolate chains with cross-links and write only those chains to pdb
     #
     # input path: str, chain_ids: list(str)
     # return new_path: str

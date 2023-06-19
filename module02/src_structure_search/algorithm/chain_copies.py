@@ -1,8 +1,4 @@
-import sys
-
 import pandas as pd
-
-MAX_NUM_COPIES = 10**8
 
 
 def create_ident_chain_copies(data):
@@ -20,6 +16,7 @@ def create_ident_chain_copies(data):
 
     # Create datapoints off of annotated multi-chains
     for new_data_info in new_data_infos:
+        already_found_opts = []
         dp, chain_a_opts, chain_b_opts = new_data_info
         count = 1
         dp_name = dp.name
@@ -31,12 +28,14 @@ def create_ident_chain_copies(data):
                     dp.chain_b = chain_b
                 dp = dp.rename(f"{dp_name}_{count}")
                 if (i, j) != (0, 0):
-                    if count == MAX_NUM_COPIES:
-                        break
-                    new_datapoints.append(dp.copy())
+                    if (dp.unip_id_a == dp.unip_id_b) and (dp.pos_a == dp.pos_b):
+                        already_annotated = (dp.chain_b, dp.chain_a) in already_found_opts
+                        if not already_annotated:
+                            new_datapoints.append(dp.copy())
+                            already_found_opts.append((dp.chain_a, dp.chain_b))
+                    else:
+                        new_datapoints.append(dp.copy())
                 count += 1
-            if count == MAX_NUM_COPIES:
-                break
 
     if new_datapoints:
         # Add new datapoints to dataset
@@ -53,9 +52,9 @@ def annotate_multi_chain_dps(data_row, new_data_infos):
     # input: data_row: pd.DataSeries, new_data_infos: list(tuple(pd.DataSeries, str, str))
     # return data: pd.DataFrame
 
-    chain_a_opts = '_' in data_row.chain_a
-    chain_b_opts = '_' in data_row.chain_b
-    if (chain_a_opts or chain_b_opts) and (len(data_row.pdb_id) == 4):
+    chain_a_opts_found = '_' in data_row.chain_a
+    chain_b_opts_found = '_' in data_row.chain_b
+    if (chain_a_opts_found or chain_b_opts_found) and (len(data_row.pdb_id) == 4):
         new_data_infos.append((data_row.copy(), data_row.chain_a, data_row.chain_b))
 
         data_row.chain_a = data_row.chain_a.split('_')[0]

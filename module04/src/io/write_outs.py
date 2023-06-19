@@ -75,17 +75,18 @@ def write_outputs(data, filename, compute_scoring, output_directory):
 
     # write full output dataset containing all given and computed information
     # select columns
-    #   all cols:
-    #       ["unip_id_a", "unip_id_b", "pos_a", "pos_b", "pep_a", "pep_b", "res_pos_a", "res_pos_b", "seq_a",
-    #       "seq_b", "pdb_id", "pdb_method", "pdb_resolution", "chain_a", "chain_b", "pdb_pos_a", "pdb_pos_b",
-    #       "pLDDT_a", "pLDDT_b", "is_interfaced", "topo_dist", "homo_adjacency", "homo_int_overl", "homo_pep_overl",
-    #       "evidence", "XL_type", "XL_confirmed", "swiss_model_homology"]
+    all_cols = ["unip_id_a", "unip_id_b", "pos_a", "pos_b", "pep_a", "pep_b", "res_pos_a", "res_pos_b", "seq_a",
+                "seq_b", "pdb_id", "pdb_method", "pdb_resolution", "chain_a", "chain_b", "pdb_pos_a", "pdb_pos_b",
+                "pLDDT_a", "pLDDT_b", "is_interfaced", "topo_dist", "homo_adjacency", "homo_int_overl",
+                "homo_pep_overl", "evidence", "XL_type", "XL_confirmed", "swiss_model_homology"]
     out_columns = ["unip_id_a", "unip_id_b", "pos_a", "pos_b", "pep_a", "pep_b", "res_pos_a", "res_pos_b", "pdb_id",
                    "pdb_method", "pdb_resolution", "chain_a", "chain_b", "pdb_pos_a", "pdb_pos_b", "pLDDT_a", "pLDDT_b",
-                   "is_interfaced", "topo_dist", "homo_pep_overl", "evidence", "XL_type", "XL_confirmed",
-                   "swiss_model_homology"]
+                   "topo_dist", "homo_pep_overl", "evidence", "XL_type", "XL_confirmed", "swiss_model_homology"]
     if compute_scoring:
         out_columns.insert(20, "homo_adjacency")
         out_columns.insert(21, "homo_int_overl")
+
+    # also, select columns which were in the input but were unused by this tool
+    out_columns.extend([col for col in data.columns if col not in all_cols])
 
     data[out_columns].to_csv(f"{output_directory}{filename}_final.csv")
