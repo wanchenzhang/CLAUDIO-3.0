@@ -10,32 +10,37 @@ from module04.src.main import main as run_claudio_xl
 
 from utils.utils import *
 
+_DEFAULT_OPTIONS = ["data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv",
+                    "peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2", False, "K,M:N:1", "blastp",
+                    1e-5, 90.0, 50.0, 6.5, 70.0, 0.0, 35.0, None, 50.0, 0.0, "data/out/full", None, "$HOME/BLAST/db",
+                    None, "$HOME/HHSUITE/db", None, False, 3]
+
 
 @click.command()
-@click.option("-i", "--input-filepath", default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv")
-@click.option("-p", "--projections", default="peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2")
-@click.option("-rt", "--read-temps", default=False)
-@click.option("-x", "--xl-residues", default="K,M:N:1")
-@click.option("-t", "--search-tool", default="blastp")
-@click.option("-e", "--e-value", default=1e-5)
-@click.option("-qi", "--query-id", default=90.0)
-@click.option("-cv", "--coverage", default=50.0)
-@click.option("-r", "--res-cutoff", default=6.5)
-@click.option("-pc", "--plddt-cutoff", default=70.0)
-@click.option("-lmin", "--linker-minimum", default=5.0)
-@click.option("-lmax", "--linker-maximum", default=35.0)
-@click.option("-es", "--euclidean-strictness", default=None)
-@click.option("-dm", "--distance-maximum", default=50.0)
-@click.option("-ct", "--cutoff", default=0.0)
-@click.option("-o", "--output-directory", default="data/out/full")
-@click.option("-bl", "--blast-bin", default=None)
-@click.option("-bldb", "--blast-db", default="$HOME/BLAST/db")
-@click.option("-hh", "--hhsearch-bin", default=None)
-@click.option("-hhdb", "--hhsearch-db", default="$HHDB")
-@click.option("-tl", "--topolink-bin", default=None)
-@click.option("-s", "--compute-scoring", default=False)
-@click.option("-v", "--verbose-level", default=3)
-@click.option("-c", "--config", default='')
+@click.option("-i", "--input-filepath", default=_DEFAULT_OPTIONS[0])
+@click.option("-p", "--projections", default=_DEFAULT_OPTIONS[1])
+@click.option("-rt", "--read-temps", default=_DEFAULT_OPTIONS[2])
+@click.option("-x", "--xl-residues", default=_DEFAULT_OPTIONS[3])
+@click.option("-t", "--search-tool", default=_DEFAULT_OPTIONS[4])
+@click.option("-e", "--e-value", default=_DEFAULT_OPTIONS[5])
+@click.option("-qi", "--query-id", default=_DEFAULT_OPTIONS[6])
+@click.option("-cv", "--coverage", default=_DEFAULT_OPTIONS[7])
+@click.option("-r", "--res-cutoff", default=_DEFAULT_OPTIONS[8])
+@click.option("-pc", "--plddt-cutoff", default=_DEFAULT_OPTIONS[9])
+@click.option("-lmin", "--linker-minimum", default=_DEFAULT_OPTIONS[10])
+@click.option("-lmax", "--linker-maximum", default=_DEFAULT_OPTIONS[11])
+@click.option("-es", "--euclidean-strictness", default=_DEFAULT_OPTIONS[12])
+@click.option("-dm", "--distance-maximum", default=_DEFAULT_OPTIONS[13])
+@click.option("-ct", "--cutoff", default=_DEFAULT_OPTIONS[14])
+@click.option("-o", "--output-directory", default=_DEFAULT_OPTIONS[15])
+@click.option("-bl", "--blast-bin", default=_DEFAULT_OPTIONS[16])
+@click.option("-bldb", "--blast-db", default=_DEFAULT_OPTIONS[17])
+@click.option("-hh", "--hhsearch-bin", default=_DEFAULT_OPTIONS[18])
+@click.option("-hhdb", "--hhsearch-db", default=_DEFAULT_OPTIONS[19])
+@click.option("-tl", "--topolink-bin", default=_DEFAULT_OPTIONS[20])
+@click.option("-s", "--compute-scoring", default=_DEFAULT_OPTIONS[21])
+@click.option("-v", "--verbose-level", default=_DEFAULT_OPTIONS[22])
+@click.option("-c", "--config", default="")
 def main(input_filepath, projections, read_temps, xl_residues, search_tool, e_value, query_id, coverage, res_cutoff,
          plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness, distance_maximum, cutoff, output_directory,
          blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin, compute_scoring, verbose_level, config):
@@ -155,10 +160,7 @@ def read_config(path, args):
                                  f"(given:{config_params[-2]}).")
 
         # Check whether already given args have default value
-        defaults = ["data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv",
-                    "peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2", False, "K,M:N:1", "blastp",
-                    1e-5, 90.0, 50.0, 6.5, 70.0, 0.0, 35.0, None, 50.0, 0.0, "data/out/full", None, "$BLASTDB", None,
-                    "$HHDB", None, False, 3]
+        defaults = _DEFAULT_OPTIONS.copy()
 
         # define dicts using line markers as keys, for aguments and default values
         defaults = {marker: defaults[i] for i, marker in enumerate(line_markers)}
