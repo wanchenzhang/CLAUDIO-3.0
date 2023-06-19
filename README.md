@@ -1,9 +1,16 @@
 # CLAUDIO 
 
 *CLAUDIO*, the tool for "**C**ross-**l**inking **a**nalysis **u**sing **di**stances and **o**verlaps", allows
-for a methodical stepwise evaluation of cross-linking interaction types via in-depth analysis of structure and sequence 
-information. It returns structural restraints, which can be applied in structure predictions, and the input dataset
-extended by its analysis' results. 
+for an in-depth evaluation of structure and sequence information, automating many necessary post-experiment analysis. 
+It downloads protein structures for this, and returns protein-link-specific small-datasets containing structural 
+restraints in CSV-format, and the input dataset extended by its results.
+These include...
+* ... PDB IDs of protein structures searched by BLASTP or HHsearch
+* ... Mapping of UniProt protein to structure sequence positions
+* ... Structural distances calculated with TopoLink
+* ... Information on Homo-signal responses (e.g. overlapping peptide sequences in same-protein cross-links)
+* ... Information on possible oligomeric states discovered by SWISS-MODEL homology
+* ... Cross-link type estimations
 
 ## Prerequisites
 ### Python
@@ -89,10 +96,11 @@ For details on how to run the **full** pipeline continue below.
 ## CLAUDIO - Full pipeline
 ### The CLI - Command Line Interface
 ```
-> python3 claudio.py [-i <filepath>] [-o <directorypath/"">] [-p <"comma-separated str">] [-bl <directorypath/None>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-tl <directorypath>] [-x <comma-separated str>] [-lmin <float>] [-lmax <float>] [-t <"blastp"/"hhsearch">] [-e <float] [-qi <float>] [-cv <float>] [-r <float>] [-rt <True/False>] [-pc <float>] [-s <True/False>] [-v <int>] [-es <float>] [-dm <float>] [-ct <float>] [-c <filepath>] 
+> python3 claudio.py [-i <filepath>] [-it <diretorypath>] [-o <directorypath/"">] [-p <"comma-separated str">] [-bl <directorypath/None>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-tl <directorypath>] [-x <comma-separated str>] [-lmin <float>] [-lmax <float>] [-t <"blastp"/"hhsearch">] [-e <float] [-qi <float>] [-cv <float>] [-r <float>] [-rt <True/False>] [-pc <float>] [-s <True/False>] [-v <int>] [-es <float>] [-dm <float>] [-ct <float>] [-c <filepath>] 
 
 -i,    --input-filepath,        path to inputfile,
                                 default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv"
+-it,   --input-temppath,        path to directory for temporary files, default=""
 -o,    --output-directory,      output directory for produced csv-files, default="data/out/full"
 -p,    --projections,           comma-separated position-sensitive list that names the column names of the users dataset
                                 containing the necessary information for the tool. The column names should contain and 
@@ -146,9 +154,7 @@ For details on how to run the **full** pipeline continue below.
                                 to inter, default=0.0
                                 
                                 
--c,    --config,                filepath to configuration file containing all input parameters, if given all other 
-                                parameters will be ignored if they are not further specified, (see example: config.txt),
-                                default=''
+-c,    --config,                filepath to configuration file containing all input parameters, default=''
 ```
 ### Input
 This tool requires a CSV-file containing multiple observed cross-linking interactions. Two columns have to contain 

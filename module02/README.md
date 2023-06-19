@@ -2,10 +2,11 @@
 
 ### The CLI - Command Line Interface
 ```
-> python3 claudio_structdi.py [-i <filepath>] [-rt <True/False>] [-t <"blastp"/"hhsearch">] [-pc <float>] [-lmin <float>] [-lmax <float>] [-e <float>] [-qi <float>] [-c <float>] [-r <float>] [-o <directorypath>] [-bl <directorypath>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-tl <directorypath>] [-v <int>]
+> python3 claudio_structdi.py [-i <filepath>] [-it <directorypath>] [-rt <True/False>] [-t <"blastp"/"hhsearch">] [-pc <float>] [-lmin <float>] [-lmax <float>] [-e <float>] [-qi <float>] [-c <float>] [-r <float>] [-o <directorypath>] [-bl <directorypath>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-tl <directorypath>] [-v <int>]
 
 -i,    --input-filepath,        path to inputfile,
                                 default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv"
+-it,   --input-temppath,        path to directory for temporary files, default=""
 -rt,   --read-temps,            if the tool has been run before with the same input a temporary file was saved, which 
                                 can be used to retireve the previouse results of the uniprot and structure searches,
                                 default=False

@@ -1,16 +1,15 @@
 import socket
 import sys
-import os
 
 import requests as r
 
 from utils.utils import *
 
 
-def do_uniprot_search(data, filename, verbose_level):
+def do_uniprot_search(data, uniprot_search_temp_dir, filename, verbose_level):
     # Retrieve full uniprot sequences and IDs if not given
     #
-    # input data: pd.DataFrame, filename: str, verbose_level: int
+    # input data: pd.DataFrame, uniprot_search_temp_dir: str, filename: str, verbose_level: int
     # return data: pd.DataFrame
 
     # retrieve sequences from uniprot entries
@@ -18,10 +17,7 @@ def do_uniprot_search(data, filename, verbose_level):
     data["seq_b"], _ = search_uniprot(data, verbose_level, already_searched=search_result_dict, site='b')
 
     # save results in temporary save file (can be used on rerun, instead of searching results again)
-    project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
-    project_path = project_path + '/' if project_path else ""
-    temp_save_filepath = f"{project_path}data/temp/uniprot_search/" \
-                         f"{filename}_srtmp.csv"
+    temp_save_filepath = f"{uniprot_search_temp_dir}{filename}_srtmp.csv"
     data[["seq_a", "seq_b"]].to_csv(temp_save_filepath, index=False)
 
     return data

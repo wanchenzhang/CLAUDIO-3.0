@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 
 
@@ -57,6 +58,25 @@ def round_self(value, decimals):
     else:
         rounded_value = float(f"{int((value * (10 ** decimals)) + .5) / (10 ** decimals):.{decimals}f}")
         return rounded_value
+
+
+def create_temp_dir(input_temppath, sub_dir):
+    # Create temporary file directory and return its path
+    #
+    # input input_temppath: str, sub_dir: str
+    # return temp_dir_path
+
+    if not input_temppath.endswith('/'):
+        input_temppath += '/'
+    if input_temppath == '/':
+        project_path = '/'.join(os.path.abspath(__file__).split('/')[:-3])
+        project_path = project_path + '/' if project_path else ""
+        input_temppath = project_path
+    temp_dir = f"{input_temppath}{sub_dir}/"
+    if not os.path.exists(temp_dir):
+        os.mkdir(temp_dir)
+
+    return temp_dir
 
 
 def clean_dataset(data):

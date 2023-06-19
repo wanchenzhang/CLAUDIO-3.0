@@ -8,37 +8,35 @@ from utils.utils import *
 warnings.filterwarnings("ignore")
 
 
-def calculate_site_dists(data, df_xl_res, plddt_cutoff, topolink_bin, verbose_level):
+def calculate_site_dists(data, temp_dir, df_xl_res, plddt_cutoff, topolink_bin, verbose_level):
     # calculate distances between interaction sites, and extend input dataset by res_criteria, e.g. whether the found
     # sites satisfy the criteria of being the specified residue, the method used to find the sites in the structure
     # file, in case said method was alphafold the pLDDT, e.g. confidence, value and finally the computed distances
     #
-    # input data: pd.DataFrame, df_xl_res: pd.DataFrame, plddt_cutoff: float, topolink_bin: str/None,
-    # verbose_level: int
+    # input data: pd.DataFrame, temp_dir: str, df_xl_res: pd.DataFrame, plddt_cutoff: float,
+    # topolink_bin: str/None, verbose_level: int
     # return data: pd.DataFrame
 
     # Compute euclidean and topological distance of interacting residues with topolink and add them all to the dataset
-    data = compute_dists_with_topolink(data, df_xl_res, plddt_cutoff, topolink_bin, verbose_level)
+    data = compute_dists_with_topolink(data, temp_dir, df_xl_res, plddt_cutoff, topolink_bin, verbose_level)
 
     return data
 
 
-def compute_dists_with_topolink(data, df_xl_res, plddt_cutoff, topolink_bin, verbose_level):
+def compute_dists_with_topolink(data, temp_dir, df_xl_res, plddt_cutoff, topolink_bin, verbose_level):
     # compute euclidean and topological distances between residues utilizing topolink software, also saves logs of
     # topolink computation into temporary folder "data/temp/dist_reeval" (careful: contents of this folder will be fully
     # deleted each time this script is executed
     #
-    # input data: pd.DataFrame, df_xl_res: pd.DataFrame, plddt_cutoff: float, topolink_bin: str/None,
-    # verbose_level: int
+    # input data: pd.DataFrame, temp_dir: str, df_xl_res: pd.DataFrame, plddt_cutoff: float,
+    # topolink_bin: str/None, verbose_level: int
     # return data: pd.DataFrame
 
     toplink_dists = []
     ind = 0
 
     # delete contents in temporary save
-    project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
-    project_path = project_path + '/' if project_path else ""
-    files = [f"{project_path}data/temp/dist_reeval/{f}" for f in os.listdir(f"{project_path}/data/temp/dist_reeval/")
+    files = [f"{temp_dir}{f}" for f in os.listdir(temp_dir)
              if f != '_.txt']
     for f in files:
         os.remove(f)
@@ -116,15 +114,15 @@ def compute_dists_with_topolink(data, df_xl_res, plddt_cutoff, topolink_bin, ver
                 topo_in.append(line)
         topo_in = ''.join(topo_in)
         # Write inputfile to temporary path (will be overwritten during next iteration)
-        with open(f"{project_path}data/temp/dist_reeval/topo.tmp", 'w') as f:
+        with open(f"{temp_dir}topo.tmp", 'w') as f:
             f.write(topo_in)
 
         # Run topolink and pop terminal print to variable
         topolink_call = "topolink" if topolink_bin is None else f"{topolink_bin}topolink"
-        res = os.popen(f"{topolink_call} {project_path}data/temp/dist_reeval/topo.tmp").read()
+        res = os.popen(f"{topolink_call} {temp_dir}topo.tmp").read()
         # Write both input and output to temporary file marked by pdb id, e.g. topo_1b0j.log, topo_afA2ASZ8.log, ...
         # in case the user wishes to review them later
-        with open(f"{project_path}data/temp/dist_reeval/topo_{pdb_id}.log", 'w') as f:
+        with open(f"{temp_dir}topo_{pdb_id}.log", 'w') as f:
             f.write(f"IN:\n{topo_in}\n\n\nOUT:\n{res}")
 
         # zip topolink results with obs_inds

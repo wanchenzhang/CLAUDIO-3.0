@@ -15,6 +15,7 @@ from utils.utils import *
 @click.command()
 @click.option("-i", "--input-directory", default="data/out/structure_search")
 @click.option("-i2", "--input-filepath", default="data/out/unique_protein_list/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.sqcs_structdi.csv")
+@click.option("-it", "--input-temppath", default="")
 @click.option("-t", "--search-tool", default="blastp")
 @click.option("-x", "--xl-residues", default="K,M:N:1")
 @click.option("-p", "--plddt-cutoff", default=70.0)
@@ -23,12 +24,15 @@ from utils.utils import *
 @click.option("-o", "--output-directory", default="data/out/dist_reeval")
 @click.option("-tl", "--topolink-bin", default=None)
 @click.option("-v", "--verbose-level", default=3)
-def main(input_directory, input_filepath, search_tool, xl_residues, plddt_cutoff, linker_minimum, linker_maximum,
-         output_directory, topolink_bin, verbose_level):
+def main(input_directory, input_filepath, input_temppath, search_tool, xl_residues, plddt_cutoff, linker_minimum,
+         linker_maximum, output_directory, topolink_bin, verbose_level):
     verbose_print("Start intra interaction check", 0, verbose_level)
     start_time = time.time()
 
     output_directory = output_directory if output_directory else '/'.join(input_filepath.split('/')[:-1])
+
+    # Create temporary dir
+    temp_dir = create_temp_dir(input_temppath, "dist_reeval")
 
     # Convert directory paths to literals if None
     if topolink_bin == "None":
@@ -59,7 +63,7 @@ def main(input_directory, input_filepath, search_tool, xl_residues, plddt_cutoff
         # Compute distances of sites, and if distance calculation successful compute new xl_type
         verbose_print("Calculate presumed interaction site distances and evaluate interaction likelihood", 0,
                       verbose_level)
-        data = calculate_site_dists(data, df_xl_res, plddt_cutoff, topolink_bin, verbose_level)
+        data = calculate_site_dists(data, temp_dir, df_xl_res, plddt_cutoff, topolink_bin, verbose_level)
 
         # Clean dataset for output
         data = clean_dataset(data)

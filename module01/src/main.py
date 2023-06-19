@@ -15,6 +15,7 @@ from utils.utils import *
 
 @click.command()
 @click.option("-i", "--input-filepath", default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv")
+@click.option("-it", "--input-temppath", default="")
 @click.option("-p", "--projections", default="peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2")
 @click.option("-s", "--uniprot-search", default=True)
 @click.option("-x", "--xl-residues", default="K,M:N:1")
@@ -25,13 +26,17 @@ from utils.utils import *
 @click.option("-hh", "--hhsearch-bin", default=None)
 @click.option("-hhdb", "--hhsearch-db", default="$HHDB")
 @click.option("-v", "--verbose-level", default=3)
-def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, output_directory, blast_bin, blast_db,
-         hhsearch_bin, hhsearch_db, verbose_level):
+def main(input_filepath, input_temppath, projections, uniprot_search, xl_residues, search_tool, output_directory,
+         blast_bin, blast_db, hhsearch_bin, hhsearch_db, verbose_level):
     verbose_print("Start Unique Protein List Tool", 0, verbose_level)
     start_time = time.time()
 
     filename = '.'.join(input_filepath.split('/')[-1].split('.')[:-1])
     output_directory = output_directory if output_directory else '/'.join(input_filepath.split('/')[:-1])
+
+    # Create temporary dirs
+    uniprot_search_temp_dir = create_temp_dir(input_temppath, "uniprot_search")
+    unique_protein_temp_dir = create_temp_dir(input_temppath, "unique_protein_list")
 
     # Convert directory paths to literals if None
     if blast_bin == "None":
@@ -52,8 +57,8 @@ def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, 
         hhsearch_db += '/'
 
     # If parameters inputted by user valid
-    if inputs_valid(input_filepath, projections, uniprot_search, xl_residues, search_tool, output_directory, blast_bin,
-                    blast_db, hhsearch_bin, hhsearch_db, verbose_level):
+    if inputs_valid(input_filepath, input_temppath, projections, uniprot_search, xl_residues, search_tool,
+                    output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, verbose_level):
         # Use projections to apply unified column names to input dataset
         # (for example see module01/src/dict/default_projections.py)
         new_keys = ["pep_a", "pep_b", "pos_a", "pos_b", "res_pos_a", "res_pos_b", "unip_id_a", "unip_id_b"]
@@ -69,8 +74,8 @@ def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, 
         # uniprot_search parameter is True actually perform a new search, else try to retrieve previous results
         # from temporary save file
         verbose_print("Retrieve UniProt sequences" + '' if uniprot_search else " from temporary save", 0, verbose_level)
-        data = do_uniprot_search(data, filename, verbose_level) if uniprot_search \
-            else read_temp_search_save(data, filename)
+        data = do_uniprot_search(data, uniprot_search_temp_dir, filename, verbose_level) if uniprot_search \
+            else read_temp_search_save(data, uniprot_search_temp_dir, filename)
 
         # Check datapoints for inconsistencies and correct them if possible (creates logfile in the process)
         verbose_print("Check datapoints for inconsistencies", 0, verbose_level)
@@ -79,8 +84,8 @@ def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, 
 
         # Write list of unique protein pairs and unique proteins overall
         verbose_print("Create unique protein list", 0, verbose_level)
-        unique_proteins_list = create_list_of_unique_proteins(data, search_tool, blast_bin, blast_db, hhsearch_bin,
-                                                              hhsearch_db, verbose_level)
+        unique_proteins_list = create_list_of_unique_proteins(data, unique_protein_temp_dir, search_tool, blast_bin,
+                                                              blast_db, hhsearch_bin, hhsearch_db, verbose_level)
 
         # Clean dataset for output
         data = clean_dataset(data)
@@ -94,13 +99,13 @@ def main(input_filepath, projections, uniprot_search, xl_residues, search_tool, 
     sys.exit()
 
 
-def inputs_valid(input_filepath, projections, uniprot_search, xl_residues, search_tool, output_directory, blast_bin,
-                 blast_db, hhsearch_bin, hhsearch_db, verbose_level):
+def inputs_valid(input_filepath, input_temppath, projections, uniprot_search, xl_residues, search_tool,
+                 output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, verbose_level):
     # check validity of inputted parameters
     #
-    # input input_filepath: str, projections: str, uniprot_search: bool, xl_residues: str, search_tool: str,
-    # output_directory: str, blast_bin: str/None, blast_db: str, hhsearch_bin: str/None, hhsearch_db: str,
-    # verbose_level: int
+    # input input_filepath: str, input_temppath: str, projections: str, uniprot_search: bool, xl_residues: str,
+    # search_tool: str, output_directory: str, blast_bin: str/None, blast_db: str, hhsearch_bin: str/None,
+    # hhsearch_db: str, verbose_level: int
     # return inputs_valid: bool
 
     filename = input_filepath.split('/')[-1]

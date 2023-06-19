@@ -8,6 +8,7 @@ from module02.src_distance_reevaluation.main import main as run_distance_analysi
 
 @click.command()
 @click.option("-i", "--input-filepath", default="data/out/unique_protein_list/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.sqcs")
+@click.option("-it", "--input-temppath", default="")
 @click.option("-rt", "--read-temps", default=False)
 @click.option("-t", "--search-tool", default="blastp")
 @click.option("-x", "--xl-residues", default="K,M:N:1")
@@ -25,16 +26,16 @@ from module02.src_distance_reevaluation.main import main as run_distance_analysi
 @click.option("-hhdb", "--hhsearch-db", default="$HHDB")
 @click.option("-tl", "--topolink-bin", default=None)
 @click.option("-v", "--verbose-level", default=3)
-def main(input_filepath, read_temps, search_tool, xl_residues, plddt_cutoff, linker_minimum, linker_maximum, e_value,
-         query_id, coverage, res_cutoff, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin,
-         verbose_level):
+def main(input_filepath, input_temppath, read_temps, search_tool, xl_residues, plddt_cutoff, linker_minimum,
+         linker_maximum, e_value, query_id, coverage, res_cutoff, output_directory, blast_bin, blast_db, hhsearch_bin,
+         hhsearch_db, topolink_bin, verbose_level):
 
     if not output_directory.endswith('/'):
         output_directory += '/'
 
     filename = input_filepath.split('/')[-1]
     try:
-        run_structure_search(["-i", input_filepath, "-s", not read_temps, "-t", search_tool,
+        run_structure_search(["-i", input_filepath, "-it", input_temppath, "-s", not read_temps, "-t", search_tool,
                               "-e", e_value, "-q", query_id, "-c", coverage, "-r", res_cutoff, "-o", output_directory,
                               "-bl", blast_bin, "-bldb", blast_db, "-hh", hhsearch_bin, "-hhdb", hhsearch_db,
                               "-v", verbose_level])
@@ -42,9 +43,9 @@ def main(input_filepath, read_temps, search_tool, xl_residues, plddt_cutoff, lin
         pass
     try:
         run_distance_analysis(["-i", f"{output_directory}structures",
-                               "-i2", f"{output_directory}{filename}_structdi.csv", "-t", search_tool,
-                               "-x", xl_residues, "-p", plddt_cutoff, "-lmin", linker_minimum, "-lmax", linker_maximum,
-                               "-o", output_directory, "-tl", topolink_bin,
+                               "-i2", f"{output_directory}{filename}_structdi.csv", "-it", input_temppath,
+                               "-t", search_tool, "-x", xl_residues, "-p", plddt_cutoff, "-lmin", linker_minimum,
+                               "-lmax", linker_maximum, "-o", output_directory, "-tl", topolink_bin,
                                "-v", verbose_level])
     except SystemExit:
         pass

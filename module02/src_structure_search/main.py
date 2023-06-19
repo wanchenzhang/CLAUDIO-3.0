@@ -15,6 +15,7 @@ from utils.utils import *
 
 @click.command()
 @click.option("-i", "--input-filepath", default="data/out/unique_protein_list/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.sqcs")
+@click.option("-it", "--input-temppath", default="")
 @click.option("-s", "--do-structure-search", default=True)
 @click.option("-t", "--search-tool", default="blastp")
 @click.option("-e", "--e-value", default=1e-5)
@@ -27,14 +28,14 @@ from utils.utils import *
 @click.option("-hh", "--hhsearch-bin", default=None)
 @click.option("-hhdb", "--hhsearch-db", default="$HHDB")
 @click.option("-v", "--verbose-level", default=3)
-def main(input_filepath, do_structure_search, search_tool, e_value, query_id, coverage, res_cutoff, output_directory,
+def main(input_filepath, input_temppath, do_structure_search, search_tool, e_value, query_id, coverage, res_cutoff, output_directory,
          blast_bin, blast_db, hhsearch_bin, hhsearch_db, verbose_level):
     verbose_print("Start structure search", 0, verbose_level)
     start_time = time.time()
 
-    project_path = '/'.join(os.path.abspath(__file__).split('/')[:-3])
-    project_path = project_path + '/' if project_path else ""
-    temp_save_search_path = f"{project_path}data/temp/structure_search/"
+    # Create temporary dir
+    temp_dir = create_temp_dir(input_temppath, "structure_search")
+
     output_directory = output_directory if output_directory else '/'.join(input_filepath.split('/')[:-1])
 
     # Convert directory paths to literals if None
@@ -56,8 +57,8 @@ def main(input_filepath, do_structure_search, search_tool, e_value, query_id, co
         hhsearch_db += '/'
 
     # If parameters inputted by user valid
-    if inputs_valid(input_filepath, do_structure_search, search_tool, e_value, query_id, coverage, res_cutoff,
-                    output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, verbose_level):
+    if inputs_valid(input_filepath, input_temppath, do_structure_search, search_tool, e_value, query_id, coverage,
+                    res_cutoff, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, verbose_level):
         e_value = float(e_value)
         query_id = float(query_id)
         coverage = float(coverage)
@@ -71,11 +72,11 @@ def main(input_filepath, do_structure_search, search_tool, e_value, query_id, co
         # save file
         if do_structure_search:
             verbose_print(f"Perform {search_tool} search", 0, verbose_level)
-            data = structure_search(data, filename, search_tool, e_value, query_id, coverage, temp_save_search_path,
+            data = structure_search(data, filename, search_tool, e_value, query_id, coverage, temp_dir,
                                     blast_bin, blast_db, hhsearch_bin, hhsearch_db, verbose_level)
         else:
             verbose_print("Read from temporary save file", 0, verbose_level)
-            data = read_temp_file(data, filename, search_tool, temp_save_search_path)
+            data = read_temp_file(data, filename, search_tool, temp_dir)
 
         # Download structure files from RCSB database into structures subdirectory, if search tool found a proper
         # result, else use uniprot ID in order to attempt retrieval of matching AlphaFold entry
@@ -96,12 +97,12 @@ def main(input_filepath, do_structure_search, search_tool, e_value, query_id, co
     sys.exit()
 
 
-def inputs_valid(input_filepath, do_structure_search, search_tool, e_value, query_id, coverage, res_cutoff,
-                 output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, verbose_level):
+def inputs_valid(input_filepath, input_temppath, do_structure_search, search_tool, e_value, query_id, coverage,
+                 res_cutoff, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, verbose_level):
     # check validity of inputted parameters
     #
-    # input input_filepath: str, do_structure_search: bool, search_tool: str, e_value: float, query_id: float,
-    # coverage: float, res_cutoff: float, output_directory: str, blast_bin: str/None, blast_db: str,
+    # input input_filepath: str, input_temppath: str, do_structure_search: bool, search_tool: str, e_value: float,
+    # query_id: float, coverage: float, res_cutoff: float, output_directory: str, blast_bin: str/None, blast_db: str,
     # hhsearch_bin: str/None, hhsearch_db: str, verbose_level: int
     # return inputs_valid: bool
 
