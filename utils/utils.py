@@ -71,7 +71,7 @@ def create_temp_dir(input_temppath, sub_dir):
     if input_temppath == '/':
         project_path = '/'.join(os.path.abspath(__file__).split('/')[:-2])
         project_path = project_path + '/' if project_path else ""
-        input_temppath = project_path
+        input_temppath = project_path + "data/temp/"
     temp_dir = f"{input_temppath}{sub_dir}/"
     if not os.path.exists(temp_dir):
         os.mkdir(temp_dir)
