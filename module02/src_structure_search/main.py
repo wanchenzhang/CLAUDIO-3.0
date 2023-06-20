@@ -14,7 +14,7 @@ from utils.utils import *
 
 
 @click.command()
-@click.option("-i", "--input-filepath", default="data/out/unique_protein_list/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.sqcs")
+@click.option("-i", "--input-filepath", default="data/out/unique_protein_list/sample_data.sqcs")
 @click.option("-it", "--input-temppath", default="")
 @click.option("-s", "--do-structure-search", default=True)
 @click.option("-t", "--search-tool", default="blastp")
@@ -28,8 +28,8 @@ from utils.utils import *
 @click.option("-hh", "--hhsearch-bin", default=None)
 @click.option("-hhdb", "--hhsearch-db", default="$HHDB")
 @click.option("-v", "--verbose-level", default=3)
-def main(input_filepath, input_temppath, do_structure_search, search_tool, e_value, query_id, coverage, res_cutoff, output_directory,
-         blast_bin, blast_db, hhsearch_bin, hhsearch_db, verbose_level):
+def main(input_filepath, input_temppath, do_structure_search, search_tool, e_value, query_id, coverage, res_cutoff,
+         output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, verbose_level):
     verbose_print("Start structure search", 0, verbose_level)
     start_time = time.time()
 

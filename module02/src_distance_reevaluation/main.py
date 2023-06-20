@@ -13,8 +13,8 @@ from utils.utils import *
 
 
 @click.command()
-@click.option("-i", "--input-directory", default="data/out/structure_search")
-@click.option("-i2", "--input-filepath", default="data/out/unique_protein_list/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.sqcs_structdi.csv")
+@click.option("-i", "--input-directory", default="data/out/structure_search/structures")
+@click.option("-i2", "--input-filepath", default="data/out/unique_protein_list/sample_data.sqcs_structdi.csv")
 @click.option("-it", "--input-temppath", default="")
 @click.option("-t", "--search-tool", default="blastp")
 @click.option("-x", "--xl-residues", default="K,M:N:1")

@@ -4,7 +4,7 @@
 #1.filepath to dataset
 #type: string
 #ex.: /home/me/desktop/my_dataset.csv
-input_filepath = data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv
+input_filepath = data/in/sample_data.csv
 
 #2.path to directory for temporary files generated during the computation process, if given 'None' the default path
 #will be used. NOTE: If multiple computations with CLAUDIO are run at the same this path MUST BE DIFFERENT. Otherwise

@@ -14,7 +14,7 @@ from utils.utils import *
 
 
 @click.command()
-@click.option("-i", "--input-filepath", default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv")
+@click.option("-i", "--input-filepath", default="data/in/sample_data.csv")
 @click.option("-it", "--input-temppath", default="")
 @click.option("-p", "--projections", default="peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2")
 @click.option("-s", "--uniprot-search", default=True)

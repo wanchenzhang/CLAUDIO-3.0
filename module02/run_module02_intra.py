@@ -7,7 +7,7 @@ from module02.src_distance_reevaluation.main import main as run_distance_analysi
 
 
 @click.command()
-@click.option("-i", "--input-filepath", default="data/out/unique_protein_list/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.sqcs")
+@click.option("-i", "--input-filepath", default="data/out/unique_protein_list/sample_data.sqcs")
 @click.option("-it", "--input-temppath", default="")
 @click.option("-rt", "--read-temps", default=False)
 @click.option("-t", "--search-tool", default="blastp")

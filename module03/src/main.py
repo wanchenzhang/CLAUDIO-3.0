@@ -11,7 +11,7 @@ from utils.utils import *
 
 
 @click.command()
-@click.option("-i", "--input-filepath", default="data/out/unique_protein_list/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.sqcs")
+@click.option("-i", "--input-filepath", default="data/out/unique_protein_list/sample_data.sqcs")
 @click.option("-o", "--output-directory", default="data/out/homo_signal/")
 @click.option("-v", "--verbose-level", default=3)
 def main(input_filepath, output_directory, verbose_level):

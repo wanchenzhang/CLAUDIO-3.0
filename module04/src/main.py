@@ -13,8 +13,8 @@ from utils.utils import *
 
 
 @click.command()
-@click.option("-i", "--input-filepath", default="data/out/dist_reeval/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.sqcs_structdi.csv")
-@click.option("-i2", "--input-filepath2", default="data/out/homo_signal/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.sqcs_ops.csv")
+@click.option("-i", "--input-filepath", default="data/out/dist_reeval/sample_data.sqcs_structdi.csv")
+@click.option("-i2", "--input-filepath2", default="data/out/homo_signal/sample_data.sqcs_ops.csv")
 @click.option("-p", "--plddt-cutoff", default=70.0)
 @click.option("-lmin", "--linker-minimum", default=5.0)
 @click.option("-lmax", "--linker-maximum", default=35.0)
