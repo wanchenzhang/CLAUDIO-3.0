@@ -12,7 +12,7 @@ from utils.utils import *
 
 _DEFAULT_OPTIONS = ["data/in/sample_data.csv", "", "peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2",
                     False, "K,M:N:1", "blastp", 1e-5, 90.0, 50.0, 6.5, 70.0, 0.0, 35.0, None, 50.0, 0.0,
-                    "data/out/full", None, "$HOME/BLAST/db", None, "$HOME/HHSUITE/db", None, False, 3]
+                    "data/out/full", None, "$HOME/BLAST/db", None, "$HOME/HHSUITE/db", None, False, 2]
 
 
 @click.command()

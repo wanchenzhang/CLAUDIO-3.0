@@ -25,7 +25,7 @@ from module02.src_distance_reevaluation.main import main as run_distance_analysi
 @click.option("-hh", "--hhsearch-bin", default=None)
 @click.option("-hhdb", "--hhsearch-db", default="$HHDB")
 @click.option("-tl", "--topolink-bin", default=None)
-@click.option("-v", "--verbose-level", default=3)
+@click.option("-v", "--verbose-level", default=2)
 def main(input_filepath, input_temppath, read_temps, search_tool, xl_residues, plddt_cutoff, linker_minimum,
          linker_maximum, e_value, query_id, coverage, res_cutoff, output_directory, blast_bin, blast_db, hhsearch_bin,
          hhsearch_db, topolink_bin, verbose_level):

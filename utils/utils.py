@@ -2,6 +2,23 @@ import os
 import pandas as pd
 
 
+def create_out_path(output_directory, input_filepath):
+    # create output directory, if not already existing
+    #
+    # input output_directory: str, input_filepath: str
+    # return output_directory: str
+
+    output_directory = output_directory if output_directory else '/'.join(input_filepath.split('/')[:-1])
+    output_directory = output_directory.replace('\\', '/')
+    output_directory += '' if output_directory.endswith('/') else '/'
+    output_directory_splits = output_directory.split('/')
+    sub_paths = ['/'.join(output_directory_splits[:i + 1]) for i in range(len(output_directory_splits))]
+    for sub_path in sub_paths:
+        if not os.path.exists(sub_path):
+            os.mkdir(sub_path)
+    return output_directory
+
+
 def verbose_print(print_string, threshold, verbose_level, end='\n'):
     # print given string, if verbose_level is higher than threshold
     #
@@ -72,6 +89,8 @@ def create_temp_dir(input_temppath, sub_dir):
         project_path = '/'.join(os.path.abspath(__file__).split('/')[:-2])
         project_path = project_path + '/' if project_path else ""
         input_temppath = project_path + "data/temp/"
+        if not os.path.exists(input_temppath):
+            os.mkdir(input_temppath)
     temp_dir = f"{input_temppath}{sub_dir}/"
     if not os.path.exists(temp_dir):
         os.mkdir(temp_dir)

@@ -26,7 +26,7 @@ def search_site_pos_in_pdb(data, df_xl_res, verbose_level):
     # to uniprot entries
     project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
     project_path = project_path + '/' if project_path else ""
-    pdb_uni_map = pd.read_csv(f"{project_path}data/in/pdb_chain_uniprot.csv", header=1)
+    pdb_uni_map = pd.read_csv(f"{project_path}data/required_data/pdb_chain_uniprot.csv", header=1)
     pdb_uni_map["PDB"] = [x.upper() for x in pdb_uni_map["PDB"]]
 
     # Define data container lists

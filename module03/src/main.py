@@ -13,16 +13,15 @@ from utils.utils import *
 @click.command()
 @click.option("-i", "--input-filepath", default="data/out/unique_protein_list/sample_data.sqcs")
 @click.option("-o", "--output-directory", default="data/out/homo_signal/")
-@click.option("-v", "--verbose-level", default=3)
+@click.option("-v", "--verbose-level", default=2)
 def main(input_filepath, output_directory, verbose_level):
     verbose_print("Start Homo-signal analysis", 0, verbose_level)
     start_time = time.time()
 
     # If parameters inputted by user valid
     if inputs_valid(input_filepath, output_directory):
-        output_directory = output_directory if output_directory else '/'.join(input_filepath.split('/')[:-1])
-        if not output_directory.endswith('/'):
-            output_directory += '/'
+        # Check output directory
+        output_directory = create_out_path(output_directory, input_filepath)
 
         # Read dataset and add columns for results
         verbose_print("Read input", 0, verbose_level)

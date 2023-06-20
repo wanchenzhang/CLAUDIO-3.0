@@ -8,7 +8,8 @@ input_filepath = data/in/sample_data.csv
 
 #2.path to directory for temporary files generated during the computation process, if given 'None' the default path
 #will be used. NOTE: If multiple computations with CLAUDIO are run at the same this path MUST BE DIFFERENT. Otherwise
-#the computation steps are likely to overwrite each other.
+#the computation steps are likely to overwrite each other. If 'None' is given, the directory in question will be
+#'data/temp/' in the tool directory.
 #types: string / None
 #ex.: /home/me/desktop/claudio_temps
 input_temppath = None
@@ -69,11 +70,13 @@ topolink_bin = None
 #10.tiny comma-separated list of possibly crosslinked residues, as one-letter-code symbols, by the crosslinker.
 #Optionally the user may add two colon-symbols, if they wish to specify the position of the residue in the
 #sequence and/or the atom in the residue used for the distance computation. After the first colon-symbol they may place
-#the atom type for the distance computation, e.g. 'CB', 'CA', or 'N', etc. (ex.: "K:CB:0"). If no value is set here 'CB'
+#the atom type for the distance computation, e.g. 'CB', 'CA', or 'N', etc. . If no value is set here 'CB'
 #will be used by default. After the second colon-symbol they may place one of three position values: 0 if the residue
 #may occur anywhere in the protein, 1 if the residue has to be at the N-terminus, or -1 if the residue has to be at the
-#C-terminus. If you want to specify multiple possible positions for the same symbol you have to add them
-#individually (ex.: "M::1,M::-1"). By default, 0 is set here, e.g. the residue may be placed anywhere.
+#C-terminus (ex.: use "K:CB:0" to calculate the cross-link distance between lysin C-beta-atoms at any position in the
+#chain). If you want to specify multiple possible positions for the same symbol you have to add them
+#individually (ex.: "M::1,M::-1" for methionine at either the beginning or end of the chain). By default, 0 is set here,
+#e.g. the residue may be placed anywhere.
 #Note: If the position or the atom type is specified there have to be two colon-symbols (ex.: "K,M:1" will not be
 #accepted as input). You can leave the respective specification empty though, if you wish to use the default here (ex.:
 #"K::1" is equal to "K:CB:1", "M:N:0" is equal to "M:N:", "K:CB:0" is equal to "K::" and also to just "K").
@@ -164,7 +167,7 @@ compute_scoring = False
 #       5: write verfications during uniprot to pdb position translation
 #type: int
 #ex.: 0
-verbose_level = 3
+verbose_level = 2
 
 #################################################
 ## EXPERIMENTAL SCORING PARAMETERS (ONLY ACTIVE IF #20=compute_scoring is set to True)

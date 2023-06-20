@@ -23,15 +23,14 @@ from utils.utils import *
 @click.option("-c", "--cutoff", default=0.0)
 @click.option("-o", "--output-directory", default="data/out/new_inter/")
 @click.option("-s", "--compute-scoring", default=False)
-@click.option("-v", "--verbose-level", default=3)
+@click.option("-v", "--verbose-level", default=2)
 def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,
          distance_maximum, cutoff, output_directory, compute_scoring, verbose_level):
     verbose_print("Start New Inter Interaction Analysis", 0, verbose_level)
     start_time = time.time()
 
-    output_directory = output_directory if output_directory else '/'.join(input_filepath.split('/')[:-1])
-    if not output_directory.endswith('/'):
-        output_directory += '/'
+    # Check output directory
+    output_directory = create_out_path(output_directory, input_filepath)
 
     # If parameters inputted by user valid
     if inputs_valid(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,

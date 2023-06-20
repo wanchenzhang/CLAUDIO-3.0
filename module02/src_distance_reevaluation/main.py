@@ -23,13 +23,14 @@ from utils.utils import *
 @click.option("-lmax", "--linker-maximum", default=35.0)
 @click.option("-o", "--output-directory", default="data/out/dist_reeval")
 @click.option("-tl", "--topolink-bin", default=None)
-@click.option("-v", "--verbose-level", default=3)
+@click.option("-v", "--verbose-level", default=2)
 def main(input_directory, input_filepath, input_temppath, search_tool, xl_residues, plddt_cutoff, linker_minimum,
          linker_maximum, output_directory, topolink_bin, verbose_level):
     verbose_print("Start intra interaction check", 0, verbose_level)
     start_time = time.time()
 
-    output_directory = output_directory if output_directory else '/'.join(input_filepath.split('/')[:-1])
+    # Check output directory
+    output_directory = create_out_path(output_directory, input_filepath)
 
     # Create temporary dir
     temp_dir = create_temp_dir(input_temppath, "dist_reeval")

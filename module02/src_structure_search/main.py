@@ -27,7 +27,7 @@ from utils.utils import *
 @click.option("-bldb", "--blast-db", default="$BLASTDB")
 @click.option("-hh", "--hhsearch-bin", default=None)
 @click.option("-hhdb", "--hhsearch-db", default="$HHDB")
-@click.option("-v", "--verbose-level", default=3)
+@click.option("-v", "--verbose-level", default=2)
 def main(input_filepath, input_temppath, do_structure_search, search_tool, e_value, query_id, coverage, res_cutoff,
          output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, verbose_level):
     verbose_print("Start structure search", 0, verbose_level)
@@ -36,7 +36,8 @@ def main(input_filepath, input_temppath, do_structure_search, search_tool, e_val
     # Create temporary dir
     temp_dir = create_temp_dir(input_temppath, "structure_search")
 
-    output_directory = output_directory if output_directory else '/'.join(input_filepath.split('/')[:-1])
+    # Check output directory
+    output_directory = create_out_path(output_directory, input_filepath)
 
     # Convert directory paths to literals if None
     if blast_bin == "None":
