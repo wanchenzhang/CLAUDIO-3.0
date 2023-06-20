@@ -25,8 +25,8 @@ def calculate_site_dists(data, temp_dir, df_xl_res, plddt_cutoff, topolink_bin, 
 
 def compute_dists_with_topolink(data, temp_dir, df_xl_res, plddt_cutoff, topolink_bin, verbose_level):
     # compute euclidean and topological distances between residues utilizing topolink software, also saves logs of
-    # topolink computation into temporary folder "data/temp/dist_reeval" (careful: contents of this folder will be fully
-    # deleted each time this script is executed
+    # topolink computation into temporary folder (careful: contents of this folder will be fully deleted each time this
+    # script is executed)
     #
     # input data: pd.DataFrame, temp_dir: str, df_xl_res: pd.DataFrame, plddt_cutoff: float,
     # topolink_bin: str/None, verbose_level: int
@@ -57,7 +57,7 @@ def compute_dists_with_topolink(data, temp_dir, df_xl_res, plddt_cutoff, topolin
         # computation
         else:
             pdb_id = structure.split('_')[-1].split('.')[0]
-            structure = isolate_pdb_chain(structure, np.unique(subset[["chain_a", "chain_b"]].values))
+            structure = isolate_pdb_chain(structure, temp_dir, np.unique(subset[["chain_a", "chain_b"]].values))
             # Check again if isolation of chains was successful, if not skip iteration
             if structure == '-':
                 ind += 1
@@ -79,8 +79,10 @@ def compute_dists_with_topolink(data, temp_dir, df_xl_res, plddt_cutoff, topolin
                     # observed LYS A 468 LYS A 457
                     # LINK: LYS A 457 CA LYS A 468 CA 11.814 12.568 YES 0.000 35.000 OK: FOUND 1 / 1 1 / 1 YY YY
                     link_strs = [
-                        ' '.join([Polypeptide.one_to_three(row['seq_a'][row['pos_a'] - 1]), row['chain_a'], str(int(row['pdb_pos_a']))]),
-                        ' '.join([Polypeptide.one_to_three(row['seq_b'][row['pos_b'] - 1]), row['chain_b'], str(int(row['pdb_pos_b']))])]
+                        ' '.join([Polypeptide.one_to_three(row['seq_a'][row['pos_a'] - 1]), row['chain_a'],
+                                  str(int(row['pdb_pos_a']))]),
+                        ' '.join([Polypeptide.one_to_three(row['seq_b'][row['pos_b'] - 1]), row['chain_b'],
+                                  str(int(row['pdb_pos_b']))])]
                     if link_strs not in known_link_strs:
                         obs_str += f"  observed {' '.join(link_strs)}\n"
                         obs_inds.append((i, link_strs, False))
@@ -96,7 +98,7 @@ def compute_dists_with_topolink(data, temp_dir, df_xl_res, plddt_cutoff, topolin
         for line in [l for l in open(f"{project_path}data/in/topolink_inputfile.inp", 'r').readlines()
                      if not l.startswith('#')]:
             if line.startswith("linkdir"):
-                topo_in.append(f"linkdir {project_path}data/temp/dist_reeval\n")
+                topo_in.append(f"linkdir {temp_dir}\n")
             elif line.startswith("structure"):
                 topo_in.append(f"structure {structure}\n")
             elif line.startswith("  observed"):
@@ -190,10 +192,10 @@ def compute_dists_with_topolink(data, temp_dir, df_xl_res, plddt_cutoff, topolin
     return data
 
 
-def isolate_pdb_chain(path, chain_ids):
+def isolate_pdb_chain(path, temp_dir, chain_ids):
     # isolate chains with cross-links and write only those chains to pdb
     #
-    # input path: str, chain_ids: list(str)
+    # input path: str, temp_dir: str, chain_ids: list(str)
     # return new_path: str
 
     # Parse pdb structure
@@ -211,9 +213,7 @@ def isolate_pdb_chain(path, chain_ids):
                 return False
 
     # save new pdb to temporary pdb path
-    project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
-    project_path = project_path + '/' if project_path else ""
-    new_path = f"{project_path}data/temp/dist_reeval/tmp.pdb"
+    new_path = f"{temp_dir}tmp.pdb"
     io = PDBIO()
     io.set_structure(structure)
     io.save(new_path, ChainSelect())

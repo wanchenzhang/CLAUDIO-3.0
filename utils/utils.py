@@ -69,7 +69,7 @@ def create_temp_dir(input_temppath, sub_dir):
     if not input_temppath.endswith('/'):
         input_temppath += '/'
     if input_temppath == '/':
-        project_path = '/'.join(os.path.abspath(__file__).split('/')[:-3])
+        project_path = '/'.join(os.path.abspath(__file__).split('/')[:-2])
         project_path = project_path + '/' if project_path else ""
         input_temppath = project_path
     temp_dir = f"{input_temppath}{sub_dir}/"

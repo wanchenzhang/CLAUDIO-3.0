@@ -57,8 +57,9 @@ def main(input_filepath, input_temppath, projections, uniprot_search, xl_residue
         hhsearch_db += '/'
 
     # If parameters inputted by user valid
-    if inputs_valid(input_filepath, input_temppath, projections, uniprot_search, xl_residues, search_tool,
-                    output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, verbose_level):
+    if inputs_valid(input_filepath, uniprot_search_temp_dir, unique_protein_temp_dir, projections, uniprot_search,
+                    xl_residues, search_tool, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db,
+                    verbose_level):
         # Use projections to apply unified column names to input dataset
         # (for example see module01/src/dict/default_projections.py)
         new_keys = ["pep_a", "pep_b", "pos_a", "pos_b", "res_pos_a", "res_pos_b", "unip_id_a", "unip_id_b"]
@@ -99,13 +100,14 @@ def main(input_filepath, input_temppath, projections, uniprot_search, xl_residue
     sys.exit()
 
 
-def inputs_valid(input_filepath, input_temppath, projections, uniprot_search, xl_residues, search_tool,
-                 output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, verbose_level):
+def inputs_valid(input_filepath, uniprot_search_temp_dir, unique_protein_temp_dir, projections, uniprot_search,
+                 xl_residues, search_tool, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db,
+                 verbose_level):
     # check validity of inputted parameters
     #
-    # input input_filepath: str, input_temppath: str, projections: str, uniprot_search: bool, xl_residues: str,
-    # search_tool: str, output_directory: str, blast_bin: str/None, blast_db: str, hhsearch_bin: str/None,
-    # hhsearch_db: str, verbose_level: int
+    # input input_filepath: str, uniprot_search_temp_dir: str, unique_protein_temp_dir: str, projections: str,
+    # uniprot_search: bool, xl_residues: str, search_tool: str, output_directory: str, blast_bin: str/None,
+    # blast_db: str, hhsearch_bin: str/None, hhsearch_db: str, verbose_level: int
     # return inputs_valid: bool
 
     filename = input_filepath.split('/')[-1]
@@ -117,9 +119,7 @@ def inputs_valid(input_filepath, input_temppath, projections, uniprot_search, xl
             # else continue
             if not uniprot_search:
                 try:
-                    project_path = '/'.join(os.path.abspath(__file__).split('/')[:-3])
-                    project_path = project_path + '/' if project_path else ""
-                    pd.read_csv(f"{project_path}data/temp/uniprot_search/{'.'.join(filename.split('.')[:-1])}_srtmp."
+                    pd.read_csv(f"{uniprot_search_temp_dir}{'.'.join(filename.split('.')[:-1])}_srtmp."
                                 f"{filename.split('.')[-1]}")
                 except FileNotFoundError:
                     print(f"Error! No temporary save file was found. Run the program with \"-s True\" to perform an "

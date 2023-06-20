@@ -167,11 +167,11 @@ def accept_resolution_method(pdb, pdb_id, res_cutoff):
     # In other cases check whether experimental method for structure determination was diffraction or microscopy method,
     # and whether the resolution is below or equal to the threshhold, if so return True
     else:
-        all_pdb_methods = ["ELECTRON DIFFRACTION", "FIBER DIFFRACTION", "FLUORESCENCE TRANSFER", "NEUTRON DIFFRACTION",
-                           "SOLUTION NMR", "NMR", "THEORETICAL MODEL", "X-RAY DIFFRACTION", "X-RAY CRYSTALLOGRAPHY",
-                           "ELECTRON CRYSTALLOGRAPHY", "ELECTRON MICROSCOPY"]
-        accepted_pdb_methods = ["ELECTRON DIFFRACTION", "FIBER DIFFRACTION", "NEUTRON DIFFRACTION", "X-RAY DIFFRACTION",
-                                "X-RAY CRYSTALLOGRAPHY", "ELECTRON CRYSTALLOGRAPHY", "ELECTRON MICROSCOPY"]
+        all_pdb_methods = ["X-RAY DIFFRACTION", "ELECTRON MICROSCOPY", "SOLUTION NMR", "ELECTRON CRYSTALLOGRAPHY",
+                           "NEUTRON DIFFRACTION", "SOLID-STATE NMR", "SOLUTION SCATTERING", "FIBER DIFFRACTION",
+                           "POWDER DIFFRACTION", "EPR", "THEORETICAL MODEL", "	INFRARED SPECTROSCOPY"]
+        accepted_pdb_methods = ["FIBER DIFFRACTION", "NEUTRON DIFFRACTION", "X-RAY DIFFRACTION",
+                                "ELECTRON CRYSTALLOGRAPHY", "ELECTRON MICROSCOPY"]
         accept_method = False
         accept_resolution = False
 

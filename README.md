@@ -162,18 +162,23 @@ uniprot ids for each interacting residue, two columns have the observed peptides
 and two columns the crosslinked residue's position within the full sequence (alternative: fill these 
 with Nans, but add two columns with the residue's positions in the respective peptides).
 1. The input file should then be specified as such with the "-i / --input-filepath"-parameter.
-2. It is important to customize the parameter "-p / --projections". This parameter requires a comma separated list
+2. If you intend to run CLAUDIO on separate datasets simultaneously, or want to split your dataset into smaller ones,
+you have to specify the parameter "-it / --input-temppath". CLAUDIO generates multiple temporary files during its
+computation, most of which are in- or outputs of the third-party tools used. If parallel executions of CLAUDIO are run
+with the same tempfile path, conflicts may be caused disrupting or falsifying some results. Thereby make sure to specify
+different paths here, if you run the tool in parallel.
+3. It is important to customize the parameter "-p / --projections". This parameter requires a comma separated list
 as input, which maps the column names of your dataset to the ones used in the tool.
-3. You need to specify the paths to the local external tool installations (BLASTP, HHsearch, and TopoLink).
+4. You need to specify the paths to the local external tool installations (BLASTP, HHsearch, and TopoLink).
 The parameters for this are "-bl / --blast-bin" for the binary directory of blast, "-bldb / --blast-db" for the database
 directory containing the *pdbaa* database files, "-hh / -hhsearch-bin" for the binary directory of HHsearch, 
 "-hhdb / --hhsearch-db" for the directory containing the *pdb70* database files, and "-tl / --topolink-bin" for the binary directory of TopoLink.\
 *Note:* If you only installed and only intend to use BLASTP for example, setting the parameters for HHsearch are not 
 necessary (and vice-versa).
-4. Make sure you customize the settings pertaining the cross-linking experiments specifications, e.g. 
+5. Make sure you customize the settings pertaining the cross-linking experiments specifications, e.g. 
 "-x / --xl-residues" for the aminoacids which may be cross-linked, and both "-lmin / --linker-minimum" and 
 "-lmax / --linker-maximum" for the cross-linker's range capability.
-5. Finally, specify which structure search tool you will be using with the parameter "-t / --search-tool" (either with 
+6. Finally, specify which structure search tool you will be using with the parameter "-t / --search-tool" (either with 
 `"blastp"` or `"hhsearch"`).
 
 With this the relevant settings are defined. You may choose to further specify the structure searche's settings in terms
