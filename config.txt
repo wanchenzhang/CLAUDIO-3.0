@@ -103,17 +103,17 @@ linker_maximum = 35.0
 #ex.: blastp / hhsearch
 search_tool = blastp
 
-#14.e-value of structure search
+#14.e-value cut-off used by structure search tool for structure search
 #type: float [0,1]
 #ex.: 0.3
 e_value = 0.00001
 
-#115.query identity of structure search
+#15.query sequence identity cutoff used by structure search tool for structure search
 #type: float [0,100]
 #ex.: 55.0
 query_id = 90.0
 
-#16.coverage of structure search
+#16.sequence coverage cutoff used by structure search tool for structure search
 #type: float [0,100]
 #ex.: 55.0
 coverage = 50.0
