@@ -30,6 +30,11 @@ def main(input_filepath, input_temppath, read_temps, search_tool, xl_residues, p
          linker_maximum, e_value, query_id, coverage, res_cutoff, output_directory, blast_bin, blast_db, hhsearch_bin,
          hhsearch_db, topolink_bin, verbose_level):
 
+    input_filepath, input_temppath, output_directory, \
+        blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin = \
+        (path.replace('\\', '/') for path in
+         [input_filepath, input_temppath, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin])
+
     if not output_directory.endswith('/'):
         output_directory += '/'
 

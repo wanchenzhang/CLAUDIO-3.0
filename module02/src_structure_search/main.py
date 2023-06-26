@@ -71,13 +71,14 @@ def main(input_filepath, input_temppath, do_structure_search, search_tool, e_val
 
         # If given variable do_structure_search is True perform new search, else retrieve results from earlier temporary
         # save file
-        if do_structure_search:
-            verbose_print(f"Perform {search_tool} search", 0, verbose_level)
-            data = structure_search(data, filename, search_tool, e_value, query_id, coverage, temp_dir,
-                                    blast_bin, blast_db, hhsearch_bin, hhsearch_db, verbose_level)
-        else:
+        tmp_filepath = f"{temp_dir}{'.'.join(filename.split('.')[:-1])}_{search_tool}_bltmp.{filename.split('.')[-1]}"
+        if (not do_structure_search) and os.path.exists(tmp_filepath):
             verbose_print("Read from temporary save file", 0, verbose_level)
-            data = read_temp_file(data, filename, search_tool, temp_dir)
+            data = read_temp_file(data, tmp_filepath)
+        else:
+            verbose_print(f"Perform {search_tool} search", 0, verbose_level)
+            data = structure_search(data, search_tool, e_value, query_id, coverage, tmp_filepath,
+                                    blast_bin, blast_db, hhsearch_bin, hhsearch_db, verbose_level)
 
         # Download structure files from RCSB database into structures subdirectory, if search tool found a proper
         # result, else use uniprot ID in order to attempt retrieval of matching AlphaFold entry

@@ -16,56 +16,50 @@ _DEFAULT_OPTIONS = ["data/in/sample_data.csv", "", "peptide1,peptide2,position1,
 
 
 @click.command()
-@click.option("-i", "--input-filepath", default=_DEFAULT_OPTIONS[0])
-@click.option("-it", "--input-temppath", default=_DEFAULT_OPTIONS[1])
-@click.option("-p", "--projections", default=_DEFAULT_OPTIONS[2])
-@click.option("-rt", "--read-temps", default=_DEFAULT_OPTIONS[3])
-@click.option("-x", "--xl-residues", default=_DEFAULT_OPTIONS[4])
-@click.option("-t", "--search-tool", default=_DEFAULT_OPTIONS[5])
-@click.option("-e", "--e-value", default=_DEFAULT_OPTIONS[6])
-@click.option("-qi", "--query-id", default=_DEFAULT_OPTIONS[7])
-@click.option("-cv", "--coverage", default=_DEFAULT_OPTIONS[8])
-@click.option("-r", "--res-cutoff", default=_DEFAULT_OPTIONS[9])
-@click.option("-pc", "--plddt-cutoff", default=_DEFAULT_OPTIONS[10])
-@click.option("-lmin", "--linker-minimum", default=_DEFAULT_OPTIONS[11])
-@click.option("-lmax", "--linker-maximum", default=_DEFAULT_OPTIONS[12])
-@click.option("-es", "--euclidean-strictness", default=_DEFAULT_OPTIONS[13])
-@click.option("-dm", "--distance-maximum", default=_DEFAULT_OPTIONS[14])
-@click.option("-ct", "--cutoff", default=_DEFAULT_OPTIONS[15])
-@click.option("-o", "--output-directory", default=_DEFAULT_OPTIONS[16])
-@click.option("-bl", "--blast-bin", default=_DEFAULT_OPTIONS[17])
-@click.option("-bldb", "--blast-db", default=_DEFAULT_OPTIONS[18])
-@click.option("-hh", "--hhsearch-bin", default=_DEFAULT_OPTIONS[19])
-@click.option("-hhdb", "--hhsearch-db", default=_DEFAULT_OPTIONS[20])
-@click.option("-tl", "--topolink-bin", default=_DEFAULT_OPTIONS[21])
-@click.option("-s", "--compute-scoring", default=_DEFAULT_OPTIONS[22])
-@click.option("-v", "--verbose-level", default=_DEFAULT_OPTIONS[23])
-@click.option("-c", "--config", default="")
+@click.option("-i", "--input-filepath")
+@click.option("-it", "--input-temppath")
+@click.option("-p", "--projections")
+@click.option("-rt", "--read-temps")
+@click.option("-x", "--xl-residues")
+@click.option("-t", "--search-tool")
+@click.option("-e", "--e-value")
+@click.option("-qi", "--query-id")
+@click.option("-cv", "--coverage")
+@click.option("-r", "--res-cutoff")
+@click.option("-pc", "--plddt-cutoff")
+@click.option("-lmin", "--linker-minimum")
+@click.option("-lmax", "--linker-maximum")
+@click.option("-es", "--euclidean-strictness")
+@click.option("-dm", "--distance-maximum")
+@click.option("-ct", "--cutoff")
+@click.option("-o", "--output-directory")
+@click.option("-bl", "--blast-bin")
+@click.option("-bldb", "--blast-db")
+@click.option("-hh", "--hhsearch-bin")
+@click.option("-hhdb", "--hhsearch-db")
+@click.option("-tl", "--topolink-bin")
+@click.option("-s", "--compute-scoring")
+@click.option("-v", "--verbose-level")
+@click.option("-c", "--config")
 def main(input_filepath, input_temppath, projections, read_temps, xl_residues, search_tool, e_value, query_id, coverage,
          res_cutoff, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness, distance_maximum, cutoff,
          output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin, compute_scoring, verbose_level,
          config):
-    verbose_print("Start full CLAUDIO pipeline", 0, verbose_level)
-    verbose_print("===================================", 0, verbose_level)
+    verbose_print("Start full CLAUDIO pipeline", 0, 1)
+    verbose_print("===================================", 0, 1)
     start_time = time.time()
 
-    # If configuration file given, ignore(/overwrite) all other parameters
-    if config:
-        verbose_print("Configuration file given", 0, verbose_level)
-        args = [input_filepath, input_temppath, projections, read_temps, xl_residues, search_tool, e_value, query_id,
-                coverage, res_cutoff, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,
-                distance_maximum, cutoff, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db,
-                topolink_bin, compute_scoring, verbose_level]
-        input_filepath, input_temppath, projections, read_temps, xl_residues, search_tool, e_value, query_id, \
-            coverage, res_cutoff, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness, \
-            distance_maximum, cutoff, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin, \
-            compute_scoring, verbose_level \
-            = read_config(config, args)
+    params = [input_filepath, input_temppath, projections, read_temps, xl_residues, search_tool, e_value, query_id,
+              coverage, res_cutoff, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,
+              distance_maximum, cutoff, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin,
+              compute_scoring, verbose_level, config]
 
-    if not output_directory.endswith('/'):
-        output_directory += '/'
+    input_filepath, input_temppath, projections, read_temps, xl_residues, search_tool, e_value, query_id,\
+        coverage, res_cutoff, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,\
+        distance_maximum, cutoff, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin,\
+        compute_scoring, verbose_level = parse_params(params)
+
     filename = '.'.join(input_filepath.split('/')[-1].split('.')[:-1])
-    verbose_level = int(verbose_level)
 
     # Run Module01
     try:
@@ -113,16 +107,43 @@ def main(input_filepath, input_temppath, projections, read_temps, xl_residues, s
     sys.exit()
 
 
+def parse_params(params):
+    # Parse input parameters, and differentiate whether it is given by the user, by the config, or is supposed to be
+    # default
+    #
+    # input params: list(str)
+    # return params: list(str)
+
+    # If configuration file given, parse its parameters
+    if params[-1]:
+        params[-1] = params[-1].replace('\\', '/')
+        verbose_print("Configuration file given", 0, 1)
+        config_params = read_config(params[-1], params[:-1])
+
+    # If parameter is unspecified and config given, use config, else if unspecified and no config use default, if
+    # specified use given value
+    for i, param in enumerate(params[:-1]):
+        if (param is None) and params[-1]:
+            params[i] = config_params[i]
+        elif param is None:
+            params[i] = _DEFAULT_OPTIONS[i]
+        elif param != _DEFAULT_OPTIONS[i]:
+            params[i] = param.replace('\\', '/')
+
+    # add '/' to output_directory and turn verbose_level into integer
+    if not params[16].endswith('/'):
+        params[16] += '/'
+    params[-2] = int(params[-2])
+
+    return params[:-1]
+
+
 def read_config(path, args):
     # read configuration file from path, compare already set values to defaults thus checking whether params were given
     # additionally to the config-file and set values for other input parameters
     #
     # input path: str, args: list(str)
-    # return input_filepath: str, input_temppath: str, projections: str, read_temps: bool, xl_residues: str,
-    # search_tool: str, e_value: float, query_id: float, coverage: float, res_cutoff: float, plddt_cutoff: float,
-    # linker_minimum: float, linker_maximum: float, euclidean_strictness: float/None, distance_maximum: float,
-    # cutoff: float, output_directory: str, blast_bin: str/None, blast_db: str, hhsearch_bin: str/None,
-    # hhsearch_db: str, topolink_bin: str, compute_scoring: bool, verbose_level: int
+    # return final_params: list(object)
 
     with open(path, 'r') as f:
         config_content = f.read()
@@ -171,14 +192,14 @@ def read_config(path, args):
         args = {marker: args[i] for i, marker in enumerate(line_markers)}
 
         # define dict containing booleans for each line marker, if already given argument has default value
-        arg_is_default = {marker: args[marker] == defaults[marker] for marker in line_markers}
+        arg_is_default = {marker: args[marker] is None for marker in line_markers}
 
         # define final params, if already given argument is not default, it takes precedence over param value in
         # config-file
-        final_params = [config_params[marker] if arg_is_default[marker] else args[marker]
+        final_params = [config_params[marker] if arg_is_default[marker] else ""
                         for marker in line_markers]
 
-        return tuple(final_params)
+        return final_params
 
 
 if __name__ == "__main__":

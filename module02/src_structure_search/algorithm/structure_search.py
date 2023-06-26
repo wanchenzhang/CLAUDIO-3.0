@@ -9,14 +9,14 @@ import socket
 from utils.utils import *
 
 
-def structure_search(data, filename, search_tool, e_value, query_id, coverage, temp_path, blast_bin,
-                     blast_db, hhsearch_bin, hhsearch_db, verbose_level):
+def structure_search(data, search_tool, e_value, query_id, coverage, tmp_filepath, blast_bin, blast_db, hhsearch_bin,
+                     hhsearch_db, verbose_level):
     # Perform either hhsearch or blastp search for any unique uniprot entry in rcsb database and retrieve the best
     # results, and save all entries for which no sufficient result was returned to retrieve these from alphafold
     # database later
     #
-    # input data: pd.DataFrame, filename: str, search_tool: str, e_value: float, query_id: float, coverage: float,
-    # temp_path: str, blast_bin: str/None, blast_db: str, hhsearch_bin: str/None, hhsearch_db: str, verbose_level: int
+    # input data: pd.DataFrame, search_tool: str, e_value: float, query_id: float, coverage: float, tmp_filepath: str,
+    # blast_bin: str/None, blast_db: str, hhsearch_bin: str/None, hhsearch_db: str, verbose_level: int
     # return dataset: pd.DataFrame
 
     # Container lists for search results
@@ -30,13 +30,13 @@ def structure_search(data, filename, search_tool, e_value, query_id, coverage, t
     for i, row in data.iterrows():
         # If encountered a new uniprot entry at site_a, do search and save results
         if row["unip_id_a"] not in already_searched.keys():
-            best_results, pdb_id, chain = perform_search(row, 'a', search_tool, e_value, query_id, coverage, temp_path,
-                                                         blast_bin, blast_db, hhsearch_bin, hhsearch_db)
+            best_results, pdb_id, chain = perform_search(row, 'a', search_tool, e_value, query_id, coverage,
+                                                         tmp_filepath, blast_bin, blast_db, hhsearch_bin, hhsearch_db)
             already_searched[row["unip_id_a"]] = (pdb_id, chain, ' '.join(best_results))
         # If encountered a new uniprot entry at site_b, do search and save results
         if row["unip_id_b"] not in already_searched.keys():
-            best_results, pdb_id, chain = perform_search(row, 'b', search_tool, e_value, query_id, coverage, temp_path,
-                                                         blast_bin, blast_db, hhsearch_bin, hhsearch_db)
+            best_results, pdb_id, chain = perform_search(row, 'b', search_tool, e_value, query_id, coverage,
+                                                         tmp_filepath, blast_bin, blast_db, hhsearch_bin, hhsearch_db)
             already_searched[row["unip_id_b"]] = (pdb_id, chain, ' '.join(best_results))
 
         if already_searched[row["unip_id_a"]][2] and already_searched[row["unip_id_b"]][2]:
@@ -68,9 +68,7 @@ def structure_search(data, filename, search_tool, e_value, query_id, coverage, t
     verbose_print("", 1, verbose_level)
 
     # Save results to temporary save file
-    marker_string = f"_{search_tool}_bltmp."
-    temp_save_filepath = f"{temp_path}{'.'.join(filename.split('.')[:-1])}{marker_string}{filename.split('.')[-1]}"
-    data[["pdb_id", "chain_a", "chain_b", "all_results"]].to_csv(temp_save_filepath, index=False)
+    data[["pdb_id", "chain_a", "chain_b", "all_results"]].to_csv(tmp_filepath, index=False)
 
     # Print ids of entries which were not found in rcsb database (will be retrieved from alphafold database instead)
     if not data[data.unip_id_a == data.unip_id_b].empty:
@@ -81,7 +79,7 @@ def structure_search(data, filename, search_tool, e_value, query_id, coverage, t
     return data
 
 
-def perform_search(data, site, search_tool, e_value, query_id, coverage, temp_path, blast_bin, blast_db,
+def perform_search(data, site, search_tool, e_value, query_id, coverage, tmp_filepath, blast_bin, blast_db,
                    hhsearch_bin, hhsearch_db):
     # Perform either hhsearch or blastp search for unique uniprot entry in rcsb database and return possible results
     #
@@ -91,8 +89,9 @@ def perform_search(data, site, search_tool, e_value, query_id, coverage, temp_pa
 
     # Save uniprot sequence in a temporary fasta file for search tool commandline call
     # (override before each new search)
+    temp_path = '/'.join(tmp_filepath.split('/')[:-1]) + '/'
     with open(f"{temp_path}tmp{data.name}.fasta", 'w') as tmp_file:
-        tmp_file.write(f">{data[f'unip_id_{site}' if site else 'unip_id']}\n{data[f'seq_{site}' if site else 'seq']}\n")
+        tmp_file.write(f">{data[f'unip_id_{site}']}\n{data[f'seq_{site}']}\n")
         tmp_file.close()
         search_results = []
 
@@ -107,13 +106,6 @@ def perform_search(data, site, search_tool, e_value, query_id, coverage, temp_pa
             search_results = res[(res["ident"] >= query_id) & (res["cov"] >= coverage)]
             search_results = search_results.loc[:, "pdb"].tolist()
 
-            # Search identical Chain IDs for (inter) cross-links
-            chains = [retrieve_identical_chain_ids(res.split('_')[0], res.split('_')[1], 5)
-                      for res in search_results]
-            search_results = [f"{res.split('_')[0]}_{'_'.join(chains[index])}"
-                              if chains[index] is not None else res
-                              for index, res in enumerate(search_results)]
-
         elif search_tool == "hhsearch":
             hhsearch_call = "hhsearch" if hhsearch_bin is None else f"{hhsearch_bin}hhsearch"
             command = f"{hhsearch_call} -i {temp_path}tmp{data.name}.fasta -d {hhsearch_db}pdb70 -e {e_value} -qid" \
@@ -121,7 +113,14 @@ def perform_search(data, site, search_tool, e_value, query_id, coverage, temp_pa
             os.system(command)
             search_results = [line.split('\t')[1]
                               for line in open(f"{temp_path}tmp{data.name}.hhr", 'r').read().split('\n')
-                              if line.split('\t')[0] == "Name"]
+                              if line.split('\t')[0] == data[f'unip_id_{site}']][:20]
+
+        # Search identical Chain IDs for (inter) cross-links
+        chains = [retrieve_identical_chain_ids(res.split('_')[0], res.split('_')[1], 5)
+                  for res in search_results]
+        search_results = [f"{res.split('_')[0]}_{'_'.join(chains[index])}"
+                          if chains[index] is not None else res
+                          for index, res in enumerate(search_results)]
 
         # If search successful, save result to respective container lists, and full result to
         # already_searched_res with specified chain

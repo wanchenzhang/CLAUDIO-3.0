@@ -2,13 +2,10 @@ import os
 import pandas as pd
 
 
-def read_temp_search_save(data, uniprot_search_temp_dir, filename):
+def read_temp_search_save(data, tmp_filepath):
     # read temporary save file containing earlier uniprot search results, for quick reruns
     #
-    # input data: pd.DataFrame, input_temppath: str, filename: str
+    # input data: pd.DataFrame, tmp_filepath: str
     # return read_temp_search_save: pd.DataFrame
 
-    tmp_filepath = f"{uniprot_search_temp_dir}{filename}_srtmp.csv"
-    tmp_data = pd.read_csv(tmp_filepath)
-
-    return pd.concat([data, tmp_data], axis=1)
+    return pd.concat([data, pd.read_csv(tmp_filepath)], axis=1)

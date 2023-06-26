@@ -31,6 +31,11 @@ def main(input_filepath, input_temppath, projections, uniprot_search, xl_residue
     verbose_print("Start Unique Protein List Tool", 0, verbose_level)
     start_time = time.time()
 
+    input_filepath, input_temppath, output_directory, \
+        blast_bin, blast_db, hhsearch_bin, hhsearch_db = \
+        (path.replace('\\', '/') for path in
+         [input_filepath, input_temppath, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db])
+
     filename = '.'.join(input_filepath.split('/')[-1].split('.')[:-1])
 
     # Check output directory
@@ -76,9 +81,13 @@ def main(input_filepath, input_temppath, projections, uniprot_search, xl_residue
 
         # uniprot_search parameter is True actually perform a new search, else try to retrieve previous results
         # from temporary save file
-        verbose_print("Retrieve UniProt sequences" + '' if uniprot_search else " from temporary save", 0, verbose_level)
-        data = do_uniprot_search(data, uniprot_search_temp_dir, filename, verbose_level) if uniprot_search \
-            else read_temp_search_save(data, uniprot_search_temp_dir, filename)
+        tmp_filepath = f"{uniprot_search_temp_dir}{filename}_srtmp.csv"
+        if (not uniprot_search) and os.path.exists(tmp_filepath):
+            verbose_print("Retrieve UniProt sequences from temporary save", 0, verbose_level)
+            read_temp_search_save(data, tmp_filepath)
+        else:
+            verbose_print("Retrieve UniProt sequences from UniProtKB", 0, verbose_level)
+            do_uniprot_search(data, tmp_filepath, verbose_level)
 
         # Check datapoints for inconsistencies and correct them if possible (creates logfile in the process)
         verbose_print("Check datapoints for inconsistencies", 0, verbose_level)

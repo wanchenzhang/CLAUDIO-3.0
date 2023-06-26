@@ -298,6 +298,9 @@ def compute_site_pos(i, data, site_id, xl_type, pdb_uni_map, method, df_xl_res, 
     try:
         if method in ["alphafold", "pdb_chain_uniprot"]:
             res = chain.__getitem__(residue_pos)
+            if pdb_id == "2HLD":
+                print("HHsearch: 2HLD", shift, residue_pos, Polypeptide.three_to_one(res.get_resname()))
+                print()
         else:
             res = None
             chain_index = 0
