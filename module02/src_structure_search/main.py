@@ -38,12 +38,6 @@ def main(input_filepath, input_temppath, do_structure_search, search_tool, e_val
     # Check output directory
     output_directory = create_out_path(output_directory, input_filepath)
 
-    # Convert directory paths to literals if None
-    if blast_bin == "None":
-        blast_bin = None
-    if hhsearch_bin == "None":
-        hhsearch_bin = None
-
     # Add '/' to end of directory paths if not there
     if not output_directory.endswith('/'):
         output_directory += '/'

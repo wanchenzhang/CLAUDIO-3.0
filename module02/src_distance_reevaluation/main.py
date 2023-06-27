@@ -34,10 +34,6 @@ def main(input_directory, input_filepath, input_temppath, search_tool, xl_residu
     # Create temporary dir
     temp_dir = create_temp_dir(input_temppath, "dist_reeval")
 
-    # Convert directory paths to literals if None
-    if topolink_bin == "None":
-        topolink_bin = None
-
     # Add '/' to end of directory paths if not there
     if not input_directory.endswith('/'):
         input_directory += '/'

@@ -46,12 +46,6 @@ def main(input_filepath, input_temppath, projections, uniprot_search, xl_residue
     uniprot_search_temp_dir = create_temp_dir(input_temppath, "uniprot_search")
     unique_protein_temp_dir = create_temp_dir(input_temppath, "unique_protein_list")
 
-    # Convert directory paths to literals if None
-    if blast_bin == "None":
-        blast_bin = None
-    if hhsearch_bin == "None":
-        hhsearch_bin = None
-
     # Add '/' to end of directory paths if not there
     if not output_directory.endswith('/'):
         output_directory += '/'

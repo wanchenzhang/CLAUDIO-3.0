@@ -18,13 +18,8 @@ def translate_windowsos_path(path_strs):
     # input path_strs: iterable(str)
     # return iterable(str)
 
-    if path_strs is None:
-        return path_strs
-    elif '\\' in path_strs:
-        return (path_str.replace("\\\\", '/').replace('\\', '/') if path_strs is not None else None
-                for path_str in path_strs)
-    else:
-        return path_strs
+    return [path_str.replace("\\\\", '/').replace('\\', '/') if path_str not in [None, "None"] else None
+            for path_str in path_strs]
 
 
 def create_out_path(output_directory, input_filepath):
