@@ -88,10 +88,13 @@ def main(input_filepath, input_temppath, projections, read_temps, xl_residues, s
 
     # Run Module04
     try:
-        run_claudio_xl(["-i", f"{output_directory}{filename}.sqcs_structdi.csv",
-                        "-i2", f"{output_directory}{filename}.sqcs_ops.csv", "-p", plddt_cutoff, "-lmin", linker_minimum,
-                        "-lmax", linker_maximum, "-es", euclidean_strictness, "-dm", distance_maximum, "-c", cutoff,
-                        "-o", output_directory, "-s", compute_scoring, "-v", verbose_level])
+        if os.path.exists(f"{output_directory}{filename}.sqcs_structdi.csv") and \
+                os.path.exists(f"{output_directory}{filename}.sqcs_ops.csv"):
+            run_claudio_xl(["-i", f"{output_directory}{filename}.sqcs_structdi.csv",
+                            "-i2", f"{output_directory}{filename}.sqcs_ops.csv", "-p", plddt_cutoff,
+                            "-lmin", linker_minimum, "-lmax", linker_maximum, "-es", euclidean_strictness,
+                            "-dm", distance_maximum, "-c", cutoff, "-o", output_directory, "-s", compute_scoring,
+                            "-v", verbose_level])
     except SystemExit:
         if os.path.exists(f"{output_directory}{filename}_final.csv"):
             os.remove(f"{output_directory}{filename}.sqcs")

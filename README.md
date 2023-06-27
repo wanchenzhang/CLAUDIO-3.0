@@ -177,7 +177,20 @@ directory containing the *pdbaa* database files, "-hh / -hhsearch-bin" for the b
 necessary (and vice-versa).
 5. Make sure you customize the settings pertaining the cross-linking experiments specifications, e.g. 
 "-x / --xl-residues" for the aminoacids which may be cross-linked, and both "-lmin / --linker-minimum" and 
-"-lmax / --linker-maximum" for the cross-linker's range capability.
+"-lmax / --linker-maximum" for the cross-linker's range capability. Besides this specify the amino acids the used cross-
+linker is able to bind to. For this sepcify a tiny comma-separated list of possibly crosslinked residues, as 
+one-letter-code symbols. Optionally you may add two colon-symbols, if they wish to specify the position of the 
+residue in the sequence and/or the atom in the residue used for the distance computation. After the first colon-symbol 
+they may place the atom type for the distance computation, e.g. 'CB', 'CA', or 'N', etc. . If no value is set here 'CB'
+will be used by default. After the second colon-symbol they may place one of three position values: 0 if the residue
+may occur anywhere in the protein, 1 if the residue has to be at the N-terminus, or -1 if the residue has to be at the
+C-terminus (ex.: use "K:CB:0" to calculate the cross-link distance between lysin C-beta-atoms at any position in the
+chain). If you want to specify multiple possible positions for the same symbol you have to add them
+individually (ex.: "M::1,M::-1" for methionine at either the beginning or end of the chain). By default, 0 is set here,
+e.g. the residue may be placed anywhere.\
+Note: If the position or the atom type is specified there have to be two colon-symbols (ex.: "K,M:1" will not be
+accepted as input). You can leave the respective specification empty though, if you wish to use the default here (ex.:
+"K::1" is equal to "K:CB:1", "M:N:0" is equal to "M:N:", "K:CB:0" is equal to "K::" and also to just "K").
 6. Finally, specify which structure search tool you will be using with the parameter "-t / --search-tool" (either with 
 `"blastp"` or `"hhsearch"`).
 

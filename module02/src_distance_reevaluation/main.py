@@ -113,5 +113,6 @@ def inputs_valid(input_directory, input_filename, search_tool, xl_residues, pldd
             print(f"Error! Given inputfile (-i2) extension hints at incorrect output of uniprot-search "
                   f"(given: {input_filename})!")
     else:
-        print(f"Error! No structure files created by structure_search tool found (given: {input_directory})!")
+        print(f"Warning! No structure files created by structure_search tool found (given: {input_directory})!")
+        return True
     return False

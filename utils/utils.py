@@ -150,7 +150,7 @@ def clean_dataset(data):
         data = data.drop(index=drop_indeces)
 
     # Drop specified data columns
-    for drop_col in ["all_results", "path", "best_res_pdb_method", "best_res_pdb_resolution", "eucl_dist",
+    for drop_col in ["all_results", "path", "best_res_pdb_method", "best_res_pdb_resolution",
                      "res_criteria_fulfilled", "res_crit_a", "res_crit_b", "method_a", "method_b", "is_interfaced"]:
         if drop_col in data.columns:
             data = data.drop(drop_col, axis=1)

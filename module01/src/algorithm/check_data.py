@@ -26,8 +26,14 @@ def double_check_data(data, filename, df_xl_res, output_directory, verbose_level
         ind += 1
 
         # SUCCESS: Remove empty entry
-        if (type(row["seq_a"]) != str) or (type(row["seq_b"]) != str):
-            log_text += f"{i}: empty entry. will be dropped\n"
+        pos_information_missing = (sum([not pd.isna(row.pos_a), not pd.isna(row.res_pos_a)]) < 1) or \
+                                  (sum([not pd.isna(row.pos_b), not pd.isna(row.res_pos_b)]) < 1)
+        is_erroneous_data = (type(row["seq_a"]) != str) or (type(row["seq_b"]) != str) or \
+                            (type(row["pep_a"]) != str) or (type(row["pep_b"]) != str) or pos_information_missing
+        if is_erroneous_data:
+            log_text += f"{i}: erroneous entry (missing " \
+                        f"{'sequence or peptide info' if not pos_information_missing else 'position info'}" \
+                        f"). will be dropped\n"
             data.drop(i, inplace=True)
             log_text += "\tREMOVE\n"
             continue
