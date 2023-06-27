@@ -12,7 +12,7 @@ def read_inputfile(input_filepath, projections):
     try:
         data.rename(columns=projections, inplace=True)
     except:
-        print("Error! Given projection of column names failed! Check given dictionary!")
+        print("Error! Given projection of column names failed! Check given comma-separated list!")
         sys.exit()
 
     return data

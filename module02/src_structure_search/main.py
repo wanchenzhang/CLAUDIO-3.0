@@ -1,7 +1,6 @@
 import click
 import sys
 import time
-import os
 
 from module02.src_structure_search.io.read_input import read_in
 from module02.src_structure_search.algorithm.structure_search import structure_search

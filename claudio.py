@@ -1,5 +1,4 @@
 import click
-import os
 import time
 import sys
 
@@ -16,31 +15,31 @@ _DEFAULT_OPTIONS = ["data/in/sample_data.csv", "", "peptide1,peptide2,position1,
 
 
 @click.command()
-@click.option("-i", "--input-filepath")
-@click.option("-it", "--input-temppath")
-@click.option("-p", "--projections")
-@click.option("-rt", "--read-temps")
-@click.option("-x", "--xl-residues")
-@click.option("-t", "--search-tool")
-@click.option("-e", "--e-value")
-@click.option("-qi", "--query-id")
-@click.option("-cv", "--coverage")
-@click.option("-r", "--res-cutoff")
-@click.option("-pc", "--plddt-cutoff")
-@click.option("-lmin", "--linker-minimum")
-@click.option("-lmax", "--linker-maximum")
-@click.option("-es", "--euclidean-strictness")
-@click.option("-dm", "--distance-maximum")
-@click.option("-ct", "--cutoff")
-@click.option("-o", "--output-directory")
-@click.option("-bl", "--blast-bin")
-@click.option("-bldb", "--blast-db")
-@click.option("-hh", "--hhsearch-bin")
-@click.option("-hhdb", "--hhsearch-db")
-@click.option("-tl", "--topolink-bin")
-@click.option("-s", "--compute-scoring")
-@click.option("-v", "--verbose-level")
-@click.option("-c", "--config")
+@click.option("-i", "--input-filepath", help="path to inputfile")
+@click.option("-it", "--input-temppath", help="path to directory for temporary files")
+@click.option("-p", "--projections", help="comma-separated position-sensitive list that names the column names of the users dataset\ncontaining the necessary information for the tool. The column names should contain and\nshould be given in the following order: crosslinked peptide_a, crosslinked peptide_b,\ncrosslinked residue position_a, crosslinked residue position_b, position of cross-linked\nresidue in peptide_a, position of cross-linked residue in peptide_b, UniProt ID of\nprotein belonging to peptide_a, UniProt ID of protein belonging to peptide_b.\nNote: The positions of the crosslinked residue in the peptides are information only\naccessed, if the given full sequence positions do not match into the retrieved UniProt\nsequence. If the positions are confirmed you may simply create two substitute columns\nfor the positions in the peptides instead and leave them empty.")
+@click.option("-rt", "--read-temps", help="if the tool has been run before with the same input a temporary file was saved, which\ncan be used to skip some of the steps")
+@click.option("-x", "--xl-residues", help="comma-separated one-letter-code residues, optional: add two ':' after the\none-letter-code symbol of the residue in order to specify full sequence position\n(either 1 for start, or -1 for end position) and/or the atom used for the distance\ncomputation")
+@click.option("-t", "--search-tool", help="can be either \"blastp\" or \"hhsearch\", specifying the tool which should be used for pdb\nsearch")
+@click.option("-e", "--e-value", help="e-value used in structure search")
+@click.option("-qi", "--query-id", help="query identity used in structure search")
+@click.option("-cv", "--coverage", help="coverage used in structure search")
+@click.option("-r", "--res-cutoff", help="float value used as cutoff in angstrom for resolution of structure files")
+@click.option("-pc", "--plddt-cutoff", help="float value used as cutoff for alphafold structure prediction confidences (plddt)")
+@click.option("-lmin", "--linker-minimum", help="float value used as minimal crosslinker range in angstrom")
+@click.option("-lmax", "--linker-maximum", help="float value used as maximal crosslinker range in angstrom")
+@click.option("-es", "--euclidean-strictness", help="float value substracted from the linker ranges for the euclidean distance scoring\n(minimum will not go below 0)")
+@click.option("-dm", "--distance-maximum", help="maximal distance value that seems realistic, if surpassed the distance will be set to\nthis value during the confidence scoring, to ensure its consistency")
+@click.option("-ct", "--cutoff", help="float value used as confidence score cutoff, if surpassed, the linker type will be set\nto inter")
+@click.option("-o", "--output-directory", help="output directory for produced csv-files")
+@click.option("-bl", "--blast-bin", help="binary directory in blast installation, or None if binary directory has been added to\nPATH variable (e.g. if blast can be called from anywhere)")
+@click.option("-bldb", "--blast-db", help="database directory for blast installation")
+@click.option("-hh", "--hhsearch-bin", help="binary directory in hh-suite installation, or None if binary directory has been added to\nPATH variable (e.g. if hhsearch can be called from anywhere)")
+@click.option("-hhdb", "--hhsearch-db", help="database directory for hh-suite installation")
+@click.option("-tl", "--topolink-bin", help="binary directory in topolink installation, or None if binary directory has been added to\nPATH variable (e.g. if topolink can be called from anywhere)")
+@click.option("-s", "--compute-scoring", help="boolean, for whether experimental scoring and resulting XL-type evluations should be\ncomputed and appended to result dataset")
+@click.option("-v", "--verbose-level", help="verbose level value")
+@click.option("-c", "--config", help="filepath to configuration file containing all input parameters")
 def main(input_filepath, input_temppath, projections, read_temps, xl_residues, search_tool, e_value, query_id, coverage,
          res_cutoff, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness, distance_maximum, cutoff,
          output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin, compute_scoring, verbose_level,
@@ -166,20 +165,9 @@ def read_config(path, args):
             sys.exit()
         else:
             # Check whether boolean params can be correctly converted
-            if config_params["read_temps="] == "True":
-                config_params["read_temps="] = True
-            elif config_params["read_temps="] == "False":
-                config_params["read_temps="] = False
-            else:
-                raise ValueError(f"Error! Could not change type of read_temp to boolean (given:{config_params[2]}).")
+            config_params["read_temps="] = evaluate_boolean_input(config_params["read_temps="])
+            config_params["compute_scoring="] = evaluate_boolean_input(config_params["compute_scoring="])
 
-            if config_params["compute_scoring="] == "True":
-                config_params["compute_scoring="] = True
-            elif config_params["compute_scoring="] == "False":
-                config_params["compute_scoring="] = False
-            else:
-                raise ValueError(f"Error! Could not change type of compute_scoring to boolean "
-                                 f"(given:{config_params[-2]}).")
             # Set input_temppath to empty string, if given None
             if config_params["input_temppath="] == "None":
                 config_params["input_temppath="] = ""

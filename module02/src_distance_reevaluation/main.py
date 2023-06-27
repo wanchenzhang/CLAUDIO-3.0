@@ -1,7 +1,6 @@
 import click
 import time
 import sys
-import os
 
 from module02.src_distance_reevaluation.io.read_uniprot_search_out import read_unipsearch_out
 from module02.src_distance_reevaluation.algorithm.search_pdb_pos import search_site_pos_in_pdb

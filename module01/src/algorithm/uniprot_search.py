@@ -33,7 +33,7 @@ def search_uniprot(data, verbose_level, already_searched={}, site='a'):
     # create list of unique uniprot ids
     unip_ids = data[f"unip_id_{site}"].unique().tolist()
 
-    # retrieve all unique uniprot sequences
+    # retrieve uniprot sequences for all uniquely discovered uniprot ids
     for id in unip_ids:
         # if search for unip id has not been performed yet, do so, and add it to already_searched dictionary
         if id not in already_searched.keys() or already_searched[id] is None:
@@ -58,26 +58,33 @@ def search_uniprot(data, verbose_level, already_searched={}, site='a'):
                 print("Error! Encountered at least one faulty return from the UniProt database.")
                 sys.exit()
 
+    # Sort uniprot search result sequences to datapoints
     ind = 0
     for _, row in data.iterrows():
         id = row[f"unip_id_{site}"]
         ind += 1
         verbose_print(f"\r\tSite_{site}:[{round_self(ind * 100 / len(data.index), 2)}%]", 1, verbose_level, end='')
+        # If search failed, or no uniprot id was given, return nan
         if pd.isna(id) or already_searched[id] is None or not already_searched[id]:
             seqs.append(float('nan'))
+        # Else, parse through all possible sequences discovered
         else:
             result = already_searched[id]
             fitting_seq_found = False
             seq = ''
             if len(result) > 1:
+                # Check for each sequence whether both peptides were discovered in the sequences
                 for seq in result:
                     peptide_arg = (row["pep_a"] in seq) and (row["pep_b"] in seq) \
                         if row["unip_id_a"] == row["unip_id_b"] else (row[f"pep_{site}"] in seq)
+                    # If a fitting sequences, containing both peptides was found set argument to True
                     if peptide_arg:
                         fitting_seq_found = True
                         break
+            # If argument is not True, return the first discovered sequence
             if not fitting_seq_found:
                 seq = result[0]
+            # Add final sequence to list
             seqs.append(seq)
     verbose_print("", 1, verbose_level)
 

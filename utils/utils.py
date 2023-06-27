@@ -2,6 +2,31 @@ import os
 import pandas as pd
 
 
+def verbose_print(print_string, threshold, verbose_level, end='\n'):
+    # print given string, if verbose_level is higher than threshold
+    #
+    # input print_string: str, threshold: int, verbose_level: int, end: str
+    # no return
+
+    if verbose_level > threshold:
+        print(print_string, end=end)
+
+
+def translate_windowsos_path(path_strs):
+    # replace backslashes in given path string to ensure proper interaction in python
+    #
+    # input path_strs: iterable(str)
+    # return iterable(str)
+
+    if path_strs is None:
+        return path_strs
+    elif '\\' in path_strs:
+        return (path_str.replace("\\\\", '/').replace('\\', '/') if path_strs is not None else None
+                for path_str in path_strs)
+    else:
+        return path_strs
+
+
 def create_out_path(output_directory, input_filepath):
     # create output directory, if not already existing
     #
@@ -19,14 +44,18 @@ def create_out_path(output_directory, input_filepath):
     return output_directory
 
 
-def verbose_print(print_string, threshold, verbose_level, end='\n'):
-    # print given string, if verbose_level is higher than threshold
+def evaluate_boolean_input(input_str):
+    # evaluate boolean value of input string
     #
-    # input print_string: str, threshold: int, verbose_level: int, end: str
-    # no return
+    # input input_str: str
+    # return boolean
 
-    if verbose_level > threshold:
-        print(print_string, end=end)
+    if str(input_str).lower() in ("y", "yes", "t", "true", "on", "1"):
+        return True
+    elif str(input_str).lower() in ("n", "no", "f", "false", "off", "0"):
+        return False
+    else:
+        raise ValueError(f"Error! Could not change type of input to boolean (given:{input_str}).")
 
 
 def build_xl_dataset(xl_residues):

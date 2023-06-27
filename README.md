@@ -202,9 +202,22 @@ Note: All CSV-file outputs pertaining the input dataset are summarized into a si
 
 ### Example
 **CLAUDIO** (in full) can be run like this:
+* with a configuration file with all parameters
 ```
 python3 claudio.py -c config.txt
+```
+* with mostly default parameters and a few set as CLI parameters
+```
 python3 claudio.py -i /home/user/docs/xl_dataset.csv -o /home/user/docs/claudio_outputs
+```
+* with a configuration file with all parameters and a few overwriting CLI parameters
+```
+python3 claudio.py -c config.txt -t hhsearch -o data/out/full/sample_hhsearch
+```
+
+Also, you may return all CLI parameters on the terminal like this:
+```
+python claudio.py --help
 ```
 
 ## Authors

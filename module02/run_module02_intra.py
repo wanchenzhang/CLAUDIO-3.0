@@ -1,9 +1,10 @@
 import click
-import os
 import sys
 
 from module02.src_structure_search.main import main as run_structure_search
 from module02.src_distance_reevaluation.main import main as run_distance_analysis
+
+from utils.utils import *
 
 
 @click.command()
@@ -30,10 +31,13 @@ def main(input_filepath, input_temppath, read_temps, search_tool, xl_residues, p
          linker_maximum, e_value, query_id, coverage, res_cutoff, output_directory, blast_bin, blast_db, hhsearch_bin,
          hhsearch_db, topolink_bin, verbose_level):
 
-    input_filepath, input_temppath, output_directory, \
-        blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin = \
-        (path.replace('\\', '/') for path in
-         [input_filepath, input_temppath, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin])
+    # Translate eventual windows paths and evaluate value of boolean inputs
+    input_filepath, input_temppath, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin = \
+        translate_windowsos_path(
+            [input_filepath, input_temppath, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db,
+             topolink_bin]
+        )
+    read_temps = evaluate_boolean_input(read_temps)
 
     if not output_directory.endswith('/'):
         output_directory += '/'

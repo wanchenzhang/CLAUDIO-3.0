@@ -18,7 +18,8 @@ def main(input_filepath, output_directory, verbose_level):
     verbose_print("Start Homo-signal analysis", 0, verbose_level)
     start_time = time.time()
 
-    input_filepath, output_directory = (path.replace('\\', '/') for path in [input_filepath, output_directory])
+    # Translate eventual windows paths and evaluate value of boolean inputs
+    input_filepath, output_directory = translate_windowsos_path([input_filepath, output_directory])
 
     # If parameters inputted by user valid
     if inputs_valid(input_filepath, output_directory):

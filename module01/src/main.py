@@ -1,6 +1,5 @@
 import click
 import sys
-import os
 import time
 
 from module01.src.io.read_in import read_inputfile
@@ -31,10 +30,12 @@ def main(input_filepath, input_temppath, projections, uniprot_search, xl_residue
     verbose_print("Start Unique Protein List Tool", 0, verbose_level)
     start_time = time.time()
 
-    input_filepath, input_temppath, output_directory, \
-        blast_bin, blast_db, hhsearch_bin, hhsearch_db = \
-        (path.replace('\\', '/') for path in
-         [input_filepath, input_temppath, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db])
+    # Translate eventual windows paths and evaluate value of boolean inputs
+    input_filepath, input_temppath, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db = \
+        translate_windowsos_path(
+            [input_filepath, input_temppath, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db]
+        )
+    uniprot_search = evaluate_boolean_input(uniprot_search)
 
     filename = '.'.join(input_filepath.split('/')[-1].split('.')[:-1])
 
@@ -133,8 +134,8 @@ def inputs_valid(input_filepath, uniprot_search_temp_dir, unique_protein_temp_di
                     pd.read_csv(f"{uniprot_search_temp_dir}{'.'.join(filename.split('.')[:-1])}_srtmp."
                                 f"{filename.split('.')[-1]}")
                 except FileNotFoundError:
-                    print(f"Error! No temporary save file was found. Run the program with \"-s True\" to perform an "
-                          f"actual search first (given: {uniprot_search}).")
+                    print(f"Error! No temporary save file was found. Run the program without the use of temp_save files"
+                          f" to perform an actual search first (given: {uniprot_search}).")
                     return False
             # check whether xl_residues can be turned into a proper DataFrame, else return False
             try:
