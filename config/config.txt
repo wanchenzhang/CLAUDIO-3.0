@@ -1,1 +1,193 @@
 
+########################################################################################################################
+## INPUT AND OUTPUT
+########################################################################################################################
+#1.filepath to dataset
+#type: string
+#ex.: /home/me/desktop/my_dataset.csv
+input_filepath = data/in/sample_data.csv
+
+#2.path to directory for temporary files generated during the computation process, if given 'None' the default path
+#will be used. NOTE: If multiple computations with CLAUDIO are run at the same this path MUST BE DIFFERENT. Otherwise
+#the computation steps are likely to overwrite each other. If 'None' is given, the directory in question will be
+#'data/temp/' in the tool directory.
+#types: string / None
+#ex.: /home/me/desktop/claudio_temps
+input_temppath = None
+
+#3.output directory for results, if left empty all generated outputs will be added to the directory of the inputfile
+#type: string
+#ex.: /home/me/desktop/my_outputs
+output_directory = data/out/full/
+
+#4.column name projections. A comma-separated position-sensitive list that names the column names of the users dataset
+#containing the necessary information for the tool. The column names should contain and should be given in the following
+#order: crosslinked peptide_a, crosslinked peptide_b, crosslinked residue position_a, crosslinked residue position_b,
+#position of crosslinked residue in peptide_a, position of crosslinked residue in peptide_b, UniProt ID of protein
+#belonging to peptide_a, UniProt ID of protein belonging to peptide_b. Note: The positions of the crosslinked residue in
+#the peptides are information only accessed, if the given full sequence positions do not match into the retrieved
+#UniProt sequence. If the positions are confirmed you may simply create two substitute columns for the positions in the
+#peptides instead and leave them empty.
+#type: string
+#ex.: peptide_a,peptide_b,position_a,position_b,residue_pos_in_pep_a,residue_pos_in_pep_b,UniProt_ID_a,UniProt_ID_b
+projections = peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2
+
+
+########################################################################################################################
+## EXTERNAL TOOL PATHS
+########################################################################################################################
+#5.binary directory in blast installation, or None if binary directory has been added to PATH variable (e.g. if blastp
+#can be called from anywhere (you may test this by running the following command on the terminal: "blastp -version"))
+#type: string / None
+#ex.: /home/me/desktop/ncbi-blast-2.13.0+/bin
+blast_bin = None
+
+#6.database directory for blast installation
+#type: string
+#ex.: /home/me/desktop/ncbi-blast-2.13.0+/db
+blast_db = $HOME/BLAST/db
+
+#7.binary directory in hh-suite installation, or None if binary directory has been added to PATH variable (e.g. if
+#hhsearch can be called from anywhere)
+#type: string / None
+#ex.: /home/me/desktop/hh-suite-3.3.0/bin
+hhsearch_bin = None
+
+#8.database directory for hh-suite installation
+#type: string
+#ex.: /home/me/desktop/hh-suite-3.3.0/db
+hhsearch_db = $HOME/HHSUITE/db
+
+#9.binary directory in topolink installation, or None if binary directory has been added to PATH variable (e.g. if
+#topolink can be called from anywhere)
+#type: string / None
+#ex.: /home/me/desktop/topolink/bin
+topolink_bin = None
+
+
+########################################################################################################################
+## XL-EXPERIMENT SPECIFICATIONS
+########################################################################################################################
+#10.tiny comma-separated list of possibly crosslinked residues, as one-letter-code symbols, by the crosslinker.
+#Optionally the user may add two colon-symbols, if they wish to specify the position of the residue in the
+#sequence and/or the atom in the residue used for the distance computation. After the first colon-symbol they may place
+#the atom type for the distance computation, e.g. 'CB', 'CA', or 'N', etc. . If no value is set here 'CB'
+#will be used by default. After the second colon-symbol they may place one of three position values: 0 if the residue
+#may occur anywhere in the protein, 1 if the residue has to be at the N-terminus, or -1 if the residue has to be at the
+#C-terminus (ex.: use "K:CB:0" to calculate the cross-link distance between lysin C-beta-atoms at any position in the
+#chain). If you want to specify multiple possible positions for the same symbol you have to add them
+#individually (ex.: "M::1,M::-1" for methionine at either the beginning or end of the chain). By default, 0 is set here,
+#e.g. the residue may be placed anywhere.
+#Note: If the position or the atom type is specified there have to be two colon-symbols (ex.: "K,M:1" will not be
+#accepted as input). You can leave the respective specification empty though, if you wish to use the default here (ex.:
+#"K::1" is equal to "K:CB:1", "M:N:0" is equal to "M:N:", "K:CB:0" is equal to "K::" and also to just "K").
+#type: string
+#ex.: K,M:N:1 #for Disuccinimidyl suberate (DSS) linker
+xl_residues = K,M:N:1
+
+#11.minimum of crosslinker range capability in angstrom (not included in accepted range)
+#type: float [0,x]
+#ex.: 5.0
+linker_minimum = 5.0
+
+#12.maximum of crosslinker range capability in angstrom (included into accepted range)
+#type: float [x,infty)
+#ex.: 20.0
+linker_maximum = 35.0
+
+
+########################################################################################################################
+## STRUCTURE SEARCH AND SELECTION PARAMETERS
+########################################################################################################################
+#13.search tool for structure search (either hhsearch or blastp)
+#type: string
+#ex.: blastp / hhsearch
+search_tool = blastp
+
+#14.e-value cut-off used by structure search tool for structure search
+#type: float [0,1]
+#ex.: 0.3
+e_value = 0.00001
+
+#15.query sequence identity cutoff used by structure search tool for structure search
+#type: float [0,100]
+#ex.: 55.0
+query_id = 90.0
+
+#16.sequence coverage cutoff used by structure search tool for structure search
+#type: float [0,100]
+#ex.: 55.0
+coverage = 50.0
+
+#17.resolution cutoff value, for which structure files will be included if they are either equal or lower during
+#structure selection
+#type: float [0,infty)
+#ex.: 5.0
+res_cutoff = 6.5
+
+
+########################################################################################################################
+## ADVANCED SETTINGS
+########################################################################################################################
+#################################################
+## READ TEMP-SAVES
+#################################################
+#18.read some results from temporary save from previous run (overwritten each time). Note: Ensure that this is called
+#with the exact same parameters as the previous run. It might otherwise lead to unforeseen issues.
+#type: boolean
+#ex.: True
+read_temps = False
+
+#################################################
+## ALPHAFOLD CONFIDENCE CUTOFF
+#################################################
+#19.alphafold structure pLDDT cutoff value, for which structure distances will be included if the involved residue atoms
+#have an either equal or higher position prediction confidence
+#type: float [0,100]
+#ex.: 55.0
+plddt_cutoff = 70.0
+
+#################################################
+## COMPUTE EXPERIMENTAL SCORING
+#################################################
+#20.boolean, for whether experimental scoring and resulting XL-type evluations should be computed and appended to result
+#dataset
+#type: boolean
+#ex.: True
+compute_scoring = False
+
+#################################################
+## VERBOSE LEVEL
+#################################################
+#21.verbose level value:
+#       0: no outputs at all will be written to the commandline
+#       1: write tool inits and passed time
+#       2: write progressbars (where implemented)
+#       3: write extra information on process results
+#       4: write alignments during data processing and uniprot to pdb position translation
+#       5: write verfications during uniprot to pdb position translation
+#type: int
+#ex.: 0
+verbose_level = 2
+
+#################################################
+## EXPERIMENTAL SCORING PARAMETERS (ONLY ACTIVE IF #20=compute_scoring is set to True)
+#################################################
+#22.strictness for euclidean distance, e.g. value substracted from euclidean distance in angstrom for confidence score
+#calculation, or None if euclidean score is not to be included into the final scoring (in which case only the
+#topological distance and OPS analysis are included)
+#type: float [0,infty) / None
+#ex.: None
+euclidean_strictness = None
+
+#23.distance maximum which, if surpassed, by either the topological or euclidean distance replaces its value for the
+#confidence score (this ensures that outliers do not negatively impact the scoring)
+#type: float [0,infty)
+#ex.: 100.0
+distance_maximum = 50.0
+
+#24.inter protein crosslink confidence score cutoff
+#type: float [0,1]
+#ex.: 0.1
+cutoff = 0.0
+#################################################
