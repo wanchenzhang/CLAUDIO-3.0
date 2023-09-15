@@ -23,10 +23,11 @@ def merge_datasets(df1, df2):
     # return df1: pd.DataFrame
     for column in df2.columns:
         if column not in df1.columns:
-            df2_col_content = df2[column].to_list()
             if type(df1.index[0]) == str:
+                df1[column] = False
                 for i in df1.index:
                     if '_' in i:
-                        df2_col_content.append(df2.loc[int(i.split('_')[0]), column])
-            df1[column] = df2_col_content
+                        df1.loc[i, column] = df2.loc[int(i.split('_')[0]), column]
+            else:
+                df1[column] = df2[column].tolist()
     return df1

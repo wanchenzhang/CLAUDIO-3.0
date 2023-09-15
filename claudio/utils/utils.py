@@ -197,7 +197,7 @@ def clean_dataset(data):
                     if not multi_chain_set[multi_chain_set.XL_confirmed & (multi_chain_set.evidence == '')].empty:
                         drop_indeces.extend(list(multi_chain_set[multi_chain_set.evidence != ''].index))
                 already_checked.extend(list(multi_chain_set.index))
-        data = data.drop(index=drop_indeces)
+        data = data.drop(index=[drop_index for drop_index in drop_indeces if '_' in drop_index])
 
     # Sort rows
     if any([type(i) == str for i in data.index]):
