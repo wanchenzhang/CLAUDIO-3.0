@@ -29,7 +29,7 @@ def write_outputs(data, filename, compute_scoring, output_directory):
             if not os.path.exists(output_subdirectory):
                 os.mkdir(output_subdirectory)
 
-            # If intra crosslink write fasta with subsequent number of sequences
+            # If intra crosslink, write fasta with subsequent number of sequences
             if is_intra:
                 # if valid oligo-states were found, create fasta with respective number of sequence copies
                 # (ex.: 3mer -> 3 seqs)
@@ -76,7 +76,7 @@ def write_outputs(data, filename, compute_scoring, output_directory):
     # write full output dataset containing all given and computed information
     # select columns
     all_cols = ["unip_id_a", "unip_id_b", "pos_a", "pos_b", "pep_a", "pep_b", "res_pos_a", "res_pos_b", "seq_a",
-                "seq_b", "pdb_id", "pdb_method", "pdb_resolution", "chain_a", "chain_b", "pdb_pos_a", "pdb_pos_b",
+                "seq_b", "path", "pdb_id", "pdb_method", "pdb_resolution", "chain_a", "chain_b", "pdb_pos_a", "pdb_pos_b",
                 "pLDDT_a", "pLDDT_b", "is_interfaced", "topo_dist", "homo_adjacency", "homo_int_overl",
                 "homo_pep_overl", "evidence", "XL_type", "XL_confirmed", "swiss_model_homology"]
     out_columns = ["unip_id_a", "unip_id_b", "pos_a", "pos_b", "pep_a", "pep_b", "res_pos_a", "res_pos_b", "pdb_id",

@@ -7,6 +7,7 @@ from module04.src.io.read_ins import read_inputs
 from module04.src.algorithm.combine_reevals import combine_inter_reevaluations
 from module04.src.algorithm.retrieve_oligo_state import retrieve_oligomeric_states
 from module04.src.algorithm.create_histo import create_histograms
+from module04.src.io.create_pymol_scripts import setup_pml_scripts
 from module04.src.io.write_outs import write_outputs
 
 from utils.utils import *
@@ -44,8 +45,7 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, linker_m
         plddt_cutoff = float(plddt_cutoff)
         linker_minimum = float(linker_minimum)
         linker_maximum = float(linker_maximum)
-        euclidean_strictness = float(euclidean_strictness) \
-            if euclidean_strictness != "None" and euclidean_strictness is not None else None
+        euclidean_strictness = float(euclidean_strictness) if euclidean_strictness not in ["None", None] else None
         distance_maximum = float(distance_maximum)
         cutoff = float(cutoff)
         filename = input_filepath.split('/')[-1].split('.')[0]
@@ -70,9 +70,13 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, linker_m
         verbose_print("Create score histogram", 0, verbose_level)
         create_histograms(data, filename, cutoff, compute_scoring, output_directory)
 
+        # Write pymol scripts
+        verbose_print("Write pymol scripts", 0, verbose_level)
+        setup_pml_scripts(data)
+
         # Write final csv containing all computed information, fastas for alphafold and protein-specific csv with
         # interaction restraints
-        verbose_print("Write outputs", 0, verbose_level)
+        verbose_print("Write full outputs", 0, verbose_level)
         write_outputs(data, filename, compute_scoring, output_directory)
 
     verbose_print(f"\nEnd script (Elapsed time: {round_self(time.time() - start_time, 2)}s)", 0, verbose_level)
