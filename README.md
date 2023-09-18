@@ -202,19 +202,18 @@ Note: All CSV-file outputs pertaining the input dataset are summarized into a si
 '.sqcs_structdi.csv', and of module03 ending with '.sqcs_ops.csv' will be summarized here. 
 
 ### Example
-**CLAUDIO** (in full) can be run like this (for example, from the location of this README):
-* with a configuration file with all parameters (all non-described parameters in the config file will be filled with 
-default values)
+**CLAUDIO** (in full) can be run like this:
+* with a configuration file with all parameters (this will run the test dataset, when using the default config.txt, with all non-descirbed parameters being filled with default values)
 ```
 python3 claudio/claudio.py -c config/config.txt
 ```
-* with a mix of default parameters and a CLI parameters (non-default CLI parameters take precedence)
+* with a configuration file and a few overwriting CLI parameters (this will run the larger benchmark dataset)
+```
+python3 claudio.py -c config.txt -i benchmark_data.csv -o test/out/benchmark
+```
+* with mostly default parameters and a few set as CLI parameters
 ```
 python3 claudio/claudio.py -i /home/user/me/docs/xl_dataset.csv -o /home/user/me/docs/claudio_outputs
-```
-* with a configuration file with all parameters and a few CLI parameters (non-default CLI parameters take precedence)
-```
-python3 claudio/claudio.py -c config/config.txt -i /home/user/me/docs/xl_dataset.csv -o /home/user/me/docs/out/
 ```
 \
 Also, you may return all CLI parameter options on the terminal like this:
