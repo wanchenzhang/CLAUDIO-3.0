@@ -9,9 +9,15 @@ from module04.src.main import main as run_claudio_xl
 
 from utils.utils import *
 
-_DEFAULT_OPTIONS = ["../test/sample_data.csv", "", "peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2",
-                    False, "K,M:N:1", "blastp", 1e-5, 90.0, 50.0, 6.5, 70.0, 0.0, 35.0, None, 50.0, 0.0,
-                    "../test/out/sample/", None, "$HOME/BLAST/db", None, "$HOME/HHSUITE/db", None, False, 2]
+_DEFAULT_OPTIONS = ["../test/sample_data_random.csv", "",
+                    "peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2", False, "K,M:N:1", "blastp",
+                    1e-5, 90.0, 50.0, 6.5, 70.0, 0.0, 35.0, None, 50.0, 0.0, "../test/out/sample/", None,
+                    "$HOME/BLAST/db", None, "$HOME/HHSUITE/db", None, False, 2]
+# ['../test/sample_data_random.csv', '',
+#  'peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2',
+#  False, 'K,M:N:1', 'blastp', 1e-05, 90.0, 50.0, 6.5, 70.0, 0.0, 35.0,
+#  'None', 50.0, 0.0, '../test/out/sample/', 'None', '$HOME/BLAST/db', None,
+#  '$HOME/HHSUITE/db', 'None', False, 2]
 
 
 @click.command()
@@ -20,7 +26,7 @@ _DEFAULT_OPTIONS = ["../test/sample_data.csv", "", "peptide1,peptide2,position1,
 @click.option("-p", "--projections", help="comma-separated position-sensitive list that names the column names of the users dataset\ncontaining the necessary information for the tool. The column names should contain and\nshould be given in the following order: crosslinked peptide_a, crosslinked peptide_b,\ncrosslinked residue position_a, crosslinked residue position_b, position of cross-linked\nresidue in peptide_a, position of cross-linked residue in peptide_b, UniProt ID of\nprotein belonging to peptide_a, UniProt ID of protein belonging to peptide_b.\nNote: The positions of the crosslinked residue in the peptides are information only\naccessed, if the given full sequence positions do not match into the retrieved UniProt\nsequence. If the positions are confirmed you may simply create two substitute columns\nfor the positions in the peptides instead and leave them empty.")
 @click.option("-rt", "--read-temps", help="if the tool has been run before with the same input a temporary file was saved, which\ncan be used to skip some of the steps")
 @click.option("-x", "--xl-residues", help="comma-separated one-letter-code residues, optional: add two ':' after the\none-letter-code symbol of the residue in order to specify full sequence position\n(either 1 for start, or -1 for end position) and/or the atom used for the distance\ncomputation")
-@click.option("-t", "--search-tool", help="can be either \"blastp\" or \"hhsearch\", specifying the tool which should be used for pdb\nsearch")
+@click.option("-t", "--search-tool", help="always set to \"blastp\" (as of this version), specifying the tool which should be used for pdb search")
 @click.option("-e", "--e-value", help="e-value used in structure search")
 @click.option("-qi", "--query-id", help="query identity used in structure search")
 @click.option("-cv", "--coverage", help="coverage used in structure search")
@@ -50,13 +56,13 @@ def main(input_filepath, input_temppath, projections, read_temps, xl_residues, s
 
     params = [input_filepath, input_temppath, projections, read_temps, xl_residues, search_tool, e_value, query_id,
               coverage, res_cutoff, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,
-              distance_maximum, cutoff, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin,
-              compute_scoring, verbose_level, config]
+              distance_maximum, cutoff, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin, compute_scoring, verbose_level, config]
 
     input_filepath, input_temppath, projections, read_temps, xl_residues, search_tool, e_value, query_id,\
         coverage, res_cutoff, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,\
-        distance_maximum, cutoff, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin,\
-        compute_scoring, verbose_level = parse_params(params)
+        distance_maximum, cutoff, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db,\
+        topolink_bin, compute_scoring, verbose_level \
+        = parse_params(params)
 
     filename = '.'.join(input_filepath.split('/')[-1].split('.')[:-1])
 
@@ -159,21 +165,13 @@ def read_config(path, args):
         config_params = {marker: l[len(marker):] for marker in line_markers for l in input_lines
                          if l.startswith(marker)}
 
-        # Check number of not empty parameters, if number is as expected convert boolean params from string into boolean
-        if len([x for x in config_params.values() if x]) != len(line_markers):
-            print(f"Error! Number of parameters in configuration file do not match the expected number. Check whether "
-                  f"you are either missing a parameter, or one is duplicated.\n"
-                  f"\tExpected number: {len(line_markers)}\n"
-                  f"\tReceived number: {len([x for x in config_params.values() if x])}")
-            sys.exit()
-        else:
-            # Check whether boolean params can be correctly converted
-            config_params["read_temps="] = evaluate_boolean_input(config_params["read_temps="])
-            config_params["compute_scoring="] = evaluate_boolean_input(config_params["compute_scoring="])
+        # Check whether boolean params can be correctly converted
+        config_params["read_temps="] = evaluate_boolean_input(config_params["read_temps="])
+        config_params["compute_scoring="] = evaluate_boolean_input(config_params["compute_scoring="])
 
-            # Set input_temppath to empty string, if given None
-            if config_params["input_temppath="] == "None":
-                config_params["input_temppath="] = ""
+        # Set input_temppath to empty string, if given None
+        if config_params["input_temppath="] == "None":
+            config_params["input_temppath="] = ""
 
         # Check whether already given args have default value
         defaults = _DEFAULT_OPTIONS.copy()
@@ -183,11 +181,13 @@ def read_config(path, args):
         args = {marker: args[i] for i, marker in enumerate(line_markers)}
 
         # define dict containing booleans for each line marker, if already given argument has default value
-        arg_is_default = {marker: args[marker] is None for marker in line_markers}
+        arg_is_default = {marker: args[marker] == defaults[marker] for marker in line_markers}
 
         # define final params, if already given argument is not default, it takes precedence over param value in
         # config-file
-        final_params = [config_params[marker] if arg_is_default[marker] else ""
+        final_params = [config_params[marker] if (marker in config_params.keys()) and arg_is_default[marker] else
+                        args[marker] if args[marker] is not None else
+                        defaults[marker]
                         for marker in line_markers]
 
         return final_params

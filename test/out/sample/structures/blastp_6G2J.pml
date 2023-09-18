@@ -5,18 +5,18 @@ set transparency, 0.8
 zoom center, 50;
 hide everything, show cartoon, chain O
 show surface, chain O and blastp_6G2J
-color 1, chain O
+color 3, chain O
 show cartoon, chain O
 hide everything, show cartoon, chain P
 show surface, chain P and blastp_6G2J
-color 3, chain P
+color 5, chain P
 show cartoon, chain P
 hide everything, show cartoon, chain W
 show surface, chain W and blastp_6G2J
-color 5, chain W
+color 6, chain W
 show cartoon, chain W
-dist intra_1_valid , resid 144 and blastp_6G2J and chain P and name cb, resid 154 and blastp_6G2J and chain P and name cb
-dist inter_1_valid , resid 208 and blastp_6G2J and chain O and name cb, resid 89 and blastp_6G2J and chain W and name cb
+dist intra_24_valid , resid 144 and blastp_6G2J and chain P and name cb, resid 154 and blastp_6G2J and chain P and name cb
+dist inter_15_valid , resid 208 and blastp_6G2J and chain O and name cb, resid 89 and blastp_6G2J and chain W and name cb
 show dashes
 set dash_gap, 0.1
 color blue, intra*_valid

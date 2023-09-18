@@ -5,7 +5,7 @@ for an in-depth evaluation of structure and sequence information, automating man
 It downloads protein structures for this, and returns protein-link-specific small-datasets containing structural 
 restraints in CSV-format, and the input dataset extended by its results.
 These include...
-* ... PDB IDs of protein structures searched by BLASTP or HHsearch
+* ... PDB IDs of protein structures searched by BLASTP
 * ... Mapping of UniProt protein to structure sequence positions
 * ... Structural distances calculated with TopoLink
 * ... Information on Homo-signal responses (e.g. overlapping peptide sequences in same-protein cross-links)
@@ -42,7 +42,7 @@ the tool.
 ### External Tools
 In order to run *CLAUDIO* you need to install the following external tools:
 * **Topolink** (for structural analysis)
-* **BLASTP** and/or **HHsearch** (for finding suitable protein structures (recommended: BLASTP))
+* **BLASTP** (for finding suitable protein structures)
 
 #### Installation Instructions
 * **Blast** with *pdbaa* database (see [Windows or Unix Manuals](https://www.ncbi.nlm.nih.gov/books/NBK52638/), or see this [MacOS Manual](https://www.blaststation.com/intl/members/en/howtoblastmac.html))
@@ -59,10 +59,6 @@ In order to run *CLAUDIO* you need to install the following external tools:
   * Hint: If you followed the Installation Manual (linked up top) to-the-letter, you may have added the environmental 
     variable `$BLASTDB` to your paths. If so, you can use this variable instead of the full path in the input parameters
     of CLAUDIO.
-* **HHsearch** with *pdb70* database (see [GitHub](https://github.com/soedinglab/hh-suite))
-  * For HHsearch, you also have to download its newest *pdb70* database found 
-  [here](https://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/) (Note: This file is large (27 GB), which
-  also was one of the reasons BLASTP was used more frequently than HHsearch). 
 * **TopoLink** (see [Installation Manual](http://leandro.iqm.unicamp.br/topolink/download.shtml))
   * Topolink possesses a standalone executable for Windows 10 systems (or higher), which can be downloaded directly
   [here](http://leandro.iqm.unicamp.br/topolink/Windows_Binaries/Windows10-64bits/topolink.exe).
@@ -96,7 +92,7 @@ For details on how to run the **full** pipeline continue below.
 ## CLAUDIO - Full pipeline
 ### The CLI - Command Line Interface
 ```
-> python3 claudio.py [-i <filepath>] [-it <diretorypath>] [-o <directorypath/"">] [-p <"comma-separated str">] [-bl <directorypath/None>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-tl <directorypath>] [-x <comma-separated str>] [-lmin <float>] [-lmax <float>] [-t <"blastp"/"hhsearch">] [-e <float] [-qi <float>] [-cv <float>] [-r <float>] [-rt <True/False>] [-pc <float>] [-s <True/False>] [-v <int>] [-es <float>] [-dm <float>] [-ct <float>] [-c <filepath>] 
+> python3 claudio.py [-i <filepath>] [-it <diretorypath>] [-o <directorypath/"">] [-p <"comma-separated str">] [-bl <directorypath/None>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-tl <directorypath>] [-x <comma-separated str>] [-lmin <float>] [-lmax <float>] [-t <"blastp">] [-e <float] [-qi <float>] [-cv <float>] [-r <float>] [-rt <True/False>] [-pc <float>] [-s <True/False>] [-v <int>] [-es <float>] [-dm <float>] [-ct <float>] [-c <filepath>] 
 
 -i,    --input-filepath,        path to inputfile,
                                 default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv"
@@ -116,9 +112,6 @@ For details on how to run the **full** pipeline continue below.
 -bl,   --blast-bin,             binary directory in blast installation, or None if binary directory has been added to 
                                 PATH variable (e.g. if blast can be called from anywhere), default=None
 -bldb, --blast-db,              database directory for blast installation, default="$BLASTDB"
--hh,   --hhsearch-bin,          binary directory in hh-suite installation, or None if binary directory has been added to
-                                PATH variable (e.g. if hhsearch can be called from anywhere), default=None
--hhdb, --hhsearch-db,           database directory for hh-suite installation, default="$HHDB"
 -tl,   --topolink-bin,          binary directory in topolink installation, or None if binary directory has been added to
                                 PATH variable (e.g. if topolink can be called from anywhere), default=None
 -x,    --xl-residues,           comma-separated one-letter-code residues, optional: add two ':' after the 
@@ -127,7 +120,7 @@ For details on how to run the **full** pipeline continue below.
                                 computation, default="K,M:N:1"
 -lmin, --linker-minimum,        float value used as minimal crosslinker range in angstrom, default=5.0
 -lmax, --linker-maximum,        float value used as maximal crosslinker range in angstrom, default=35.0
--t,    --search-tool,           can be either "blastp" or "hhsearch", specifying the tool which should be used for pdb 
+-t,    --search-tool,           always set to "blastp" (as of this version), specifying the tool which should be used for pdb 
                                 search, default="blastp"
 -e,    --e-value,               e-value used in structure search, default=1e-5
 -qi,   --query-id,              query identity used in structure search, default=90.0
@@ -169,12 +162,9 @@ with the same tempfile path, conflicts may be caused disrupting or falsifying so
 different paths here, if you run the tool in parallel.
 3. It is important to customize the parameter "-p / --projections". This parameter requires a comma separated list
 as input, which maps the column names of your dataset to the ones used in the tool.
-4. You need to specify the paths to the local external tool installations (BLASTP, HHsearch, and TopoLink).
+4. You need to specify the paths to the local external tool installations (BLASTP and TopoLink).
 The parameters for this are "-bl / --blast-bin" for the binary directory of blast, "-bldb / --blast-db" for the database
-directory containing the *pdbaa* database files, "-hh / -hhsearch-bin" for the binary directory of HHsearch, 
-"-hhdb / --hhsearch-db" for the directory containing the *pdb70* database files, and "-tl / --topolink-bin" for the binary directory of TopoLink.\
-*Note:* If you only installed and only intend to use BLASTP for example, setting the parameters for HHsearch are not 
-necessary (and vice-versa).
+directory containing the *pdbaa* database files, and "-tl / --topolink-bin" for the binary directory of TopoLink.
 5. Make sure you customize the settings pertaining the cross-linking experiments specifications, e.g. 
 "-x / --xl-residues" for the aminoacids which may be cross-linked, and both "-lmin / --linker-minimum" and 
 "-lmax / --linker-maximum" for the cross-linker's range capability. Besides this specify the amino acids the used cross-
@@ -191,8 +181,6 @@ e.g. the residue may be placed anywhere.\
 Note: If the position or the atom type is specified there have to be two colon-symbols (ex.: "K,M:1" will not be
 accepted as input). You can leave the respective specification empty though, if you wish to use the default here (ex.:
 "K::1" is equal to "K:CB:1", "M:N:0" is equal to "M:N:", "K:CB:0" is equal to "K::" and also to just "K").
-6. Finally, specify which structure search tool you will be using with the parameter "-t / --search-tool" (either with 
-`"blastp"` or `"hhsearch"`).
 
 With this the relevant settings are defined. You may choose to further specify the structure searche's settings in terms
 of coverage, sequence identity, and e-value, as well as the resolution cutoff during the structure selection, or even 
@@ -214,23 +202,24 @@ Note: All CSV-file outputs pertaining the input dataset are summarized into a si
 '.sqcs_structdi.csv', and of module03 ending with '.sqcs_ops.csv' will be summarized here. 
 
 ### Example
-**CLAUDIO** (in full) can be run like this:
-* with a configuration file with all parameters
+**CLAUDIO** (in full) can be run like this (for example, from the location of this README):
+* with a configuration file with all parameters (all non-described parameters in the config file will be filled with 
+default values)
 ```
-python3 claudio.py -c config.txt
+python3 claudio/claudio.py -c config/config.txt
 ```
-* with mostly default parameters and a few set as CLI parameters
+* with a mix of default parameters and a CLI parameters (non-default CLI parameters take precedence)
 ```
-python3 claudio.py -i /home/user/docs/xl_dataset.csv -o /home/user/docs/claudio_outputs
+python3 claudio/claudio.py -i /home/user/me/docs/xl_dataset.csv -o /home/user/me/docs/claudio_outputs
 ```
-* with a configuration file with all parameters and a few overwriting CLI parameters
+* with a configuration file with all parameters and a few CLI parameters (non-default CLI parameters take precedence)
 ```
-python3 claudio.py -c config.txt -t hhsearch -o data/out/full/sample_hhsearch
+python3 claudio/claudio.py -c config/config.txt -i /home/user/me/docs/xl_dataset.csv -o /home/user/me/docs/out/
 ```
-
-Also, you may return all CLI parameters on the terminal like this:
+\
+Also, you may return all CLI parameter options on the terminal like this:
 ```
-python claudio.py --help
+python claudio/claudio.py --help
 ```
 
 ## Authors

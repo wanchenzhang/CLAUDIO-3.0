@@ -90,3 +90,29 @@ def write_outputs(data, filename, compute_scoring, output_directory):
     out_columns.extend([col for col in data.columns if col not in all_cols])
 
     data[out_columns].to_csv(f"{output_directory}{filename}_final.csv")
+
+    # TODO: comment this out
+    #write_small_test_sets(data)
+
+
+def write_small_test_sets(data):
+    # write small sample data sets, one containing 10 and one with 100 samples of xls mapped onto alphafold structures
+    #
+    # input data: pd.DataFrame, filename: str, compute_scoring: bool, output_directory: str
+    # no return
+
+    # entry1,entry2,position1,position2,peptide1,peptide2,k_pos1,k_pos2,Organism
+    test_data = data[(data.pdb_id.str.len() > 4) & (~data.index.str.contains('_'))][
+        ["unip_id_a", "unip_id_b", "pos_a", "pos_b", "pep_a", "pep_b", "res_pos_a", "res_pos_b"]
+    ]
+    test_data["Organism"] = ""
+    test_data.rename(columns={"unip_id_a": "entry1",
+                              "unip_id_b": "entry2",
+                              "pos_a": "position1",
+                              "pos_b": "position2",
+                              "pep_a": "peptide1",
+                              "pep_b": "peptide2",
+                              "res_pos_a": "k_pos1",
+                              "res_pos_b": "k_pos2"}, inplace=True)
+    test_data.sample(100).to_csv(f"../test/sample_data_100.csv")
+    test_data.sample(10).to_csv(f"../test/sample_data_10.csv")

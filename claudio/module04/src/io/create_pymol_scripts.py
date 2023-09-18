@@ -10,7 +10,7 @@ def setup_pml_scripts(data, bg_color="white"):
 
             chains = pd.concat([xl_set.chain_a, xl_set.chain_b]).unique()
             chains_dict = {}
-            color_i = 1
+            color_i = 3
             for chain in chains:
                 dps_with_chain = xl_set[(xl_set.chain_a == chain) | (xl_set.chain_b == chain)]
                 if np.any(~(pd.isna(dps_with_chain.pdb_pos_a) | pd.isna(dps_with_chain.pdb_pos_b))):
@@ -38,8 +38,8 @@ def setup_pml_scripts(data, bg_color="white"):
                                "overlaps": [],
                                "same": []}}
             for i, row in xl_set.iterrows():
-                if not (pd.isna(row.pdb_pos_a) or pd.isna(row.pdb_pos_b)):
-                    dist_data = (row.chain_a, row.pdb_pos_a, row.chain_b, row.pdb_pos_b)
+                if not (pd.isna(row.pdb_pos_a) or pd.isna(row.pdb_pos_b)) and (row.XL_confirmed or '_' not in i):
+                    dist_data = (i, (row.chain_a, row.pdb_pos_a, row.chain_b, row.pdb_pos_b))
                     dists[
                         "intra" if row.chain_a == row.chain_b else "inter"
                     ][
@@ -69,11 +69,11 @@ def write_pml_script(dists, color_map, output_path, start=0, zoom=50):
         for d_type, sites in dists.items():
             for site in sites:
                 dists_dict = sites[site]
-                for i, dist in enumerate(dists_dict):
-                    chain_a, res_id_a, chain_b, res_id_b = dist
+                for _, dist in enumerate(dists_dict):
+                    i, (chain_a, res_id_a, chain_b, res_id_b) = dist
                     res_id_a = int(res_id_a) + start
                     res_id_b = int(res_id_b) + start
-                    file_content += f"dist {d_type}_{i + 1}_{site} , " \
+                    file_content += f"dist {d_type}_{i}_{site} , " \
                                     f"resid {res_id_a} and {pdb} and chain {chain_a} and name cb, " \
                                     f"resid {res_id_b} and {pdb} and chain {chain_b} and name cb\n"
         file_content += "show dashes\n" \

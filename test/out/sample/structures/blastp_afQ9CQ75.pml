@@ -5,9 +5,9 @@ set transparency, 0.8
 zoom center, 50;
 hide everything, show cartoon, chain A
 show surface, chain A and blastp_afQ9CQ75
-color 1, chain A
+color 3, chain A
 show cartoon, chain A
-dist intra_1_valid , resid 13 and blastp_afQ9CQ75 and chain A and name cb, resid 98 and blastp_afQ9CQ75 and chain A and name cb
+dist intra_5_valid , resid 13 and blastp_afQ9CQ75 and chain A and name cb, resid 98 and blastp_afQ9CQ75 and chain A and name cb
 show dashes
 set dash_gap, 0.1
 color blue, intra*_valid
