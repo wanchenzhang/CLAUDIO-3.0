@@ -4,7 +4,7 @@ import numpy as np
 
 def setup_pml_scripts(data, bg_color="white"):
     for pdb_id in data.pdb_id.unique():
-        if pdb_id != '' and pdb_id != '-' and not data[data.pdb_id == pdb_id].empty:
+        if pdb_id.replace(' ', '') != '' and pdb_id != '-' and not data[data.pdb_id == pdb_id].empty:
             xl_set = data[data.pdb_id == pdb_id]
             out_path = f"{'.'.join(xl_set.iloc[0].path.split('.')[:-1])}.pml"
 
@@ -38,7 +38,7 @@ def setup_pml_scripts(data, bg_color="white"):
                                "overlaps": [],
                                "same": []}}
             for i, row in xl_set.iterrows():
-                if not (pd.isna(row.pdb_pos_a) or pd.isna(row.pdb_pos_b)) and (row.XL_confirmed or '_' not in i):
+                if not (pd.isna(row.pdb_pos_a) or pd.isna(row.pdb_pos_b)) and (row.XL_confirmed or '_' not in str(i)):
                     dist_data = (i, (row.chain_a, row.pdb_pos_a, row.chain_b, row.pdb_pos_b))
                     dists[
                         "intra" if row.chain_a == row.chain_b else "inter"

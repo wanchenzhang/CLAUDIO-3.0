@@ -41,8 +41,8 @@ the tool.
 
 ### External Tools
 In order to run *CLAUDIO* you need to install the following external tools:
-* **Topolink** (for structural analysis)
-* **BLASTP** (for finding suitable protein structures)
+* **Topolink**[1] (for structural analysis)
+* **BLASTP**[2] (for finding suitable protein structures)
 
 #### Installation Instructions
 * **Blast** with *pdbaa* database (see [Windows or Unix Manuals](https://www.ncbi.nlm.nih.gov/books/NBK52638/), or see this [MacOS Manual](https://www.blaststation.com/intl/members/en/howtoblastmac.html))
@@ -68,20 +68,26 @@ To ease the execution of *CLAUDIO* you may want to ensure that these tools can b
 location of the `bin` directories in the input parameters.
 
 ### Online connection
-*CLAUDIO* calls upon the API of a number of bioinformatic online databases ([UniProt](https://www.uniprot.org/), 
-[RCSB](https://www.rcsb.org/), [AlphaFold](https://alphafold.ebi.ac.uk/), and 
-[SWISS-MODEL](https://swissmodel.expasy.org/)) during its computations. This means it cannot be run offline.\
+*CLAUDIO* calls upon the API of a number of bioinformatic online databases ([UniProt](https://www.uniprot.org/)[3], 
+[RCSB](https://www.rcsb.org/)[4], [AlphaFold](https://alphafold.ebi.ac.uk/)[5], and 
+[SWISS-MODEL](https://swissmodel.expasy.org/)[6]) during its computations. This means it cannot be run offline.\
 It is furthermore recommended having a stable internet connection, as otherwise certain API calls may not be answered or
 lead to empty results. This of course, also necessitates the database server's side to be running properly as well. If 
 errors or suspicious inconsistencies in the results persist due to this, you may want to try again later.
 
+### Offline Databases
+In addition to the aforementioned online databases, *CLAUDIO* accesses the SIFTS database[7,8]. The file in question can
+be found [here](https://github.com/KohlbacherLab/CLAUDIO/blob/main/claudio/data/pdb_chain_uniprot.csv).\
+We also recommend updating this file from time to time ([download here](http://ftp.ebi.ac.uk/pub/databases/msd/sifts/flatfiles/csv/pdb_chain_uniprot.csv.gz)) 
+in order to keep up its efficiency, though this is not a necessity (last updated: 26.09.2023).
+
 ## Usage
 *CLAUDIO* consists of a total of 4 modules. Each module can be run independently as long as appropriate inputs are 
 delivered. For details on how to run the modules individually see their respective README-files.
-* [Module 01 - Unique protein (pair) listing tool](https://github.com/KohlbacherLab/CLAUDIO/blob/main/module01/README.md)
-* [Module 02 - Structural distance analysis tool](https://github.com/KohlbacherLab/CLAUDIO/blob/main/module02/README.md)
-* [Module 03 - Overlapping peptide sequence analysis tool](https://github.com/KohlbacherLab/CLAUDIO/blob/main/module03/README.md)
-* [Module 04 - XL-type evaluation](https://github.com/KohlbacherLab/CLAUDIO/blob/main/module04/README.md)
+* [Module 01 - Unique protein (pair) listing tool](https://github.com/KohlbacherLab/CLAUDIO/blob/main/claudio/module01/README.md)
+* [Module 02 - Structural distance analysis tool](https://github.com/KohlbacherLab/CLAUDIO/blob/main/claudio/module02/README.md)
+* [Module 03 - Overlapping peptide sequence analysis tool](https://github.com/KohlbacherLab/CLAUDIO/blob/main/claudio/module03/README.md)
+* [Module 04 - XL-type evaluation](https://github.com/KohlbacherLab/CLAUDIO/blob/main/claudio/module04/README.md)
 
 For details on how to run the **full** pipeline continue below.
 
@@ -92,7 +98,7 @@ For details on how to run the **full** pipeline continue below.
 ## CLAUDIO - Full pipeline
 ### The CLI - Command Line Interface
 ```
-> python3 claudio.py [-i <filepath>] [-it <diretorypath>] [-o <directorypath/"">] [-p <"comma-separated str">] [-bl <directorypath/None>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-tl <directorypath>] [-x <comma-separated str>] [-lmin <float>] [-lmax <float>] [-t <"blastp">] [-e <float] [-qi <float>] [-cv <float>] [-r <float>] [-rt <True/False>] [-pc <float>] [-s <True/False>] [-v <int>] [-es <float>] [-dm <float>] [-ct <float>] [-c <filepath>] 
+> python3 claudio.py [-i <filepath>] [-it <diretorypath>] [-o <directorypath/"">] [-p <"comma-separated str">] [-bl <directorypath/None>] [-bldb <directorypath>] [-tl <directorypath>] [-x <comma-separated str>] [-lmin <float>] [-lmax <float>] [-t <"blastp">] [-e <float] [-qi <float>] [-cv <float>] [-r <float>] [-rt <True/False>] [-pc <float>] [-s <True/False>] [-v <int>] [-es <float>] [-dm <float>] [-ct <float>] [-c <filepath>] 
 
 -i,    --input-filepath,        path to inputfile,
                                 default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv"
@@ -168,7 +174,7 @@ directory containing the *pdbaa* database files, and "-tl / --topolink-bin" for 
 5. Make sure you customize the settings pertaining the cross-linking experiments specifications, e.g. 
 "-x / --xl-residues" for the aminoacids which may be cross-linked, and both "-lmin / --linker-minimum" and 
 "-lmax / --linker-maximum" for the cross-linker's range capability. Besides this specify the amino acids the used cross-
-linker is able to bind to. For this sepcify a tiny comma-separated list of possibly crosslinked residues, as 
+linker is able to bind to. For this specify a tiny comma-separated list of possibly crosslinked residues, as 
 one-letter-code symbols. Optionally you may add two colon-symbols, if they wish to specify the position of the 
 residue in the sequence and/or the atom in the residue used for the distance computation. After the first colon-symbol 
 they may place the atom type for the distance computation, e.g. 'CB', 'CA', or 'N', etc. . If no value is set here 'CB'
@@ -186,16 +192,16 @@ With this the relevant settings are defined. You may choose to further specify t
 of coverage, sequence identity, and e-value, as well as the resolution cutoff during the structure selection, or even 
 the advanced settings.
 
-You may see examples for all parameters in the [example configuration-file](https://github.com/KohlbacherLab/CLAUDIO/blob/main/config.txt),
+You may see examples for all parameters in the [example configuration-file](https://github.com/KohlbacherLab/CLAUDIO/blob/main/config/config.txt),
 which also serves as an alternative to supply all parameter inputs.
 
 
 ### Output
 This tool returns all the outputs listed in the modules (see 
-[module01](https://github.com/KohlbacherLab/CLAUDIO/tree/main/module01),
-[module02](https://github.com/KohlbacherLab/CLAUDIO/tree/main/module02),
-[module03](https://github.com/KohlbacherLab/CLAUDIO/tree/main/module03),
-[module04](https://github.com/KohlbacherLab/CLAUDIO/tree/main/module04)).
+[module01](https://github.com/KohlbacherLab/CLAUDIO/tree/main/claudio/module01),
+[module02](https://github.com/KohlbacherLab/CLAUDIO/tree/main/claudio/module02),
+[module03](https://github.com/KohlbacherLab/CLAUDIO/tree/main/claudio/module03),
+[module04](https://github.com/KohlbacherLab/CLAUDIO/tree/main/claudio/module04)).
 
 Note: All CSV-file outputs pertaining the input dataset are summarized into a single one (marked with 
 '_final.csv'-extension), e.g. the output CSV-file of module01 ending with '.sqcs', of module02 ending with 
@@ -225,3 +231,13 @@ python claudio/claudio.py --help
 * **Alexander Röhl**
 * **Hadeer Elhabashy**
 * **Eugen Netz**
+
+## References
+* [1] Ferrari, Allan JR, et al. "TopoLink: evaluation of structural models using chemical crosslinking distance constraints." Bioinformatics 35.17 (2019): 3169-3170.
+* [2] Altschul, Stephen F., et al. "Basic local alignment search tool." Journal of molecular biology 215.3 (1990): 403-410.
+* [3] UniProt Consortium. "UniProt: a worldwide hub of protein knowledge." Nucleic acids research 47.D1 (2019): D506-D515.
+* [4] Kouranov, Andrei, et al. "The RCSB PDB information portal for structural genomics." Nucleic acids research 34.suppl_1 (2006): D302-D305.
+* [5] David, Alessia, et al. "The AlphaFold database of protein structures: a biologist’s guide." Journal of molecular biology 434.2 (2022): 167336.
+* [6] Schwede, Torsten, et al. "SWISS-MODEL: an automated protein homology-modeling server." Nucleic acids research 31.13 (2003): 3381-3385.
+* [7] Dana, Jose M., et al. "SIFTS: updated Structure Integration with Function, Taxonomy and Sequences resource allows 40-fold increase in coverage of structure-based annotations for proteins." Nucleic acids research 47.D1 (2019): D482-D489.
+* [8] Velankar, Sameer, et al. "SIFTS: structure integration with function, taxonomy and sequences resource." Nucleic acids research 41.D1 (2012): D483-D489.

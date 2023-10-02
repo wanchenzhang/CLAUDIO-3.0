@@ -1,4 +1,5 @@
 import os
+import numpy as np
 
 
 def write_outputs(data, filename, compute_scoring, output_directory):
@@ -77,11 +78,12 @@ def write_outputs(data, filename, compute_scoring, output_directory):
     # select columns
     all_cols = ["unip_id_a", "unip_id_b", "pos_a", "pos_b", "pep_a", "pep_b", "res_pos_a", "res_pos_b", "seq_a",
                 "seq_b", "path", "pdb_id", "pdb_method", "pdb_resolution", "chain_a", "chain_b", "pdb_pos_a", "pdb_pos_b",
-                "pLDDT_a", "pLDDT_b", "is_interfaced", "topo_dist", "homo_adjacency", "homo_int_overl",
+                "pLDDT_a", "pLDDT_b", "is_interfaced", "topo_dist", "eucl_dist", "homo_adjacency", "homo_int_overl",
                 "homo_pep_overl", "evidence", "XL_type", "XL_confirmed", "swiss_model_homology"]
     out_columns = ["unip_id_a", "unip_id_b", "pos_a", "pos_b", "pep_a", "pep_b", "res_pos_a", "res_pos_b", "pdb_id",
                    "pdb_method", "pdb_resolution", "chain_a", "chain_b", "pdb_pos_a", "pdb_pos_b", "pLDDT_a", "pLDDT_b",
-                   "topo_dist", "homo_pep_overl", "evidence", "XL_type", "XL_confirmed", "swiss_model_homology"]
+                   "topo_dist", "eucl_dist", "homo_pep_overl", "evidence", "XL_type", "XL_confirmed",
+                   "swiss_model_homology"]
     if compute_scoring:
         out_columns.insert(20, "homo_adjacency")
         out_columns.insert(21, "homo_int_overl")
@@ -91,8 +93,12 @@ def write_outputs(data, filename, compute_scoring, output_directory):
 
     data[out_columns].to_csv(f"{output_directory}{filename}_final.csv")
 
-    # TODO: comment this out
-    #write_small_test_sets(data)
+    # # TODO: comment this out
+    # try:
+    #     write_small_test_sets(data)
+    # except:
+    #     print("Warning! Creating sample sets failed (not enough datapoints found).")
+    #     pass
 
 
 def write_small_test_sets(data):
@@ -101,7 +107,6 @@ def write_small_test_sets(data):
     # input data: pd.DataFrame, filename: str, compute_scoring: bool, output_directory: str
     # no return
 
-    # entry1,entry2,position1,position2,peptide1,peptide2,k_pos1,k_pos2,Organism
     test_data = data[(data.pdb_id.str.len() > 4) & (~data.index.str.contains('_'))][
         ["unip_id_a", "unip_id_b", "pos_a", "pos_b", "pep_a", "pep_b", "res_pos_a", "res_pos_b"]
     ]
@@ -114,5 +119,14 @@ def write_small_test_sets(data):
                               "pep_b": "peptide2",
                               "res_pos_a": "k_pos1",
                               "res_pos_b": "k_pos2"}, inplace=True)
-    test_data.sample(100).to_csv(f"../test/sample_data_100.csv")
-    test_data.sample(10).to_csv(f"../test/sample_data_10.csv")
+    try:
+        pdb_mchains_found = {i: not test_data[test_data.index.str.startswith(i.split('_')[0]) &
+                                              test_data.index.str.contains('_') &
+                                              test_data.pdb_id.str.len() == 4].empty
+                             for i in test_data.index}
+        new_test_data = test_data[~pdb_mchains_found[test_data.index]]
+        new_test_data.sample(100).to_csv(f"../test/sample_data_100.csv", index=False)
+        new_test_data.sample(10).to_csv(f"../test/sample_data_10.csv", index=False)
+    except:
+        test_data.sample(100).to_csv(f"../test/sample_data_100.csv", index=False)
+        test_data.sample(10).to_csv(f"../test/sample_data_10.csv", index=False)
