@@ -59,7 +59,7 @@ topolink_bin = None
 #8.tiny comma-separated list of possibly crosslinked residues, as one-letter-code symbols, by the crosslinker.
 #Optionally the user may add two colon-symbols, if they wish to specify the position of the residue in the
 #sequence and/or the atom in the residue used for the distance computation. After the first colon-symbol they may place
-#the atom type for the distance computation, e.g. 'CB', 'CA', or 'N', etc. . If no value is set here 'CB'
+#the atom type for the distance computation (allowed: "N", "CA", "C", "O", "CB"). If no value is set here 'CB'
 #will be used by default. After the second colon-symbol they may place one of three position values: 0 if the residue
 #may occur anywhere in the protein, 1 if the residue has to be at the N-terminus, or -1 if the residue has to be at the
 #C-terminus (ex.: use "K:CB:0" to calculate the cross-link distance between lysin C-beta-atoms at any position in the

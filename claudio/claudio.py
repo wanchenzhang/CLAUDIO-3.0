@@ -56,7 +56,8 @@ def main(input_filepath, input_temppath, projections, read_temps, xl_residues, s
 
     params = [input_filepath, input_temppath, projections, read_temps, xl_residues, search_tool, e_value, query_id,
               coverage, res_cutoff, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,
-              distance_maximum, cutoff, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin, compute_scoring, verbose_level, config]
+              distance_maximum, cutoff, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin,
+              compute_scoring, verbose_level, config]
 
     input_filepath, input_temppath, projections, read_temps, xl_residues, search_tool, e_value, query_id,\
         coverage, res_cutoff, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,\

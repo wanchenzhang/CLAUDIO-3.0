@@ -47,19 +47,21 @@ def create_histogram(data, filename, output_directory, linker_minimum, linker_ma
     plt.xticks(bins, x_labels)
     plt.legend()
     plt.title("Frequency of structural crosslink distances")
-    plt.savefig(f"{output_directory}{filename}_hist.png")
+    plt.savefig(f"{output_directory}{filename}_hist_unfiltered.png")
 
     # Clear figure
     plt.clf()
 
     # pdb method histogram
-    method_data = data[["pdb_method"]].copy().astype(str)
+    method_data = data[["pdb_id", "pdb_method"]].copy()
+    method_data = method_data.groupby("pdb_id").apply(lambda x: x.iloc[0])
+    method_data = method_data.pdb_method.astype(str)
     labels = ["selected structure"]
     label_dict = {x: i for i, x in enumerate(sorted(pd.unique(method_data.values.ravel('K'))))}
     bins = list(range(len(label_dict) + 1))
     bin_centers = np.diff(bins) * .5 + bins[:-1]
     plt.figure(figsize=(6.5, 6), constrained_layout=True)
-    freq, _, _ = plt.hist(method_data["pdb_method"].map(label_dict), bins=bins, color=colors[0], label=f"{labels[0]}")
+    freq, _, _ = plt.hist(method_data.map(label_dict), bins=bins, color=colors[0], label=f"{labels[0]}")
     if add_labels:
         known_xy = []
         for fr, x in zip(freq, bin_centers):
@@ -87,16 +89,17 @@ def create_histogram(data, filename, output_directory, linker_minimum, linker_ma
     plt.clf()
 
     # pdb resolution histogram
-    res_data = data[["pdb_resolution"]].copy()
+    res_data = data[["pdb_id", "pdb_resolution"]].copy()
+    res_data = res_data.groupby("pdb_id").apply(lambda x: x.iloc[0])
     labels = ["selected structure"]
     res_data[res_data == "ALPHAFOLD"] = -1
     res_data[res_data == '-'] = -2
-    res_data = res_data.astype(float)
+    res_data = res_data.pdb_resolution.astype(float)
     res_data[res_data > 13] = 14
     bins = [x - 2 for x in range(18)]
     bin_centers = np.diff(bins) * .5 + bins[:-1]
     plt.figure(figsize=(6.5, 6), constrained_layout=True)
-    freq, _, _ = plt.hist(res_data["pdb_resolution"], bins=bins, color=colors[0], label=f"{labels[0]}")
+    freq, _, _ = plt.hist(res_data, bins=bins, color=colors[0], label=f"{labels[0]}")
     if add_labels:
         known_xy = []
         for fr, x in zip(freq, bin_centers):

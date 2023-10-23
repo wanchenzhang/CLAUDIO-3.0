@@ -12,7 +12,7 @@ def create_homo_signal_histograms(data, filename, output_directory):
     # adjacency histogram
     adj_data = data["homo_adjacency"].copy()
     adj_data = adj_data[~np.isnan(adj_data)]
-    colors = ["#9ACE9A", "#464444"]
+    colors = ["#9ACE9A", "silver"]
     if not adj_data.empty:
         bins = [round(x * 0.1, 1) for x in range(11)]
         plt.figure(figsize=(6.5, 6), constrained_layout=True)
@@ -94,9 +94,8 @@ def create_homo_signal_histograms(data, filename, output_directory):
             abs_val = int(np.round(pct / 100 * np.sum(all_vals)))
             return f"{pct:.1f}%\n(n={abs_val})"
 
-        wedges, _, autos = plt.pie(data, autopct=lambda x: percentages(x, data),
-                                   colors=colors, textprops=dict(weight="bold"))
-        autos[1].set_color('w')
+        wedges, _, _ = plt.pie(data, autopct=lambda x: percentages(x, data),
+                                   colors=colors, textprops={"weight": "bold", "color": 'black'})
         plt.legend(wedges, labels)
         plt.title("Boolean distinction whether peptides overlap or not (intra-links only)")
         plt.savefig(f"{output_directory}{filename}_pep_ovl_pie.png")

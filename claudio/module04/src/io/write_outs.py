@@ -93,21 +93,20 @@ def write_outputs(data, filename, compute_scoring, output_directory):
 
     data[out_columns].to_csv(f"{output_directory}{filename}_final.csv")
 
-    # # TODO: comment this out
     # try:
     #     write_small_test_sets(data)
-    # except:
-    #     print("Warning! Creating sample sets failed (not enough datapoints found).")
+    # except Exception:
     #     pass
 
 
 def write_small_test_sets(data):
-    # write small sample data sets, one containing 10 and one with 100 samples of xls mapped onto alphafold structures
+    # write small sample datasets, one containing 10 and one with 100 samples of xls mapped onto alphafold structures
     #
     # input data: pd.DataFrame, filename: str, compute_scoring: bool, output_directory: str
     # no return
 
-    test_data = data[(data.pdb_id.str.len() > 4) & (~data.index.str.contains('_'))][
+    test_data = data[(data.pdb_id.astype(str).str.len() > 4) &
+                     (~data.index.astype(str).str.contains('_'))][
         ["unip_id_a", "unip_id_b", "pos_a", "pos_b", "pep_a", "pep_b", "res_pos_a", "res_pos_b"]
     ]
     test_data["Organism"] = ""
@@ -119,14 +118,18 @@ def write_small_test_sets(data):
                               "pep_b": "peptide2",
                               "res_pos_a": "k_pos1",
                               "res_pos_b": "k_pos2"}, inplace=True)
-    try:
-        pdb_mchains_found = {i: not test_data[test_data.index.str.startswith(i.split('_')[0]) &
-                                              test_data.index.str.contains('_') &
-                                              test_data.pdb_id.str.len() == 4].empty
-                             for i in test_data.index}
-        new_test_data = test_data[~pdb_mchains_found[test_data.index]]
-        new_test_data.sample(100).to_csv(f"../test/sample_data_100.csv", index=False)
-        new_test_data.sample(10).to_csv(f"../test/sample_data_10.csv", index=False)
-    except:
-        test_data.sample(100).to_csv(f"../test/sample_data_100.csv", index=False)
+    pdb_mchains_found = {str(i): not data[data.index.astype(str).str.startswith(i) &
+                                          data.index.astype(str).str.contains('_')].empty
+                         for i in data.index if '_' not in str(i)}
+    test_data = test_data.loc[(not pdb_mchains_found[str(i)] for i in test_data.index)]
+    if len(test_data.index) >= 10:
+        print("Wrote xl dataset with 10 samples.")
         test_data.sample(10).to_csv(f"../test/sample_data_10.csv", index=False)
+
+        if len(test_data.index) >= 100:
+            print("Wrote xl dataset with 100 samples.")
+            test_data.sample(100).to_csv(f"../test/sample_data_100.csv", index=False)
+
+    if len(test_data.index) < 10:
+        print(f"Not enough datapoints to create sample dataset (found only {len(test_data.index)}).")
+        raise Exception(f"Not enough datapoints to create sample dataset (found only {len(test_data.index)}).")

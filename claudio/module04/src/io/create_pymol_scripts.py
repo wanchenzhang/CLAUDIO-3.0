@@ -4,9 +4,12 @@ import numpy as np
 
 def setup_pml_scripts(data, bg_color="white"):
     for pdb_id in data.pdb_id.unique():
-        if pdb_id.replace(' ', '') != '' and pdb_id != '-' and not data[data.pdb_id == pdb_id].empty:
-            xl_set = data[data.pdb_id == pdb_id]
-            out_path = f"{'.'.join(xl_set.iloc[0].path.split('.')[:-1])}.pml"
+        if pdb_id.replace(' ', '') != '' and \
+                pdb_id != '-' and \
+                not data[(data.pdb_id == pdb_id) & (data.path != '-')].empty:
+            xl_set = data[(data.pdb_id == pdb_id) & (data.path != '-')]
+            pdb_path_id = '.'.join(xl_set.iloc[0].path.split('.')[:-1])
+            out_path = f"{pdb_path_id}.pml"
 
             chains = pd.concat([xl_set.chain_a, xl_set.chain_b]).unique()
             chains_dict = {}
@@ -14,38 +17,43 @@ def setup_pml_scripts(data, bg_color="white"):
             for chain in chains:
                 dps_with_chain = xl_set[(xl_set.chain_a == chain) | (xl_set.chain_b == chain)]
                 if np.any(~(pd.isna(dps_with_chain.pdb_pos_a) | pd.isna(dps_with_chain.pdb_pos_b))):
-                    color_i = color_i + 1 if color_i in [2, 4] else color_i
+                    color_i = color_i + 1 if color_i in [2, 4, 6, 13] else color_i
                     chains_dict[chain] = color_i
                     color_i += 1
             cm_map = {"bg": bg_color,
                       "chain": chains_dict,
-                      "intra": {"valid": "blue",
-                                "out_range": "red",
-                                "overlaps": "red",
-                                "same": "red"},
-                      "inter": {"valid": "blue",
-                                "out_range": "red",
-                                "overlaps": "red",
-                                "same": "red"}
+                      "intra": {"valid": 2,
+                                "out_range": 2,
+                                "overlaps": 2,
+                                "same": 2,
+                                "unknown": "black"},
+                      "inter": {"valid": 13,
+                                "out_range": 13,
+                                "overlaps": 13,
+                                "same": 13,
+                                "unknown": "black"}
                       }
 
             dists = {"intra": {"valid": [],
                                "out_range": [],
                                "overlaps": [],
-                               "same": []},
+                               "same": [],
+                               "unknown": []},
                      "inter": {"valid": [],
                                "out_range": [],
                                "overlaps": [],
-                               "same": []}}
+                               "same": [],
+                               "unknown": []}}
             for i, row in xl_set.iterrows():
                 if not (pd.isna(row.pdb_pos_a) or pd.isna(row.pdb_pos_b)) and (row.XL_confirmed or '_' not in str(i)):
                     dist_data = (i, (row.chain_a, row.pdb_pos_a, row.chain_b, row.pdb_pos_b))
                     dists[
                         "intra" if row.chain_a == row.chain_b else "inter"
                     ][
-                        "valid" if not row.evidence else
+                        "valid" if (not row.evidence) and not pd.isna(row.topo_dist) else
                         ("out_range" if "distance" in row.evidence else
-                         ("overlaps" if "overlap" in row.evidence else "same"))
+                         ("overlaps" if ("overlap" in row.evidence) else
+                          ("unknown" if pd.isna(row.topo_dist) else "same")))
                     ].append(dist_data)
 
             write_pml_script(dists, cm_map, out_path)
@@ -83,6 +91,11 @@ def write_pml_script(dists, color_map, output_path, start=0, zoom=50):
             color_specified = d_type in color_map.keys()
             for site in sites:
                 file_content += f"color {color_map[d_type][site] if color_specified else 'white'}, {d_type}*_{site}\n"
+
+        file_content += f"set dash_gap, 1, *_out_range\n" \
+                        f"set dash_gap, 1, *_overlaps\n" \
+                        f"set dash_gap, 1, *_same\n" \
+                        f"hide dashes, inter*_unknown\n"
 
         file_content += f"set dash_width, 9\n" \
                         f"center\n" \

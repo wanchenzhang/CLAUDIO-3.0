@@ -32,7 +32,8 @@ def main(input_directory, input_filepath, input_temppath, search_tool, xl_residu
     output_directory = create_out_path(output_directory, input_filepath)
 
     # Create temporary dir
-    temp_dir = create_temp_dir(input_temppath, "dist_reeval")
+    temp_dir = create_out_path(input_temppath if input_temppath else
+                               output_directory + "temp/dist_reeval", input_filepath)
 
     # Add '/' to end of directory paths if not there
     if not input_directory.endswith('/'):
@@ -90,7 +91,8 @@ def inputs_valid(input_directory, input_filename, search_tool, xl_residues, pldd
             if search_tool in ["blastp", "hhsearch"]:
                 # check whether xl_residues can be turned into a proper DataFrame, else return False
                 try:
-                    if build_xl_dataset(xl_residues) is None:
+                    xl_set = build_xl_dataset(xl_residues)
+                    if xl_set is None:
                         return False
 
                     # check whether plddt cutoff has valid value

@@ -41,8 +41,8 @@ the tool.
 
 ### External Tools
 In order to run *CLAUDIO* you need to install the following external tools:
-* **Topolink**[1] (for structural analysis)
-* **BLASTP**[2] (for finding suitable protein structures)
+* **Topolink**[[1]](https://github.com/KohlbacherLab/CLAUDIO/tree/main#references) (for structural analysis)
+* **BLASTP**[[2]](https://github.com/KohlbacherLab/CLAUDIO/tree/main#references) (for finding suitable protein structures)
 
 #### Installation Instructions
 * **Blast** with *pdbaa* database (see [Windows or Unix Manuals](https://www.ncbi.nlm.nih.gov/books/NBK52638/), or see this [MacOS Manual](https://www.blaststation.com/intl/members/en/howtoblastmac.html))
@@ -68,16 +68,20 @@ To ease the execution of *CLAUDIO* you may want to ensure that these tools can b
 location of the `bin` directories in the input parameters.
 
 ### Online connection
-*CLAUDIO* calls upon the API of a number of bioinformatic online databases ([UniProt](https://www.uniprot.org/)[3], 
-[RCSB](https://www.rcsb.org/)[4], [AlphaFold](https://alphafold.ebi.ac.uk/)[5], and 
-[SWISS-MODEL](https://swissmodel.expasy.org/)[6]) during its computations. This means it cannot be run offline.\
+*CLAUDIO* calls upon the API of a number of bioinformatic online databases ([UniProt](https://www.uniprot.org/)
+[[3]](https://github.com/KohlbacherLab/CLAUDIO/tree/main#references), [RCSB](https://www.rcsb.org/)
+[[4]](https://github.com/KohlbacherLab/CLAUDIO/tree/main#references), [AlphaFold](https://alphafold.ebi.ac.uk/)
+[[5]](https://github.com/KohlbacherLab/CLAUDIO/tree/main#references), and [SWISS-MODEL](https://swissmodel.expasy.org/)
+[[6]](https://github.com/KohlbacherLab/CLAUDIO/tree/main#references)) during its computations. This means it cannot be 
+run offline.\
 It is furthermore recommended having a stable internet connection, as otherwise certain API calls may not be answered or
 lead to empty results. This of course, also necessitates the database server's side to be running properly as well. If 
 errors or suspicious inconsistencies in the results persist due to this, you may want to try again later.
 
 ### Offline Databases
-In addition to the aforementioned online databases, *CLAUDIO* accesses the SIFTS database[7,8]. The file in question can
-be found [here](https://github.com/KohlbacherLab/CLAUDIO/blob/main/claudio/data/pdb_chain_uniprot.csv).\
+In addition to the aforementioned online databases, *CLAUDIO* accesses the SIFTS database
+[[7,8]](https://github.com/KohlbacherLab/CLAUDIO/tree/main#references). The file in question can be found 
+[here](https://github.com/KohlbacherLab/CLAUDIO/blob/main/claudio/data/pdb_chain_uniprot.csv).\
 We also recommend updating this file from time to time ([download here](http://ftp.ebi.ac.uk/pub/databases/msd/sifts/flatfiles/csv/pdb_chain_uniprot.csv.gz)) 
 in order to keep up its efficiency, though this is not a necessity (last updated: 26.09.2023).
 
@@ -123,7 +127,7 @@ For details on how to run the **full** pipeline continue below.
 -x,    --xl-residues,           comma-separated one-letter-code residues, optional: add two ':' after the 
                                 one-letter-code symbol of the residue in order to specify full sequence position 
                                 (either 1 for start, or -1 for end position) and/or the atom used for the distance
-                                computation, default="K,M:N:1"
+                                computation (allowed: "N", "CA", "C", "O", "CB"), default="K,M:N:1"
 -lmin, --linker-minimum,        float value used as minimal crosslinker range in angstrom, default=5.0
 -lmax, --linker-maximum,        float value used as maximal crosslinker range in angstrom, default=35.0
 -t,    --search-tool,           always set to "blastp" (as of this version), specifying the tool which should be used for pdb 

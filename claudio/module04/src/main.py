@@ -6,7 +6,7 @@ import ast
 from module04.src.io.read_ins import read_inputs
 from module04.src.algorithm.combine_reevals import combine_inter_reevaluations
 from module04.src.algorithm.retrieve_oligo_state import retrieve_oligomeric_states
-from module04.src.algorithm.create_histo import create_histograms
+from module04.src.algorithm.create_plots import create_plots
 from module04.src.io.create_pymol_scripts import setup_pml_scripts
 from module04.src.io.write_outs import write_outputs
 
@@ -65,14 +65,21 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, linker_m
 
         # Clean dataset for output
         data = clean_dataset(data)
-
-        # Create inter score histogram
-        verbose_print("Create score histogram", 0, verbose_level)
-        create_histograms(data, filename, cutoff, compute_scoring, output_directory)
+        data[["unip_id_a", "unip_id_b", "pos_a", "pos_b", "pep_a", "pep_b", "res_pos_a", "res_pos_b", "pdb_id",
+              "pdb_method", "pdb_resolution", "chain_a", "chain_b", "pdb_pos_a", "pdb_pos_b", "pLDDT_a", "pLDDT_b",
+              "topo_dist", "eucl_dist", "homo_pep_overl", "evidence", "XL_type", "XL_confirmed",
+              "swiss_model_homology"]].to_csv(f"{output_directory}{filename}_extended.csv")
 
         # Write pymol scripts
         verbose_print("Write pymol scripts", 0, verbose_level)
         setup_pml_scripts(data)
+
+        # Minimze dataset
+        data = clean_dataset(data, "minimize")
+
+        # Create inter score histogram
+        verbose_print("Create score histogram", 0, verbose_level)
+        create_plots(data, filename, cutoff, compute_scoring, output_directory, linker_minimum, linker_maximum)
 
         # Write final csv containing all computed information, fastas for alphafold and protein-specific csv with
         # interaction restraints

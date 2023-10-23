@@ -33,7 +33,8 @@ def main(input_filepath, input_temppath, do_structure_search, search_tool, e_val
     start_time = time.time()
 
     # Create temporary dir
-    temp_dir = create_temp_dir(input_temppath, "structure_search")
+    temp_dir = create_out_path(input_temppath if input_temppath else
+                               output_directory + "temp/structure_search", input_filepath)
 
     # Check output directory
     output_directory = create_out_path(output_directory, input_filepath)

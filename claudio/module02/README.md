@@ -15,7 +15,7 @@
 -x,    --xl-residues,           comma-separated one-letter-code residues, optional: add two ':' after the 
                                 one-letter-code symbol of the residue in order to specify full sequence position 
                                 (either 1 for start, or -1 for end position) and/or the atom used for the distance
-                                computation, default="K,M:N:1"
+                                computation (allowed: "N", "CA", "C", "O", "CB"), default="K,M:N:1"
 -pc,   --plddt-cutoff,          float value used as cutoff for alphafold structure prediction confidences (plddt), 
                                 default=70.0
 -lmin, --linker-minimum,        float value used as minimal crosslinker range in angstrom, default=5.0

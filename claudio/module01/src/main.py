@@ -43,8 +43,10 @@ def main(input_filepath, input_temppath, projections, uniprot_search, xl_residue
     output_directory = create_out_path(output_directory, input_filepath)
 
     # Create temporary dirs
-    uniprot_search_temp_dir = create_temp_dir(input_temppath, "uniprot_search")
-    unique_protein_temp_dir = create_temp_dir(input_temppath, "unique_protein_list")
+    uniprot_search_temp_dir = create_out_path(input_temppath if input_temppath else
+                                              output_directory + "temp/uniprot_search", input_filepath)
+    unique_protein_temp_dir = create_out_path(input_temppath if input_temppath else
+                                              output_directory + "temp/unique_protein_list", input_filepath)
 
     # Add '/' to end of directory paths if not there
     if not output_directory.endswith('/'):
