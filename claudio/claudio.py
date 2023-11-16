@@ -156,7 +156,7 @@ def read_config(path, args):
 
     with open(path, 'r') as f:
         config_content = f.read()
-        input_lines = [l.replace('"', "'").replace(" ", "")
+        input_lines = [l.replace('"', "'").replace(" = ", "=").replace("= ", "=").replace(" =", "=")
                        for l in config_content.split('\n') if l and not l.startswith('#')]
         line_markers = ["input_filepath=", "input_temppath=", "projections=", "read_temps=", "xl_residues=",
                         "search_tool=", "e_value=", "query_id=", "coverage=", "res_cutoff=", "plddt_cutoff=",

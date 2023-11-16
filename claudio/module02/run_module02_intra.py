@@ -30,13 +30,13 @@ from utils.utils import *
 def main(input_filepath, input_temppath, read_temps, search_tool, xl_residues, plddt_cutoff, linker_minimum,
          linker_maximum, e_value, query_id, coverage, res_cutoff, output_directory, blast_bin, blast_db, hhsearch_bin,
          hhsearch_db, topolink_bin, verbose_level):
-
-    # Translate eventual windows paths and evaluate value of boolean inputs
+    # Get absolute paths and translate eventual windows paths
+    list_of_paths = [input_filepath, input_temppath, output_directory,
+                     blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin]
     input_filepath, input_temppath, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin = \
-        translate_windowsos_path(
-            [input_filepath, input_temppath, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db,
-             topolink_bin]
-        )
+        clean_input_paths(list_of_paths)
+
+    # Evaluate value of boolean inputs
     read_temps = evaluate_boolean_input(read_temps)
 
     if not output_directory.endswith('/'):
