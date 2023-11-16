@@ -9,14 +9,14 @@ from module04.src.main import main as run_claudio_xl
 
 from utils.utils import *
 
-_DEFAULT_OPTIONS = ["../test/sample_data_random.csv", "",
+_DEFAULT_OPTIONS = ["test/sample_data_random.csv", None,
                     "peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2", False, "K,M:N:1", "blastp",
-                    1e-5, 90.0, 50.0, 6.5, 70.0, 0.0, 35.0, None, 50.0, 0.0, "../test/out/sample/", None,
+                    1e-5, 90.0, 50.0, 6.5, 70.0, 0.0, 35.0, None, 50.0, 0.0, "test/out/sample/", None,
                     "$HOME/BLAST/db", None, "$HOME/HHSUITE/db", None, False, 2]
-# ['../test/sample_data_random.csv', '',
+# ['test/sample_data_random.csv', None,
 #  'peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2',
 #  False, 'K,M:N:1', 'blastp', 1e-05, 90.0, 50.0, 6.5, 70.0, 0.0, 35.0,
-#  'None', 50.0, 0.0, '../test/out/sample/', 'None', '$HOME/BLAST/db', None,
+#  'None', 50.0, 0.0, 'test/out/sample/', 'None', '$HOME/BLAST/db', None,
 #  '$HOME/HHSUITE/db', 'None', False, 2]
 
 
@@ -169,10 +169,6 @@ def read_config(path, args):
         # Check whether boolean params can be correctly converted
         config_params["read_temps="] = evaluate_boolean_input(config_params["read_temps="])
         config_params["compute_scoring="] = evaluate_boolean_input(config_params["compute_scoring="])
-
-        # Set input_temppath to empty string, if given None
-        if config_params["input_temppath="] == "None":
-            config_params["input_temppath="] = ""
 
         # Check whether already given args have default value
         defaults = _DEFAULT_OPTIONS.copy()

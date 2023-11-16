@@ -95,7 +95,7 @@ def write_pml_script(dists, color_map, output_path, start=0, zoom=50):
         file_content += f"set dash_gap, 1, *_out_range\n" \
                         f"set dash_gap, 1, *_overlaps\n" \
                         f"set dash_gap, 1, *_same\n" \
-                        f"hide dashes, inter*_unknown\n"
+                        f"hide dashes, *_unknown\n"
 
         file_content += f"set dash_width, 9\n" \
                         f"center\n" \

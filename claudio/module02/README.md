@@ -6,7 +6,7 @@
 
 -i,    --input-filepath,        path to inputfile,
                                 default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv"
--it,   --input-temppath,        path to directory for temporary files, default=""
+-it,   --input-temppath,        path to directory for temporary files, default=None
 -rt,   --read-temps,            if the tool has been run before with the same input a temporary file was saved, which 
                                 can be used to retireve the previouse results of the uniprot and structure searches,
                                 default=False

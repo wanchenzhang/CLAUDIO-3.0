@@ -4,12 +4,12 @@
 #1.filepath to dataset
 #type: string
 #ex.: /home/me/desktop/my_dataset.csv
-input_filepath = ../test/sample_data_random.csv
+input_filepath = test/sample_data_random.csv
 
 #2.path to directory for temporary files generated during the computation process, if given 'None' the default path
 #will be used. NOTE: If multiple computations with CLAUDIO are run at the same this path MUST BE DIFFERENT. Otherwise
 #the computation steps are likely to overwrite each other. If 'None' is given, the directory in question will be
-#'data/temp/' in the tool directory.
+#'temp/' in the output directory.
 #types: string / None
 #ex.: /home/me/desktop/claudio_temps
 input_temppath = None
@@ -17,7 +17,7 @@ input_temppath = None
 #3.output directory for results, if left empty all generated outputs will be added to the directory of the inputfile
 #type: string
 #ex.: /home/me/desktop/my_outputs
-output_directory = ../test/out/sample/
+output_directory = test/out/sample/
 
 #4.column name projections. A comma-separated position-sensitive list that names the column names of the users dataset
 #containing the necessary information for the tool. The column names should contain and should be given in the following

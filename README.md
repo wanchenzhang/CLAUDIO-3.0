@@ -106,7 +106,7 @@ For details on how to run the **full** pipeline continue below.
 
 -i,    --input-filepath,        path to inputfile,
                                 default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv"
--it,   --input-temppath,        path to directory for temporary files, default=""
+-it,   --input-temppath,        path to directory for temporary files, default=None
 -o,    --output-directory,      output directory for produced csv-files, default="data/out/full"
 -p,    --projections,           comma-separated position-sensitive list that names the column names of the users dataset
                                 containing the necessary information for the tool. The column names should contain and 

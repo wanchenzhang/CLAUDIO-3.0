@@ -14,7 +14,7 @@ from utils.utils import *
 
 @click.command()
 @click.option("-i", "--input-filepath", default="data/out/unique_protein_list/sample_data.sqcs")
-@click.option("-it", "--input-temppath", default="")
+@click.option("-it", "--input-temppath", default=None)
 @click.option("-s", "--do-structure-search", default=True)
 @click.option("-t", "--search-tool", default="blastp")
 @click.option("-e", "--e-value", default=1e-5)
@@ -32,8 +32,13 @@ def main(input_filepath, input_temppath, do_structure_search, search_tool, e_val
     verbose_print("Start structure search", 0, verbose_level)
     start_time = time.time()
 
+    # Get absolute paths and translate eventual windows paths
+    list_of_paths = [input_filepath, input_temppath, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db]
+    input_filepath, input_temppath, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db = \
+        clean_input_paths(list_of_paths)
+
     # Create temporary dir
-    temp_dir = create_out_path(input_temppath if input_temppath else
+    temp_dir = create_out_path(input_temppath + "/structure_search" if input_temppath is not None else
                                output_directory + "temp/structure_search", input_filepath)
 
     # Check output directory

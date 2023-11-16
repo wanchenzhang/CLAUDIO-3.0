@@ -14,7 +14,7 @@ from utils.utils import *
 @click.command()
 @click.option("-i", "--input-directory", default="data/out/structure_search/structures")
 @click.option("-i2", "--input-filepath", default="data/out/unique_protein_list/sample_data.sqcs_structdi.csv")
-@click.option("-it", "--input-temppath", default="")
+@click.option("-it", "--input-temppath", default=None)
 @click.option("-t", "--search-tool", default="blastp")
 @click.option("-x", "--xl-residues", default="K,M:N:1")
 @click.option("-p", "--plddt-cutoff", default=70.0)
@@ -28,11 +28,15 @@ def main(input_directory, input_filepath, input_temppath, search_tool, xl_residu
     verbose_print("Start intra interaction check", 0, verbose_level)
     start_time = time.time()
 
+    # Get absolute paths and translate eventual windows paths
+    list_of_paths = [input_filepath, input_temppath, output_directory, topolink_bin]
+    input_filepath, input_temppath, output_directory, topolink_bin = clean_input_paths(list_of_paths)
+
     # Check output directory
     output_directory = create_out_path(output_directory, input_filepath)
 
     # Create temporary dir
-    temp_dir = create_out_path(input_temppath if input_temppath else
+    temp_dir = create_out_path(input_temppath + "/dist_reeval" if input_temppath is not None else
                                output_directory + "temp/dist_reeval", input_filepath)
 
     # Add '/' to end of directory paths if not there

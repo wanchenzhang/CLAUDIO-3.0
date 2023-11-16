@@ -14,14 +14,23 @@ def verbose_print(print_string, threshold, verbose_level, end='\n'):
         print(print_string, end=end)
 
 
-def translate_windowsos_path(path_strs):
-    # replace backslashes in given path string to ensure proper interaction in python
+def clean_input_paths(path_strs):
+    # get absolute paths and apply windowsos path translation, if not NoneType (else return None) and if it does not
+    # contain an environmental variable (else return it as is)
     #
     # input path_strs: iterable(str)
-    # return list(str)
+    # return abs_paths: list(str)
 
-    return [path_str.replace("\\\\", '/').replace('\\', '/') if path_str not in [None, "None"] else None
-            for path_str in path_strs]
+    abs_paths = []
+    for path_str in path_strs:
+        if path_str in [None, "None"]:
+            abs_paths.append(None)
+        elif '$' in path_str:
+            abs_paths.append(path_str)
+        else:
+            abs_paths.append(os.path.abspath(path_str.replace("\\\\", '/').replace('\\', '/')))
+
+    return abs_paths
 
 
 def create_out_path(output_directory, input_filepath):

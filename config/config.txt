@@ -2,9 +2,9 @@
 ## MAIN SETTINGS
 ########################################################################################################################
 # INPUT AND OUTPUT
-input_filepath = ../test/sample_data_random.csv
+input_filepath = test/sample_data_random.csv
 input_temppath = None
-output_directory = ../test/out/sample/
+output_directory = test/out/sample/
 projections = peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2
 
 

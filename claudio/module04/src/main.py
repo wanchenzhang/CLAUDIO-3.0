@@ -30,10 +30,11 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, linker_m
     verbose_print("Start New Inter Interaction Analysis", 0, verbose_level)
     start_time = time.time()
 
-    # Translate eventual windows paths and evaluate value of boolean inputs
-    input_filepath, input_filepath2, output_directory = translate_windowsos_path(
-        [input_filepath, input_filepath2, output_directory]
-    )
+    # Get absolute paths and translate eventual windows paths
+    list_of_paths = [input_filepath, input_filepath2, output_directory]
+    input_filepath, input_filepath2, output_directory = clean_input_paths(list_of_paths)
+
+    # Evaluate value of boolean inputs
     compute_scoring = evaluate_boolean_input(compute_scoring)
 
     # Check output directory

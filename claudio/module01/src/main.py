@@ -14,7 +14,7 @@ from utils.utils import *
 
 @click.command()
 @click.option("-i", "--input-filepath", default="data/in/sample_data.csv")
-@click.option("-it", "--input-temppath", default="")
+@click.option("-it", "--input-temppath", default=None)
 @click.option("-p", "--projections", default="peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2")
 @click.option("-s", "--uniprot-search", default=True)
 @click.option("-x", "--xl-residues", default="K,M:N:1")
@@ -30,11 +30,12 @@ def main(input_filepath, input_temppath, projections, uniprot_search, xl_residue
     verbose_print("Start Unique Protein List Tool", 0, verbose_level)
     start_time = time.time()
 
-    # Translate eventual windows paths and evaluate value of boolean inputs
+    # Get absolute paths and translate eventual windows paths
+    list_of_paths = [input_filepath, input_temppath, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db]
     input_filepath, input_temppath, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db = \
-        translate_windowsos_path(
-            [input_filepath, input_temppath, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db]
-        )
+        clean_input_paths(list_of_paths)
+
+    # Evaluate value of boolean inputs
     uniprot_search = evaluate_boolean_input(uniprot_search)
 
     filename = '.'.join(input_filepath.split('/')[-1].split('.')[:-1])
@@ -43,9 +44,9 @@ def main(input_filepath, input_temppath, projections, uniprot_search, xl_residue
     output_directory = create_out_path(output_directory, input_filepath)
 
     # Create temporary dirs
-    uniprot_search_temp_dir = create_out_path(input_temppath if input_temppath else
+    uniprot_search_temp_dir = create_out_path(input_temppath + "/uniprot_search" if input_temppath is not None else
                                               output_directory + "temp/uniprot_search", input_filepath)
-    unique_protein_temp_dir = create_out_path(input_temppath if input_temppath else
+    unique_protein_temp_dir = create_out_path(input_temppath + "/unique_protein_list" if input_temppath is not None else
                                               output_directory + "temp/unique_protein_list", input_filepath)
 
     # Add '/' to end of directory paths if not there
