@@ -49,11 +49,11 @@ def main(input_filepath, input_temppath, do_structure_search, search_tool, e_val
         output_directory += '/'
     if (blast_bin is not None) and (not blast_bin.endswith('/')):
         blast_bin += '/'
-    if not blast_db.endswith('/'):
+    if (blast_db is not None) and (not blast_db.endswith('/')):
         blast_db += '/'
     if (hhsearch_bin is not None) and (not hhsearch_bin.endswith('/')):
         hhsearch_bin += '/'
-    if not hhsearch_db.endswith('/'):
+    if (hhsearch_db is not None) and (not hhsearch_db.endswith('/')):
         hhsearch_db += '/'
 
     # If parameters inputted by user valid
@@ -111,48 +111,59 @@ def inputs_valid(input_filepath, input_temppath, do_structure_search, search_too
     if input_filepath and input_filepath.endswith(".sqcs"):
         # check whether inputted search tool is either hhsearch or blastp
         if search_tool in ["blastp", "hhsearch"]:
-            # check whether value given for e-value can be turned into a float variable
-            try:
-                e_value = float(e_value)
-                # check whether e-value is a value between 0 and 1
-                if 0 < e_value < 1:
-                    # check whether value given for query identity can be turned into a float variable
+            # check blast database path
+            if (search_tool == "hhsearch") or os.path.exists(str(blast_db) + "pdbaa.phr"):
+                # check hhsearch database path
+                if (search_tool == "blastp") or os.path.exists(str(hhsearch_db) + "pdb70_a3m.ffdata"):
+                    # check whether value given for e-value can be turned into a float variable
                     try:
-                        query_id = float(query_id)
-                        # check whether query identity is a value in [0,100]
-                        if 0 <= query_id <= 100:
-                            # check whether value given for coverage can be turned into a float variable
+                        e_value = float(e_value)
+                        # check whether e-value is a value between 0 and 1
+                        if 0 < e_value < 1:
+                            # check whether value given for query identity can be turned into a float variable
                             try:
-                                coverage = float(coverage)
-                                # check whether coverage is a value in [0,100]
-                                if 0 <= coverage <= 100:
+                                query_id = float(query_id)
+                                # check whether query identity is a value in [0,100]
+                                if 0 <= query_id <= 100:
+                                    # check whether value given for coverage can be turned into a float variable
                                     try:
-                                        # check whether value given for resolution cutoff can be turned into a float
-                                        # variable
-                                        res_cutoff = float(res_cutoff)
-                                        return True
+                                        coverage = float(coverage)
+                                        # check whether coverage is a value in [0,100]
+                                        if 0 <= coverage <= 100:
+                                            try:
+                                                # check whether value given for resolution cutoff can be turned into a
+                                                # float variable
+                                                res_cutoff = float(res_cutoff)
+                                                return True
+                                            except:
+                                                raise Exception(f"Error! Given value for resolution cutoff could not "
+                                                                f"be turned into a float variable (given: {res_cutoff}")
+                                        else:
+                                            raise Exception(f"Error! Given coverage is not within allowed interval of "
+                                                            f"[0,100] (given: {coverage}).")
                                     except:
-                                        print(f"Error! Given value for resolution cutoff could not be turned into a"
-                                              f" float variable (given: {res_cutoff}")
+                                        raise Exception(f"Error! Given value for coverage could not be turned into a "
+                                                        f"float variable (given: {coverage}")
                                 else:
-                                    print(f"Error! Given coverage is not within allowed interval of [0,100] "
-                                          f"(given: {coverage}).")
+                                    raise Exception(f"Error! Given query identity is not within allowed interval of "
+                                                    f"[0,100] (given: {query_id}).")
                             except:
-                                print(f"Error! Given value for coverage could not be turned into a float variable "
-                                      f"(given: {coverage}")
+                                raise Exception(f"Error! Given value for query identity could not be turned into a "
+                                                f"float variable (given: {query_id}")
                         else:
-                            print(f"Error! Given query identity is not within allowed interval of [0,100] "
-                                  f"(given: {query_id}).")
+                            raise Exception(f"Error! Given e-value is not within allowed interval of (0,1) "
+                                            f"(given: {e_value}).")
                     except:
-                        print(f"Error! Given value for query identity could not be turned into a float variable "
-                              f"(given: {query_id}")
+                        raise Exception(f"Error! Given value for e-value could not be turned into a float variable "
+                                        f"(given: {e_value}")
                 else:
-                    print(f"Error! Given e-value is not within allowed interval of (0,1) (given: {e_value}).")
-            except:
-                print(f"Error! Given value for e-value could not be turned into a float variable (given: {e_value}")
+                    raise Exception(f"Error! Could not find 'pdb70_a3m.ffdata' in given hhsearch database directory "
+                                    f"(given: {hhsearch_db}).")
+            else:
+                raise Exception(f"Error! Could not find 'pdbaa.phr'-File in given blast database directory "
+                                f"(given: {blast_db}).")
         else:
-            print(f"Error! Invalid search tool selected (given: {search_tool}).")
+            raise Exception(f"Error! Invalid search tool selected (given: {search_tool}).")
     else:
-        print(f"Error! The parameter \"input-filepath\" was not given or was not ending with the '.sqcs' extension "
-              f"(given: {input_filepath}).")
-    return False
+        raise Exception(f"Error! The parameter \"input-filepath\" was not given or was not ending with the '.sqcs' "
+                        f"extension (given: {input_filepath}).")

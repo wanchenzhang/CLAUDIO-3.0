@@ -19,18 +19,11 @@ def clean_input_paths(path_strs):
     # contain an environmental variable (else return it as is)
     #
     # input path_strs: iterable(str)
-    # return abs_paths: list(str)
+    # return list(str)
 
-    abs_paths = []
-    for path_str in path_strs:
-        if path_str in [None, "None"]:
-            abs_paths.append(None)
-        elif '$' in path_str:
-            abs_paths.append(path_str)
-        else:
-            abs_paths.append(os.path.abspath(path_str.replace("\\\\", '/').replace('\\', '/')))
-
-    return abs_paths
+    return [os.path.abspath(os.path.expandvars(path_str).replace("\\\\", '/').replace('\\', '/'))
+            if path_str not in [None, "None"] else None
+            for path_str in path_strs]
 
 
 def create_out_path(output_directory, input_filepath):
@@ -76,10 +69,9 @@ def build_xl_dataset(xl_residues):
     for s in xl_residues.replace(';', ',').split(','):
         if ':' in s:
             if s.count(':') != 2:
-                print(f"Error! Found ':' in one xl_res input, but less or more than two-times. If you wish "
-                      f"to specify either the position or the atom type make sure you always add two ':' "
-                      f"in the input (specific: {s}, full: {xl_residues}).")
-                return None
+                raise Exception(f"Error! Found ':' in one xl_res input, but less or more than two-times. If you wish "
+                                f"to specify either the position or the atom type make sure you always add two ':' "
+                                f"in the input (specific: {s}, full: {xl_residues}).")
             res_list.append(s.split(':')[0])
             atom_list.append(s.split(':')[1] if s.split(':')[1] else "CB")
             pos_list.append(int(s.split(':')[2]) if s.split(':')[2] else 0)
@@ -94,9 +86,8 @@ def build_xl_dataset(xl_residues):
 
     for atom in df_xl_res.atom:
         if atom not in ["N", "CA", "C", "O", "CB"]:
-            print(f"Error! Found {atom} as atom type, which is not allowed. Please only use either backbone atoms or CB"
-                  f" (either \"N\", \"CA\", \"C\", \"O\", or \"CB\")")
-            return None
+            raise Exception(f"Error! Found {atom} as atom type, which is not allowed. Please only use either backbone "
+                            f"atoms or CB (either \"N\", \"CA\", \"C\", \"O\", or \"CB\")")
 
     return df_xl_res
 

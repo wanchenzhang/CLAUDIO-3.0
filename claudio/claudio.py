@@ -16,8 +16,8 @@ _DEFAULT_OPTIONS = ["test/sample_data_random.csv", None,
 # ['test/sample_data_random.csv', None,
 #  'peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2',
 #  False, 'K,M:N:1', 'blastp', 1e-05, 90.0, 50.0, 6.5, 70.0, 0.0, 35.0,
-#  'None', 50.0, 0.0, 'test/out/sample/', 'None', '$HOME/BLAST/db', None,
-#  '$HOME/HHSUITE/db', 'None', False, 2]
+#  None, 50.0, 0.0, 'test/out/sample/', None, '$HOME/BLAST/db', None,
+#  '$HOME/HHSUITE/db', None, False, 2]
 
 
 @click.command()
@@ -82,6 +82,8 @@ def main(input_filepath, input_temppath, projections, read_temps, xl_residues, s
         run_claudio_ops(["-i", f"{output_directory}{filename}.sqcs", "-o", output_directory, "-v", verbose_level])
     except SystemExit:
         pass
+    if not os.path.exists(f"{output_directory}{filename}.sqcs_ops.csv"):
+        sys.exit()
 
     # Run Module02
     try:
@@ -92,6 +94,8 @@ def main(input_filepath, input_temppath, projections, read_temps, xl_residues, s
                               "-hhdb", hhsearch_db, "-tl", topolink_bin, "-v", verbose_level])
     except SystemExit:
         pass
+    if not os.path.exists(f"{output_directory}{filename}.sqcs_structdi.csv"):
+        sys.exit()
 
     # Run Module04
     try:

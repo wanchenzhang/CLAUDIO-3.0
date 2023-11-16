@@ -94,31 +94,22 @@ def inputs_valid(input_directory, input_filename, search_tool, xl_residues, pldd
         if input_filename.endswith(".sqcs_structdi.csv"):
             if search_tool in ["blastp", "hhsearch"]:
                 # check whether xl_residues can be turned into a proper DataFrame, else return False
+                build_xl_dataset(xl_residues)
+                # check whether plddt cutoff has valid value
                 try:
-                    xl_set = build_xl_dataset(xl_residues)
-                    if xl_set is None:
-                        return False
-
-                    # check whether plddt cutoff has valid value
-                    try:
-                        plddt_cutoff = float(plddt_cutoff)
-                        if 0 <= plddt_cutoff <= 100:
-                            return True
-                        else:
-                            print(f"pLDDT cutoff value should be in [0, 100] (given: {plddt_cutoff}).")
-                    except:
-                        print(
-                            f"Value given for pLDDT cutoff should be possible to turn into a float "
-                            f"(given: {plddt_cutoff}).")
+                    plddt_cutoff = float(plddt_cutoff)
+                    if 0 <= plddt_cutoff <= 100:
+                        return True
+                    else:
+                        raise Exception(f"pLDDT cutoff value should be in [0, 100] (given: {plddt_cutoff}).")
                 except:
-                    print(f"Error! Could not properly parse xl_residues for accepted crosslinked residues "
-                          f"(given: {xl_residues}).")
+                    raise Exception(f"Value given for pLDDT cutoff should be possible to turn into a float "
+                                    f"(given: {plddt_cutoff}).")
             else:
-                print(f"Error! Invalid search tool! (given: {search_tool})")
+                raise Exception(f"Error! Invalid search tool! (given: {search_tool})")
         else:
-            print(f"Error! Given inputfile (-i2) extension hints at incorrect output of uniprot-search "
-                  f"(given: {input_filename})!")
+            raise Exception(f"Error! Given inputfile (-i2) extension hints at incorrect output of uniprot-search "
+                            f"(given: {input_filename})!")
     else:
         print(f"Warning! No structure files created by structure_search tool found (given: {input_directory})!")
         return True
-    return False

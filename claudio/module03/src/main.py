@@ -61,6 +61,5 @@ def inputs_valid(input_filepath, output_directory):
     if input_filepath and input_filepath.endswith(".sqcs"):
         return True
     else:
-        print(f"Error! The parameter \"input-filepath\" was not given or was not ending with the '.sqcs' extension "
-              f"(given: {input_filepath}).")
-    return False
+        raise Exception(f"Error! The parameter \"input-filepath\" was not given or was not ending with the '.sqcs' "
+                        f"extension (given: {input_filepath}).")

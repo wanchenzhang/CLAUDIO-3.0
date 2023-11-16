@@ -54,11 +54,11 @@ def main(input_filepath, input_temppath, projections, uniprot_search, xl_residue
         output_directory += '/'
     if (blast_bin is not None) and (not blast_bin.endswith('/')):
         blast_bin += '/'
-    if not blast_db.endswith('/'):
+    if (blast_db is not None) and (not blast_db.endswith('/')):
         blast_db += '/'
     if (hhsearch_bin is not None) and (not hhsearch_bin.endswith('/')):
         hhsearch_bin += '/'
-    if not hhsearch_db.endswith('/'):
+    if (hhsearch_db is not None) and (not hhsearch_db.endswith('/')):
         hhsearch_db += '/'
 
     # If parameters inputted by user valid
@@ -124,32 +124,33 @@ def inputs_valid(input_filepath, uniprot_search_temp_dir, unique_protein_temp_di
     if input_filepath:
         # check whether the number of comma-separated values is acceptable
         if len(projections.split(',')) == 8:
-            # if uniprot_search False then check whether temporary save file exists, return False if it fails,
-            # else continue
+            # if uniprot_search False then check whether temporary save file exists
             if not uniprot_search:
                 try:
                     pd.read_csv(f"{uniprot_search_temp_dir}{'.'.join(filename.split('.')[:-1])}_srtmp."
                                 f"{filename.split('.')[-1]}")
                 except FileNotFoundError:
-                    print(f"Error! No temporary save file was found. Run the program without the use of temp_save files"
-                          f" to perform an actual search first (given: {uniprot_search}).")
-                    return False
-            # check whether xl_residues can be turned into a proper DataFrame, else return False
-            try:
-                if build_xl_dataset(xl_residues) is None:
-                    return False
-
-                # check whether specified structure search tool is either blastp or hhsearch
-                if search_tool in ["blastp", "hhsearch"]:
-                    return True
+                    raise Exception(f"Error! No temporary save file was found. Run the program without the use of "
+                                    f"temp_save files to perform an actual search first (given: {uniprot_search}).")
+            # check whether xl_residues can be turned into a proper DataFrame
+            build_xl_dataset(xl_residues)
+            # check whether specified structure search tool is either blastp or hhsearch
+            if search_tool in ["blastp", "hhsearch"]:
+                # check blast database path
+                if (search_tool == "hhsearch") or os.path.exists(str(blast_db) + "pdbaa.phr"):
+                    # check hhsearch database path
+                    if (search_tool == "blastp") or os.path.exists(str(hhsearch_db) + "pdb70_a3m.ffdata"):
+                        return True
+                    else:
+                        raise Exception(f"Error! Could not find 'pdb70_a3m.ffdata' in given hhsearch database "
+                                        f"directory (given: {hhsearch_db}).")
                 else:
-                    print(f"Error! Given search tool is neither blastp or hhsearch (given: {search_tool}).")
-            except:
-                print(f"Error! Could not properly parse xl_residues for accepted crosslinked residues "
-                      f"(given: {xl_residues}).")
+                    raise Exception(f"Error! Could not find 'pdbaa.phr'-File in given blast database directory "
+                          f"(given: {blast_db}).")
+            else:
+                raise Exception(f"Error! Given search tool is neither blastp or hhsearch (given: {search_tool}).")
         else:
-            print(f"Error! Could not find all necessary keys in \"projections\" parameter (given: "
-                  f"{projections}).")
+            raise Exception(f"Error! Could not find all necessary keys in \"projections\" parameter (given: "
+                            f"{projections}).")
     else:
-        print(f"Error! The parameter \"input-filepath\" was not given (given: {input_filepath}).")
-    return False
+        raise Exception(f"Error! The parameter \"input-filepath\" was not given (given: {input_filepath}).")

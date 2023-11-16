@@ -213,7 +213,7 @@ Note: All CSV-file outputs pertaining the input dataset are summarized into a si
 
 ### Example
 **CLAUDIO** (in full) can be run like this:
-* with a configuration file with all parameters (this will run the test dataset, when using the default config.txt, with all non-descirbed parameters being filled with default values)
+* with a configuration file with all parameters (this will run the test dataset, when using the default config.txt, with all non-described parameters being filled with default values)
 ```
 python3 claudio/claudio.py -c config/config.txt
 ```

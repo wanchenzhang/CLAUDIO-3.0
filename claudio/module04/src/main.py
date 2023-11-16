@@ -124,9 +124,8 @@ def inputs_valid(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, 
                                     if euclidean_strictness is not None:
                                         euclidean_strictness = ast.literal_eval(euclidean_strictness)
                                 except ValueError:
-                                    print(f"Error! Could not change type of given euclidean strictness to either float "
-                                          f"or None (given: {euclidean_strictness}).")
-                                    return False
+                                    raise Exception(f"Error! Could not change type of given euclidean strictness to "
+                                                    f"either float or None (given: {euclidean_strictness}).")
                             # check whether maximum distance has valid value
                             try:
                                 distance_maximum = float(distance_maximum)
@@ -136,28 +135,28 @@ def inputs_valid(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, 
                                     if 0 <= cutoff <= 1:
                                         return True
                                     else:
-                                        print(f"Cutoff value for reclassification should be in [0, 1] "
-                                              f"(given: {cutoff}).")
+                                        raise Exception(f"Cutoff value for reclassification should be in [0, 1] "
+                                                        f"(given: {cutoff}).")
                                 except:
-                                    print(f"Value given for reclassification cutoff should be possible to turn into a"
-                                          f" float (given: {cutoff}).")
+                                    raise Exception(f"Value given for reclassification cutoff should be possible to "
+                                                    f"turn into a float (given: {cutoff}).")
                             except:
-                                print(f"Value given for maximum distance value should be possible to turn into a "
-                                      f"float (given: {distance_maximum}).")
+                                raise Exception(f"Value given for maximum distance value should be possible to turn "
+                                                f"into a float (given: {distance_maximum}).")
                         except:
-                            print(f"Value given for crosslinker maximum should be possible to turn into a float "
-                                  f"(given: {linker_maximum}).")
+                            raise Exception(f"Value given for crosslinker maximum should be possible to turn into a "
+                                            f"float (given: {linker_maximum}).")
                     except:
-                        print(f"Value given for crosslinker minimum should be possible to turn into a float "
-                              f"(given: {linker_minimum}).")
+                        raise Exception(f"Value given for crosslinker minimum should be possible to turn into a float "
+                                        f"(given: {linker_minimum}).")
                 else:
-                    print(f"pLDDT cutoff value should be in [0, 100] (given: {plddt_cutoff}).")
+                    raise Exception(f"pLDDT cutoff value should be in [0, 100] (given: {plddt_cutoff}).")
             except:
-                print(f"Value given for pLDDT cutoff should be possible to turn into a float (given: {plddt_cutoff}).")
+                raise Exception(f"Value given for pLDDT cutoff should be possible to turn into a float "
+                                f"(given: {plddt_cutoff}).")
         else:
-            print(f"Homo-signal reevaluation outputfile was either not correctly given or has wrong extension "
-                  f"(given: {input_filepath2}).")
+            raise Exception(f"Homo-signal reevaluation outputfile was either not correctly given or has wrong "
+                            f"extension (given: {input_filepath2}).")
     else:
-        print(f"Distance reevaluation outputfile was either not correctly given or has wrong extension "
-              f"(given: {input_filepath}).")
-    return False
+        raise Exception(f"Distance reevaluation outputfile was either not correctly given or has wrong extension "
+                        f"(given: {input_filepath}).")
