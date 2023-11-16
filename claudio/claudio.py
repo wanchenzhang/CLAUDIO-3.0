@@ -186,8 +186,8 @@ def read_config(path, args):
 
         # define final params, if already given argument is not default, it takes precedence over param value in
         # config-file
-        final_params = [config_params[marker] if (marker in config_params.keys()) and arg_is_default[marker] else
-                        args[marker] if args[marker] is not None else
+        final_params = [config_params[marker] if (marker in config_params.keys()) and (args[marker] is None) else
+                        args[marker] if not arg_is_default[marker] else
                         defaults[marker]
                         for marker in line_markers]
 
