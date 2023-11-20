@@ -1,4 +1,4 @@
-from utils.utils import *
+from utils.utils import verbose_print
 
 
 def write_outputs(data, unique_proteins_list, filename, output_directory, verbose_level):

@@ -2,9 +2,12 @@ from io import StringIO
 import requests as r
 import time
 import socket
+import pandas as pd
+import os
+import platform
 
 
-from utils.utils import *
+from utils.utils import verbose_print, round_self
 
 
 def structure_search(data, search_tool, e_value, query_id, coverage, tmp_filepath, blast_bin, blast_db, hhsearch_bin,
@@ -97,8 +100,9 @@ def perform_search(data, site, search_tool, e_value, query_id, coverage, tmp_fil
         # $HHDB to be set according to instructions found in README.md)
         if search_tool == "blastp":
             blast_call = "blastp" if blast_bin is None else f"{blast_bin}blastp"
-            command = f"{blast_call} -query {temp_path}tmp{data.name}.fasta -db {blast_db}pdbaa -evalue {e_value} " \
-                      f"-outfmt \"6 delim=, saccver pident qcovs evalue\""
+            blast_call = f"& \"{blast_call}\"" if platform.system() == "Windows" else blast_call.replace(' ', '\\ ')
+            command = f"{blast_call} -query \"{temp_path}tmp{data.name}.fasta\" -db \"{blast_db}pdbaa\" " \
+                      f"-evalue {e_value} -outfmt \"6 delim=, saccver pident qcovs evalue\""
             res = pd.read_csv(StringIO(os.popen(command).read()), sep=',', names=["pdb", "ident", "cov", "eval"],
                               dtype={"pdb": str, "ident": float, "cov": float, "eval": float})
             search_results = res[(res["ident"] >= query_id) & (res["cov"] >= coverage)]
@@ -106,8 +110,9 @@ def perform_search(data, site, search_tool, e_value, query_id, coverage, tmp_fil
 
         elif search_tool == "hhsearch":
             hhsearch_call = "hhsearch" if hhsearch_bin is None else f"{hhsearch_bin}hhsearch"
-            command = f"{hhsearch_call} -i {temp_path}tmp{data.name}.fasta -d {hhsearch_db}pdb70 -e {e_value} -qid" \
-                      f" {query_id} -cov {coverage} -blasttab {temp_path}tmp{data.name}.hhr -v 0 -cpu 20"
+            hhsearch_call = f"& \"{hhsearch_call}\"" if platform.system() == "Windows" else hhsearch_call.replace(' ', '\\ ')
+            command = f"{hhsearch_call} -i \"{temp_path}tmp{data.name}.fasta\" -d \"{hhsearch_db}pdb70\" -e {e_value} " \
+                      f"-qid {query_id} -cov {coverage} -blasttab \"{temp_path}tmp{data.name}.hhr\" -v 0 -cpu 20"
             os.system(command)
             search_results = [line.split('\t')[1]
                               for line in open(f"{temp_path}tmp{data.name}.hhr", 'r').read().split('\n')

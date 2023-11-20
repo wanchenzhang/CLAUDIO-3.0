@@ -1,8 +1,10 @@
+import os
 from Bio.PDB import Polypeptide, PDBParser, MMCIFParser, Select, PDBIO
 import numpy as np
 import warnings
+import platform
 
-from utils.utils import *
+from utils.utils import verbose_print, round_self
 
 warnings.filterwarnings("ignore")
 
@@ -120,7 +122,8 @@ def compute_dists_with_topolink(data, temp_dir, df_xl_res, plddt_cutoff, topolin
 
         # Run topolink and pop terminal print to variable
         topolink_call = "topolink" if topolink_bin is None else f"{topolink_bin}topolink"
-        res = os.popen(f"{topolink_call} {temp_dir}topo.tmp").read()
+        topolink_call = f"& \"{topolink_call}\"" if platform.system() == "Windows" else topolink_call.replace(' ', '\\ ')
+        res = os.popen(f"{topolink_call} \"{temp_dir}topo.tmp\"").read()
         # Write both input and output to temporary file marked by pdb id, e.g. topo_1b0j.log, topo_afA2ASZ8.log, ...
         # in case the user wishes to review them later
         with open(f"{temp_dir}topo_{pdb_id}.log", 'w') as f:

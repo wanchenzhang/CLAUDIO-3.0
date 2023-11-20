@@ -10,7 +10,8 @@ from module04.src.algorithm.create_plots import create_plots
 from module04.src.io.create_pymol_scripts import setup_pml_scripts
 from module04.src.io.write_outs import write_outputs
 
-from utils.utils import *
+from utils.utils import verbose_print, clean_input_paths, evaluate_boolean_input, \
+    create_out_path, clean_dataset, round_self
 
 
 @click.command()

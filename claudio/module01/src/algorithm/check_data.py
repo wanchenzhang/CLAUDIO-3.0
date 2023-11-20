@@ -1,7 +1,8 @@
 import sys
 from Bio.Align import PairwiseAligner
+import pandas as pd
 
-from utils.utils import *
+from utils.utils import verbose_print, round_self
 
 
 def double_check_data(data, filename, df_xl_res, output_directory, verbose_level):

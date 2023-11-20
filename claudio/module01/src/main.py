@@ -1,6 +1,8 @@
+import os
 import click
 import sys
 import time
+import pandas as pd
 
 from module01.src.io.read_in import read_inputfile
 from module01.src.io.read_temp import read_temp_search_save
@@ -9,7 +11,8 @@ from module01.src.algorithm.check_data import double_check_data
 from module01.src.algorithm.create_unique_list import create_list_of_unique_proteins
 from module01.src.io.write_out import write_outputs
 
-from utils.utils import *
+from utils.utils import verbose_print, clean_input_paths, evaluate_boolean_input, \
+    create_out_path, build_xl_dataset, clean_dataset, round_self
 
 
 @click.command()
@@ -49,18 +52,6 @@ def main(input_filepath, input_temppath, projections, uniprot_search, xl_residue
     unique_protein_temp_dir = create_out_path(input_temppath + "/unique_protein_list" if input_temppath is not None else
                                               output_directory + "temp/unique_protein_list", input_filepath)
 
-    # Add '/' to end of directory paths if not there
-    if not output_directory.endswith('/'):
-        output_directory += '/'
-    if (blast_bin is not None) and (not blast_bin.endswith('/')):
-        blast_bin += '/'
-    if (blast_db is not None) and (not blast_db.endswith('/')):
-        blast_db += '/'
-    if (hhsearch_bin is not None) and (not hhsearch_bin.endswith('/')):
-        hhsearch_bin += '/'
-    if (hhsearch_db is not None) and (not hhsearch_db.endswith('/')):
-        hhsearch_db += '/'
-
     # If parameters inputted by user valid
     if inputs_valid(input_filepath, uniprot_search_temp_dir, unique_protein_temp_dir, projections, uniprot_search,
                     xl_residues, search_tool, output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db,
@@ -82,10 +73,10 @@ def main(input_filepath, input_temppath, projections, uniprot_search, xl_residue
         tmp_filepath = f"{uniprot_search_temp_dir}{filename}_srtmp.csv"
         if (not uniprot_search) and os.path.exists(tmp_filepath):
             verbose_print("Retrieve UniProt sequences from temporary save", 0, verbose_level)
-            read_temp_search_save(data, tmp_filepath)
+            data = read_temp_search_save(data, tmp_filepath)
         else:
             verbose_print("Retrieve UniProt sequences from UniProtKB", 0, verbose_level)
-            do_uniprot_search(data, tmp_filepath, verbose_level)
+            data = do_uniprot_search(data, tmp_filepath, verbose_level)
 
         # Check datapoints for inconsistencies and correct them if possible (creates logfile in the process)
         verbose_print("Check datapoints for inconsistencies", 0, verbose_level)

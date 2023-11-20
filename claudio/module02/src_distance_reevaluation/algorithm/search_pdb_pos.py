@@ -1,5 +1,7 @@
+import os
 import socket
 import time
+import pandas as pd
 
 from Bio.PDB import Polypeptide, PDBParser, MMCIFParser
 from Bio.Align import PairwiseAligner
@@ -7,7 +9,7 @@ import requests as r
 import sys
 import numpy as np
 
-from utils.utils import *
+from utils.utils import verbose_print, round_self
 
 _MAX_INTERFACE_DISTANCE = 50
 

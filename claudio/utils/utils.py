@@ -19,11 +19,12 @@ def clean_input_paths(path_strs):
     # contain an environmental variable (else return it as is)
     #
     # input path_strs: iterable(str)
-    # return list(str)
+    # return out_paths: list(str)
+    out_paths = [os.path.abspath(os.path.expandvars(path_str)).replace("\\\\", '/').replace('\\', '/')
+                 if path_str not in [None, "None"] else None
+                 for path_str in path_strs]
 
-    return [os.path.abspath(os.path.expandvars(path_str).replace("\\\\", '/').replace('\\', '/'))
-            if path_str not in [None, "None"] else None
-            for path_str in path_strs]
+    return [op if (op is None) or op.endswith('/') or ('.' in op[-6:]) else op + '/' for op in out_paths]
 
 
 def create_out_path(output_directory, input_filepath):

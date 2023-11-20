@@ -1,10 +1,13 @@
+import os
 import socket
 import sys
+import pandas as pd
+import platform
 
 import requests as r
 from io import StringIO
 
-from utils.utils import *
+from utils.utils import verbose_print, round_self
 
 
 def create_list_of_unique_proteins(data, unique_protein_temp_dir, search_tool, blast_bin, blast_db, hhsearch_bin,
@@ -115,8 +118,9 @@ def search_pdb_entries(proteins, sequences, unique_protein_temp_dir, search_tool
         # Depending on given string either perform blastp or hhsearch
         if search_tool == "blastp":
             blast_call = "blastp" if blast_bin is None else f"{blast_bin}blastp"
-            cmd = f"{blast_call} -query {unique_protein_temp_dir}tmp{i}.fasta -db {blast_db}pdbaa -evalue 1e-5 " \
-                  f"-outfmt \"6 delim=, saccver pident qcovs evalue\""
+            blast_call = f"& \"{blast_call}\"" if platform.system() == "Windows" else blast_call.replace(' ', '\\ ')
+            cmd = f"{blast_call} -query \"{unique_protein_temp_dir}tmp{i}.fasta\" -db \"{blast_db}pdbaa\"" \
+                  f" -evalue 1e-5 -outfmt \"6 delim=, saccver pident qcovs evalue\""
             res = pd.read_csv(StringIO(os.popen(cmd).read()),
                               sep=',',
                               names=["pdb", "ident", "cov", "eval"],
@@ -130,8 +134,9 @@ def search_pdb_entries(proteins, sequences, unique_protein_temp_dir, search_tool
                 res = res.iloc[0, :]["pdb"]
         elif search_tool == "hhsearch":
             hhearch_call = "hhsearch" if hhsearch_bin is None else f"{hhsearch_bin}hhsearch"
-            cmd = f"{hhearch_call} -i {unique_protein_temp_dir}tmp{i}.fasta -d {hhsearch_db}pdb70 -e 1e-5 " \
-                  f"-blasttab {unique_protein_temp_dir}tmp{i}.hhr -qid 90 -cov 50 -v 0 -cpu 20"
+            hhearch_call = f"& \"{hhearch_call}\"" if platform.system() == "Windows" else hhearch_call.replace(' ', '\\ ')
+            cmd = f"{hhearch_call} -i \"{unique_protein_temp_dir}tmp{i}.fasta\" -d \"{hhsearch_db}pdb70\" -e 1e-5 " \
+                  f"-blasttab \"{unique_protein_temp_dir}tmp{i}.hhr\" -qid 90 -cov 50 -v 0 -cpu 20"
             os.system(cmd)
             # Open hhsearch output (Note: hhsearch outs cannot be retrieved from the commandline, as it is the case with
             # blastp)

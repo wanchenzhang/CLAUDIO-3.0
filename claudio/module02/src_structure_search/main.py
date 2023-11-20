@@ -1,3 +1,4 @@
+import os
 import click
 import sys
 import time
@@ -9,7 +10,7 @@ from module02.src_structure_search.algorithm.pdb_download import download_pdbs
 from module02.src_structure_search.algorithm.chain_copies import create_ident_chain_copies
 from module02.src_structure_search.io.write_out import write_output
 
-from utils.utils import *
+from utils.utils import verbose_print, clean_input_paths, create_out_path, round_self
 
 
 @click.command()
@@ -43,18 +44,6 @@ def main(input_filepath, input_temppath, do_structure_search, search_tool, e_val
 
     # Check output directory
     output_directory = create_out_path(output_directory, input_filepath)
-
-    # Add '/' to end of directory paths if not there
-    if not output_directory.endswith('/'):
-        output_directory += '/'
-    if (blast_bin is not None) and (not blast_bin.endswith('/')):
-        blast_bin += '/'
-    if (blast_db is not None) and (not blast_db.endswith('/')):
-        blast_db += '/'
-    if (hhsearch_bin is not None) and (not hhsearch_bin.endswith('/')):
-        hhsearch_bin += '/'
-    if (hhsearch_db is not None) and (not hhsearch_db.endswith('/')):
-        hhsearch_db += '/'
 
     # If parameters inputted by user valid
     if inputs_valid(input_filepath, input_temppath, do_structure_search, search_tool, e_value, query_id, coverage,

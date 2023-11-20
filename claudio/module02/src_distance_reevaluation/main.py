@@ -1,3 +1,4 @@
+import os
 import click
 import time
 import sys
@@ -8,7 +9,7 @@ from module02.src_distance_reevaluation.algorithm.calc_site_distances import cal
 from module02.src_distance_reevaluation.io.write_out import write_output
 from module02.src_distance_reevaluation.algorithm.create_plots import create_histogram
 
-from utils.utils import *
+from utils.utils import verbose_print, create_out_path, clean_input_paths, build_xl_dataset, clean_dataset, round_self
 
 
 @click.command()
@@ -38,14 +39,6 @@ def main(input_directory, input_filepath, input_temppath, search_tool, xl_residu
     # Create temporary dir
     temp_dir = create_out_path(input_temppath + "/dist_reeval" if input_temppath is not None else
                                output_directory + "temp/dist_reeval", input_filepath)
-
-    # Add '/' to end of directory paths if not there
-    if not input_directory.endswith('/'):
-        input_directory += '/'
-    if not output_directory.endswith('/'):
-        output_directory += '/'
-    if (topolink_bin is not None) and (not topolink_bin.endswith('/')):
-        topolink_bin += '/'
 
     # If parameters inputted by user valid
     if inputs_valid(input_directory, input_filepath, search_tool, xl_residues, plddt_cutoff, output_directory,

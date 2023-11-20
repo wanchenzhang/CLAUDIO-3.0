@@ -7,7 +7,7 @@ from module03.src.algorithm.signal_analysis import analyse_homo_signals
 from module03.src.algorithm.create_histograms import create_homo_signal_histograms
 from module03.src.io.write_out import write_output
 
-from utils.utils import *
+from utils.utils import verbose_print, clean_input_paths, create_out_path, clean_dataset, round_self
 
 
 @click.command()

@@ -2,8 +2,9 @@ import socket
 import requests as r
 import time
 import ast
+import pandas as pd
 
-from utils.utils import *
+from utils.utils import verbose_print, round_self
 
 
 def retrieve_oligomeric_states(data, verbose_level):
