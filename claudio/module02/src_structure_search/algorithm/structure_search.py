@@ -4,7 +4,6 @@ import time
 import socket
 import pandas as pd
 import os
-import platform
 
 
 from utils.utils import verbose_print, round_self
@@ -100,8 +99,7 @@ def perform_search(data, site, search_tool, e_value, query_id, coverage, tmp_fil
         # $HHDB to be set according to instructions found in README.md)
         if search_tool == "blastp":
             blast_call = "blastp" if blast_bin is None else f"{blast_bin}blastp"
-            blast_call = f"& \"{blast_call}\"" if platform.system() == "Windows" else blast_call.replace(' ', '\\ ')
-            command = f"{blast_call} -query \"{temp_path}tmp{data.name}.fasta\" -db \"{blast_db}pdbaa\" " \
+            command = f"\"{blast_call}\" -query \"{temp_path}tmp{data.name}.fasta\" -db \"{blast_db}pdbaa\" " \
                       f"-evalue {e_value} -outfmt \"6 delim=, saccver pident qcovs evalue\""
             res = pd.read_csv(StringIO(os.popen(command).read()), sep=',', names=["pdb", "ident", "cov", "eval"],
                               dtype={"pdb": str, "ident": float, "cov": float, "eval": float})
@@ -110,8 +108,7 @@ def perform_search(data, site, search_tool, e_value, query_id, coverage, tmp_fil
 
         elif search_tool == "hhsearch":
             hhsearch_call = "hhsearch" if hhsearch_bin is None else f"{hhsearch_bin}hhsearch"
-            hhsearch_call = f"& \"{hhsearch_call}\"" if platform.system() == "Windows" else hhsearch_call.replace(' ', '\\ ')
-            command = f"{hhsearch_call} -i \"{temp_path}tmp{data.name}.fasta\" -d \"{hhsearch_db}pdb70\" -e {e_value} " \
+            command = f"\"{hhsearch_call}\" -i \"{temp_path}tmp{data.name}.fasta\" -d \"{hhsearch_db}pdb70\" -e {e_value} " \
                       f"-qid {query_id} -cov {coverage} -blasttab \"{temp_path}tmp{data.name}.hhr\" -v 0 -cpu 20"
             os.system(command)
             search_results = [line.split('\t')[1]
