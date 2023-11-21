@@ -126,7 +126,8 @@ def inputs_valid(input_filepath, input_temppath, do_structure_search, search_too
                                                 return True
                                             except:
                                                 raise Exception(f"Error! Given value for resolution cutoff could not "
-                                                                f"be turned into a float variable (given: {res_cutoff}")
+                                                                f"be turned into a float variable (given: "
+                                                                f"{res_cutoff}).")
                                         else:
                                             raise Exception(f"Error! Given coverage is not within allowed interval of "
                                                             f"[0,100] (given: {coverage}).")

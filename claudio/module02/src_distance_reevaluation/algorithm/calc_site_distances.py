@@ -93,7 +93,7 @@ def compute_dists_with_topolink(data, temp_dir, df_xl_res, plddt_cutoff, topolin
 
         # Creates inputfile for topolink, utilizing templatefile: data/topolink_inputfile.inp
         topo_in = []
-        project_path = '/'.join(os.path.abspath(__file__).split('/')[:-4])
+        project_path = '/'.join(os.path.abspath(__file__).replace('\\\\', '/').replace('\\', '/').split('/')[:-4])
         project_path = project_path + '/' if project_path else ""
         for line in [l for l in open(f"{project_path}data/topolink_inputfile.inp", 'r').readlines()
                      if not l.startswith('#')]:
