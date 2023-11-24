@@ -225,7 +225,7 @@ claudio -c config/config.txt
 ```
 * with a configuration file and a few overwriting CLI parameters (this will run the larger benchmark dataset)
 ```
-pclaudio -c config/config.txt -i benchmark_data.csv -o test/out/benchmark
+claudio -c config/config.txt -i benchmark_data.csv -o test/out/benchmark
 ```
 * with mostly default parameters and a few set as CLI parameters
 ```
