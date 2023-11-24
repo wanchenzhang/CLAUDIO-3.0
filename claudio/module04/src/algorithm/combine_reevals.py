@@ -1,5 +1,6 @@
 import pandas as pd
-from utils.utils import round_self
+
+from claudio.utils.utils import round_self
 
 
 def combine_inter_reevaluations(data, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,

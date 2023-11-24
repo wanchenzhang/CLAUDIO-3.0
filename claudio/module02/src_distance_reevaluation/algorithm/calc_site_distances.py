@@ -1,9 +1,10 @@
 import os
-from Bio.PDB import Polypeptide, PDBParser, MMCIFParser, Select, PDBIO
 import numpy as np
 import warnings
 
-from utils.utils import verbose_print, round_self
+from Bio.PDB import Polypeptide, PDBParser, MMCIFParser, Select, PDBIO
+
+from claudio.utils.utils import verbose_print, round_self
 
 warnings.filterwarnings("ignore")
 

@@ -3,27 +3,27 @@ import sys
 import time
 import ast
 
-from module04.src.io.read_ins import read_inputs
-from module04.src.algorithm.combine_reevals import combine_inter_reevaluations
-from module04.src.algorithm.retrieve_oligo_state import retrieve_oligomeric_states
-from module04.src.algorithm.create_plots import create_plots
-from module04.src.io.create_pymol_scripts import setup_pml_scripts
-from module04.src.io.write_outs import write_outputs
+from claudio.module04.src.io.read_ins import read_inputs
+from claudio.module04.src.algorithm.combine_reevals import combine_inter_reevaluations
+from claudio.module04.src.algorithm.retrieve_oligo_state import retrieve_oligomeric_states
+from claudio.module04.src.algorithm.create_plots import create_plots
+from claudio.module04.src.io.create_pymol_scripts import setup_pml_scripts
+from claudio.module04.src.io.write_outs import write_outputs
 
-from utils.utils import verbose_print, clean_input_paths, evaluate_boolean_input, \
+from claudio.utils.utils import verbose_print, clean_input_paths, evaluate_boolean_input, \
     create_out_path, clean_dataset, round_self
 
 
 @click.command()
-@click.option("-i", "--input-filepath", default="data/out/dist_reeval/sample_data.sqcs_structdi.csv")
-@click.option("-i2", "--input-filepath2", default="data/out/homo_signal/sample_data.sqcs_ops.csv")
+@click.option("-i", "--input-filepath", default="test/out/sample/sample_data_random.sqcs_structdi.csv")
+@click.option("-i2", "--input-filepath2", default="test/out/sample/sample_data_random.sqcs_ops.csv")
 @click.option("-p", "--plddt-cutoff", default=70.0)
 @click.option("-lmin", "--linker-minimum", default=5.0)
 @click.option("-lmax", "--linker-maximum", default=35.0)
 @click.option("-es", "--euclidean-strictness", default=None)
 @click.option("-dm", "--distance-maximum", default=50.0)
 @click.option("-c", "--cutoff", default=0.0)
-@click.option("-o", "--output-directory", default="data/out/new_inter/")
+@click.option("-o", "--output-directory", default="test/out/sample/")
 @click.option("-s", "--compute-scoring", default=False)
 @click.option("-v", "--verbose-level", default=2)
 def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness,

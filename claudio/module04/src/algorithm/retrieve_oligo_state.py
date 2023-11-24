@@ -4,7 +4,7 @@ import time
 import ast
 import pandas as pd
 
-from utils.utils import verbose_print, round_self
+from claudio.utils.utils import verbose_print, round_self
 
 
 def retrieve_oligomeric_states(data, verbose_level):

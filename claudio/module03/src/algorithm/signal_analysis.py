@@ -1,4 +1,4 @@
-from utils.utils import round_self
+from claudio.utils.utils import round_self
 
 
 def analyse_homo_signals(data):

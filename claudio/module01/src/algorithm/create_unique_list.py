@@ -2,11 +2,10 @@ import os
 import socket
 import sys
 import pandas as pd
-
 import requests as r
 from io import StringIO
 
-from utils.utils import verbose_print, round_self
+from claudio.utils.utils import verbose_print, round_self
 
 
 def create_list_of_unique_proteins(data, unique_protein_temp_dir, search_tool, blast_bin, blast_db, hhsearch_bin,

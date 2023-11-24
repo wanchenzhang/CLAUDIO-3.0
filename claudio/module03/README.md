@@ -5,9 +5,9 @@
 > python3 claudio_ops.py [-i <filepath>] [-o <directorypath>] [-v <int>] 
 
 -i,   --input-filepath,         path to inputfile,
-                                default="data/out/unique_protein_list/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv.sqcs"
--o,   --output-directory,       output directory for produced csv-files, default="data/out/homo_signal/"
--v,    --verbose-level,         verbose level value, default=3:
+                                default="test/sample_data_random.sqcs"
+-o,   --output-directory,       output directory for produced csv-files, default="test/out/sample/"
+-v,   --verbose-level,          verbose level value, default=3:
                                     0: no outputs at all will be written to the commandline
                                     1: write tool inits and passed time
                                     2: write progressbars (where implemented)
@@ -39,18 +39,18 @@ cross-linked residues, the relative overlaps of peptides, as well as a simple TR
 overlapping peptide sequences.
 
 ### Example
-The project can be run like this:
+This module can be run like with default parameters on the sample dataset:
 ```
-python3 claudio_ops.py
+claudio_ops
 ```
-This will result in a CSV-file in "data/out/homo_signal" containing the full dataset with the results of the OPS 
+This will result in a CSV-file in "test/out/sample" containing the full dataset with the results of the OPS 
 analysis tool, and three histograms depicting the analysis' results as distributions, all pertaining the project's 
-default dataset ['liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv'](https://github.com/KohlbacherLab/CLAUDIO/blob/main/data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv).
+default dataset ['sample_data_random.csv'](https://github.com/KohlbacherLab/CLAUDIO/blob/main/test/sample_data_random.csv).
 ```
-python3 claudio_ops.py -i "c/user/documents/cross_links.csv -p "{'my_entry1': 'unip_id', 'peptide1': 'pep_a', 'peptide2': 'pep_b', 'position1': 'pos_a', 'position2': 'pos_b', 'k_pos1': 'res_pos_a', 'k_pos2': 'res_pos_b'}" -s True -o "c/user/documents/outs"
+claudio_ops -i "c/user/documents/cross_links.csv -o "c/user/documents/outs"
 ```
-This will result in the respective outputs into the directory "c/user/documents/outs" for the placeholder 
-'cross_links.csv' with a fresh uniprot search for the full protein sequences.
+This will result in the respective outputs into the directory "c/user/documents/outs" for the input dataset 
+'cross_links.csv'.
 
 ## Authors
 * **Alexander Röhl**

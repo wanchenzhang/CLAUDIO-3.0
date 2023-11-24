@@ -12,32 +12,13 @@ These include...
 * ... Information on possible oligomeric states discovered by SWISS-MODEL homology
 * ... Cross-link type estimations
 
-## Prerequisites
-### Python
-This tool is written in and has to be run with python 3 (last tested v3.11).\
-It has the following requirements:
-
-Packages:
-* biopython 1.79
-* click 8.1.3
-* matplotlib 3.6.3
-* pandas 1.5.3
-* requests 2.28.2
-
-The packages may be installed all at once with the file [requirements.txt](https://github.com/KohlbacherLab/CLAUDIO/blob/main/requirements.txt):
+## Setup
+For a quick setup, run the following command with the ``pip``-installation associated with your version of python 3, 
+while your current working directory is the directory containing this README file (alternatively: replace '``.``' in the
+command with the path to said directory):
 ```
-pip install -r requirements.txt
+pip install .
 ```
-or individually:
-```
-pip install biopython==1.79
-pip install click==8.1.3
-pip install matplotlib==3.6.3
-pip install pandas==1.5.3
-pip install requests==2.28.2
-```
-Note: Both approaches need to refer to the pip-installer associated to the python installation, that will be used to run
-the tool.
 
 ### External Tools
 In order to run *CLAUDIO* you need to install the following external tools:
@@ -85,6 +66,31 @@ In addition to the aforementioned online databases, *CLAUDIO* accesses the SIFTS
 We also recommend updating this file from time to time ([download here](http://ftp.ebi.ac.uk/pub/databases/msd/sifts/flatfiles/csv/pdb_chain_uniprot.csv.gz)) 
 in order to keep up its efficiency, though this is not a necessity (last updated: 26.09.2023).
 
+### Optional: Packages (background info)
+This tool is written in and has to be run with python 3 (last tested v3.11).\
+It has the following requirements:
+
+* biopython 1.79
+* click 8.1.3
+* matplotlib 3.6.3
+* pandas 1.5.3
+* requests 2.28.2
+
+The packages may be installed all at once with the file [requirements.txt](https://github.com/KohlbacherLab/CLAUDIO/blob/main/requirements.txt):
+```
+pip install -r requirements.txt
+```
+or individually:
+```
+pip install biopython==1.79
+pip install click==8.1.3
+pip install matplotlib==3.6.3
+pip install pandas==1.5.3
+pip install requests==2.28.2
+```
+Note: Both approaches need to refer to the pip-installer associated to the python installation, that will be used to run
+the tool.
+
 ## Usage
 *CLAUDIO* consists of a total of 4 modules. Each module can be run independently as long as appropriate inputs are 
 delivered. For details on how to run the modules individually see their respective README-files.
@@ -96,13 +102,13 @@ delivered. For details on how to run the modules individually see their respecti
 For details on how to run the **full** pipeline continue below.
 
 ---
----
+
 ---
 
 ## CLAUDIO - Full pipeline
 ### The CLI - Command Line Interface
 ```
-> python3 claudio.py [-i <filepath>] [-it <diretorypath>] [-o <directorypath/"">] [-p <"comma-separated str">] [-bl <directorypath/None>] [-bldb <directorypath>] [-tl <directorypath>] [-x <comma-separated str>] [-lmin <float>] [-lmax <float>] [-t <"blastp">] [-e <float] [-qi <float>] [-cv <float>] [-r <float>] [-rt <True/False>] [-pc <float>] [-s <True/False>] [-v <int>] [-es <float>] [-dm <float>] [-ct <float>] [-c <filepath>] 
+> claudio [-i <filepath>] [-it <diretorypath>] [-o <directorypath/"">] [-p <"comma-separated str">] [-bl <directorypath/None>] [-bldb <directorypath>] [-tl <directorypath>] [-x <comma-separated str>] [-lmin <float>] [-lmax <float>] [-t <"blastp">] [-e <float] [-qi <float>] [-cv <float>] [-r <float>] [-rt <True/False>] [-pc <float>] [-s <True/False>] [-v <int>] [-es <float>] [-dm <float>] [-ct <float>] [-c <filepath>] 
 
 -i,    --input-filepath,        path to inputfile,
                                 default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv"
@@ -215,20 +221,20 @@ Note: All CSV-file outputs pertaining the input dataset are summarized into a si
 **CLAUDIO** (in full) can be run like this:
 * with a configuration file with all parameters (this will run the test dataset, when using the default config.txt, with all non-described parameters being filled with default values)
 ```
-python3 claudio/claudio.py -c config/config.txt
+claudio -c config/config.txt
 ```
 * with a configuration file and a few overwriting CLI parameters (this will run the larger benchmark dataset)
 ```
-python3 claudio/claudio.py -c config/config.txt -i benchmark_data.csv -o test/out/benchmark
+pclaudio -c config/config.txt -i benchmark_data.csv -o test/out/benchmark
 ```
 * with mostly default parameters and a few set as CLI parameters
 ```
-python3 claudio/claudio.py -i /home/user/me/docs/xl_dataset.csv -o /home/user/me/docs/claudio_outputs
+claudio -i /home/user/me/docs/xl_dataset.csv -o /home/user/me/docs/claudio_outputs
 ```
 \
 Also, you may return all CLI parameter options on the terminal like this:
 ```
-python claudio/claudio.py --help
+claudio --help
 ```
 
 ## Authors

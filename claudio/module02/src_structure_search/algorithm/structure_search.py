@@ -5,8 +5,7 @@ import socket
 import pandas as pd
 import os
 
-
-from utils.utils import verbose_print, round_self
+from claudio.utils.utils import verbose_print, round_self
 
 
 def structure_search(data, search_tool, e_value, query_id, coverage, tmp_filepath, blast_bin, blast_db, hhsearch_bin,

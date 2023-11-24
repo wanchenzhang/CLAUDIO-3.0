@@ -3,12 +3,12 @@ import time
 import sys
 import os
 
-from module01.src.main import main as run_claudio_lists
-from module02.run_module02_intra import main as run_claudio_structdi
-from module03.src.main import main as run_claudio_ops
-from module04.src.main import main as run_claudio_xl
+from claudio.module01.src.main import main as run_claudio_lists
+from claudio.module02.run_module02_intra import main as run_claudio_structdi
+from claudio.module03.src.main import main as run_claudio_ops
+from claudio.module04.src.main import main as run_claudio_xl
 
-from utils.utils import verbose_print, round_self, evaluate_boolean_input
+from claudio.utils.utils import verbose_print, round_self, evaluate_boolean_input
 
 _DEFAULT_OPTIONS = ["test/sample_data_random.csv", None,
                     "peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2", False, "K,M:N:1", "blastp",

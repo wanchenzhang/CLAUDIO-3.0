@@ -3,8 +3,7 @@ import socket
 import time
 import requests as r
 
-
-from utils.utils import verbose_print, round_self
+from claudio.utils.utils import verbose_print, round_self
 
 
 def download_pdbs(dataset, search_tool, res_cutoff, output_directory, verbose_level):

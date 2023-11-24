@@ -2,10 +2,10 @@
 
 ### The CLI - Command Line Interface
 ```
-> python3 claudio_lists.py [-i <filepath>] [-it <directorypath>] [-p <"projection_dict">] [-s <True/False>] [-t <"blastp"/"hhsearch">] [-o <directorypath>] [-bl <directorypath>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-v <int>]
+> claudio_lists [-i <filepath>] [-it <directorypath>] [-p <"projection_dict">] [-s <True/False>] [-x <comma-separated str>] [-t <"blastp">] [-o <directorypath>] [-bl <directorypath>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-v <int>]
 
 -i,    --input-filepath,        path to inputfile,
-                                default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv"
+                                default="test/sample_data_random.csv"
 -it,   --input-temppath,        path to directory for temporary files, default=None
 -p,    --projections,           comma-separated position-sensitive list that names the column names of the users dataset
                                 containing the necessary information for the tool. The column names should contain and 
@@ -26,9 +26,9 @@
                                 one-letter-code symbol of the residue in order to specify full sequence position 
                                 (either 1 for start, or -1 for end position) and/or the atom used for the distance
                                 computation, default="K,M:N:1"
--t,    --search-tool,           can be either "blastp" or "hhsearch", specifying the tool which should be used for pdb 
+-t,    --search-tool,           always set to "blastp" (as of this version), specifying the tool which should be used for pdb 
                                 search, default="blastp"
--o,    --output-directory,      output directory for produced csv-files, default="data/out/unique_protein_list"
+-o,    --output-directory,      output directory for produced csv-files, default="test/out/sample"
 -bl,   --blast-bin,             binary directory in blast installation, or None if binary directory has been added to 
                                 PATH variable (e.g. if blast can be called from anywhere), default=None
 -bldb, --blast-db,              database directory for blast installation, default="$BLASTDB"
@@ -50,11 +50,9 @@ interacting residue and two columns have to contain the crosslinked residue's po
 (alternative: fill these with Nans, but add two columns with the crosslinked residue position in the respective 
 peptide).\ It is recommended to start the analysis of your cross-linking dataset here, if you do not run the full 
 pipeline. Most important for this first step is the customization of the parameter "-p / --projections". This parameter 
-requires a python dictionary as input, which maps the column names of your dataset to the ones used in the tool. You may
-see examples for this in [this module](https://github.com/KohlbacherLab/CLAUDIO/blob/main/module01/src/dict/default_projections.py)
-or in the [example configuration-file](https://github.com/KohlbacherLab/CLAUDIO/blob/main/config.txt). You can also add
-your own projection to either [this file](https://github.com/KohlbacherLab/CLAUDIO/blob/main/module01/src/dict/default_projections.py)
-or to your own configuration file.
+requires a comma-separated position-sensitive list, which maps the column names of your dataset to the ones used in the tool. You may
+see examples for this in [this module](https://github.com/KohlbacherLab/CLAUDIO/blob/module01/src/main.py)
+or in the [example configuration-file](https://github.com/KohlbacherLab/CLAUDIO/blob/config/config_description.txt).
 
 ### Output
 This tool will return two CSV-files and one LOG-file. One contains a list of all unique proteins, their full uniprot 
@@ -64,16 +62,16 @@ lists eventual issues or errors in cross-linked residue positions in the inputfi
 output.
 
 ### Example
-The project can be run like this:
+This module can be run like with default parameters on the sample dataset:
 ```
-python3 claudio_lists.py
+claudio_lists
 ```
-This will result in two CSV-files in "data/out/unique_protein_list" pertaining the project's default dataset 
-['liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv'](https://github.com/KohlbacherLab/CLAUDIO/blob/main/data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv).
+This will result in two CSV-files in "data/out/unique_protein_list" pertaining the project's sample dataset 
+['sample_data_random.csv'](https://github.com/KohlbacherLab/CLAUDIO/blob/main/test/sample_data_random.csv).
 ```
-python3 claudio_lists.py -i "c/user/documents/cross_links.csv -p "{'my_entry1': 'unip_id', 'peptide1': 'pep_a', 'peptide2': 'pep_b', 'position1': 'pos_a', 'position2': 'pos_b', 'k_pos1': 'res_pos_a', 'k_pos2': 'res_pos_b'}" -t "hhsearch" -o "c/user/documents/outs"
+python3 claudio_lists.py -i "c/user/documents/cross_links.csv -o "c/user/documents/outs"
 ```
-This will result in two csv-files in "c/user/documents/outs" for the placeholder 'cross_links.csv'.
+This will result in two csv-files in "c/user/documents/outs" for the input dataset 'cross_links.csv'.
 
 ## Authors
 * **Alexander Röhl**

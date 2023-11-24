@@ -2,15 +2,15 @@
 
 ### The CLI - Command Line Interface
 ```
-> python3 claudio_structdi.py [-i <filepath>] [-it <directorypath>] [-rt <True/False>] [-t <"blastp"/"hhsearch">] [-pc <float>] [-lmin <float>] [-lmax <float>] [-e <float>] [-qi <float>] [-c <float>] [-r <float>] [-o <directorypath>] [-bl <directorypath>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-tl <directorypath>] [-v <int>]
+> claudio_structdi [-i <filepath>] [-it <directorypath>] [-rt <True/False>] [-t <"blastp">] [-x <comma-separated str>] [-pc <float>] [-lmin <float>] [-lmax <float>] [-e <float>] [-qi <float>] [-c <float>] [-r <float>] [-o <directorypath>] [-bl <directorypath>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-tl <directorypath>] [-v <int>]
 
 -i,    --input-filepath,        path to inputfile,
-                                default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv"
+                                default="test/sample_data_random.sqcs"
 -it,   --input-temppath,        path to directory for temporary files, default=None
 -rt,   --read-temps,            if the tool has been run before with the same input a temporary file was saved, which 
                                 can be used to retireve the previouse results of the uniprot and structure searches,
                                 default=False
--t,    --search-tool,           can be either "blastp" or "hhsearch", specifying the tool which should be used for pdb 
+-t,    --search-tool,           always set to "blastp" (as of this version), specifying the tool which should be used for pdb 
                                 search, default="blastp"
 -x,    --xl-residues,           comma-separated one-letter-code residues, optional: add two ':' after the 
                                 one-letter-code symbol of the residue in order to specify full sequence position 
@@ -24,7 +24,7 @@
 -qi,   --query-id,              query identity used in structure search, default=90.0
 -c,    --coverage,              coverage used in structure search, default=50.0
 -r,    --res-cutoff,            float value used as cutoff in angstrom for resolution of structure files, default=6.5
--o,    --output-directory,      output directory, default="data/out/module02"
+-o,    --output-directory,      output directory, default="test/out/sample"
 -bl,   --blast-bin,             binary directory in blast installation, or None if binary directory has been added to 
                                 PATH variable (e.g. if blast can be called from anywhere), default=None
 -bldb, --blast-db,              database directory for blast installation, default="$BLASTDB"
@@ -65,18 +65,18 @@ structural distance computation's results, two histogram PNG-files depicting the
 differences, and two more which depict the experimental methods and their resolution for each pdb structure.
 
 ### Example
-The project can be run like this:
+This module can be run like with default parameters on the sample dataset:
 ```
-python3 claudio_structdi.py
+claudio_structdi
 ```
-This will result in a directory called 'structures' in "data/out/module02" filled with pdb structures, two 
+This will result in a directory called 'structures' in "test/out/sample" filled with pdb structures, two 
 histograms describing their resolutions and experimental methods, and one CSV-file with the associated results of the
 structural distance analysis, all pertaining the project's default dataset 
-['liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv'](https://github.com/KohlbacherLab/CLAUDIO/blob/main/data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv).
+['sample_data_random.csv'](https://github.com/KohlbacherLab/CLAUDIO/blob/main/test/sample_data_random.csv).
 ```
-python3 claudio_structdi.py -i "c/user/documents/cross_links.csv -p "{'my_entry1': 'unip_id', 'peptide1': 'pep_a', 'peptide2': 'pep_b', 'position1': 'pos_a', 'position2': 'pos_b', 'k_pos1': 'res_pos_a', 'k_pos2': 'res_pos_b'}" -rt True -o "c/user/documents/outs"
+claudio_structdi -i c/user/documents/cross_links.csv -rt True -o "c/user/documents/outs"
 ```
-This will result in the respective outputs into the directory "c/user/documents/outs" for the placeholder 
+This will result in the respective outputs into the directory "c/user/documents/outs" for the input dataset 
 'cross_links.csv' using the temporary save files from the last execution (if this has not been run previously with the 
 same input, this will return an error).
 

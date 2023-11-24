@@ -1,3 +1,3 @@
-from module01.src.main import main
+from claudio.module01.src.main import main
 
 main()

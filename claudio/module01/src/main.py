@@ -4,25 +4,25 @@ import sys
 import time
 import pandas as pd
 
-from module01.src.io.read_in import read_inputfile
-from module01.src.io.read_temp import read_temp_search_save
-from module01.src.algorithm.uniprot_search import do_uniprot_search
-from module01.src.algorithm.check_data import double_check_data
-from module01.src.algorithm.create_unique_list import create_list_of_unique_proteins
-from module01.src.io.write_out import write_outputs
+from claudio.module01.src.io.read_in import read_inputfile
+from claudio.module01.src.io.read_temp import read_temp_search_save
+from claudio.module01.src.algorithm.uniprot_search import do_uniprot_search
+from claudio.module01.src.algorithm.check_data import double_check_data
+from claudio.module01.src.algorithm.create_unique_list import create_list_of_unique_proteins
+from claudio.module01.src.io.write_out import write_outputs
 
-from utils.utils import verbose_print, clean_input_paths, evaluate_boolean_input, \
+from claudio.utils.utils import verbose_print, clean_input_paths, evaluate_boolean_input, \
     create_out_path, build_xl_dataset, clean_dataset, round_self
 
 
 @click.command()
-@click.option("-i", "--input-filepath", default="data/in/sample_data.csv")
+@click.option("-i", "--input-filepath", default="test/sample_data_random.csv")
 @click.option("-it", "--input-temppath", default=None)
 @click.option("-p", "--projections", default="peptide1,peptide2,position1,position2,k_pos1,k_pos2,entry1,entry2")
 @click.option("-s", "--uniprot-search", default=True)
 @click.option("-x", "--xl-residues", default="K,M:N:1")
 @click.option("-t", "--search-tool", default="blastp")
-@click.option("-o", "--output-directory", default="data/out/unique_protein_list")
+@click.option("-o", "--output-directory", default="test/out/sample")
 @click.option("-bl", "--blast-bin", default=None)
 @click.option("-bldb", "--blast-db", default="$BLASTDB")
 @click.option("-hh", "--hhsearch-bin", default=None)

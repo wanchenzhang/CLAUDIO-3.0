@@ -12,9 +12,19 @@ setup(
               'claudio.module04', 'claudio.module04.src', 'claudio.module04.src.io', 'claudio.module04.src.algorithm'],
     url='https://github.com/KohlbacherLab/CLAUDIO',
     license='MIT',
+    platforms='Windows/Linux/Mac',
     author='Alexander Röhl',
     author_email='alexander.roehl@uni-tuebingen.de',
     description='Structural analysis, mapping, validation, visualization, and modeling of protein cross-links on '
                 'protein and protein-protein interaction.',
-    install_requires=['biopython==1.79', 'click==8.1.3', 'matplotlib==3.6.3', 'pandas==1.5.3', 'requests==2.28.2']
+    install_requires=['biopython==1.79', 'click==8.1.3', 'matplotlib==3.6.3', 'pandas==1.5.3', 'requests==2.28.2'],
+    entry_points={
+        'console_scripts': [
+            'claudio=claudio.claudio:main',
+            'claudio_lists=claudio.module01.src.main:main',
+            'claudio_structdi=claudio.module02.run_module02_intra:main',
+            'claudio_ops=claudio.module03.src.main:main',
+            'claudio_xl=claudio.module04.src.main:main'
+        ]
+    }
 )

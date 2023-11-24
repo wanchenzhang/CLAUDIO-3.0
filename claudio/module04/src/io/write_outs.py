@@ -1,5 +1,4 @@
 import os
-import numpy as np
 
 
 def write_outputs(data, filename, compute_scoring, output_directory):

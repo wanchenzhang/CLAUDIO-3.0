@@ -3,25 +3,26 @@ import click
 import time
 import sys
 
-from module02.src_distance_reevaluation.io.read_uniprot_search_out import read_unipsearch_out
-from module02.src_distance_reevaluation.algorithm.search_pdb_pos import search_site_pos_in_pdb
-from module02.src_distance_reevaluation.algorithm.calc_site_distances import calculate_site_dists
-from module02.src_distance_reevaluation.io.write_out import write_output
-from module02.src_distance_reevaluation.algorithm.create_plots import create_histogram
+from claudio.module02.src_distance_reevaluation.io.read_uniprot_search_out import read_unipsearch_out
+from claudio.module02.src_distance_reevaluation.algorithm.search_pdb_pos import search_site_pos_in_pdb
+from claudio.module02.src_distance_reevaluation.algorithm.calc_site_distances import calculate_site_dists
+from claudio.module02.src_distance_reevaluation.io.write_out import write_output
+from claudio.module02.src_distance_reevaluation.algorithm.create_plots import create_histogram
 
-from utils.utils import verbose_print, create_out_path, clean_input_paths, build_xl_dataset, clean_dataset, round_self
+from claudio.utils.utils import verbose_print, create_out_path, clean_input_paths, build_xl_dataset, clean_dataset, \
+    round_self
 
 
 @click.command()
-@click.option("-i", "--input-directory", default="data/out/structure_search/structures")
-@click.option("-i2", "--input-filepath", default="data/out/unique_protein_list/sample_data.sqcs_structdi.csv")
+@click.option("-i", "--input-directory", default="test/out/sample/structures")
+@click.option("-i2", "--input-filepath", default="test/out/sample/sample_data_random.sqcs_structdi.csv")
 @click.option("-it", "--input-temppath", default=None)
 @click.option("-t", "--search-tool", default="blastp")
 @click.option("-x", "--xl-residues", default="K,M:N:1")
 @click.option("-p", "--plddt-cutoff", default=70.0)
 @click.option("-lmin", "--linker-minimum", default=5.0)
 @click.option("-lmax", "--linker-maximum", default=35.0)
-@click.option("-o", "--output-directory", default="data/out/dist_reeval")
+@click.option("-o", "--output-directory", default="test/out/sample")
 @click.option("-tl", "--topolink-bin", default=None)
 @click.option("-v", "--verbose-level", default=2)
 def main(input_directory, input_filepath, input_temppath, search_tool, xl_residues, plddt_cutoff, linker_minimum,

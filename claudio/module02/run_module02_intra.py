@@ -1,14 +1,14 @@
 import click
 import sys
 
-from module02.src_structure_search.main import main as run_structure_search
-from module02.src_distance_reevaluation.main import main as run_distance_analysis
+from claudio.module02.src_structure_search.main import main as run_structure_search
+from claudio.module02.src_distance_reevaluation.main import main as run_distance_analysis
 
-from utils.utils import *
+from claudio.utils.utils import clean_input_paths, evaluate_boolean_input
 
 
 @click.command()
-@click.option("-i", "--input-filepath", default="data/out/unique_protein_list/sample_data.sqcs")
+@click.option("-i", "--input-filepath", default="test/out/sample/sample_data_random.sqcs")
 @click.option("-it", "--input-temppath", default="")
 @click.option("-rt", "--read-temps", default=False)
 @click.option("-t", "--search-tool", default="blastp")
@@ -20,7 +20,7 @@ from utils.utils import *
 @click.option("-qi", "--query-id", default=90.0)
 @click.option("-c", "--coverage", default=50.0)
 @click.option("-r", "--res-cutoff", default=6.5)
-@click.option("-o", "--output-directory", default="data/out/module02")
+@click.option("-o", "--output-directory", default="test/out/sample")
 @click.option("-bl", "--blast-bin", default=None)
 @click.option("-bldb", "--blast-db", default="$BLASTDB")
 @click.option("-hh", "--hhsearch-bin", default=None)

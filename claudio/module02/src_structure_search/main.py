@@ -3,18 +3,18 @@ import click
 import sys
 import time
 
-from module02.src_structure_search.io.read_input import read_in
-from module02.src_structure_search.algorithm.structure_search import structure_search
-from module02.src_structure_search.io.read_temp import read_temp_file
-from module02.src_structure_search.algorithm.pdb_download import download_pdbs
-from module02.src_structure_search.algorithm.chain_copies import create_ident_chain_copies
-from module02.src_structure_search.io.write_out import write_output
+from claudio.module02.src_structure_search.io.read_input import read_in
+from claudio.module02.src_structure_search.algorithm.structure_search import structure_search
+from claudio.module02.src_structure_search.io.read_temp import read_temp_file
+from claudio.module02.src_structure_search.algorithm.pdb_download import download_pdbs
+from claudio.module02.src_structure_search.algorithm.chain_copies import create_ident_chain_copies
+from claudio.module02.src_structure_search.io.write_out import write_output
 
-from utils.utils import verbose_print, clean_input_paths, create_out_path, round_self
+from claudio.utils.utils import verbose_print, clean_input_paths, create_out_path, round_self
 
 
 @click.command()
-@click.option("-i", "--input-filepath", default="data/out/unique_protein_list/sample_data.sqcs")
+@click.option("-i", "--input-filepath", default="test/out/sample/sample_data_random.sqcs")
 @click.option("-it", "--input-temppath", default=None)
 @click.option("-s", "--do-structure-search", default=True)
 @click.option("-t", "--search-tool", default="blastp")
@@ -22,7 +22,7 @@ from utils.utils import verbose_print, clean_input_paths, create_out_path, round
 @click.option("-q", "--query-id", default=90.0)
 @click.option("-c", "--coverage", default=50.0)
 @click.option("-r", "--res-cutoff", default=6.5)
-@click.option("-o", "--output-directory", default="data/out/structure_search")
+@click.option("-o", "--output-directory", default="test/out/sample")
 @click.option("-bl", "--blast-bin", default=None)
 @click.option("-bldb", "--blast-db", default="$BLASTDB")
 @click.option("-hh", "--hhsearch-bin", default=None)

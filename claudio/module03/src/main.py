@@ -2,17 +2,17 @@ import click
 import sys
 import time
 
-from module03.src.io.read_in import read_in
-from module03.src.algorithm.signal_analysis import analyse_homo_signals
-from module03.src.algorithm.create_histograms import create_homo_signal_histograms
-from module03.src.io.write_out import write_output
+from claudio.module03.src.io.read_in import read_in
+from claudio.module03.src.algorithm.signal_analysis import analyse_homo_signals
+from claudio.module03.src.algorithm.create_histograms import create_homo_signal_histograms
+from claudio.module03.src.io.write_out import write_output
 
-from utils.utils import verbose_print, clean_input_paths, create_out_path, clean_dataset, round_self
+from claudio.utils.utils import verbose_print, clean_input_paths, create_out_path, clean_dataset, round_self
 
 
 @click.command()
-@click.option("-i", "--input-filepath", default="data/out/unique_protein_list/sample_data.sqcs")
-@click.option("-o", "--output-directory", default="data/out/homo_signal/")
+@click.option("-i", "--input-filepath", default="test/out/sample/sample_data_random.sqcs")
+@click.option("-o", "--output-directory", default="test/out/sample/")
 @click.option("-v", "--verbose-level", default=2)
 def main(input_filepath, output_directory, verbose_level):
     verbose_print("Start Homo-signal analysis", 0, verbose_level)

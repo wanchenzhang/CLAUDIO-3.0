@@ -1,10 +1,9 @@
 import socket
 import sys
 import pandas as pd
-
 import requests as r
 
-from utils.utils import verbose_print, round_self
+from claudio.utils.utils import verbose_print, round_self
 
 
 def do_uniprot_search(data, tmp_filepath, verbose_level):
