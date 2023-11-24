@@ -51,8 +51,8 @@ interacting residue and two columns have to contain the crosslinked residue's po
 peptide).\ It is recommended to start the analysis of your cross-linking dataset here, if you do not run the full 
 pipeline. Most important for this first step is the customization of the parameter "-p / --projections". This parameter 
 requires a comma-separated position-sensitive list, which maps the column names of your dataset to the ones used in the tool. You may
-see examples for this in [this module](https://github.com/KohlbacherLab/CLAUDIO/blob/module01/src/main.py)
-or in the [example configuration-file](https://github.com/KohlbacherLab/CLAUDIO/blob/config/config_description.txt).
+see examples for this in [this module](https://github.com/KohlbacherLab/CLAUDIO/tree/main/module01/src/main.py)
+or in the [example configuration-file](https://github.com/KohlbacherLab/CLAUDIO/tree/main/config/config_description.txt).
 
 ### Output
 This tool will return two CSV-files and one LOG-file. One contains a list of all unique proteins, their full uniprot 
@@ -67,7 +67,7 @@ This module can be run like with default parameters on the sample dataset:
 claudio_lists
 ```
 This will result in two CSV-files in "data/out/unique_protein_list" pertaining the project's sample dataset 
-['sample_data_random.csv'](https://github.com/KohlbacherLab/CLAUDIO/blob/main/test/sample_data_random.csv).
+['sample_data_random.csv'](https://github.com/KohlbacherLab/CLAUDIO/tree/main/test/sample_data_random.csv).
 ```
 python3 claudio_lists.py -i "c/user/documents/cross_links.csv -o "c/user/documents/outs"
 ```

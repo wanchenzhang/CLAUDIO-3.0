@@ -45,7 +45,7 @@ claudio_ops
 ```
 This will result in a CSV-file in "test/out/sample" containing the full dataset with the results of the OPS 
 analysis tool, and three histograms depicting the analysis' results as distributions, all pertaining the project's 
-default dataset ['sample_data_random.csv'](https://github.com/KohlbacherLab/CLAUDIO/blob/main/test/sample_data_random.csv).
+default dataset ['sample_data_random.csv'](https://github.com/KohlbacherLab/CLAUDIO/tree/main/test/sample_data_random.csv).
 ```
 claudio_ops -i "c/user/documents/cross_links.csv -o "c/user/documents/outs"
 ```

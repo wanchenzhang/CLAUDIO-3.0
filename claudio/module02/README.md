@@ -72,7 +72,7 @@ claudio_structdi
 This will result in a directory called 'structures' in "test/out/sample" filled with pdb structures, two 
 histograms describing their resolutions and experimental methods, and one CSV-file with the associated results of the
 structural distance analysis, all pertaining the project's default dataset 
-['sample_data_random.csv'](https://github.com/KohlbacherLab/CLAUDIO/blob/main/test/sample_data_random.csv).
+['sample_data_random.csv'](https://github.com/KohlbacherLab/CLAUDIO/tree/main/test/sample_data_random.csv).
 ```
 claudio_structdi -i c/user/documents/cross_links.csv -rt True -o "c/user/documents/outs"
 ```

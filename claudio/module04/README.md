@@ -49,7 +49,7 @@ claudio_xl
 This will result in a CSV-file in "test/out/sample" containing the full dataset with the results of the structural 
 distance analysis tool, OPS analysis tool, and final cross-link type evaluation, as well as one histogram depicting the 
 confidence score distribution, all pertaining the project's default dataset 
-['sample_data_random.csv'](https://github.com/KohlbacherLab/CLAUDIO/blob/main/test/sample_data_random.csv).
+['sample_data_random.csv'](https://github.com/KohlbacherLab/CLAUDIO/tree/main/test/sample_data_random.csv).
 ```
 claudio_xl -i c/user/documents/cross_links.csv -o c/user/documents/outs
 ```

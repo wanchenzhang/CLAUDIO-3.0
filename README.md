@@ -62,7 +62,7 @@ errors or suspicious inconsistencies in the results persist due to this, you may
 ### Offline Databases
 In addition to the aforementioned online databases, *CLAUDIO* accesses the SIFTS database
 [[7,8]](https://github.com/KohlbacherLab/CLAUDIO/tree/main#references). The file in question can be found 
-[here](https://github.com/KohlbacherLab/CLAUDIO/blob/main/claudio/data/pdb_chain_uniprot.csv).\
+[here](https://github.com/KohlbacherLab/CLAUDIO/tree/main/claudio/data/pdb_chain_uniprot.csv).\
 We also recommend updating this file from time to time ([download here](http://ftp.ebi.ac.uk/pub/databases/msd/sifts/flatfiles/csv/pdb_chain_uniprot.csv.gz)) 
 in order to keep up its efficiency, though this is not a necessity (last updated: 26.09.2023).
 
@@ -76,7 +76,7 @@ It has the following requirements:
 * pandas 1.5.3
 * requests 2.28.2
 
-The packages may be installed all at once with the file [requirements.txt](https://github.com/KohlbacherLab/CLAUDIO/blob/main/requirements.txt):
+The packages may be installed all at once with the file [requirements.txt](https://github.com/KohlbacherLab/CLAUDIO/tree/main/requirements.txt):
 ```
 pip install -r requirements.txt
 ```
@@ -94,10 +94,10 @@ the tool.
 ## Usage
 *CLAUDIO* consists of a total of 4 modules. Each module can be run independently as long as appropriate inputs are 
 delivered. For details on how to run the modules individually see their respective README-files.
-* [Module 01 - Unique protein (pair) listing tool](https://github.com/KohlbacherLab/CLAUDIO/blob/main/claudio/module01/README.md)
-* [Module 02 - Structural distance analysis tool](https://github.com/KohlbacherLab/CLAUDIO/blob/main/claudio/module02/README.md)
-* [Module 03 - Overlapping peptide sequence analysis tool](https://github.com/KohlbacherLab/CLAUDIO/blob/main/claudio/module03/README.md)
-* [Module 04 - XL-type evaluation](https://github.com/KohlbacherLab/CLAUDIO/blob/main/claudio/module04/README.md)
+* [Module 01 - Unique protein (pair) listing tool](https://github.com/KohlbacherLab/CLAUDIO/tree/main/claudio/module01/README.md)
+* [Module 02 - Structural distance analysis tool](https://github.com/KohlbacherLab/CLAUDIO/tree/main/claudio/module02/README.md)
+* [Module 03 - Overlapping peptide sequence analysis tool](https://github.com/KohlbacherLab/CLAUDIO/tree/main/claudio/module03/README.md)
+* [Module 04 - XL-type evaluation](https://github.com/KohlbacherLab/CLAUDIO/tree/main/claudio/module04/README.md)
 
 For details on how to run the **full** pipeline continue below.
 
@@ -202,7 +202,7 @@ With this the relevant settings are defined. You may choose to further specify t
 of coverage, sequence identity, and e-value, as well as the resolution cutoff during the structure selection, or even 
 the advanced settings.
 
-You may see examples for all parameters in the [example configuration-file](https://github.com/KohlbacherLab/CLAUDIO/blob/main/config/config.txt),
+You may see examples for all parameters in the [example configuration-file](https://github.com/KohlbacherLab/CLAUDIO/tree/main/config/config.txt),
 which also serves as an alternative to supply all parameter inputs.
 
 
