@@ -7,7 +7,7 @@ def read_inputs(file1, file2):
     # input file1: str, file2: str
     # return data: pd.DataFrame
 
-    data1 = pd.read_csv(file1, index_col=0)
+    data1 = pd.read_csv(file1, index_col=0, low_memory=False)
     data2 = pd.read_csv(file2, index_col=0)
     data = merge_datasets(data1, data2)
     data.loc[data.chain_a != data.chain_b, "homo_pep_overl"] = False

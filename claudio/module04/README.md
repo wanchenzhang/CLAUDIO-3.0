@@ -5,9 +5,9 @@
 > claudio_xl [-i <filepath>] [-i2 <filepath>] [-p <float>] [-lmin <float>] [-lmax <float>] [-es <float>] [-dm <float] [-c <float>] [-o <directorypath>] [-s <True/False>] [-v <int>]
 
 -i,   --input-filepath,         path to outputfile of structural distance analysis,
-                                default="test/sample_data_random.sqcs_structdi.csv"
+                                default="test/out/sample/sample_data_random.sqcs_structdi.csv"
 -i2,  --input-filepath2,        path to outputfile of ops analysis,
-                                default="test/sample_data_random.sqcs_ops.csv"
+                                default="test/out/sample/sample_data_random.sqcs_ops.csv"
 -p,   --plddt-cutoff,           float value used as cutoff for alphafold structure prediction confidences (plddt), 
                                 default=70.0  
 -lmin,--linker-minimum,         float value used as minimal crosslinker range in angstrom, default=0.0

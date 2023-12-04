@@ -5,7 +5,7 @@
 > claudio_structdi [-i <filepath>] [-it <directorypath>] [-rt <True/False>] [-t <"blastp">] [-x <comma-separated str>] [-pc <float>] [-lmin <float>] [-lmax <float>] [-e <float>] [-qi <float>] [-c <float>] [-r <float>] [-o <directorypath>] [-bl <directorypath>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-tl <directorypath>] [-v <int>]
 
 -i,    --input-filepath,        path to inputfile,
-                                default="test/sample_data_random.sqcs"
+                                default="test/out/sample/sample_data_random.sqcs"
 -it,   --input-temppath,        path to directory for temporary files, default=None
 -rt,   --read-temps,            if the tool has been run before with the same input a temporary file was saved, which 
                                 can be used to retireve the previouse results of the uniprot and structure searches,

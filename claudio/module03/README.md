@@ -5,7 +5,7 @@
 > python3 claudio_ops.py [-i <filepath>] [-o <directorypath>] [-v <int>] 
 
 -i,   --input-filepath,         path to inputfile,
-                                default="test/sample_data_random.sqcs"
+                                default="test/out/sample/sample_data_random.sqcs"
 -o,   --output-directory,       output directory for produced csv-files, default="test/out/sample/"
 -v,   --verbose-level,          verbose level value, default=3:
                                     0: no outputs at all will be written to the commandline

@@ -203,8 +203,23 @@ def clean_dataset(data, method=""):
             if len(data_ind_snippet.index) > 1:
                 inter_snip = data_ind_snippet[data_ind_snippet.XL_type == "inter"]
                 intra_snip = data_ind_snippet[data_ind_snippet.XL_type == "intra"]
-                drop_indeces.extend([i for i in inter_snip.index if is_intra or (i != inter_snip.topo_dist.idxmin())])
-                drop_indeces.extend([i for i in intra_snip.index if (not is_intra) or (i != intra_snip.topo_dist.idxmin())])
+                no_evidence_found = inter_snip.evidence == ''
+                dist_calc = ~pd.isna(inter_snip.topo_dist)
+                if not inter_snip[no_evidence_found & dist_calc].empty:
+                    drop_indeces.extend([i for i in inter_snip.index if is_intra or
+                                         (i != inter_snip[no_evidence_found & dist_calc].topo_dist.idxmin())])
+                elif not inter_snip[dist_calc].empty:
+                    drop_indeces.extend([i for i in inter_snip.index if is_intra or
+                                         (i != inter_snip[dist_calc].topo_dist.idxmin())])
+                elif not inter_snip[no_evidence_found].empty:
+                    drop_indeces.extend([i for i in inter_snip.index if is_intra or
+                                         (i != inter_snip[no_evidence_found].topo_dist.idxmin())])
+                else:
+                    drop_indeces.extend([i for i in inter_snip.index
+                                         if is_intra or (i != inter_snip.topo_dist.idxmin())])
+
+                drop_indeces.extend([i for i in intra_snip.index
+                                     if (not is_intra) or (i != intra_snip.topo_dist.idxmin())])
 
             if all((i in drop_indeces for i in data_ind_snippet.index)):
                 drop_indeces.remove(data_ind_snippet.index[0])

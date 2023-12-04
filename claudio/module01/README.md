@@ -2,7 +2,7 @@
 
 ### The CLI - Command Line Interface
 ```
-> claudio_lists [-i <filepath>] [-it <directorypath>] [-p <"projection_dict">] [-s <True/False>] [-x <comma-separated str>] [-t <"blastp">] [-o <directorypath>] [-bl <directorypath>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-v <int>]
+> claudio_lists [-i <filepath>] [-it <directorypath>] [-p <"comma-separated str">] [-s <True/False>] [-x <comma-separated str>] [-t <"blastp">] [-o <directorypath>] [-bl <directorypath>] [-bldb <directorypath>] [-hh <directorypath>] [-hhdb <directorypath>] [-v <int>]
 
 -i,    --input-filepath,        path to inputfile,
                                 default="test/sample_data_random.csv"

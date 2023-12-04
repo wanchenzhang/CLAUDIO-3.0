@@ -110,10 +110,9 @@ For details on how to run the **full** pipeline continue below.
 ```
 > claudio [-i <filepath>] [-it <diretorypath>] [-o <directorypath/"">] [-p <"comma-separated str">] [-bl <directorypath/None>] [-bldb <directorypath>] [-tl <directorypath>] [-x <comma-separated str>] [-lmin <float>] [-lmax <float>] [-t <"blastp">] [-e <float] [-qi <float>] [-cv <float>] [-r <float>] [-rt <True/False>] [-pc <float>] [-s <True/False>] [-v <int>] [-es <float>] [-dm <float>] [-ct <float>] [-c <filepath>] 
 
--i,    --input-filepath,        path to inputfile,
-                                default="data/in/liu18_schweppe17_linked_residues_intra-homo_2370_nonredundant.csv"
+-i,    --input-filepath,        path to inputfile, default="test/sample_data_random.csv"
 -it,   --input-temppath,        path to directory for temporary files, default=None
--o,    --output-directory,      output directory for produced csv-files, default="data/out/full"
+-o,    --output-directory,      output directory for produced csv-files, default="test/out/sample"
 -p,    --projections,           comma-separated position-sensitive list that names the column names of the users dataset
                                 containing the necessary information for the tool. The column names should contain and 
                                 should be given in the following order: crosslinked peptide_a, crosslinked peptide_b, 
@@ -161,7 +160,6 @@ For details on how to run the **full** pipeline continue below.
                                 this value during the confidence scoring, to ensure its consistency, default=50.0
 -ct,   --cutoff,                float value used as confidence score cutoff, if surpassed, the linker type will be set 
                                 to inter, default=0.0
-                                
                                 
 -c,    --config,                filepath to configuration file containing all input parameters, default=''
 ```
