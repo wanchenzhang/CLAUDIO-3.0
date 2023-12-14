@@ -40,9 +40,9 @@ In order to run *CLAUDIO* you need to install the following external tools:
   * Hint: If you followed the Installation Manual (linked up top) to-the-letter, you may have added the environmental 
     variable `$BLASTDB` to your paths. If so, you can use this variable instead of the full path in the input parameters
     of CLAUDIO.
-* **TopoLink** (see [Installation Manual](http://leandro.iqm.unicamp.br/topolink/download.shtml))
+* **TopoLink** (see [Installation Manual](https://m3g.github.io/topolink/download.html))
   * Topolink possesses a standalone executable for Windows 10 systems (or higher), which can be downloaded directly
-  [here](http://leandro.iqm.unicamp.br/topolink/Windows_Binaries/Windows10-64bits/topolink.exe).
+  [here](https://m3g.github.io/topolink/Windows_Binaries/Windows10-64bits/topolink.exe).
 
 To ease the execution of *CLAUDIO* you may want to ensure that these tools can be executed directly from your terminal 
 (e.g. add their respective `bin` directories to the `Path` variable of your OS). Otherwise, you may specify the
