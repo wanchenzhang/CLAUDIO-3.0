@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='CLAUDIO',
-    version='v0.9.0',
+    version='v1.0.0',
     packages=['claudio', 'claudio.utils', 'claudio.data', 'claudio.module01', 'claudio.module01.src',
               'claudio.module01.src.io', 'claudio.module01.src.algorithm', 'claudio.module02',
               'claudio.module02.src_structure_search', 'claudio.module02.src_structure_search.io',
