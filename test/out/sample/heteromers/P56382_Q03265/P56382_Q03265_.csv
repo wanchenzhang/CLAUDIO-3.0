@@ -1,0 +1,3 @@
+pdb_id,chain_a,chain_b,pdb_pos_a,pdb_pos_b,pos_a,pos_b,swiss_model_homology,XL_type
+6TT7,I,A,37.0,460.0,37,503,,inter
+6TT7,I,C,44.0,455.0,44,498,,inter

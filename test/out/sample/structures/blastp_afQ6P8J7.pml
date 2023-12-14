@@ -10,14 +10,20 @@ show cartoon, chain A
 dist intra_22_2_same , resid 353 and blastp_afQ6P8J7 and chain A and name cb, resid 353 and blastp_afQ6P8J7 and chain A and name cb
 show dashes
 set dash_gap, 0.1
-color blue, intra*_valid
-color red, intra*_out_range
-color red, intra*_overlaps
-color red, intra*_same
-color blue, inter*_valid
-color red, inter*_out_range
-color red, inter*_overlaps
-color red, inter*_same
+color 2, intra*_valid
+color 2, intra*_out_range
+color 2, intra*_overlaps
+color 2, intra*_same
+color black, intra*_unknown
+color 13, inter*_valid
+color 13, inter*_out_range
+color 13, inter*_overlaps
+color 13, inter*_same
+color black, inter*_unknown
+set dash_gap, 1, *_out_range
+set dash_gap, 1, *_overlaps
+set dash_gap, 1, *_same
+hide dashes, *_unknown
 set dash_width, 9
 center
 save blastp_afQ6P8J7.pse
