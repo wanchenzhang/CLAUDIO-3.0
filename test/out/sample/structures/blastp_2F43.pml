@@ -1,4 +1,4 @@
-load blastp_2W6E.pdb
+load blastp_2F43.pdb
 hide all
 bg_color white
 set transparency, 0.8
@@ -21,5 +21,5 @@ set dash_gap, 1, *_same
 hide dashes, *_unknown
 set dash_width, 9
 center
-save blastp_2W6E.pse
-png blastp_2W6E.png
+save blastp_2F43.pse
+png blastp_2F43.png
