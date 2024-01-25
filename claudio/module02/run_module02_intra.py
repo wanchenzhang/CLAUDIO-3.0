@@ -19,7 +19,7 @@ from claudio.utils.utils import clean_input_paths, evaluate_boolean_input
 @click.option("-e", "--e-value", default=1e-5)
 @click.option("-qi", "--query-id", default=90.0)
 @click.option("-c", "--coverage", default=50.0)
-@click.option("-r", "--res-cutoff", default=6.5)
+@click.option("-r", "--res-cutoff", default=4)
 @click.option("-o", "--output-directory", default="test/out/sample")
 @click.option("-bl", "--blast-bin", default=None)
 @click.option("-bldb", "--blast-db", default="$BLASTDB")

@@ -23,7 +23,7 @@
 -e,    --e-value,               e-value used in structure search, default=1e-5
 -qi,   --query-id,              query identity used in structure search, default=90.0
 -c,    --coverage,              coverage used in structure search, default=50.0
--r,    --res-cutoff,            float value used as cutoff in angstrom for resolution of structure files, default=6.5
+-r,    --res-cutoff,            float value used as cutoff in angstrom for resolution of structure files, default=4
 -o,    --output-directory,      output directory, default="test/out/sample"
 -bl,   --blast-bin,             binary directory in blast installation, or None if binary directory has been added to 
                                 PATH variable (e.g. if blast can be called from anywhere), default=None
