@@ -167,9 +167,9 @@ def accept_resolution_method(pdb, pdb_id, res_cutoff):
     else:
         all_pdb_methods = ["X-RAY DIFFRACTION", "ELECTRON MICROSCOPY", "SOLUTION NMR", "ELECTRON CRYSTALLOGRAPHY",
                            "NEUTRON DIFFRACTION", "SOLID-STATE NMR", "SOLUTION SCATTERING", "FIBER DIFFRACTION",
-                           "POWDER DIFFRACTION", "EPR", "THEORETICAL MODEL", "	INFRARED SPECTROSCOPY"]
-        accepted_pdb_methods = ["FIBER DIFFRACTION", "NEUTRON DIFFRACTION", "X-RAY DIFFRACTION",
-                                "ELECTRON CRYSTALLOGRAPHY", "ELECTRON MICROSCOPY"]
+                           "POWDER DIFFRACTION", "EPR", "THEORETICAL MODEL", "INFRARED SPECTROSCOPY"]
+        accepted_pdb_methods = ["X-RAY DIFFRACTION", "ELECTRON MICROSCOPY", "SOLUTION NMR", "ELECTRON CRYSTALLOGRAPHY",
+                                "NEUTRON DIFFRACTION", "SOLID-STATE NMR", "FIBER DIFFRACTION"]
         accept_method = False
         accept_resolution = False
 
