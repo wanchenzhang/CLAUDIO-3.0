@@ -193,8 +193,6 @@ def clean_dataset(data, method=""):
             data["sort_index_j"] = [int(i.split('_')[1]) if '_' in i else 1 for i in data.index]
             data = data.sort_values(["sort_index_i", "sort_index_j"]).drop("sort_index_i", axis=1).drop("sort_index_j", axis=1)
     elif method == "minimize":
-        # intra_to_inter_i = {"dist": 0, "ops": 0, "both": 0, "same": 0}
-        # special_ops = []
 
         drop_indeces = []
         for ind in [i for i in data.index if '_' not in str(i)]:
@@ -223,26 +221,16 @@ def clean_dataset(data, method=""):
 
             if all((i in drop_indeces for i in data_ind_snippet.index)):
                 drop_indeces.remove(data_ind_snippet.index[0])
+        for i, row in data.iterrows():
+            if i not in drop_indeces:
+                for next_i, next_row in data.iterrows():
+                    if int(next_i.split('_')[0]) > int(i.split('_')[0]):
+                        same_proteins = (row.unip_id_a == next_row.unip_id_a) and (row.unip_id_b == next_row.unip_id_b)
+                        same_peptides = (row.pep_a == next_row.pep_a) and (row.pep_b == next_row.pep_b)
+                        copies_found = (row.seq_a.count(row.pep_a) > 1) or (row.seq_b.count(row.pep_b) > 1)
+                        if same_proteins and same_peptides and copies_found:
+                            drop_indeces.append(next_i)
 
-        #     kept_i = [i for i in data_ind_snippet.index if i not in drop_indeces]
-        #     to_be_disposed = data_ind_snippet.iloc[0]
-        #     to_be_kept = data_ind_snippet.loc[kept_i[0]]
-        #     if (to_be_kept.evidence or
-        #         ((to_be_kept.unip_id_a == to_be_kept.unip_id_b) and
-        #          (to_be_kept.XL_type == "inter"))) and \
-        #             (not to_be_kept.evidence):
-        #         if ("overlap" in to_be_disposed.evidence) and ("distance" in to_be_disposed.evidence):
-        #             intra_to_inter_i["both"] += 1
-        #             special_ops.append((to_be_disposed.name, to_be_disposed.pdb_id))
-        #         elif "same" in to_be_disposed.evidence:
-        #             intra_to_inter_i["same"] += 1
-        #         elif "overlap" in to_be_disposed.evidence:
-        #             intra_to_inter_i["ops"] += 1
-        #         elif "distance" in to_be_disposed.evidence:
-        #             intra_to_inter_i["dist"] += 1
-        #
-        # print(intra_to_inter_i)
-        # print(special_ops)
         data = data.drop(index=drop_indeces)
 
     return data
