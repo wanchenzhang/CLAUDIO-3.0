@@ -7,10 +7,32 @@ def analyse_homo_signals(data):
     # input data: pd.DataFrame
     # return data: pd.DataFrame
 
+    data["pep_copies_found"] = data.apply(lambda x: search_for_peptide_copies(x, data), axis=1)
     data["homo_adjacency"] = data.apply(lambda x: compute_interaction_adj(x), axis=1)
     data["homo_int_overl"] = data.apply(lambda x: compute_interaction_overlap(x), axis=1)
     data["homo_pep_overl"] = data.homo_int_overl > 0
+    data = data.drop("pep_copies_found", axis=1)
     return data
+
+
+def search_for_peptide_copies(data_row, data):
+    # search the dataset for in-sequence peptide copies. If so, return True marking them to be excluded from
+    # the ops analysis
+    #
+    # input: data_row: pd.Series, data: pd.DataFrame
+    # return bool
+
+    for i, row in data.iterrows():
+        if i != data_row.name:
+            same_proteins = (data_row.unip_id_a == row.unip_id_a) and (data_row.unip_id_b == row.unip_id_b)
+            same_peptides = (data_row.pep_a == row.pep_a) and (data_row.pep_b == row.pep_b)
+            if same_proteins and same_peptides:
+                a_copy_found = data_row.seq_a.count(data_row.pep_a) > 1
+                b_copy_found = data_row.seq_b.count(data_row.pep_b) > 1
+                copies_found = a_copy_found or b_copy_found
+                if copies_found:
+                    return True
+    return False
 
 
 def compute_interaction_adj(data_row):
@@ -20,7 +42,7 @@ def compute_interaction_adj(data_row):
     # input data_row: pd.Series
     # return compute_interaction_dist: float
 
-    if data_row["unip_id_a"] == data_row["unip_id_b"]:
+    if (data_row["unip_id_a"] == data_row["unip_id_b"]) and (not data_row.pep_copies_found):
         adjacency = 1 - (abs(int(data_row["pos_a"]) - int(data_row["pos_b"])) /
                          len(data_row["seq_a"]))
         return round_self(adjacency, 3)
@@ -36,7 +58,7 @@ def compute_interaction_overlap(data_row):
     # input data_row: pd.Series
     # return compute_interaction_overlap: float
 
-    if data_row["unip_id_a"] == data_row["unip_id_b"]:
+    if (data_row["unip_id_a"] == data_row["unip_id_b"]) and (not data_row.pep_copies_found):
         if data_row["pos_a"] == data_row["pos_b"]:
             return 1.0
         else:
