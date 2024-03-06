@@ -1,13 +1,13 @@
-load blastp_afP08249.pdb
+load blastp_1NZN.pdb
 hide all
 bg_color white
 set transparency, 0.8
 zoom center, 50;
 hide everything, show cartoon, chain A
-show surface, chain A and blastp_afP08249
+show surface, chain A and blastp_1NZN
 color 3, chain A
 show cartoon, chain A
-dist intra_20_same , resid 105 and blastp_afP08249 and chain A and name cb, resid 105 and blastp_afP08249 and chain A and name cb
+dist intra_106_valid , resid 95 and blastp_1NZN and chain A and name cb, resid 70 and blastp_1NZN and chain A and name cb
 show dashes
 set dash_gap, 0.1
 color 2, intra*_valid
@@ -26,5 +26,5 @@ set dash_gap, 1, *_same
 hide dashes, *_unknown
 set dash_width, 9
 center
-save blastp_afP08249.pse
-png blastp_afP08249.png
+save blastp_1NZN.pse
+png blastp_1NZN.png
