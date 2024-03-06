@@ -9,7 +9,7 @@ def verbose_print(print_string, threshold, verbose_level, end='\n'):
     # no return
 
     if verbose_level > threshold:
-        print(print_string, end=end)
+        print(print_string.replace('\x00', ''), end=end)
 
 
 def clean_input_paths(path_strs):

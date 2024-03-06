@@ -75,21 +75,25 @@ def download_pdbs(dataset, search_tool, res_cutoff, output_directory, verbose_le
 
             # Stop Iteration of results if result gets accepted
             if method_accepted:
-                # Update pdb_id and chain in dataset
-                dataset.loc[i, "pdb_id"] = pdb_id
-                dataset.loc[i, "chain_a"] = chain
-                dataset.loc[i, "chain_b"] = chain_b
-                # Add filename to paths
-                dataset.loc[i, "path"] = filename
-                # Add method and resolution to dataset
-                dataset.loc[i, "pdb_method"] = method
-                dataset.loc[i, "pdb_resolution"] = resolution
+                not_nmr_alphafold = ("NMR" not in method) and ("ALPHAFOLD" not in method)
+                no_nmr_found_yet = "NMR" not in dataset.loc[i, "pdb_method"]
+                if not_nmr_alphafold or no_nmr_found_yet:
+                    # Update pdb_id and chain in dataset
+                    dataset.loc[i, "pdb_id"] = pdb_id
+                    dataset.loc[i, "chain_a"] = chain
+                    dataset.loc[i, "chain_b"] = chain_b
+                    # Add filename to paths
+                    dataset.loc[i, "path"] = filename
+                    # Add method and resolution to dataset
+                    dataset.loc[i, "pdb_method"] = method
+                    dataset.loc[i, "pdb_resolution"] = resolution
 
-                # Save pdb text to new pdb file with custom name
-                if (not os.path.exists(filename)) and (pdb_file is not None):
-                    with open(filename, 'w') as f:
-                        f.write(pdb_file)
-                break
+                    # Save pdb text to new pdb file with custom name
+                    if (not os.path.exists(filename)) and (pdb_file is not None):
+                        with open(filename, 'w') as f:
+                            f.write(pdb_file)
+                if "NMR" not in method:
+                    break
 
         ind += 1
         verbose_print(f"\r\t[{round_self(ind * 100 / len(dataset.index), 2)}%]", 1, verbose_level, end='')
@@ -168,8 +172,9 @@ def accept_resolution_method(pdb, pdb_id, res_cutoff):
         all_pdb_methods = ["X-RAY DIFFRACTION", "ELECTRON MICROSCOPY", "SOLUTION NMR", "ELECTRON CRYSTALLOGRAPHY",
                            "NEUTRON DIFFRACTION", "SOLID-STATE NMR", "SOLUTION SCATTERING", "FIBER DIFFRACTION",
                            "POWDER DIFFRACTION", "EPR", "THEORETICAL MODEL", "INFRARED SPECTROSCOPY"]
-        accepted_pdb_methods = ["X-RAY DIFFRACTION", "ELECTRON MICROSCOPY", "SOLUTION NMR", "ELECTRON CRYSTALLOGRAPHY",
-                                "NEUTRON DIFFRACTION", "SOLID-STATE NMR", "FIBER DIFFRACTION"]
+        accepted_pdb_methods = ["X-RAY DIFFRACTION", "ELECTRON MICROSCOPY", "ELECTRON CRYSTALLOGRAPHY",
+                                "NEUTRON DIFFRACTION", "FIBER DIFFRACTION"]
+        resolution_excepted_methods = ["SOLUTION NMR", "SOLID-STATE NMR"]
         accept_method = False
         accept_resolution = False
 
@@ -184,6 +189,11 @@ def accept_resolution_method(pdb, pdb_id, res_cutoff):
             elif ("ANGSTROMS." in line) and ("RESOLUTION." in line):
                 resolution = float([w for w in line.replace('  ', ' ').split() if w][-2])
                 accept_resolution = resolution <= res_cutoff
+                break
+            elif method in resolution_excepted_methods:
+                accept_method = True
+                accept_resolution = True
+                resolution = 'NOT APPLICABLE'
                 break
 
         return accept_method and accept_resolution, method, resolution
