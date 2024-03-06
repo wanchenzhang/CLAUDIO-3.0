@@ -1,4 +1,5 @@
 import click
+import pkg_resources
 import time
 import sys
 import os
@@ -51,7 +52,7 @@ def main(input_filepath, input_temppath, projections, read_temps, xl_residues, s
          res_cutoff, plddt_cutoff, linker_minimum, linker_maximum, euclidean_strictness, distance_maximum, cutoff,
          output_directory, blast_bin, blast_db, hhsearch_bin, hhsearch_db, topolink_bin, compute_scoring, verbose_level,
          config):
-    verbose_print("Start full CLAUDIO pipeline", 0, 1)
+    verbose_print(f"Start full CLAUDIO v{pkg_resources.require('CLAUDIO')[0].version} pipeline", 0, 1)
     verbose_print("===================================", 0, 1)
     start_time = time.time()
 
