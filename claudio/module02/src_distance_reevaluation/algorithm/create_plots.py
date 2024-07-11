@@ -94,7 +94,15 @@ def create_histogram(data, filename, output_directory, linker_minimum, linker_ma
     labels = ["selected structure"]
     res_data[res_data == "ALPHAFOLD"] = -1
     res_data[res_data == '-'] = -2
-    res_data = res_data.pdb_resolution.astype(float)
+
+    resolutions = []
+    for res in res_data.pdb_resolution:
+        try:
+            resolutions.append(float(res))
+        except ValueError:
+            resolutions.append(-2)
+    res_data = pd.Series(resolutions)
+
     res_data[res_data > 13] = 14
     bins = [x - 2 for x in range(18)]
     bin_centers = np.diff(bins) * .5 + bins[:-1]
