@@ -330,6 +330,8 @@ def create_duplicates(row, df_xl_res, log_text):
 
         # Only create new datapoints, if the current residue can be placed in multiple positions
         if dp.pos == 0:
+            row.res_pos_a = str(row.res_pos_a)
+            row.res_pos_b = str(row.res_pos_b)
             # Make sure that the crosslinked residue can be uniquely identified for pep_a
             if ((row.pep_a.count(dp.res) == 1) or row.res_pos_a.replace(' ', '')) and seq_a.count(row.pep_a) != 1:
                 # Find all positions of pep_a
