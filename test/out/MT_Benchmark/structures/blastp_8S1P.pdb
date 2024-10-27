@@ -207,6 +207,7 @@ SOURCE  99 ORGANISM_TAXID: 224308
 KEYWDS    LSU, 50S, RQC, YLMH, RIBOSOME                                         
 EXPDTA    ELECTRON MICROSCOPY                                                   
 AUTHOR    H.PATERNOGA,L.DIMITROVA-PATERNOGA,D.N.WILSON                          
+REVDAT   3   23-OCT-24 8S1P    1       REMARK                                   
 REVDAT   2   21-AUG-24 8S1P    1       JRNL                                     
 REVDAT   1   12-JUN-24 8S1P    0                                                
 JRNL        AUTH   H.TAKADA,H.PATERNOGA,K.FUJIWARA,J.A.NAKAMOTO,E.N.PARK,       
