@@ -235,4 +235,11 @@ def update_pdb_database():
         df["modification_date"] = time.strftime("%Y-%m-%d")
         df.to_csv('./claudio/data/pdb/pdb_ids.csv', index=False)
 
-# update_pdb_database()
+
+if __name__ == "__main__":
+    """
+    Update the local PDB database with the latest PDB files. If no local
+    database exists, it creates one by downloading all available structures
+    containing proteins. 
+    """
+    update_pdb_database()
