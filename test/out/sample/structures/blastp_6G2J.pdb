@@ -484,6 +484,7 @@ KEYWDS   2 OXIDOREDUCTASE
 EXPDTA    ELECTRON MICROSCOPY                                                   
 AUTHOR    A.N.A.AGIP,J.N.BLAZA,H.R.BRIDGES,C.VISCOMI,S.RAWSON,S.P.MUENCH,       
 AUTHOR   2 J.HIRST                                                              
+REVDAT   5   09-APR-25 6G2J    1       COMPND HETNAM HETSYN                     
 REVDAT   4   02-JUN-21 6G2J    1       SEQRES                                   
 REVDAT   3   01-AUG-18 6G2J    1       JRNL                                     
 REVDAT   2   04-JUL-18 6G2J    1       JRNL                                     
@@ -3127,7 +3128,7 @@ HETNAM     2MR N3, N4-DIMETHYLARGININE
 HETNAM     AYA N-ACETYLALANINE                                                  
 HETNAM     SAC N-ACETYL-SERINE                                                  
 HETNAM     AME N-ACETYLMETHIONINE                                               
-HETNAM     3PE 1,2-DIACYL-SN-GLYCERO-3-PHOSPHOETHANOLAMINE                      
+HETNAM     3PE 1,2-DISTEAROYL-SN-GLYCEROPHOSPHOETHANOLAMINE                     
 HETNAM     SF4 IRON/SULFUR CLUSTER                                              
 HETNAM     FES FE2/S2 (INORGANIC) CLUSTER                                       
 HETNAM     FMN FLAVIN MONONUCLEOTIDE                                            
@@ -3140,7 +3141,8 @@ HETNAM      ZN ZINC ION
 HETNAM     EHZ ~{S}-[2-[3-[[(2~{R})-3,3-DIMETHYL-2-OXIDANYL-4-                  
 HETNAM   2 EHZ  PHOSPHONOOXY-BUTANOYL]AMINO]PROPANOYLAMINO]ETHYL]               
 HETNAM   3 EHZ  (3~{S})-3-OXIDANYLTETRADECANETHIOATE                            
-HETSYN     3PE 3-SN-PHOSPHATIDYLETHANOLAMINE                                    
+HETSYN     3PE 3-SN-PHOSPHATIDYLETHANOLAMINE; 1,2-DIACYL-SN-GLYCERO-3-          
+HETSYN   2 3PE  PHOSPHOETHANOLAMINE                                             
 HETSYN     FMN RIBOFLAVIN MONOPHOSPHATE                                         
 HETSYN     PC1 3-SN-PHOSPHATIDYLCHOLINE                                         
 HETSYN     CDL DIPHOSPHATIDYL GLYCEROL; BIS-(1,2-DIACYL-SN-GLYCERO-3-           
