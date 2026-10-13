@@ -68,6 +68,16 @@ def fetch_complex_metadata(model_id):
     return records
 def download_complex_cif(records, output_dir):
     """Download a complex mmCIF file and return its local path."""
+    cif_urls = {record["cifUrl"] for record in records}
+    if len(cif_urls) != 1:
+        raise ValueError("Inconsistent CIF URLs in complex metadata")
+
+    model_identities = {
+        (record["modelEntityId"], record["latestVersion"])
+        for record in records
+    }
+    if len(model_identities) != 1:
+        raise ValueError("Inconsistent model identity in complex metadata")
     record = records[0]
     url = record["cifUrl"]
 

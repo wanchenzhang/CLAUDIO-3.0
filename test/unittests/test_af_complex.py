@@ -186,5 +186,55 @@ class TestDownloadComplexCif(unittest.TestCase):
                 expected_content,
                 "The saved mmCIF should contain decompressed content",
             )
+    def test_rejects_inconsistent_cif_urls(self):
+        records = json.loads(
+            (FIXTURE_DIR / "metadata.json").read_text(encoding="utf-8")
+        )
+        records[1]["cifUrl"] = "https://example.org/different-model.cif"
+
+        response = Mock()
+        response.content = b"data_test\n"
+
+        with TemporaryDirectory() as output_dir:
+            with patch(
+                "claudio.utils.af_complex.requests.get",
+                return_value=response,
+            ) as mock_get:
+                with self.assertRaisesRegex(
+                    ValueError, "Inconsistent CIF URLs"
+                ):
+                    download_complex_cif(records, output_dir)
+
+                mock_get.assert_not_called()
+    def test_rejects_inconsistent_model_identity(self):
+        cases = [
+            ("modelEntityId", "AF-different-model"),
+            ("latestVersion", 999),
+        ]
+
+        for field, different_value in cases:
+            with self.subTest(field=field):
+                records = json.loads(
+                    (FIXTURE_DIR / "metadata.json").read_text(
+                        encoding="utf-8"
+                    )
+                )
+                records[1][field] = different_value
+
+                with TemporaryDirectory() as output_dir:
+                    response = Mock()
+                    response.content = b"data_test\n"
+
+                    with patch(
+                        "claudio.utils.af_complex.requests.get",
+                        return_value=response,
+                    ) as mock_get:
+                        with self.assertRaisesRegex(
+                            ValueError,
+                            "Inconsistent model identity",
+                        ):
+                            download_complex_cif(records, output_dir)
+
+                        mock_get.assert_not_called()
 if __name__ == "__main__":
     unittest.main()
