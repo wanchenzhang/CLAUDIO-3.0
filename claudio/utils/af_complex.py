@@ -2,8 +2,9 @@
 
 from Bio.PDB import MMCIFParser
 from Bio.SeqUtils import seq1
-
-
+import requests
+from pathlib import Path
+import gzip
 def read_complex_chains(structure_path, records):
     """Read protein chains and associate them with AFDB metadata."""
     parser = MMCIFParser(QUIET=True)
@@ -27,7 +28,7 @@ def read_complex_chains(structure_path, records):
             seq1(residue.resname)
             for residue in residues
         )
-        
+
         if chain.id not in metadata_by_chain:
             raise ValueError(
                 f"Missing metadata for chain {chain.id}"
@@ -48,3 +49,43 @@ def read_complex_chains(structure_path, records):
         })
 
     return chains
+
+def fetch_complex_metadata(model_id):
+    """Retrieve AFDB metadata for an existing protein-complex model."""
+    url = f"https://alphafold.ebi.ac.uk/api/prediction/{model_id}"
+
+    response = requests.get(url, timeout=30)
+    response.raise_for_status()
+
+    records = response.json()
+    if records == []:
+        raise ValueError(f"No metadata found for model {model_id}")
+
+    for record in records:
+        if record.get("isComplex") is not True:
+            raise ValueError(f"Model {model_id} is not a complex")
+
+    return records
+def download_complex_cif(records, output_dir):
+    """Download a complex mmCIF file and return its local path."""
+    record = records[0]
+    url = record["cifUrl"]
+
+    response = requests.get(url, timeout=30)
+    response.raise_for_status()
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    filename = (
+        f"{record['modelEntityId']}"
+        f"-model_v{record['latestVersion']}.cif"
+    )
+    structure_path = output_dir / filename
+    content = response.content
+    if content.startswith(b"\x1f\x8b"):
+        content = gzip.decompress(content)
+
+    structure_path.write_bytes(content)
+
+    return structure_path
