@@ -234,5 +234,9 @@ class TestM1RecordTracking(unittest.TestCase):
         self.assertEqual(row["original_pos_b"], 3)
         self.assertEqual(row["pos_a"], 4)
         self.assertEqual(row["pos_b"], 3)
+        self.assertIn("position_status_a", saved.columns)
+        self.assertIn("position_status_b", saved.columns)
+        self.assertEqual(row["position_status_a"], "corrected")
+        self.assertEqual(row["position_status_b"], "valid")
 if __name__ == "__main__":
     unittest.main()
