@@ -11,7 +11,7 @@ from claudio.module02.src_distance_reevaluation.algorithm import (
 from claudio.module02.src_distance_reevaluation.algorithm.calc_site_distances import (
     isolate_pdb_chain,
 )
-
+from claudio.utils.structure_io import read_structure_models
 
 FIXTURE = (
     Path(__file__).resolve().parents[1]
@@ -57,3 +57,25 @@ class TestAFComplexDistanceInput(unittest.TestCase):
             )
             model = next(structure.get_models())
             self.assertEqual({chain.id for chain in model}, {"A", "B"})
+    def test_reads_single_chain_pdb(self):
+        with TemporaryDirectory() as temp_dir:
+            (Path(temp_dir) / "struct").mkdir()
+
+            # Export chain A as an ordinary single-chain PDB file.
+            pdb_path = isolate_pdb_chain(
+                str(FIXTURE),
+                "single_chain",
+                temp_dir + "/",
+                ["A"],
+            )
+
+            models = read_structure_models(pdb_path)
+
+            self.assertEqual(len(models), 1)
+            self.assertEqual(
+                {chain.id for chain in models[0]},
+                {"A"},
+            )
+            residue = models[0]["A"][67]
+            self.assertEqual(residue.get_resname(), "LYS")
+            self.assertIn("CB", residue)
