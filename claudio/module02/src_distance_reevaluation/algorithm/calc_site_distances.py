@@ -7,10 +7,10 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from Bio.PDB import Polypeptide, PDBParser, FastMMCIFParser, Select, PDBIO
+from Bio.PDB import Polypeptide, Select, PDBIO
 
 from claudio.utils.utils import verbose_print, round_self
-
+from claudio.utils.structure_io import read_structure_models
 warnings.filterwarnings("ignore")
 
 
@@ -300,10 +300,7 @@ def isolate_pdb_chain(path: str, pdb_id: str, temp_dir: str,
     new_path : str
     """
 
-    try:
-        structure = PDBParser().get_structure('', path).get_list()[0]
-    except:
-        structure = FastMMCIFParser().get_structure('', path).get_list()[0]
+    structure = read_structure_models(path)[0]
 
     class ChainSelect(Select):
         """

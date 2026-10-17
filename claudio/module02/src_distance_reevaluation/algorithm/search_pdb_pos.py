@@ -5,11 +5,11 @@ import concurrent.futures
 import socket
 import time
 import pandas as pd
-from Bio.PDB import Polypeptide, PDBParser, FastMMCIFParser
+from Bio.PDB import Polypeptide, PDBParser
 from Bio.Align import PairwiseAligner
 import requests as r
 import numpy as np
-
+from claudio.utils.structure_io import read_structure_models
 from claudio.data.constants import ALPHAFOLD_URL
 from claudio.utils.utils import verbose_print, round_self
 
@@ -641,15 +641,8 @@ def populate_pdb_cache(data: pd.DataFrame, verbose_level: int):
     ind = 0
     def parse_task(path):
         global pdb_cache
-        # Parse structure file with normal PDBParser, if exception thrown use
-        # FastMMCIFParser
-        if path != '-':
-            try:
-                models = PDBParser().get_structure('', path).get_list()
-            except:
-                models = FastMMCIFParser().get_structure('', path).get_list()
-
-            pdb_cache[path] = models
+        if path != "-":
+            pdb_cache[path] = read_structure_models(path)
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         len_paths = len(data["path"].unique().tolist())
