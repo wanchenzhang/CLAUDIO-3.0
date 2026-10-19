@@ -142,3 +142,90 @@ def discover_complex_candidates(protein_a, protein_b):
         protein_a=protein_a,
         protein_b=protein_b,
     )
+
+
+def retrieve_discovered_complexes(data, output_dir):
+    """Discover and retrieve complex models for input protein pairs."""
+    pair_positions = {}
+
+    # Group row positions by protein pair.
+    # A-B and B-A share the same discovery query.
+    for position, (protein_a, protein_b) in enumerate(
+        zip(data["unip_id_a"], data["unip_id_b"])
+    ):
+        pair = tuple(sorted((protein_a, protein_b)))
+        pair_positions.setdefault(pair, []).append(position)
+
+    model_positions = {}
+    unmatched_positions = []
+
+    # Discover models and collect their associated input rows.
+    for pair, positions in pair_positions.items():
+        candidates = discover_complex_candidates(*pair)
+
+        if len(candidates) == 0:
+            unmatched_positions.extend(positions)
+            continue
+
+        for candidate in candidates:
+            model_id = candidate["modelEntityId"]
+            model_positions.setdefault(model_id, set()).update(positions)
+
+    retrieved = []
+
+    # Retrieve each model once, using only its associated records.
+    for model_id, positions in model_positions.items():
+        subset = data.iloc[sorted(positions)].copy()
+        result = retrieve_af_complex(subset, model_id, output_dir)
+        retrieved.append(result)
+
+    # Preserve records for which discovery found no candidate.
+    if unmatched_positions:
+        unmatched = data.iloc[sorted(unmatched_positions)].copy()
+
+        unmatched["af_match_status"] = "no_candidate_model"
+        unmatched["chain_a"] = "-"
+        unmatched["chain_b"] = "-"
+        unmatched["path"] = "-"
+        unmatched["af_model_id"] = pd.NA
+        unmatched["af_model_version"] = pd.NA
+        unmatched["af_metadata_path"] = pd.NA
+
+        retrieved.append(unmatched)
+
+    if not retrieved:
+        return data.copy()
+
+    if len(retrieved) == 1:
+        return retrieved[0]
+
+    combined = pd.concat(retrieved)
+
+    # Keep candidate indices unique across models.
+    reserved_indices = {str(index) for index in combined.index}
+    used_indices = set()
+    unique_indices = []
+
+    for index in combined.index:
+        new_index = index
+
+        if str(index) in used_indices:
+            suffix = 1
+            new_index = f"{index}_{suffix}"
+
+            while (
+                str(new_index) in reserved_indices
+                or str(new_index) in used_indices
+            ):
+                suffix += 1
+                new_index = f"{index}_{suffix}"
+
+        used_indices.add(str(new_index))
+        unique_indices.append(new_index)
+
+    combined.index = pd.Index(
+        unique_indices,
+        name=combined.index.name,
+    )
+
+    return combined

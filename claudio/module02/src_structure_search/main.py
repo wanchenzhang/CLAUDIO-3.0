@@ -13,6 +13,7 @@ from claudio.module02.src_structure_search.algorithm.chain_copies import create_
 from claudio.module02.src_structure_search.io.write_out import write_output
 from claudio.module02.src_structure_search.algorithm.af_complex_search import (
     retrieve_af_complex,
+    retrieve_discovered_complexes,
 )
 
 from claudio.utils.utils import (verbose_print, clean_input_paths,
@@ -39,10 +40,16 @@ from claudio.utils.utils import (verbose_print, clean_input_paths,
     default=None,
     help="Retrieve a specified existing AFDB protein-complex model.",
 )
+@click.option(
+    "--af-complex-auto",
+    is_flag=True,
+    default=False,
+    help="Discover and retrieve existing AFDB complexes for input protein pairs.",
+)
 @click.option("-v", "--verbose-level", default=2)
 def main(input_filepath, input_temppath, do_structure_search, search_tool,
          e_value, query_id, coverage, res_cutoff, output_directory, blast_bin,
-         blast_db, hhsearch_bin, hhsearch_db, verbose_level, af_complex_model=None):
+         blast_db, hhsearch_bin, hhsearch_db, verbose_level, af_complex_model=None, af_complex_auto=False):
     """
         Performs structure search as part of the structural analysis
 
@@ -68,6 +75,10 @@ def main(input_filepath, input_temppath, do_structure_search, search_tool,
         None
 
     """
+    if af_complex_auto and af_complex_model is not None:
+        raise click.UsageError(
+            "--af-complex-auto and --af-complex-model are mutually exclusive."
+        )
     verbose_print("[3.1] Start Structure Search", 0, verbose_level, start='')
     start_time = time.time()
 
@@ -76,7 +87,7 @@ def main(input_filepath, input_temppath, do_structure_search, search_tool,
                      blast_bin, blast_db, hhsearch_bin, hhsearch_db]
     input_filepath, input_temppath, output_directory, blast_bin, blast_db, \
     hhsearch_bin, hhsearch_db = clean_input_paths(list_of_paths)
-    if af_complex_model is not None:
+    if af_complex_auto or af_complex_model is not None:
         if not input_filepath or not input_filepath.endswith(".sqcs"):
             raise click.BadParameter(
                 "Input must be a .sqcs file.",
@@ -89,11 +100,17 @@ def main(input_filepath, input_temppath, do_structure_search, search_tool,
         data, filename = read_in(input_filepath)
 
         structures_dir = os.path.join(output_directory, "structures")
-        data = retrieve_af_complex(
-            data,
-            af_complex_model,
-            structures_dir,
-        )
+        if af_complex_auto:
+            data = retrieve_discovered_complexes(
+                data,
+                structures_dir,
+            )
+        else:
+            data = retrieve_af_complex(
+                data,
+                af_complex_model,
+                structures_dir,
+            )
 
         matched = data["af_match_status"].eq("matched")
         data.loc[matched, "pdb_id"] = data.loc[matched, "af_model_id"]
