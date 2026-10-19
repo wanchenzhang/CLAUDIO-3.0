@@ -3,6 +3,7 @@ from claudio.utils.af_complex import (
     fetch_complex_metadata,
     download_complex_cif,
     read_complex_chains,
+    fetch_complex_candidates,
 )
 import json
 from pathlib import Path
@@ -114,3 +115,30 @@ def retrieve_af_complex(data, model_id, output_dir):
     result.loc[matched, "path"] = str(structure_path)
 
     return result
+
+
+def filter_complex_candidates(candidates, protein_a, protein_b):
+    """Keep complex candidates containing both input proteins."""
+    matching = []
+
+    for candidate in candidates:
+        if candidate.get("isComplex") is not True:
+            continue
+
+        proteins = candidate.get("uniprotAccession", [])
+
+        if protein_a in proteins and protein_b in proteins:
+            matching.append(candidate)
+
+    return matching
+
+
+def discover_complex_candidates(protein_a, protein_b):
+    """Discover existing AFDB complexes containing both input proteins."""
+    candidates = fetch_complex_candidates(protein_a)
+
+    return filter_complex_candidates(
+        candidates,
+        protein_a=protein_a,
+        protein_b=protein_b,
+    )

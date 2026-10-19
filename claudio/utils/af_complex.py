@@ -99,3 +99,10 @@ def download_complex_cif(records, output_dir):
     structure_path.write_bytes(content)
 
     return structure_path
+
+def fetch_complex_candidates(uniprot_id):
+    """Return AFDB complex candidates containing a UniProt accession."""
+    url = f"https://alphafold.ebi.ac.uk/api/complex/{uniprot_id}"
+    response = requests.get(url, timeout=30)
+    response.raise_for_status()
+    return response.json()
