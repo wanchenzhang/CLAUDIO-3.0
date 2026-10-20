@@ -108,3 +108,28 @@ def map_complex_residue(
         "atom_name": atom.get_name(),
         "coord": tuple(float(value) for value in atom.get_coord()),
     }
+def map_complex_record(row, records, atom_a, atom_b):
+    """Map both endpoints while preserving the original record."""
+    result = row.copy(deep=True)
+
+    for site, atom_name in (("a", atom_a), ("b", atom_b)):
+        mapped = map_complex_residue(
+            structure_path=row["path"],
+            records=records,
+            protein_id=row[f"unip_id_{site}"],
+            protein_sequence=row[f"seq_{site}"],
+            chain_id=row[f"chain_{site}"],
+            protein_position=row[f"pos_{site}"],
+            atom_name=atom_name,
+            position_status=row.get(f"position_status_{site}"),
+        )
+
+        result[f"mapping_status_{site}"] = mapped["mapping_status"]
+        result[f"mapping_reason_{site}"] = mapped["mapping_reason"]
+        result[f"mapping_detail_{site}"] = mapped.get("mapping_detail")
+        result[f"mapped_residue_id_{site}"] = mapped["residue_id"]
+        result[f"mapped_residue_name_{site}"] = mapped["residue_name"]
+        result[f"mapping_atom_{site}"] = mapped["atom_name"]
+        result[f"mapping_coord_{site}"] = mapped["coord"]
+
+    return result
