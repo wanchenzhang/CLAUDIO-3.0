@@ -112,24 +112,54 @@ def map_complex_residue(
         "coord": tuple(float(value) for value in atom.get_coord()),
     }
 def map_complex_record(row, records, atom_a, atom_b):
-    """Map both endpoints while preserving the original record."""
+    """Map both endpoints after checking the metadata identity."""
     result = row.copy(deep=True)
+
+    def not_evaluable_record(reason):
+        for site, atom_name in (("a", atom_a), ("b", atom_b)):
+            result[f"mapping_status_{site}"] = "not_evaluable"
+            result[f"mapping_reason_{site}"] = reason
+            result[f"mapping_detail_{site}"] = None
+            result[f"mapped_residue_id_{site}"] = None
+            result[f"mapped_residue_name_{site}"] = None
+            result[f"mapping_atom_{site}"] = atom_name
+            result[f"mapping_coord_{site}"] = None
+        return result
+
     af_status = row.get("af_match_status")
 
     if isinstance(af_status, str) and af_status in (
         "no_candidate_model",
         "no_matching_chain_pair",
     ):
-        for site, atom_name in (("a", atom_a), ("b", atom_b)):
-            result[f"mapping_status_{site}"] = "not_evaluable"
-            result[f"mapping_reason_{site}"] = af_status
-            result[f"mapping_detail_{site}"] = None
-            result[f"mapped_residue_id_{site}"] = None
-            result[f"mapped_residue_name_{site}"] = None
-            result[f"mapping_atom_{site}"] = atom_name
-            result[f"mapping_coord_{site}"] = None
+        return not_evaluable_record(af_status)
 
-        return result
+    expected_model = row.get("af_model_id")
+    metadata_models = {
+        record.get("modelEntityId")
+        for record in records
+    }
+
+    if (
+        not isinstance(expected_model, str)
+        or metadata_models != {expected_model}
+    ):
+        return not_evaluable_record("model_identity_mismatch")
+
+    expected_version = row.get("af_model_version")
+    metadata_versions = {
+        record.get("latestVersion")
+        for record in records
+    }
+
+    if (
+        isinstance(expected_version, bool)
+        or not isinstance(expected_version, Real)
+        or pd.isna(expected_version)
+        or metadata_versions != {expected_version}
+    ):
+        return not_evaluable_record("model_version_mismatch")
+
     for site, atom_name in (("a", atom_a), ("b", atom_b)):
         mapped = map_complex_residue(
             structure_path=row["path"],

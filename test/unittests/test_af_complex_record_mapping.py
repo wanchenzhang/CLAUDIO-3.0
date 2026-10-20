@@ -217,5 +217,77 @@ class TestAFComplexRecordMapping(unittest.TestCase):
                     self.assertIsNone(
                         result[f"mapping_coord_{site}"]
                     )
+    def test_rejects_model_identity_or_version_mismatch(self):
+        records = json.loads(
+            (FIXTURE_DIR / "metadata.json").read_text(encoding="utf-8")
+        )
+        metadata = {
+            record["chainId"]: record for record in records
+        }
+
+        template = pd.Series({
+            "source_record_id": "record_000001",
+            "af_match_status": "matched",
+            "af_model_id": "AF-0000000208747029",
+            "af_model_version": 1,
+            "path": str(FIXTURE_DIR / "AF-0000000208747029.cif"),
+            "unip_id_a": "A0A0P0Y832",
+            "unip_id_b": "P0C2Z6",
+            "seq_a": metadata["A"]["sequence"],
+            "seq_b": metadata["B"]["sequence"],
+            "chain_a": "A",
+            "chain_b": "B",
+            "pos_a": 67,
+            "pos_b": 11,
+            "position_status_a": "valid",
+            "position_status_b": "valid",
+        }, name="7_1")
+
+        cases = (
+            (
+                "af_model_id",
+                "AF-9999999999999999",
+                "model_identity_mismatch",
+            ),
+            (
+                "af_model_version",
+                2,
+                "model_version_mismatch",
+            ),
+        )
+
+        for field, wrong_value, expected_reason in cases:
+            with self.subTest(field=field):
+                row = template.copy(deep=True)
+                row[field] = wrong_value
+                original = row.copy(deep=True)
+
+                result = map_complex_record(
+                    row=row,
+                    records=records,
+                    atom_a="CB",
+                    atom_b="CB",
+                )
+
+                pd.testing.assert_series_equal(row, original)
+                pd.testing.assert_series_equal(
+                    result.loc[original.index], original
+                )
+
+                for site in ("a", "b"):
+                    self.assertEqual(
+                        result[f"mapping_status_{site}"],
+                        "not_evaluable",
+                    )
+                    self.assertEqual(
+                        result[f"mapping_reason_{site}"],
+                        expected_reason,
+                    )
+                    self.assertIsNone(
+                        result[f"mapped_residue_id_{site}"]
+                    )
+                    self.assertIsNone(
+                        result[f"mapping_coord_{site}"]
+                    )
 if __name__ == "__main__":
     unittest.main()
