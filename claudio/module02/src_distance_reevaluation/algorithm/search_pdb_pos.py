@@ -56,6 +56,9 @@ def search_site_pos_in_pdb(data: pd.DataFrame, df_xl_res: pd.DataFrame,
     # Initialize columns for results
     data["pdb_pos_a"] = None
     data["pdb_pos_b"] = None
+    for site in ("a", "b"):
+        data[f"pdb_hetflag_{site}"] = None
+        data[f"pdb_icode_{site}"] = None
     data["res_criteria_fulfilled"] = False
     data["res_crit_a"] = False
     data["res_crit_b"] = False
@@ -80,25 +83,34 @@ def search_site_pos_in_pdb(data: pd.DataFrame, df_xl_res: pd.DataFrame,
         # else append values to list containers indicating a fail here
         both_pdbs_found = row["path"] != '-'
         if both_pdbs_found:
-            # Search site_a in structure file
-            pdb_pos_a, res_criteria_a, method_a, i_error_a, plddt_a, new_path, atom_coord_a = \
-                compute_site_pos(i, row, 'a', row["xl_type"], pdb_uni_map,
-                                 "", xl_res_list, verbose_level)
-            # If method used for site_a is alphafold, set method
-            # for set_b to alphafold as well
+            # Search both endpoints and retain complete residue IDs.
+            residue_id_a, res_criteria_a, method_a, i_error_a, plddt_a, new_path, atom_coord_a = \
+                compute_site_pos(
+                    i, row, 'a', row["xl_type"], pdb_uni_map,
+                    "", xl_res_list, verbose_level, return_residue_id=True,
+                )
             method_b = "" if method_a != "alphafold" else "alphafold"
 
-            # Search site_b in structure file
-            pdb_pos_b, res_criteria_b, method_b, i_error_b, plddt_b, new_path, atom_coord_b = \
-                compute_site_pos(i, row, 'b', row["xl_type"], pdb_uni_map,
-                                 method_b, xl_res_list, verbose_level)
+            residue_id_b, res_criteria_b, method_b, i_error_b, plddt_b, new_path, atom_coord_b = \
+                compute_site_pos(
+                    i, row, 'b', row["xl_type"], pdb_uni_map,
+                    method_b, xl_res_list, verbose_level, return_residue_id=True,
+                )
 
-            # If method for site_b was alphafold, but not for site_a,
-            # search site_a again with alphafold method specified this time
             if method_b == "alphafold" and method_a != "alphafold":
-                pdb_pos_a, res_criteria_a, method_a, i_error_a, plddt_a, new_path, atom_coord_a = \
-                    compute_site_pos(i, row, 'a', row["xl_type"], pdb_uni_map, "alphafold",
-                                     xl_res_list, verbose_level)
+                residue_id_a, res_criteria_a, method_a, i_error_a, plddt_a, new_path, atom_coord_a = \
+                    compute_site_pos(
+                        i, row, 'a', row["xl_type"], pdb_uni_map,
+                        "alphafold", xl_res_list, verbose_level,
+                        return_residue_id=True,
+                    )
+
+            pdb_pos_a = residue_id_a[1] if residue_id_a is not None else None
+            pdb_pos_b = residue_id_b[1] if residue_id_b is not None else None
+            for site, residue_id in (("a", residue_id_a), ("b", residue_id_b)):
+                if residue_id is not None:
+                    data.at[i, f"pdb_hetflag_{site}"] = residue_id[0]
+                    data.at[i, f"pdb_icode_{site}"] = residue_id[2]
 
             # Replace path if alphafold file was downloaded instead
             if new_path and row["xl_type"] == "intra":
@@ -188,7 +200,7 @@ def search_site_pos_in_pdb(data: pd.DataFrame, df_xl_res: pd.DataFrame,
 
 def compute_site_pos(i: int, data: pd.Series, site_id: int, xl_type: str,
                      pdb_uni_map: pd.DataFrame, method: str, xl_res_list: list,
-                     verbose_level: int):
+                     verbose_level: int, *, return_residue_id: bool = False):
     """
     Search site in structure file and return threedimensional position
 
@@ -205,7 +217,7 @@ def compute_site_pos(i: int, data: pd.Series, site_id: int, xl_type: str,
 
     Returns
     -------
-    pdb_pos : int,
+    pdb_pos : int | tuple | None,
     res_criteria : bool,
     method : str,
     i_error : int,
@@ -422,7 +434,8 @@ def compute_site_pos(i: int, data: pd.Series, site_id: int, xl_type: str,
         if res_criteria:
             try:
                 _ = res["CB"]
-                return (int(res.get_id()[1]), res_criteria, method, -1,
+                return (res.get_id() if return_residue_id else int(res.get_id()[1]),
+                        res_criteria, method, -1,
                         res["CB"].get_bfactor() if method == "alphafold" else '-',
                         new_path, res["CB"].get_coord())
             except Exception:
@@ -449,7 +462,8 @@ def compute_site_pos(i: int, data: pd.Series, site_id: int, xl_type: str,
                 res_criteria = resname in xl_res_list
                 verbose_print(f"\tFinal residue is '{resname}' (thus res_criteria_{site_id}:"
                               f" {res_criteria})", 4, verbose_level)
-                return (int(res.get_id()[1]), res_criteria, method, -1,
+                return (res.get_id() if return_residue_id else int(res.get_id()[1]),
+                        res_criteria, method, -1,
                         res["CB"].get_bfactor(), new_path,
                         res["CB"].get_coord())
             except Exception:
