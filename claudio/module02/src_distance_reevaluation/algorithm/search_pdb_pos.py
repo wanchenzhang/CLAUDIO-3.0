@@ -72,6 +72,10 @@ def search_site_pos_in_pdb(data: pd.DataFrame, df_xl_res: pd.DataFrame,
     data["xl_type"] = np.where(data["unip_id_a"] == data["unip_id_b"],
                                "intra", "inter")
     xl_res_list = df_xl_res.res.tolist()
+    xl_atom_map = {
+        residue: tuple(dict.fromkeys(group["atom"]))
+        for residue, group in df_xl_res.groupby("res", sort=False)
+    }
 
     global pdb_cache
     pdb_cache = {}
@@ -88,6 +92,7 @@ def search_site_pos_in_pdb(data: pd.DataFrame, df_xl_res: pd.DataFrame,
                 compute_site_pos(
                     i, row, 'a', row["xl_type"], pdb_uni_map,
                     "", xl_res_list, verbose_level, return_residue_id=True,
+                    xl_atom_map=xl_atom_map,
                 )
             method_b = "" if method_a != "alphafold" else "alphafold"
 
@@ -95,6 +100,7 @@ def search_site_pos_in_pdb(data: pd.DataFrame, df_xl_res: pd.DataFrame,
                 compute_site_pos(
                     i, row, 'b', row["xl_type"], pdb_uni_map,
                     method_b, xl_res_list, verbose_level, return_residue_id=True,
+                    xl_atom_map=xl_atom_map,
                 )
 
             if method_b == "alphafold" and method_a != "alphafold":
@@ -103,6 +109,7 @@ def search_site_pos_in_pdb(data: pd.DataFrame, df_xl_res: pd.DataFrame,
                         i, row, 'a', row["xl_type"], pdb_uni_map,
                         "alphafold", xl_res_list, verbose_level,
                         return_residue_id=True,
+                        xl_atom_map=xl_atom_map,
                     )
 
             pdb_pos_a = residue_id_a[1] if residue_id_a is not None else None
@@ -200,7 +207,8 @@ def search_site_pos_in_pdb(data: pd.DataFrame, df_xl_res: pd.DataFrame,
 
 def compute_site_pos(i: int, data: pd.Series, site_id: int, xl_type: str,
                      pdb_uni_map: pd.DataFrame, method: str, xl_res_list: list,
-                     verbose_level: int, *, return_residue_id: bool = False):
+                     verbose_level: int, *, return_residue_id: bool = False,
+                     xl_atom_map: dict | None = None):
     """
     Search site in structure file and return threedimensional position
 
@@ -245,6 +253,18 @@ def compute_site_pos(i: int, data: pd.Series, site_id: int, xl_type: str,
                       f" (entry: {i}, unip_id: {unip_id})", 4, verbose_level)
         return None, False, method, 0, '-', '', None
 
+    atom_name = "CB"
+    if xl_atom_map is not None:
+        residue_name = unip_seq[data[f"pos_{site_id}"] - 1]
+        atom_names = xl_atom_map.get(residue_name, ())
+        if len(atom_names) != 1:
+            verbose_print(
+                f"\tCannot select one configured atom for {residue_name}: "
+                f"{atom_names} (entry: {i}, site: {site_id})",
+                2, verbose_level,
+            )
+            return None, False, method, 6, '-', '', None
+        atom_name = atom_names[0]
     # Check whether structure file was already parsed, if not parse it and
     # save it in cache
     models = pdb_cache.get(data["path"])
@@ -433,11 +453,11 @@ def compute_site_pos(i: int, data: pd.Series, site_id: int, xl_type: str,
         # If residue criteria fulfilled return result
         if res_criteria:
             try:
-                _ = res["CB"]
+                _ = res[atom_name]
                 return (res.get_id() if return_residue_id else int(res.get_id()[1]),
                         res_criteria, method, -1,
-                        res["CB"].get_bfactor() if method == "alphafold" else '-',
-                        new_path, res["CB"].get_coord())
+                        res[atom_name].get_bfactor() if method == "alphafold" else '-',
+                        new_path, res[atom_name].get_coord())
             except Exception:
                 pass
         # Else attempt final alphafold replacement, if this fails return fail
@@ -464,8 +484,8 @@ def compute_site_pos(i: int, data: pd.Series, site_id: int, xl_type: str,
                               f" {res_criteria})", 4, verbose_level)
                 return (res.get_id() if return_residue_id else int(res.get_id()[1]),
                         res_criteria, method, -1,
-                        res["CB"].get_bfactor(), new_path,
-                        res["CB"].get_coord())
+                        res[atom_name].get_bfactor(), new_path,
+                        res[atom_name].get_coord())
             except Exception:
                 verbose_print(f"\tWarning! Got non-aminoacid at residue position("
                               f"{res.get_resname()}).\n\t\t\t"
