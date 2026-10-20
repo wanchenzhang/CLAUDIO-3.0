@@ -120,13 +120,11 @@ def compute_dists_with_topolink(data: pd.DataFrame, temp_dir: str,
             ind += 1
             return
 
-        # obs_inds is container to save tuples: (index of observation in
-        # dataset, string of observed link, boolean whether link was found
-        # in topolink results (initialized as False))
+        # obs_inds stores (list of row indices, link strings, result_found).
         # obs_str is string of collected observed link strings for inputfile
         obs_inds = []
         obs_str = ''
-        known_link_strs = []
+        known_link_groups = {}
         subset = subset[subset["res_criteria_fulfilled"]
                         & subset["is_interfaced"]]
         for row in subset.itertuples():
@@ -152,11 +150,15 @@ def compute_dists_with_topolink(data: pd.DataFrame, temp_dir: str,
                                   row.chain_a, str(topolink_pos_a)]),
                         ' '.join([Polypeptide.one_to_three(row.seq_b[row.pos_b - 1]),
                                   row.chain_b, str(topolink_pos_b)])]
-                    if link_strs not in known_link_strs:
+                    link_key = tuple(sorted(link_strs))
+                    if link_key in known_link_groups:
+                        known_link_groups[link_key].append(i)
+                    else:
+                        known_link_groups[link_key] = [i]
                         obs_str += f"  observed {' '.join(link_strs)}\n"
-                        obs_inds.append((i, link_strs, False))
-                        known_link_strs.append(link_strs)
-                        known_link_strs.append([link_strs[1], link_strs[0]])
+                        obs_inds.append(
+                            (known_link_groups[link_key], link_strs, False)
+                        )
                 except:
                     continue
 
@@ -291,10 +293,9 @@ def compute_dists_with_topolink(data: pd.DataFrame, temp_dir: str,
 
     # For zipped distances in collection, replace them at specified index in
     # dataset
-    for dist in toplink_dists:
-        index, eucl_dist, top_dist = dist
-        data.loc[index, "eucl_dist_tplk"] = round_self(eucl_dist, 3)
-        data.loc[index, "topo_dist_tplk"] = round_self(top_dist, 3)
+    for indices, eucl_dist, top_dist in toplink_dists:
+        data.loc[indices, "eucl_dist_tplk"] = round_self(eucl_dist, 3)
+        data.loc[indices, "topo_dist_tplk"] = round_self(top_dist, 3)
 
     # Fill topolink distances with zero, if positions equal
     data.loc[(data.pos_a == data.pos_b) & (data.unip_id_a == data.unip_id_b)
