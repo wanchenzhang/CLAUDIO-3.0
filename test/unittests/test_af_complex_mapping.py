@@ -316,5 +316,46 @@ class TestAFComplexMapping(unittest.TestCase):
                 else:
                     self.assertIsNone(result["residue_id"])
                     self.assertIsNone(result["coord"])
+    def test_reports_incomplete_structure_without_shifting_positions(self):
+        records = json.loads(
+            (FIXTURE_DIR / "metadata.json").read_text(encoding="utf-8")
+        )
+        metadata = next(
+            record for record in records
+            if record["chainId"] == "A"
+        )
+
+        structure = MMCIFParser(QUIET=True).get_structure(
+            "incomplete",
+            str(FIXTURE_DIR / "AF-0000000208747029.cif"),
+        )
+        model = next(structure.get_models())
+
+        # Remove the residue immediately before target position 67.
+        model["A"].detach_child((" ", 66, " "))
+
+        with TemporaryDirectory() as directory:
+            structure_path = Path(directory) / "incomplete.cif"
+            writer = MMCIFIO()
+            writer.set_structure(structure)
+            writer.save(str(structure_path))
+
+            result = map_complex_residue(
+                structure_path=structure_path,
+                records=records,
+                protein_id="A0A0P0Y832",
+                protein_sequence=metadata["sequence"],
+                chain_id="A",
+                protein_position=67,
+                atom_name="CB",
+                position_status="valid",
+            )
+
+        self.assertEqual(result["mapping_status"], "not_evaluable")
+        self.assertEqual(
+            result["mapping_reason"], "structure_metadata_mismatch"
+        )
+        self.assertIsNone(result["residue_id"])
+        self.assertIsNone(result["coord"])
 if __name__ == "__main__":
     unittest.main()

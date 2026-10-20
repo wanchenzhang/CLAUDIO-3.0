@@ -5,6 +5,8 @@ from Bio.SeqUtils import seq1
 import requests
 from pathlib import Path
 import gzip
+class ComplexMetadataMismatchError(ValueError):
+    """Structure chains do not match their AFDB metadata."""
 def read_complex_chains(structure_path, records):
     """Read protein chains and associate them with AFDB metadata."""
     parser = MMCIFParser(QUIET=True)
@@ -30,13 +32,13 @@ def read_complex_chains(structure_path, records):
         )
 
         if chain.id not in metadata_by_chain:
-            raise ValueError(
+            raise ComplexMetadataMismatchError(
                 f"Missing metadata for chain {chain.id}"
             )
 
         metadata = metadata_by_chain[chain.id]
         if sequence != metadata["sequence"]:
-            raise ValueError(
+            raise ComplexMetadataMismatchError(
                 f"Sequence mismatch for chain {chain.id}: "
                 "structure sequence differs from AFDB metadata"
             )

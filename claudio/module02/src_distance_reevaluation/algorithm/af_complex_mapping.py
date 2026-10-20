@@ -2,7 +2,10 @@
 
 from Bio.PDB import MMCIFParser
 
-from claudio.utils.af_complex import read_complex_chains
+from claudio.utils.af_complex import (
+    ComplexMetadataMismatchError,
+    read_complex_chains,
+)
 from math import isfinite
 from numbers import Integral, Real
 
@@ -50,7 +53,12 @@ def map_complex_residue(
             return not_evaluable("invalid_protein_position")
 
     protein_position = int(protein_position)
-    chains = read_complex_chains(structure_path, records)
+    try:
+        chains = read_complex_chains(structure_path, records)
+    except ComplexMetadataMismatchError as error:
+        result = not_evaluable("structure_metadata_mismatch")
+        result["mapping_detail"] = str(error)
+        return result
 
     chain_info = next(
         (chain for chain in chains if chain["chain_id"] == chain_id),
