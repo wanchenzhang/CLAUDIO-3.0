@@ -160,6 +160,62 @@ class TestAFComplexRecordMapping(unittest.TestCase):
                     self.assertIsNotNone(
                         result[f"mapping_coord_{other}"]
                     )
+    def test_preserves_records_without_a_usable_structure(self):
+        for status in ("no_candidate_model", "no_matching_chain_pair"):
+            with self.subTest(af_match_status=status):
+                has_model = status == "no_matching_chain_pair"
 
+                source = pd.Series({
+                    "source_record_id": "record_000002",
+                    "af_match_status": status,
+                    "af_model_id": (
+                        "AF-0000000208747029" if has_model else None
+                    ),
+                    "af_model_version": 1 if has_model else None,
+                    "path": "-",
+                    "unip_id_a": "TEST_A",
+                    "unip_id_b": "TEST_B",
+                    "seq_a": "AK",
+                    "seq_b": "MK",
+                    "pos_a": 2,
+                    "pos_b": 2,
+                    "chain_a": "-",
+                    "chain_b": "-",
+                    "position_status_a": "valid",
+                    "position_status_b": "valid",
+                }, name="12")
+
+                row = source.copy(deep=True)
+                for site in ("a", "b"):
+                    row[f"mapped_residue_id_{site}"] = (" ", 999, " ")
+                    row[f"mapping_coord_{site}"] = (999.0, 999.0, 999.0)
+                original = row.copy(deep=True)
+
+                result = map_complex_record(
+                    row=row,
+                    records=[],
+                    atom_a="CB",
+                    atom_b="CB",
+                )
+
+                pd.testing.assert_series_equal(row, original)
+                pd.testing.assert_series_equal(
+                    result.loc[source.index], source
+                )
+
+                for site in ("a", "b"):
+                    self.assertEqual(
+                        result[f"mapping_status_{site}"],
+                        "not_evaluable",
+                    )
+                    self.assertEqual(
+                        result[f"mapping_reason_{site}"], status
+                    )
+                    self.assertIsNone(
+                        result[f"mapped_residue_id_{site}"]
+                    )
+                    self.assertIsNone(
+                        result[f"mapping_coord_{site}"]
+                    )
 if __name__ == "__main__":
     unittest.main()

@@ -111,7 +111,22 @@ def map_complex_residue(
 def map_complex_record(row, records, atom_a, atom_b):
     """Map both endpoints while preserving the original record."""
     result = row.copy(deep=True)
+    af_status = row.get("af_match_status")
 
+    if isinstance(af_status, str) and af_status in (
+        "no_candidate_model",
+        "no_matching_chain_pair",
+    ):
+        for site, atom_name in (("a", atom_a), ("b", atom_b)):
+            result[f"mapping_status_{site}"] = "not_evaluable"
+            result[f"mapping_reason_{site}"] = af_status
+            result[f"mapping_detail_{site}"] = None
+            result[f"mapped_residue_id_{site}"] = None
+            result[f"mapped_residue_name_{site}"] = None
+            result[f"mapping_atom_{site}"] = atom_name
+            result[f"mapping_coord_{site}"] = None
+
+        return result
     for site, atom_name in (("a", atom_a), ("b", atom_b)):
         mapped = map_complex_residue(
             structure_path=row["path"],
