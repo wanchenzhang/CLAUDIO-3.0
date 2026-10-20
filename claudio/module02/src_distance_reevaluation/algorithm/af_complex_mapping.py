@@ -3,7 +3,8 @@
 from Bio.PDB import MMCIFParser
 
 from claudio.utils.af_complex import read_complex_chains
-
+from math import isfinite
+from numbers import Integral, Real
 
 def map_complex_residue(
     structure_path,
@@ -35,7 +36,20 @@ def map_complex_residue(
         or position_status not in ("valid", "corrected")
     ):
         return not_evaluable("unresolved_position")
+    if (
+        isinstance(protein_position, bool)
+        or not isinstance(protein_position, Real)
+    ):
+        return not_evaluable("invalid_protein_position")
 
+    if not isinstance(protein_position, Integral):
+        if (
+            not isfinite(protein_position)
+            or protein_position != int(protein_position)
+        ):
+            return not_evaluable("invalid_protein_position")
+
+    protein_position = int(protein_position)
     chains = read_complex_chains(structure_path, records)
 
     chain_info = next(

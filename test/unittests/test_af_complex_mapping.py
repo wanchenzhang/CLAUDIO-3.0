@@ -265,5 +265,56 @@ class TestAFComplexMapping(unittest.TestCase):
         self.assertEqual(result["residue_name"], "LYS")
         self.assertEqual(result["atom_name"], "CB")
         self.assertIsNone(result["coord"])
+    def test_validates_numeric_position_values(self):
+        records = json.loads(
+            (FIXTURE_DIR / "metadata.json").read_text(encoding="utf-8")
+        )
+        metadata = next(
+            record for record in records
+            if record["chainId"] == "A"
+        )
+
+        cases = (
+            (67.0, "mapped", None),
+            (67.5, "not_evaluable", "invalid_protein_position"),
+            (float("nan"), "not_evaluable", "invalid_protein_position"),
+            (float("inf"), "not_evaluable", "invalid_protein_position"),
+            (None, "not_evaluable", "invalid_protein_position"),
+            (True, "not_evaluable", "invalid_protein_position"),
+        )
+
+        for position, expected_status, expected_reason in cases:
+            with self.subTest(protein_position=position):
+                result = map_complex_residue(
+                    structure_path=(
+                        FIXTURE_DIR / "AF-0000000208747029.cif"
+                    ),
+                    records=records,
+                    protein_id="A0A0P0Y832",
+                    protein_sequence=metadata["sequence"],
+                    chain_id="A",
+                    protein_position=position,
+                    atom_name="CB",
+                    position_status="valid",
+                )
+
+                self.assertEqual(
+                    result["mapping_status"], expected_status
+                )
+                self.assertEqual(
+                    result["mapping_reason"], expected_reason
+                )
+
+                if expected_status == "mapped":
+                    self.assertIsInstance(
+                        result["protein_position"], int
+                    )
+                    self.assertEqual(result["protein_position"], 67)
+                    self.assertEqual(
+                        result["residue_id"], (" ", 67, " ")
+                    )
+                else:
+                    self.assertIsNone(result["residue_id"])
+                    self.assertIsNone(result["coord"])
 if __name__ == "__main__":
     unittest.main()
