@@ -8,7 +8,10 @@ from claudio.utils.af_complex import (
 )
 from math import isfinite
 from numbers import Integral, Real
+import json
+from pathlib import Path
 
+import pandas as pd
 def map_complex_residue(
     structure_path,
     records,
@@ -146,5 +149,62 @@ def map_complex_record(row, records, atom_a, atom_b):
         result[f"mapped_residue_name_{site}"] = mapped["residue_name"]
         result[f"mapping_atom_{site}"] = mapped["atom_name"]
         result[f"mapping_coord_{site}"] = mapped["coord"]
+
+    return result
+def map_complex_dataset(data, atom_a, atom_b):
+    """Map all candidate rows while preserving input fields and indices."""
+    result = data.copy(deep=True)
+
+    mapping_fields = (
+        "mapping_status",
+        "mapping_reason",
+        "mapping_detail",
+        "mapped_residue_id",
+        "mapped_residue_name",
+        "mapping_atom",
+        "mapping_coord",
+    )
+    mapping_columns = [
+        f"{field}_{site}"
+        for site in ("a", "b")
+        for field in mapping_fields
+    ]
+
+    for column in mapping_columns:
+        result[column] = pd.Series(
+            None, index=result.index, dtype="object"
+        )
+
+    metadata_cache = {}
+
+    for row_number, (_, row) in enumerate(data.iterrows()):
+        af_status = row.get("af_match_status")
+
+        if isinstance(af_status, str) and af_status in (
+            "no_candidate_model",
+            "no_matching_chain_pair",
+        ):
+            records = []
+        else:
+            metadata_path = Path(row["af_metadata_path"])
+
+            if metadata_path not in metadata_cache:
+                metadata_cache[metadata_path] = json.loads(
+                    metadata_path.read_text(encoding="utf-8")
+                )
+
+            records = metadata_cache[metadata_path]
+
+        mapped = map_complex_record(
+            row=row,
+            records=records,
+            atom_a=atom_a,
+            atom_b=atom_b,
+        )
+
+        for column in mapping_columns:
+            result.iat[
+                row_number, result.columns.get_loc(column)
+            ] = mapped[column]
 
     return result
