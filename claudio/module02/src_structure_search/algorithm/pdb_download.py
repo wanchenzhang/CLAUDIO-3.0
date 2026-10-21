@@ -9,7 +9,8 @@ import requests as r
 import pandas as pd
 from io import StringIO
 from math import isfinite
-
+from Bio.PDB import PDBParser
+from Bio.PDB.PDBExceptions import PDBConstructionException
 from Bio.PDB.MMCIF2Dict import MMCIF2Dict
 from claudio.data.constants import ALPHAFOLD_URL
 from claudio.utils.utils import verbose_print, round_self, rreplace
@@ -231,11 +232,25 @@ def download_pdb_from_db(url: str, i_try: int, max_try: int):
 
         # Else attempt .pdb call from AlphaFold database
         for i in reversed(range(1, 7)):
-            pdb_file = r.get(rreplace(url, 6, i, 1),timeout=60).text
-            if "<Error><Code>NoSuchKey</Code><Message>The specified key does not exist.</Message></Error>" in pdb_file:
-                pass
-            else:
-                return pdb_file
+            response = r.get(rreplace(url, 6, i, 1), timeout=60)
+            if response.status_code == 404:
+                continue
+            response.raise_for_status()
+            pdb_text = response.text
+            try:
+                structure = PDBParser(
+                    QUIET=True, PERMISSIVE=False
+                ).get_structure("alphafold", StringIO(pdb_text))
+                atoms = list(structure.get_atoms())
+                if not atoms or any(
+                    not isfinite(value)
+                    for atom in atoms
+                    for value in atom.get_coord()
+                ):
+                    continue
+            except (ValueError, PDBConstructionException):
+                continue
+            return pdb_text
         return None
     # Retry on timeout if not reached max_try already, else return None
     except (r.exceptions.Timeout, TimeoutError):
