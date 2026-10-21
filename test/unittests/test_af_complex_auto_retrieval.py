@@ -3,7 +3,7 @@
 import unittest
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
-
+from requests import Response
 import pandas as pd
 
 from claudio.module02.src_structure_search.algorithm.af_complex_search import (
@@ -364,5 +364,72 @@ class TestRetrieveDiscoveredComplexes(unittest.TestCase):
         self.assertEqual(unmatched["chain_b"], "-")
         self.assertEqual(unmatched["path"], "-")
         self.assertTrue(pd.isna(unmatched["af_model_id"]))
+    @patch(
+        "claudio.module02.src_structure_search.algorithm."
+        "af_complex_search.retrieve_af_complex"
+    )
+    @patch("claudio.utils.af_complex.requests.get")
+    def test_continues_after_404_and_preserves_source_records(
+        self, mock_get, mock_retrieve
+    ):
+        data = pd.DataFrame([
+            {
+                "unip_id_a": "P1", "unip_id_b": "P2",
+                "source_record_id": "record_000001",
+                "pos_a": 10, "pos_b": 20, "experiment": "condition_1",
+            },
+            {
+                "unip_id_a": "P3", "unip_id_b": "P4",
+                "source_record_id": "record_000002",
+                "pos_a": 30, "pos_b": 40, "experiment": "condition_2",
+            },
+        ], index=[7, 12])
+        original = data.copy(deep=True)
+
+        missing = Response()
+        missing.status_code = 404
+        missing._content = b"{}"
+
+        found = Response()
+        found.status_code = 200
+        found._content = (
+            b'[{"modelEntityId":"AF-test-cd","latestVersion":1,'
+            b'"isComplex":true,"uniprotAccession":["P3","P4"]}]'
+        )
+        mock_get.side_effect = [missing, found]
+        mock_retrieve.return_value = data.iloc[[1]].assign(
+            af_model_id="AF-test-cd",
+            af_match_status="matched",
+            chain_a="A", chain_b="B", path="new_structure.cif",
+        )
+
+        with TemporaryDirectory() as output_dir:
+            result = retrieve_discovered_complexes(data, output_dir)
+
+            mock_retrieve.assert_called_once()
+            args = mock_retrieve.call_args.args
+            pd.testing.assert_frame_equal(args[0], data.iloc[[1]])
+            self.assertEqual(args[1:], ("AF-test-cd", output_dir))
+
+        self.assertEqual(
+            [call.args[0] for call in mock_get.call_args_list],
+            [
+                "https://alphafold.ebi.ac.uk/api/complex/P1",
+                "https://alphafold.ebi.ac.uk/api/complex/P3",
+            ],
+        )
+        self.assertEqual(len(result), 2)
+        self.assertTrue(result.index.is_unique)
+        pd.testing.assert_frame_equal(
+            result.loc[data.index, data.columns], original
+        )
+        self.assertEqual(result.loc[7, "af_match_status"], "no_candidate_model")
+        self.assertEqual(result.loc[7, "path"], "-")
+        self.assertEqual(result.loc[7, "chain_a"], "-")
+        self.assertEqual(result.loc[7, "chain_b"], "-")
+        self.assertTrue(pd.isna(result.loc[7, "af_model_id"]))
+        self.assertEqual(result.loc[12, "af_match_status"], "matched")
+        self.assertEqual(result.loc[12, "af_model_id"], "AF-test-cd")
+        pd.testing.assert_frame_equal(data, original)
 if __name__ == "__main__":
     unittest.main()

@@ -106,5 +106,9 @@ def fetch_complex_candidates(uniprot_id):
     """Return AFDB complex candidates containing a UniProt accession."""
     url = f"https://alphafold.ebi.ac.uk/api/complex/{uniprot_id}"
     response = requests.get(url, timeout=30)
+
+    if response.status_code == 404:
+        return []
+
     response.raise_for_status()
     return response.json()

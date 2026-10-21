@@ -57,6 +57,25 @@ class TestFetchComplexCandidates(unittest.TestCase):
             fetch_complex_candidates("A0A0P0Y832")
 
         response.json.assert_not_called()
+    @patch("claudio.utils.af_complex.requests.get")
+    def test_returns_empty_list_when_complex_endpoint_returns_404(
+        self, mock_get
+    ):
+        response = mock_get.return_value
+        response.status_code = 404
+        response.raise_for_status.side_effect = HTTPError(
+            "404 Not Found", response=response
+        )
+        response.json.return_value = {}
+
+        result = fetch_complex_candidates("Q8WZ42")
+
+        self.assertEqual(result, [])
+        mock_get.assert_called_once_with(
+            "https://alphafold.ebi.ac.uk/api/complex/Q8WZ42",
+            timeout=30,
+        )
+        response.json.assert_not_called()
 class TestFilterComplexCandidates(unittest.TestCase):
     def test_keeps_only_models_containing_both_proteins(self):
         matching = {
