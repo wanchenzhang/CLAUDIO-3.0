@@ -110,9 +110,10 @@ def compute_dists_with_topolink(data: pd.DataFrame, temp_dir: str,
         os.makedirs(f"{task_dir}in/", exist_ok=True)
         os.makedirs(f"{task_dir}struct/", exist_ok=True)
 
+        chain_ids = np.unique(subset[["chain_a", "chain_b"]].values)
+        chain_map = build_topolink_chain_map(chain_ids)
         structure, residue_map = prepare_topolink_structure(
-            structure, pdb_id, task_dir,
-            np.unique(subset[["chain_a", "chain_b"]].values),
+            structure, pdb_id, task_dir, chain_ids,
         )
         # Check again if isolation of chains was successful,
         # if not skip iteration
@@ -146,10 +147,21 @@ def compute_dists_with_topolink(data: pd.DataFrame, temp_dir: str,
                         continue
 
                     link_strs = [
-                        ' '.join([Polypeptide.one_to_three(row.seq_a[row.pos_a - 1]),
-                                  row.chain_a, str(topolink_pos_a)]),
-                        ' '.join([Polypeptide.one_to_three(row.seq_b[row.pos_b - 1]),
-                                  row.chain_b, str(topolink_pos_b)])]
+                        ' '.join([
+                            Polypeptide.one_to_three(
+                                row.seq_a[row.pos_a - 1]
+                            ),
+                            chain_map[row.chain_a],
+                            str(topolink_pos_a),
+                        ]),
+                        ' '.join([
+                            Polypeptide.one_to_three(
+                                row.seq_b[row.pos_b - 1]
+                            ),
+                            chain_map[row.chain_b],
+                            str(topolink_pos_b),
+                        ]),
+                    ]
                     link_key = tuple(sorted(link_strs))
                     if link_key in known_link_groups:
                         known_link_groups[link_key].append(i)
@@ -341,17 +353,47 @@ def isolate_pdb_chain(path: str, pdb_id: str, temp_dir: str,
     io.save(new_path, ChainSelect())
 
     return new_path
+def build_topolink_chain_map(chain_ids):
+    """Assign distinct PDB chain IDs while preserving existing legal IDs."""
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    source_ids = sorted(set(chain_ids))
+    if len(source_ids) > len(alphabet):
+        raise ValueError(
+            "TopoLink PDB export supports at most 62 selected chains"
+        )
+
+    chain_map = {
+        chain_id: chain_id
+        for chain_id in source_ids
+        if len(chain_id) == 1 and chain_id in alphabet
+    }
+    available = iter(
+        name for name in alphabet if name not in chain_map.values()
+    )
+    for chain_id in source_ids:
+        if chain_id not in chain_map:
+            chain_map[chain_id] = next(available)
+    return chain_map
+
+
 def prepare_topolink_structure(path, pdb_id, temp_dir, chain_ids):
-    """Export a numbered copy and record original residue identities."""
+    """Export a mapped copy and record original chain/residue identities."""
     model = read_structure_models(path)[0].copy()
+    chain_map = build_topolink_chain_map(chain_ids)
     residue_map = {}
     mapping_rows = []
     source_path = os.path.abspath(path)
 
-    for chain in list(model):
-        if chain.id not in chain_ids:
-            model.detach_child(chain.id)
+    # Detach all chains before renaming to avoid ID collisions.
+    source_chains = list(model)
+    for chain in source_chains:
+        model.detach_child(chain.id)
+
+    for chain in source_chains:
+        source_chain = chain.id
+        if source_chain not in chain_map:
             continue
+        chain.id = chain_map[source_chain]
 
         residues = list(chain)
         for residue in residues:
@@ -359,11 +401,11 @@ def prepare_topolink_structure(path, pdb_id, temp_dir, chain_ids):
 
         for new_number, residue in enumerate(residues, start=1):
             hetflag, number, icode = residue.id
-            residue_map[(chain.id, hetflag, number, icode)] = new_number
+            residue_map[(source_chain, hetflag, number, icode)] = new_number
             mapping_rows.append(
                 {
                     "source_path": source_path,
-                    "source_chain": chain.id,
+                    "source_chain": source_chain,
                     "source_hetflag": hetflag,
                     "source_resseq": number,
                     "source_icode": icode,
@@ -373,6 +415,7 @@ def prepare_topolink_structure(path, pdb_id, temp_dir, chain_ids):
             )
             residue.id = (hetflag, new_number, " ")
             chain.add(residue)
+        model.add(chain)
 
     if not residue_map:
         return "-", {}
@@ -380,12 +423,12 @@ def prepare_topolink_structure(path, pdb_id, temp_dir, chain_ids):
     new_path = f"{temp_dir}struct/{pdb_id}_tmp.pdb"
     writer = PDBIO()
     writer.set_structure(model)
-    writer.save(new_path)
+    with open(new_path, "w", encoding="utf-8") as output:
+        writer.save(output)
     pd.DataFrame(mapping_rows).to_csv(
         f"{temp_dir}residue_map.csv", index=False
     )
     return new_path, residue_map
-
 
 def resolve_topolink_position(row, site, residue_map):
     """Resolve an original residue to its unique exported number."""

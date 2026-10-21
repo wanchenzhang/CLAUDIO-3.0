@@ -286,7 +286,7 @@ def compute_site_pos(i: int, data: pd.Series, site_id: int, xl_type: str,
     else:
         chain_found = False
         for c in chains:
-            if c.__repr__().split('=')[1][0] == chain_id:
+            if c.id == chain_id:
                 chain = c
                 chain_found = True
                 break
