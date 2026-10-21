@@ -260,12 +260,12 @@ def download_pdb_from_db(url: str, i_try: int, max_try: int):
         return download_pdb_from_db(url, i_try + 1, max_try)
     # Break execution if no connection to database possible
     except (ConnectionError, socket.gaierror, r.exceptions.ConnectionError) as e:
-        if i_try == max_try:
+        if i_try >= max_try:
             print(f"No connection to {'RCSB' if url.startswith('https://files.rcsb.org/') else 'AlphaFold'}"
                   f" API possible. Please try again later.")
             print(e)
+            return None
         return download_pdb_from_db(url, i_try + 1, max_try)
-
 
 def accept_resolution_method_download(pdb: str, pdb_id: str,
                                       res_cutoff: float):

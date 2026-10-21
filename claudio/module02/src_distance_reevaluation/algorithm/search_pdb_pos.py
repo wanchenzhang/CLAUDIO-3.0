@@ -623,9 +623,10 @@ def replacement_alphafold_download(
     except (
         ConnectionError, socket.gaierror, r.exceptions.ConnectionError
     ) as error:
-        if i_try == max_try:
+        if i_try >= max_try:
             print("No connection to AlphaFold API possible. Please try again later.")
             print(error)
+            return None, ""
         return replacement_alphafold_download(
             unip_id, path, verbose_level, i_try + 1
         )
