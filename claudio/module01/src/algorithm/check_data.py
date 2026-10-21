@@ -168,7 +168,7 @@ def double_check_data(data: pd.DataFrame, filename: str,
     # Add aforementioned possible variations to the end of the dataset (*)
     if new_datapoints:
         data = pd.concat([data] + new_datapoints).drop_duplicates().reset_index(drop=True)
-
+    data = assign_candidate_ids(data)
     log_text += f"\n======================================================================\nFinal result:\n" \
                 f"\tFAILS: {log_text.count('FAIL')}\n" \
                 f"\tREMOVES: {log_text.count('REMOVE')}\n" \
@@ -194,7 +194,33 @@ def double_check_data(data: pd.DataFrame, filename: str,
         index=False,
     )
     return data
+def assign_candidate_ids(data: pd.DataFrame):
+    """Identify resolved sequence residue pairs while retaining source rows."""
+    known_candidates = {}
+    candidate_ids = []
+    allowed_statuses = {"valid", "corrected"}
 
+    for row in data.itertuples(index=False):
+        if (
+            row.position_status_a not in allowed_statuses
+            or row.position_status_b not in allowed_statuses
+        ):
+            candidate_ids.append(pd.NA)
+            continue
+
+        endpoints = (
+            (row.unip_id_a, row.seq_a, row.pos_a),
+            (row.unip_id_b, row.seq_b, row.pos_b),
+        )
+        candidate_key = tuple(sorted(endpoints))
+        if candidate_key not in known_candidates:
+            known_candidates[candidate_key] = (
+                f"candidate_{len(known_candidates) + 1:06d}"
+            )
+        candidate_ids.append(known_candidates[candidate_key])
+
+    data["candidate_id"] = pd.array(candidate_ids, dtype="string")
+    return data
 
 def check_pep_pos(i: int, row: pd.Series, site: str, df_xl_res: pd.DataFrame,
                   log_text: str, verbose_level: int):
