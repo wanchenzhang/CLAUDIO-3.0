@@ -210,6 +210,33 @@ class TestAFComplexPipelineIntegration(unittest.TestCase):
                     self.assertTrue(Path(final.iloc[0][column]).is_file())
                 plt.close("all")
 
+    def test_native_lower_bound_is_preserved_to_final_output(self):
+        # These LINK values reproduce the native TopoLink example.
+        native_output = (
+            "  LINK: LYS A 67 CB LYS B 11 CB 62.907 66.751 "
+            "YES 0.000 35.000 BAD: LONG\n"
+            "  LINK: LYS A 67 CB LYS B 23 CB 75.957 >75.957 "
+            "YES 0.000 35.000 BAD: EUCL\n"
+        )
+        output = self.root / "lower_bound"
+        with patch.object(
+            self, "run_topolink", return_value=StringIO(native_output),
+        ):
+            topolink = self.run_pipeline(output, ["--af-complex-auto"])
+        topolink.assert_called_once()
+        final = self.check_source_outputs(output)
+        first, bounded, unresolved = (final.iloc[i] for i in range(3))
+        self.assertEqual(first["distance_status"], "computed")
+        self.assertAlmostEqual(first["topo_dist"], 66.751)
+        self.assertEqual(bounded["distance_status"], "lower_bound")
+        self.assertEqual(bounded["distance_reason"], "topolink_lower_bound")
+        self.assertEqual(bounded["topo_dist_raw"], ">75.957")
+        self.assertAlmostEqual(bounded["topo_dist_lower_bound"], 75.957)
+        self.assertTrue(pd.isna(bounded["topo_dist"]))
+        self.assertFalse(bounded["XL_confirmed"])
+        self.assertEqual(unresolved["distance_reason"], "unresolved_position")
+        self.assertTrue(pd.isna(unresolved["topo_dist_lower_bound"]))
+
     def test_auto_mode_preserves_sources_when_afdb_has_no_candidate(self):
         self.no_candidates = True
         output = self.root / "no_candidates"

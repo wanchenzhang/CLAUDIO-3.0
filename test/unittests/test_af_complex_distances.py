@@ -167,6 +167,57 @@ class TestAFComplexDistances(unittest.TestCase):
         self.assertTrue(pd.isna(row["eucl_dist_tplk"]))
         self.assertTrue(pd.isna(row["topo_dist_tplk"]))
 
+    def test_lower_bounds_have_their_own_status_and_keep_raw_tokens(self):
+        unresolved = {
+            **self.row, "source_record_id": "record_000002",
+            "position_status_a": "ambiguous",
+        }
+        data = pd.DataFrame([self.row, unresolved], index=[7, 12])
+
+        def bounded(selected, *args):
+            result = selected.copy()
+            result["eucl_dist_tplk"] = 62.907
+            result["topo_dist_tplk"] = float("nan")
+            result["eucl_dist_lower_bound"] = float("nan")
+            result["topo_dist_lower_bound"] = 75.957
+            result["eucl_dist_raw"] = "62.907"
+            result["topo_dist_raw"] = ">75.957"
+            return result
+
+        with patch(
+            "claudio.module02.src_distance_reevaluation.algorithm."
+            "af_complex_distances.calculate_site_dists", side_effect=bounded,
+        ):
+            result = calculate_complex_site_dists(
+                data, "unused/", "K", 0.0, None, 0,
+            )
+        row = result.loc[7]
+        self.assertEqual(row["distance_status"], "lower_bound")
+        self.assertEqual(row["distance_reason"], "topolink_lower_bound")
+        self.assertEqual(row["topo_dist_lower_bound"], 75.957)
+        self.assertEqual(row["topo_dist_raw"], ">75.957")
+        self.assertTrue(pd.isna(row["topo_dist_tplk"]))
+        self.assertEqual(result.loc[12, "distance_reason"], "unresolved_position")
+        self.assertTrue(pd.isna(result.loc[12, "topo_dist_lower_bound"]))
+        self.assertTrue(pd.isna(result.loc[12, "topo_dist_raw"]))
+
+    def test_unresolved_records_do_not_keep_stale_bound_fields(self):
+        data = pd.DataFrame([{
+            **self.row, "position_status_a": "ambiguous",
+            "topo_dist_lower_bound": 100.0, "topo_dist_raw": ">100",
+        }])
+        with patch(
+            "claudio.module02.src_distance_reevaluation.algorithm."
+            "af_complex_distances.calculate_site_dists",
+        ) as calculate:
+            result = calculate_complex_site_dists(
+                data, "unused/", "K", 0.0, None, 0,
+            )
+        calculate.assert_not_called()
+        self.assertEqual(result.iloc[0]["distance_status"], "not_evaluable")
+        self.assertTrue(pd.isna(result.iloc[0]["topo_dist_lower_bound"]))
+        self.assertTrue(pd.isna(result.iloc[0]["topo_dist_raw"]))
+
     def test_rejects_invalid_cutoff_before_reading_structure(self):
         with patch(
             "claudio.module02.src_distance_reevaluation.algorithm."

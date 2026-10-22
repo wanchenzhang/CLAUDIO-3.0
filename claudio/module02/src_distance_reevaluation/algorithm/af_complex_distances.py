@@ -22,8 +22,12 @@ def calculate_complex_site_dists(
 
     rules = build_xl_dataset(xl_residues)
     result = prepare_complex_distance_input(data, rules)
-    result["eucl_dist_tplk"] = float("nan")
-    result["topo_dist_tplk"] = float("nan")
+    for prefix in ("eucl", "topo"):
+        result[f"{prefix}_dist_tplk"] = float("nan")
+        result[f"{prefix}_dist_lower_bound"] = float("nan")
+        result[f"{prefix}_dist_raw"] = pd.Series(
+            None, index=result.index, dtype="object",
+        )
     result["distance_status"] = "not_evaluable"
     result["distance_reason"] = pd.Series(
         None, index=result.index, dtype="object"
@@ -67,22 +71,39 @@ def calculate_complex_site_dists(
         selected, temp_dir, rules, cutoff, topolink_bin, verbose_level
     )
 
+    distance_columns = [
+        f"{prefix}_dist{suffix}"
+        for prefix in ("eucl", "topo")
+        for suffix in ("_tplk", "_lower_bound", "_raw")
+    ]
     for local_position, original_position in enumerate(eligible):
-        distances = computed.loc[
-            local_position, ["eucl_dist_tplk", "topo_dist_tplk"]
-        ]
-        for column, value in distances.items():
+        computed_row = computed.loc[local_position]
+        for column in distance_columns:
             result.iat[
                 original_position, result.columns.get_loc(column)
-            ] = value
+            ] = computed_row.get(column, float("nan"))
+
         available = all(
-            pd.notna(value) and isfinite(value) for value in distances
+            pd.notna(computed_row.get(column))
+            and isfinite(computed_row[column])
+            for column in ("eucl_dist_tplk", "topo_dist_tplk")
         )
+        has_bound = any(
+            pd.notna(computed_row.get(column))
+            and isfinite(computed_row[column])
+            for column in ("eucl_dist_lower_bound", "topo_dist_lower_bound")
+        )
+        if has_bound:
+            status, reason = "lower_bound", "topolink_lower_bound"
+        elif available:
+            status, reason = "computed", None
+        else:
+            status, reason = "not_evaluable", "distance_unavailable"
         result.iat[
             original_position, result.columns.get_loc("distance_status")
-        ] = "computed" if available else "not_evaluable"
+        ] = status
         result.iat[
             original_position, result.columns.get_loc("distance_reason")
-        ] = None if available else "distance_unavailable"
+        ] = reason
 
     return result
