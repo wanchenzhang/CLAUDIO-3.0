@@ -84,43 +84,57 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum,
                                 else None)
         distance_maximum = float(distance_maximum)
         cutoff = float(cutoff)
-        filename = input_filepath.split('/')[-1].split('.')[0]
+        filename = input_filepath.split("/")[-1].removesuffix(".sqcs_structdi.csv")
 
         # Read inputs
         verbose_print("Read inputs", 0, verbose_level)
         data = read_inputs(input_filepath, input_filepath2)
 
-        # Combine results of both reevaluations
-        verbose_print("Combine results of both reevaluations", 0, verbose_level)
-        data = combine_inter_reevaluations(data, plddt_cutoff, linker_minimum, linker_maximum,
-                                           euclidean_strictness, distance_maximum, cutoff,
-                                           compute_scoring)
+        af_complex_input = "af_match_status" in data.columns
+        if af_complex_input and data.empty:
+            data = data.assign(
+                evidence="", XL_type="", XL_confirmed=False,
+                swiss_model_homology="",
+            )
+            if compute_scoring:
+                data = data.assign(
+                    inter_score=float("nan"), score_XL_type="",
+                )
+        else:
+            verbose_print("Combine results of both reevaluations",
+                          0, verbose_level)
+            data = combine_inter_reevaluations(
+                data, plddt_cutoff, linker_minimum, linker_maximum,
+                euclidean_strictness, distance_maximum, cutoff,
+                compute_scoring,
+            )
 
-        # Retrieve known oligomeric states from SWISS-MODEL
-        verbose_print("Retrieve known oligomeric states from SWISS-MODEL",
-                      0, verbose_level)
-        data = retrieve_oligomeric_states(data, verbose_level)
+            verbose_print("Retrieve known oligomeric states from SWISS-MODEL",
+                          0, verbose_level)
+            data = retrieve_oligomeric_states(data, verbose_level)
 
-        # Clean dataset for output
-        data = clean_dataset(data)
-        data[["unip_id_a", "unip_id_b", "pos_a", "pos_b", "pep_a", "pep_b",
-              "res_pos_a", "res_pos_b", "pdb_id", "pdb_method", 
-              "pdb_resolution", "chain_a", "chain_b", "pdb_pos_a", "pdb_pos_b",
-              "pLDDT_a", "pLDDT_b", "topo_dist", "eucl_dist", "homo_pep_overl",
-              "evidence", "XL_type", "XL_confirmed", "swiss_model_homology"
+        if af_complex_input:
+            # Preserve every source/model/chain candidate for later assessment.
+            data.to_csv(f"{output_directory}{filename}_extended.csv")
+        else:
+            data = clean_dataset(data)
+            data[[
+                "unip_id_a", "unip_id_b", "pos_a", "pos_b", "pep_a", "pep_b",
+                "res_pos_a", "res_pos_b", "pdb_id", "pdb_method",
+                "pdb_resolution", "chain_a", "chain_b", "pdb_pos_a", "pdb_pos_b",
+                "pLDDT_a", "pLDDT_b", "topo_dist", "eucl_dist", "homo_pep_overl",
+                "evidence", "XL_type", "XL_confirmed", "swiss_model_homology",
             ]].to_csv(f"{output_directory}{filename}_extended.csv")
 
-        # Write pymol scripts
-        verbose_print("Write pymol scripts", 0, verbose_level)
-        setup_pml_scripts(data)
+            verbose_print("Write pymol scripts", 0, verbose_level)
+            setup_pml_scripts(data)
+            data = minimize_dataset(data)
 
-        # Minimize dataset
-        data = minimize_dataset(data)
-
-        # Create inter score histogram
-        verbose_print("Create score histogram", 0, verbose_level)
-        create_plots(data, filename, cutoff, compute_scoring,
-                     output_directory, linker_minimum, linker_maximum)
+            verbose_print("Create score histogram", 0, verbose_level)
+            create_plots(
+                data, filename, cutoff, compute_scoring,
+                output_directory, linker_minimum, linker_maximum,
+            )
 
         # Write final csv containing all computed information,
         # fastas for alphafold and protein-specific csv with interaction

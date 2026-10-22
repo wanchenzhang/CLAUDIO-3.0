@@ -21,6 +21,10 @@ def write_outputs(data: pd.DataFrame, filename: str, compute_scoring: bool, outp
 
     """
 
+    if "af_match_status" in data.columns:
+        data.to_csv(f"{output_directory}{filename}_final.csv")
+        return
+
     # save list of already written results by uniprot ids
     already_written = []
 
