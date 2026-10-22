@@ -45,7 +45,8 @@ def merge_datasets(df1: pd.DataFrame, df2: pd.DataFrame):
     -------
     df1 : pd.DataFrame
     """
-
+    if "af_match_status" in df1.columns:
+        return _merge_af_candidates(df1, df2)
     for column in df2.columns:
         if column not in df1.columns:
             if isinstance(df1.index[0],str):
@@ -59,3 +60,48 @@ def merge_datasets(df1: pd.DataFrame, df2: pd.DataFrame):
             else:
                 df1[column] = df2[column].tolist()
     return df1
+
+def _merge_af_candidates(structural, ops):
+    """Attach M3 results using the original M1 row behind each AF candidate."""
+    if not ops.index.is_unique:
+        raise ValueError("M3 input indices must be unique")
+
+    source_positions = {
+        str(index): position
+        for position, index in enumerate(ops.index)
+    }
+    positions = []
+    for index in structural.index:
+        source_index = str(index).split("_", maxsplit=1)[0]
+        if source_index not in source_positions:
+            raise ValueError(
+                f"No M3 row found for structural candidate {index}"
+            )
+        positions.append(source_positions[source_index])
+
+    aligned = ops.iloc[positions].copy()
+    aligned.index = structural.index
+
+    identity_columns = [
+        "source_record_id", "candidate_id", "unip_id_a", "unip_id_b",
+        "pos_a", "pos_b", "pep_a", "pep_b", "res_pos_a", "res_pos_b",
+        "seq_a", "seq_b",
+    ]
+    for column in identity_columns:
+        if column in structural.columns and column in aligned.columns:
+            matches = structural[column].eq(aligned[column]).fillna(False)
+            matches |= structural[column].isna() & aligned[column].isna()
+            if not matches.all():
+                raise ValueError(
+                    f"M3 input does not match structural {column}"
+                )
+
+    result = structural.copy()
+    ops_columns = {
+        "homo_adjacency", "homo_int_overl", "homo_pep_overl",
+    }
+    for column in aligned.columns:
+        if column not in result.columns or column in ops_columns:
+            result[column] = aligned[column].to_numpy()
+
+    return result
