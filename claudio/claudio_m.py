@@ -9,7 +9,7 @@ from claudio.module02.run_module02_intra import main as run_claudio_structdi
 from claudio.module03.src.main import main as run_claudio_ops
 from claudio.module04.src.main import main as run_claudio_xl
 
-from claudio.utils.utils import verbose_print, round_self, evaluate_boolean_input, clean_input_paths
+from claudio.utils.utils import verbose_print, round_self, evaluate_boolean_input, clean_input_paths, create_out_path
 from claudio.utils.db_updater import main as db_updater
 
 _DEFAULT_OPTIONS = ["test/sample_data_random.csv", None,
@@ -22,6 +22,26 @@ _DEFAULT_OPTIONS = ["test/sample_data_random.csv", None,
 #  False, 'K,M:N:1', 'blastp', 1e-05, 90.0, 50.0, 4, 70.0, 0.0, 35.0,
 #  None, 50.0, 0.0, 'test/out/sample/', None, 'claudio/data/pdbaa', None,
 #  '$HOME/HHSUITE/db', None, False, 2]
+
+
+def _run_stage(command, **params):
+    context = click.get_current_context()
+    if isinstance(command, click.Command):
+        for option in command.params:
+            if option.name in params:
+                params[option.name] = option.type_cast_value(
+                    context, params[option.name]
+                )
+    try:
+        return context.invoke(command, **params)
+    except SystemExit as error:
+        if error.code not in (None, 0):
+            raise
+
+
+def _require_output(path):
+    if not os.path.isfile(path):
+        raise click.ClickException(f"Expected output was not created: {path}")
 
 
 @click.command()
@@ -72,13 +92,16 @@ _DEFAULT_OPTIONS = ["test/sample_data_random.csv", None,
               help="boolean, for whether experimental scoring and resulting XL-type evluations should be\ncomputed and appended to result dataset")
 @click.option("-v", "--verbose-level",
               help="verbose level value")
+@click.option("--af-complex-model", default=None)
+@click.option("--af-complex-auto", is_flag=True, default=False)
 @click.option("-c", "--config",
               help="filepath to configuration file containing all input parameters")
 def main(input_filepath, input_temppath, projections, read_temps, xl_residues,
          search_tool, e_value, query_id, coverage, res_cutoff, plddt_cutoff,
          linker_minimum, linker_maximum, euclidean_strictness, distance_maximum,
          cutoff, output_directory, blast_bin, blast_db, hhsearch_bin,
-         hhsearch_db, topolink_bin, compute_scoring, verbose_level, config):
+         hhsearch_db, topolink_bin, compute_scoring, verbose_level, config,
+         af_complex_model=None, af_complex_auto=False):
     """
     
     wrapper function for the full CLAUDIO pipeline, which includes the following modules:
@@ -121,6 +144,18 @@ def main(input_filepath, input_temppath, projections, read_temps, xl_residues,
 
     """
 
+    if af_complex_auto and af_complex_model is not None:
+        raise click.UsageError(
+            "--af-complex-auto and --af-complex-model are mutually exclusive."
+        )
+    if af_complex_model is not None:
+        af_complex_model = af_complex_model.strip()
+        if not af_complex_model:
+            raise click.BadParameter(
+                "Model ID must not be empty", param_hint="--af-complex-model",
+            )
+    af_mode = af_complex_auto or af_complex_model is not None
+
     verbose_print(f"Start full CLAUDIO v{_pkg_version('CLAUDIO')} pipeline", 0, 1, start='')
     verbose_print("===================================", 0, 1, start='')
     start_time = time.time()
@@ -143,89 +178,73 @@ def main(input_filepath, input_temppath, projections, read_temps, xl_residues,
         = clean_input_paths([input_filepath, input_temppath, output_directory, blast_bin, blast_db, hhsearch_bin,
                              hhsearch_db, topolink_bin])
 
-    verbose_print(f"Check Updates for SIFTS and pdbaa databases.", 0, 1)
-    try:
-        db_updater(["-s", 14, "-p", 14, "-d", blast_db])
-    except SystemExit:
-        pass
-    except Exception as e:
-        print("Error during database update:", repr(e))
-        raise(e)
-    verbose_print("===================================", 0, 1, start='')
+    read_temps = evaluate_boolean_input(read_temps)
+    compute_scoring = evaluate_boolean_input(compute_scoring)
+    input_temppath = input_temppath or None
+    output_directory = create_out_path(output_directory, input_filepath)
+    filename = os.path.splitext(os.path.basename(input_filepath))[0]
+    sqcs_path = f"{output_directory}{filename}.sqcs"
+    ops_path = f"{sqcs_path}_ops.csv"
+    structure_path = f"{sqcs_path}_structdi.csv"
+    final_path = f"{output_directory}{filename}_final.csv"
 
-    filename = '.'.join(input_filepath.split('/')[-1].split('.')[:-1])
+    if not af_mode:
+        verbose_print("Check updates for SIFTS and pdbaa databases.",
+                      0, verbose_level)
+        _run_stage(
+            db_updater, sifts_threshold=14, pdbaa_threshold=14,
+            pdbaa_dir=blast_db,
+        )
 
-    # Run Module01
-    try:
-        run_claudio_lists(["-i", input_filepath, "-it", input_temppath,
-                           "-p", projections, "-s", not read_temps,
-                           "-x", xl_residues, "-t", search_tool,
-                           "-o", output_directory, "-bl", blast_bin,
-                           "-bldb", blast_db, "-hh", hhsearch_bin,
-                           "-hhdb", hhsearch_db, "-v", verbose_level])
-    except SystemExit:
-        pass
-    except Exception as e:
-        print("Error during preprocessing:", repr(e))
-        raise(e)
-    if not os.path.exists(f"{output_directory}{filename}.sqcs"):
-        sys.exit(1)
+    _run_stage(
+        run_claudio_lists,
+        input_filepath=input_filepath, input_temppath=input_temppath,
+        projections=projections, uniprot_search=not read_temps,
+        xl_residues=xl_residues, search_tool=search_tool,
+        output_directory=output_directory, blast_bin=blast_bin,
+        blast_db=blast_db, hhsearch_bin=hhsearch_bin,
+        hhsearch_db=hhsearch_db, verbose_level=verbose_level,
+        skip_protein_structure_search=af_mode,
+    )
+    _require_output(sqcs_path)
 
-    # Run Module03
-    try:
-        run_claudio_ops(["-i", f"{output_directory}{filename}.sqcs",
-                         "-o", output_directory, "-v", verbose_level])
-    except SystemExit:
-        pass
-    except Exception as e:
-        print("Error during ops analysis:", repr(e))
-        raise(e)
-    if not os.path.exists(f"{output_directory}{filename}.sqcs_ops.csv"):
-        sys.exit(1)
+    _run_stage(
+        run_claudio_ops, input_filepath=sqcs_path,
+        output_directory=output_directory, verbose_level=verbose_level,
+    )
+    _require_output(ops_path)
 
-    # Run Module02
-    try:
-        run_claudio_structdi(["-i", f"{output_directory}{filename}.sqcs",
-                              "-it", input_temppath, "-rt", read_temps,
-                              "-t", search_tool, "-x", xl_residues,
-                              "-pc", plddt_cutoff, "-lmin", linker_minimum,
-                              "-lmax", linker_maximum, "-e", e_value,
-                              "-qi", query_id, "-c", coverage,
-                              "-r", res_cutoff, "-o", output_directory,
-                              "-bl", blast_bin, "-bldb", blast_db,
-                              "-hh", hhsearch_bin, "-hhdb", hhsearch_db,
-                              "-tl", topolink_bin, "-v", verbose_level])
-    except SystemExit:
-        pass
-    except Exception as e:
-        print("Error during structural analysis:", repr(e))
-        raise(e)
-    if not os.path.exists(f"{output_directory}{filename}.sqcs_structdi.csv"):
-        sys.exit(1)
+    _run_stage(
+        run_claudio_structdi,
+        input_filepath=sqcs_path, input_temppath=input_temppath,
+        read_temps=read_temps, search_tool=search_tool,
+        xl_residues=xl_residues, plddt_cutoff=plddt_cutoff,
+        linker_minimum=linker_minimum, linker_maximum=linker_maximum,
+        e_value=e_value, query_id=query_id, coverage=coverage,
+        res_cutoff=res_cutoff, output_directory=output_directory,
+        blast_bin=blast_bin, blast_db=blast_db,
+        hhsearch_bin=hhsearch_bin, hhsearch_db=hhsearch_db,
+        topolink_bin=topolink_bin, verbose_level=verbose_level,
+        af_complex_model=af_complex_model, af_complex_auto=af_complex_auto,
+    )
+    _require_output(structure_path)
 
-    # Run Module04
-    try:
-        if os.path.exists(f"{output_directory}{filename}.sqcs_structdi.csv") and \
-                os.path.exists(f"{output_directory}{filename}.sqcs_ops.csv"):
-            run_claudio_xl(["-i",
-                            f"{output_directory}{filename}.sqcs_structdi.csv",
-                            "-i2",
-                            f"{output_directory}{filename}.sqcs_ops.csv",
-                            "-p", plddt_cutoff, "-lmin", linker_minimum,
-                            "-lmax", linker_maximum,
-                            "-es", euclidean_strictness,
-                            "-dm", distance_maximum, "-c", cutoff,
-                            "-o", output_directory, "-s", compute_scoring,
-                            "-v", verbose_level])
-    except SystemExit:
-        if os.path.exists(f"{output_directory}{filename}_final.csv"):
-            os.remove(f"{output_directory}{filename}.sqcs")
-            os.remove(f"{output_directory}{filename}.sqcs_structdi.csv")
-            os.remove(f"{output_directory}{filename}.sqcs_ops.csv")
-        pass
-    except Exception as e:
-        print("Error during result combination:", repr(e))
-        raise(e)
+    _run_stage(
+        run_claudio_xl,
+        input_filepath=structure_path, input_filepath2=ops_path,
+        plddt_cutoff=plddt_cutoff, linker_minimum=linker_minimum,
+        linker_maximum=linker_maximum,
+        euclidean_strictness=euclidean_strictness,
+        distance_maximum=distance_maximum, cutoff=cutoff,
+        output_directory=output_directory, compute_scoring=compute_scoring,
+        verbose_level=verbose_level,
+    )
+    _require_output(final_path)
+
+    # AF intermediate tables retain source, model, and mapping details.
+    if not af_mode:
+        for path in (sqcs_path, structure_path, ops_path):
+            os.remove(path)
 
     verbose_print(f"\nFinished full CLAUDIO pipeline execution (Total elapsed time: "
                   f"{round_self(time.time() - start_time, 2)}s)",
