@@ -238,3 +238,94 @@ def map_complex_dataset(data, atom_a, atom_b):
             ] = mapped[column]
 
     return result
+def _configured_complex_atom(row, site, df_xl_res):
+    sequence = row.get(f"seq_{site}", "")
+    position = row.get(f"pos_{site}")
+    if (
+        not isinstance(sequence, str)
+        or isinstance(position, bool)
+        or not isinstance(position, Real)
+        or not isfinite(position)
+        or position != int(position)
+        or not 1 <= position <= len(sequence)
+    ):
+        return None
+
+    position = int(position)
+    atoms = {
+        rule.atom
+        for rule in df_xl_res.itertuples()
+        if rule.res == sequence[position - 1]
+        and (
+            rule.pos == 0
+            or (rule.pos == 1 and position == 1)
+            or (rule.pos == -1 and position == len(sequence))
+        )
+    }
+    return next(iter(atoms)) if len(atoms) == 1 else None
+
+
+def prepare_complex_distance_input(data, df_xl_res):
+    """Adapt strict AF mappings to the residue fields used by M2."""
+    pieces = []
+    for position in range(len(data)):
+        row = data.iloc[position]
+        atom_a = _configured_complex_atom(row, "a", df_xl_res)
+        atom_b = _configured_complex_atom(row, "b", df_xl_res)
+        mapped = map_complex_dataset(
+            data.iloc[[position]], atom_a=atom_a, atom_b=atom_b
+        )
+        for site, atom in (("a", atom_a), ("b", atom_b)):
+            if (
+                atom is None
+                and mapped.iloc[0][f"mapping_reason_{site}"] == "missing_atom"
+            ):
+                mapped[f"mapping_reason_{site}"] = "no_unique_configured_atom"
+        pieces.append(mapped)
+
+    result = (
+        pd.concat(pieces)
+        if pieces else map_complex_dataset(data, atom_a=None, atom_b=None)
+    )
+    for site in ("a", "b"):
+        for field in ("pdb_pos", "pdb_hetflag", "pdb_icode"):
+            result[f"{field}_{site}"] = pd.Series(
+                None, index=result.index, dtype="object"
+            )
+        result[f"method_{site}"] = ""
+        result[f"pLDDT_{site}"] = float("nan")
+        result[f"res_crit_{site}"] = False
+
+    models = {}
+    for position in range(len(result)):
+        row = result.iloc[position]
+        for site in ("a", "b"):
+            if row[f"mapping_status_{site}"] != "mapped":
+                continue
+
+            residue_id = row[f"mapped_residue_id_{site}"]
+            structure_path = str(row["path"])
+            if structure_path not in models:
+                structure = MMCIFParser(QUIET=True).get_structure(
+                    "af_complex", structure_path
+                )
+                models[structure_path] = next(structure.get_models())
+            atom = models[structure_path][row[f"chain_{site}"]][residue_id][
+                row[f"mapping_atom_{site}"]
+            ]
+
+            values = {
+                f"pdb_hetflag_{site}": residue_id[0],
+                f"pdb_pos_{site}": residue_id[1],
+                f"pdb_icode_{site}": residue_id[2],
+                f"method_{site}": "alphafold",
+                f"pLDDT_{site}": float(atom.get_bfactor()),
+                f"res_crit_{site}": True,
+            }
+            for column, value in values.items():
+                result.iat[position, result.columns.get_loc(column)] = value
+
+    result["res_criteria_fulfilled"] = (
+        result["res_crit_a"] & result["res_crit_b"]
+    )
+    return result
