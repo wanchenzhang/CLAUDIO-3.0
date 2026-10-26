@@ -1,6 +1,5 @@
 """Prevent parallel AlphaFold models from sharing TopoLink work files."""
-import io
-import shlex
+import subprocess
 import tempfile
 import threading
 import unittest
@@ -84,9 +83,9 @@ class TestAFModelWorkdirs(unittest.TestCase):
             structure_paths = []
             lock = threading.Lock()
 
-            def fake_topolink(command):
+            def fake_topolink(command, **kwargs):
                 try:
-                    input_path = Path(shlex.split(command)[-1])
+                    input_path = Path(kwargs["cwd"]) / command[-1]
 
                     # Both workers finish writing before either reads.
                     ready.wait(timeout=10)
@@ -98,27 +97,33 @@ class TestAFModelWorkdirs(unittest.TestCase):
                     structure_path = Path(structure_line.split(maxsplit=1)[1])
 
                     exported = PDBParser(QUIET=True).get_structure(
-                        "exported", str(structure_path)
+                        "exported", (Path(kwargs["cwd"]) / (str(structure_path)))
                     )
                     chain = exported[0]["A"]
                     distance = float(chain[1]["CB"] - chain[2]["CB"])
 
                     with lock:
                         input_paths.append(input_path)
-                        structure_paths.append(structure_path)
+                        structure_paths.append((Path(kwargs["cwd"]) / structure_path).resolve())
 
                     # Controlled output at the external-program boundary.
-                    return io.StringIO(
-                        f"  LINK: LYS A 1 CB LYS A 2 CB "
-                        f"{distance:.3f} {distance + 2.0:.3f}\n"
+                    return subprocess.CompletedProcess(
+                        command, 0,
+                        stdout=(
+                            f"  LINK: LYS A 1 CB LYS A 2 CB "
+                            f"{distance:.3f} {distance + 2.0:.3f}\n"
+                        ),
+                        stderr="",
                     )
                 except Exception as error:
                     with lock:
                         errors.append(repr(error))
-                    return io.StringIO("")
+                    return subprocess.CompletedProcess(
+                        command, 0, stdout="", stderr="",
+                    )
 
             with patch.object(
-                calc_site_distances.os, "popen", side_effect=fake_topolink
+                calc_site_distances.subprocess, "run", side_effect=fake_topolink
             ) as mocked_topolink:
                 result = calc_site_distances.compute_dists_with_topolink(
                     pd.DataFrame(rows),

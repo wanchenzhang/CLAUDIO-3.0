@@ -1,7 +1,6 @@
 """Keep TopoLink distance bounds separate from numeric path results."""
 
-import io
-import shlex
+import subprocess
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -56,18 +55,24 @@ class TestM2DistanceBounds(unittest.TestCase):
         ], index=[7, 12, 19, 23])
 
     def compute(self, euclidean="10.000", topological="12.000", data=None, missing=False):
-        def topolink(command):
-            lines = Path(shlex.split(command)[-1]).read_text().splitlines()
+        def topolink(command, **kwargs):
+            lines = (Path(kwargs["cwd"]) / command[-1]).read_text().splitlines()
             observed = [line for line in lines if line.strip().startswith("observed ")]
             self.assertEqual(len(observed), 2)
             if missing:
-                return io.StringIO("")
-            return io.StringIO(
-                f"  LINK: LYS A 1 CB LYS A 2 CB {euclidean} {topological}\n"
-                "  LINK: LYS A 2 CB LYS A 3 CB 20.000 22.000\n"
+                return subprocess.CompletedProcess(
+                    command, 0, stdout="", stderr="",
+                )
+            return subprocess.CompletedProcess(
+                command, 0,
+                stdout=(
+                    f"  LINK: LYS A 1 CB LYS A 2 CB {euclidean} {topological}\n"
+                    "  LINK: LYS A 2 CB LYS A 3 CB 20.000 22.000\n"
+                ),
+                stderr="",
             )
 
-        with patch.object(calc_site_distances.os, "popen", side_effect=topolink):
+        with patch.object(calc_site_distances.subprocess, "run", side_effect=topolink):
             return calc_site_distances.compute_dists_with_topolink(
                 (self.data if data is None else data).copy(),
                 str(self.root / "work") + "/",

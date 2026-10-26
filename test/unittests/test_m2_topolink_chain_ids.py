@@ -1,9 +1,8 @@
 """Preserve original chain identities in TopoLink PDB exports."""
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
-import io
-import shlex
 from unittest.mock import patch
 import numpy as np
 import pandas as pd
@@ -132,15 +131,15 @@ class TestM2TopoLinkChainIds(unittest.TestCase):
             errors = []
             observed_pairs = []
 
-            def fake_topolink(command):
+            def fake_topolink(command, **kwargs):
                 try:
-                    input_path = Path(shlex.split(command)[-1])
+                    input_path = Path(kwargs["cwd"]) / command[-1]
                     lines = input_path.read_text().splitlines()
                     structure_line = next(
                         line for line in lines if line.startswith("structure ")
                     )
                     exported = PDBParser(QUIET=True).get_structure(
-                        "exported", structure_line.split(maxsplit=1)[1]
+                        "exported", (Path(kwargs["cwd"]) / (structure_line.split(maxsplit=1)[1]))
                     )[0]
                     output = []
                     for line in lines:
@@ -162,13 +161,17 @@ class TestM2TopoLinkChainIds(unittest.TestCase):
                             f"{b_name} {b_chain} {b_pos} CB "
                             f"{distance:.3f} {distance + 2.0:.3f}\n"
                         )
-                    return io.StringIO("".join(output))
+                    return subprocess.CompletedProcess(
+                        command, 0, stdout="".join(output), stderr="",
+                    )
                 except Exception as error:
                     errors.append(str(error))
-                    return io.StringIO("")
+                    return subprocess.CompletedProcess(
+                        command, 0, stdout="", stderr="",
+                    )
 
             with patch.object(
-                calc_site_distances.os, "popen", side_effect=fake_topolink
+                calc_site_distances.subprocess, "run", side_effect=fake_topolink
             ) as mocked:
                 result = calc_site_distances.compute_dists_with_topolink(
                     data, str(root / "work") + "/",

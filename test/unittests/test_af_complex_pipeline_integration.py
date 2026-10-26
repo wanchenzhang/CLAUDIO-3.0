@@ -1,10 +1,9 @@
 """Run the full CLI with local AF geometry and controlled service responses."""
 
+import subprocess
 import importlib
 import json
-import shlex
 import unittest
-from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -99,14 +98,14 @@ class TestAFComplexPipelineIntegration(unittest.TestCase):
             self.fail(f"Unexpected network request: {url}")
         return response
 
-    def run_topolink(self, command):
-        lines = Path(shlex.split(command)[1]).read_text().splitlines()
+    def run_topolink(self, command, **kwargs):
+        lines = (Path(kwargs["cwd"]) / command[-1]).read_text().splitlines()
         structure_path = next(
             line.split(maxsplit=1)[1]
             for line in lines if line.startswith("structure ")
         )
         model = next(PDBParser(QUIET=True).get_structure(
-            "export", structure_path,
+            "export", (Path(kwargs["cwd"]) / structure_path),
         ).get_models())
         observed = [
             line.split() for line in lines if line.strip().startswith("observed ")
@@ -123,14 +122,16 @@ class TestAFComplexPipelineIntegration(unittest.TestCase):
                 f"{distance:.3f} {distance + 1:.3f} "
                 "YES 0.000 100.000 OK: FOUND\n"
             )
-        return StringIO("".join(results))
+        return subprocess.CompletedProcess(
+            command, 0, stdout="".join(results), stderr="",
+        )
 
     def run_pipeline(self, output, options):
         with patch(
             "requests.get", side_effect=self.service_response,
         ), patch(
             "claudio.module02.src_distance_reevaluation.algorithm."
-            "calc_site_distances.os.popen", side_effect=self.run_topolink,
+            "calc_site_distances.subprocess.run", side_effect=self.run_topolink,
         ) as topolink, patch.object(
             pipeline, "db_updater",
             side_effect=AssertionError("AF mode must not update structure databases"),
@@ -229,7 +230,9 @@ class TestAFComplexPipelineIntegration(unittest.TestCase):
         )
         output = self.root / "lower_bound"
         with patch.object(
-            self, "run_topolink", return_value=StringIO(native_output),
+            self, "run_topolink", return_value=subprocess.CompletedProcess(
+                [], 0, stdout=native_output, stderr="",
+            ),
         ):
             topolink = self.run_pipeline(output, ["--af-complex-auto"])
         topolink.assert_called_once()
@@ -245,6 +248,33 @@ class TestAFComplexPipelineIntegration(unittest.TestCase):
         self.assertFalse(bounded["XL_confirmed"])
         self.assertEqual(unresolved["distance_reason"], "unresolved_position")
         self.assertTrue(pd.isna(unresolved["topo_dist_lower_bound"]))
+
+    def test_native_failure_stops_before_final_output(self):
+        output = self.root / "native_failure"
+        failure = subprocess.CompletedProcess(
+            [], 7, stdout="partial native output\n",
+            stderr="native execution failed\n",
+        )
+        with patch(
+            "requests.get", side_effect=self.service_response,
+        ), patch(
+            "claudio.module02.src_distance_reevaluation.algorithm."
+            "calc_site_distances.subprocess.run", return_value=failure,
+        ), patch.object(pipeline, "db_updater"):
+            result = CliRunner().invoke(pipeline.main, [
+                "-i", str(self.input), "-o", str(output),
+                "-bldb", str(self.root / "missing-db"),
+                "-x", "K", "-pc", "0", "-rt", "False",
+                "-s", "False", "-v", "0", "--af-complex-auto",
+            ])
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertIn("TopoLink", str(result.exception))
+        self.assertIn("exit code 7", str(result.exception))
+        self.assertFalse((output / "crosslinks.run1_final.csv").exists())
+        self.assertNotIn("Finished full CLAUDIO pipeline", result.output)
+        logs = list(output.rglob("topo_*.log"))
+        self.assertEqual(len(logs), 1)
+        self.assertIn("native execution failed", logs[0].read_text())
 
     def test_auto_mode_preserves_sources_when_afdb_has_no_candidate(self):
         self.no_candidates = True

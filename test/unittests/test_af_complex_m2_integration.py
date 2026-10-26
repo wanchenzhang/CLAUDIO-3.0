@@ -1,10 +1,9 @@
 """Exercise both M2 stages with AFDB responses and a local complex fixture."""
 
+import subprocess
 import importlib
 import json
-import shlex
 import unittest
-from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -77,13 +76,13 @@ class TestAFComplexM2Integration(unittest.TestCase):
             self.fail(f"Unexpected network request: {url}")
         return response
 
-    def run_topolink(self, command):
-        lines = Path(shlex.split(command)[1]).read_text().splitlines()
+    def run_topolink(self, command, **kwargs):
+        lines = (Path(kwargs["cwd"]) / command[-1]).read_text().splitlines()
         structure = next(
             line.split(maxsplit=1)[1]
             for line in lines if line.startswith("structure ")
         )
-        model = next(PDBParser(QUIET=True).get_structure("export", structure).get_models())
+        model = next(PDBParser(QUIET=True).get_structure("export", (Path(kwargs["cwd"]) / (structure))).get_models())
         observed = [
             line.split() for line in lines if line.strip().startswith("observed ")
         ]
@@ -94,11 +93,15 @@ class TestAFComplexM2Integration(unittest.TestCase):
         atom_b = model[link[5]][int(link[6])]["CB"]
         distance = float(np.linalg.norm(atom_a.coord - atom_b.coord))
         self.assertGreater(distance, 50)
-        return StringIO(
-            f"  LINK: {' '.join(link[1:4])} CB "
-            f"{' '.join(link[4:7])} CB "
-            f"{distance:.3f} {distance + 1:.3f} "
-            "YES 0.000 100.000 OK: FOUND\n"
+        return subprocess.CompletedProcess(
+            command, 0,
+            stdout=(
+                f"  LINK: {' '.join(link[1:4])} CB "
+                f"{' '.join(link[4:7])} CB "
+                f"{distance:.3f} {distance + 1:.3f} "
+                "YES 0.000 100.000 OK: FOUND\n"
+            ),
+            stderr="",
         )
 
     def invoke_m2(self, data, output, options):
@@ -127,7 +130,7 @@ class TestAFComplexM2Integration(unittest.TestCase):
                     side_effect=self.afdb_response,
                 ) as network, patch(
                     "claudio.module02.src_distance_reevaluation.algorithm."
-                    "calc_site_distances.os.popen",
+                    "calc_site_distances.subprocess.run",
                     side_effect=self.run_topolink,
                 ) as topolink:
                     result = self.invoke_m2(self.data, output, options)
@@ -175,7 +178,7 @@ class TestAFComplexM2Integration(unittest.TestCase):
             "claudio.utils.af_complex.requests.get", side_effect=no_candidate,
         ) as network, patch(
             "claudio.module02.src_distance_reevaluation.algorithm."
-            "calc_site_distances.os.popen",
+            "calc_site_distances.subprocess.run",
         ) as topolink:
             result = self.invoke_m2(self.data, output, ["--af-complex-auto"])
 

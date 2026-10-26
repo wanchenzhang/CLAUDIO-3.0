@@ -9,7 +9,7 @@ import pandas as pd
 from pathlib import Path
 from tempfile import mkdtemp
 from Bio.PDB import Polypeptide, Select, PDBIO
-
+import subprocess
 from claudio.utils.utils import verbose_print, round_self
 from claudio.utils.structure_io import read_structure_models
 warnings.filterwarnings("ignore")
@@ -121,14 +121,15 @@ def compute_dists_with_topolink(data: pd.DataFrame, temp_dir: str,
         # chains from structure to reduce
         # computation
         pdb_id = Path(structure).stem
-        task_dir = mkdtemp(prefix=f"{pdb_id}_", dir=temp_dir) + os.sep
+        source_structure = str(structure)
+        task_dir = mkdtemp(prefix=f"{pdb_id[:32]}_", dir=temp_dir) + os.sep
         os.makedirs(f"{task_dir}in/", exist_ok=True)
         os.makedirs(f"{task_dir}struct/", exist_ok=True)
 
         chain_ids = np.unique(subset[["chain_a", "chain_b"]].values)
         chain_map = build_topolink_chain_map(chain_ids)
         structure, residue_map = prepare_topolink_structure(
-            structure, pdb_id, task_dir, chain_ids,
+            structure, "structure", task_dir, chain_ids,
         )
         # Check again if isolation of chains was successful,
         # if not skip iteration
@@ -194,7 +195,7 @@ def compute_dists_with_topolink(data: pd.DataFrame, temp_dir: str,
             ind += 1
             return
         # utilizing templatefile: data/topolink_inputfile.inp
-        topo_in = [f"linkdir {task_dir}\n"]
+        topo_in = ["linkdir ./\n"]
         project_path = '/'.join(os.path.abspath(__file__).replace('\\\\', '/').replace('\\', '/').split('/')[:-4])
         project_path = project_path + '/' if project_path else ""
         with open(
@@ -210,7 +211,8 @@ def compute_dists_with_topolink(data: pd.DataFrame, temp_dir: str,
             if line.startswith("linkdir"):
                 continue
             elif line.startswith("structure"):
-                topo_in.append(f"structure {structure}\n")
+                relative_structure = Path(structure).relative_to(task_dir).as_posix()
+                topo_in.append(f"structure {relative_structure}\n")
             elif line.startswith("  observed"):
                 topo_in.append(obs_str)
             elif line.startswith("  linktype"):
@@ -230,20 +232,45 @@ def compute_dists_with_topolink(data: pd.DataFrame, temp_dir: str,
         topo_in = ''.join(topo_in)
         # Write inputfile to temporary path
         # (will be overwritten during next iteration)
-        topo_input_path = f"{task_dir}in/topo_{pdb_id}_.tmp"
+        topo_input_path = f"{task_dir}in/topolink.tmp"
         with open(topo_input_path, 'w', encoding="utf-8") as f:
             f.write(topo_in)
 
-        # Run topolink and pop terminal print to variable
-        topolink_call = "topolink" if topolink_bin is None else f"{topolink_bin}topolink"
-        res = os.popen(f"\"{topolink_call}\" \"{topo_input_path}\"").read()
-        # Write both input and output to temporary file marked by pdb id,
-        #  e.g. topo_1b0j.log, topo_afA2ASZ8.log, ...
-        # in case the user wishes to review them later
-        with open(f"{task_dir}topo_{pdb_id}.log", 'w', encoding="utf-8") as f:
-            f.write(f"IN:\n{topo_in}\n\n\nOUT:\n{res}")
+        # Run each native process from its own directory using short paths.
+        topolink_call = (
+            "topolink" if topolink_bin is None
+            else str((Path(topolink_bin) / "topolink").resolve())
+        )
+        log_path = Path(task_dir) / f"topo_{pdb_id[:32]}.log"
+        log_header = (
+            f"SOURCE STRUCTURE: {source_structure}\n"
+            f"WORKDIR: {Path(task_dir).resolve()}\nIN:\n{topo_in}\n"
+        )
+        try:
+            completed = subprocess.run(
+                [topolink_call, "in/topolink.tmp"],
+                cwd=task_dir, capture_output=True, text=True,
+                encoding="utf-8", errors="replace", check=False,
+            )
+        except OSError as error:
+            log_path.write_text(
+                f"{log_header}\nSTART ERROR:\n{error}\n", encoding="utf-8"
+            )
+            raise RuntimeError(
+                f"Could not start TopoLink for {pdb_id}; see {log_path}"
+            ) from error
 
-
+        res = completed.stdout
+        log_path.write_text(
+            f"{log_header}\nRETURN CODE: {completed.returncode}\n"
+            f"OUT:\n{res}\nSTDERR:\n{completed.stderr}\n",
+            encoding="utf-8",
+        )
+        if completed.returncode != 0:
+            raise RuntimeError(
+                f"TopoLink failed for {pdb_id} "
+                f"(exit code {completed.returncode}); see {log_path}"
+            )
         # zip topolink results with obs_inds
         # -> toplink_dists = [(index, eucl_dist, top_dist), ...]
         link_results = [' '.join(line.split())
@@ -282,10 +309,7 @@ def compute_dists_with_topolink(data: pd.DataFrame, temp_dir: str,
         verbose_print(f"TopoLink:[{progress}%]", 1, verbose_level, start='\r\t\t', end='')
 
     for future in concurrent.futures.as_completed(futures):
-        try:
-            del futures[future]
-        except Exception as e:
-            print(e)
+        future.result()
 
     verbose_print("", 1, verbose_level)
 

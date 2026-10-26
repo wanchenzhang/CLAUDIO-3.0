@@ -1,8 +1,7 @@
 """Route AF complex mappings to distance calculation without losing records."""
 
+import subprocess
 import json
-import shlex
-from io import StringIO
 from tempfile import TemporaryDirectory
 import unittest
 from pathlib import Path
@@ -264,15 +263,15 @@ class TestAFComplexDistances(unittest.TestCase):
             - np.array((-41.383, 25.017, 10.236))
         ))
 
-        def run_topolink(command):
-            input_path = Path(shlex.split(command)[1])
+        def run_topolink(command, **kwargs):
+            input_path = Path(kwargs["cwd"]) / command[-1]
             lines = input_path.read_text().splitlines()
             structure_path = next(
                 line.split(maxsplit=1)[1]
                 for line in lines if line.startswith("structure ")
             )
             model = next(PDBParser(QUIET=True).get_structure(
-                "export", structure_path
+                "export", (Path(kwargs["cwd"]) / structure_path)
             ).get_models())
             observed = [
                 line.split() for line in lines
@@ -287,17 +286,21 @@ class TestAFComplexDistances(unittest.TestCase):
             ))
             self.assertGreater(distance, 50.0)
             self.assertAlmostEqual(distance, expected, places=3)
-            return StringIO(
-                f"  LINK: {' '.join(link[1:4])} CB "
-                f"{' '.join(link[4:7])} CB "
-                f"{distance:.3f} {distance + 1.0:.3f} "
-                "YES 0.000 100.000 OK: FOUND\n"
+            return subprocess.CompletedProcess(
+                command, 0,
+                stdout=(
+                    f"  LINK: {' '.join(link[1:4])} CB "
+                    f"{' '.join(link[4:7])} CB "
+                    f"{distance:.3f} {distance + 1.0:.3f} "
+                    "YES 0.000 100.000 OK: FOUND\n"
+                ),
+                stderr="",
             )
 
         with TemporaryDirectory() as folder:
             with patch(
                 "claudio.module02.src_distance_reevaluation.algorithm."
-                "calc_site_distances.os.popen",
+                "calc_site_distances.subprocess.run",
                 side_effect=run_topolink,
             ) as topolink:
                 result = calculate_complex_site_dists(

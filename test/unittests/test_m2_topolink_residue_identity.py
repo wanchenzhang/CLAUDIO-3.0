@@ -1,6 +1,5 @@
 """Keep inserted residue identities when preparing TopoLink calculations."""
-import io
-import shlex
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -74,16 +73,16 @@ class TestM2TopoLinkResidueIdentity(unittest.TestCase):
             selected_coordinates = []
             errors = []
 
-            def fake_topolink(command):
+            def fake_topolink(command, **kwargs):
                 try:
-                    input_path = Path(shlex.split(command)[-1])
+                    input_path = Path(kwargs["cwd"]) / command[-1]
                     lines = input_path.read_text(encoding="utf-8").splitlines()
                     structure_line = next(
                         line for line in lines if line.startswith("structure ")
                     )
                     exported_path = structure_line.split(maxsplit=1)[1]
                     exported = PDBParser(QUIET=True).get_structure(
-                        "exported", exported_path
+                        "exported", (Path(kwargs["cwd"]) / (exported_path))
                     )[0]
                     observed = next(
                         line.split() for line in lines
@@ -96,17 +95,23 @@ class TestM2TopoLinkResidueIdentity(unittest.TestCase):
                         [atom_a.coord.copy(), atom_b.coord.copy()]
                     )
                     distance = float(atom_a - atom_b)
-                    return io.StringIO(
-                        f"  LINK: {a_name} {a_chain} {a_pos} CB "
-                        f"{b_name} {b_chain} {b_pos} CB "
-                        f"{distance:.3f} {distance + 2.0:.3f}\n"
+                    return subprocess.CompletedProcess(
+                        command, 0,
+                        stdout=(
+                            f"  LINK: {a_name} {a_chain} {a_pos} CB "
+                            f"{b_name} {b_chain} {b_pos} CB "
+                            f"{distance:.3f} {distance + 2.0:.3f}\n"
+                        ),
+                        stderr="",
                     )
                 except Exception as error:
                     errors.append(repr(error))
-                    return io.StringIO("")
+                    return subprocess.CompletedProcess(
+                        command, 0, stdout="", stderr="",
+                    )
 
             with patch.object(
-                calc_site_distances.os, "popen", side_effect=fake_topolink
+                calc_site_distances.subprocess, "run", side_effect=fake_topolink
             ) as mocked_topolink:
                 result = calc_site_distances.compute_dists_with_topolink(
                     data,
