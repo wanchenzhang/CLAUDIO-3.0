@@ -55,6 +55,12 @@ def calculate_complex_site_dists(
             reason = "invalid_plddt"
         elif any(row[f"pLDDT_{site}"] < cutoff for site in ("a", "b")):
             reason = "low_plddt"
+        elif (
+            row["chain_a"] == row["chain_b"]
+            and row["mapped_residue_id_a"] == row["mapped_residue_id_b"]
+            and row["mapping_atom_a"] == row["mapping_atom_b"]
+        ):
+            reason = "identical_atom_endpoints"
         else:
             eligible.append(position)
             continue
