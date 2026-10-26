@@ -73,6 +73,7 @@ class TestAFComplexPipelineCLI(unittest.TestCase):
                     stages[name].assert_called_once()
                 m1 = stages["run_claudio_lists"].call_args.kwargs
                 self.assertEqual(m1["skip_protein_structure_search"], af_mode)
+                self.assertEqual(m1["preserve_source_records"], af_mode)
                 self.assertTrue(m1["uniprot_search"])
                 m2 = stages["run_claudio_structdi"].call_args.kwargs
                 self.assertEqual(m2["af_complex_model"], model)

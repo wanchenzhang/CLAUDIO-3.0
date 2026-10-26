@@ -58,7 +58,8 @@ class TestAFComplexPipelineIntegration(unittest.TestCase):
             "k_pos1": None, "k_pos2": 4, "experiment": "condition_C",
         }
         self.input = self.root / "crosslinks.run1.csv"
-        pd.DataFrame([forward, reverse, unresolved, forward]).to_csv(
+        other_condition = {**forward, "experiment": "condition_D"}
+        pd.DataFrame([forward, reverse, unresolved, other_condition]).to_csv(
             self.input, index=False,
         )
         self.no_candidates = False
@@ -158,21 +159,26 @@ class TestAFComplexPipelineIntegration(unittest.TestCase):
         pd.testing.assert_frame_equal(final[structural.columns], structural)
         pd.testing.assert_frame_equal(extended, final)
         self.assertEqual(final["source_record_id"].tolist(), [
-            "record_000001", "record_000002", "record_000003",
+            "record_000001", "record_000002", "record_000003", "record_000004",
         ])
         self.assertEqual(final["experiment"].tolist(), [
-            "condition_A", "condition_B", "condition_C",
+            "condition_A", "condition_B", "condition_C", "condition_D",
         ])
         self.assertEqual(final["position_status_a"].tolist(),
-                         ["corrected", "valid", "ambiguous"])
-        self.assertEqual(final["original_pos_a"].tolist(), [76, 23, 100])
-        self.assertEqual(final["pos_a"].tolist(), [67, 23, 100])
+                         ["corrected", "valid", "ambiguous", "corrected"])
+        self.assertEqual(final["original_pos_a"].tolist(), [76, 23, 100, 76])
+        self.assertEqual(final["pos_a"].tolist(), [67, 23, 100, 67])
         self.assertTrue(pd.isna(final.iloc[2]["candidate_id"]))
         duplicates = pd.read_csv(output / f"{stem}_duplicate_sources.csv")
-        self.assertEqual(duplicates.to_dict("records"), [{
-            "retained_source_record_id": "record_000001",
-            "duplicate_source_record_id": "record_000004",
-        }])
+        self.assertTrue(duplicates.empty)
+        self.assertEqual(final.iloc[0]["candidate_id"], final.iloc[3]["candidate_id"])
+        self.assertEqual(final["candidate_id"].nunique(), 2)
+        for path in (m1_path, ops_path, structure_path):
+            stage = pd.read_csv(path, index_col=0)
+            self.assertEqual(stage["source_record_id"].tolist(),
+                             final["source_record_id"].tolist())
+            self.assertEqual(stage["experiment"].tolist(),
+                             final["experiment"].tolist())
         return final
 
     def test_manual_and_auto_modes_keep_provenance_through_all_modules(self):
@@ -194,14 +200,17 @@ class TestAFComplexPipelineIntegration(unittest.TestCase):
                 topolink = self.run_pipeline(output, options)
                 topolink.assert_called_once()
                 final = self.check_source_outputs(output)
-                self.assertEqual(final["chain_a"].tolist(), ["A", "B", "A"])
-                self.assertEqual(final["chain_b"].tolist(), ["B", "A", "B"])
+                self.assertEqual(final["chain_a"].tolist(), ["A", "B", "A", "A"])
+                self.assertEqual(final["chain_b"].tolist(), ["B", "A", "B", "B"])
                 self.assertTrue(final["af_model_id"].eq(MODEL_ID).all())
                 self.assertEqual(final["distance_status"].tolist(),
-                                 ["computed", "computed", "not_evaluable"])
+                                 ["computed", "computed", "not_evaluable", "computed"])
                 np.testing.assert_allclose(final.iloc[:2]["eucl_dist"], expected, atol=0.001)
                 np.testing.assert_allclose(final.iloc[:2]["topo_dist"],
                                            np.array(expected) + 1, atol=0.001)
+                repeated = final.iloc[3]
+                self.assertAlmostEqual(repeated["eucl_dist"], final.iloc[0]["eucl_dist"])
+                self.assertAlmostEqual(repeated["topo_dist"], final.iloc[0]["topo_dist"])
                 unresolved = final.iloc[2]
                 self.assertEqual(unresolved["distance_reason"], "unresolved_position")
                 self.assertTrue(pd.isna(unresolved["topo_dist"]))

@@ -37,11 +37,17 @@ from claudio.utils.utils import verbose_print, clean_input_paths, \
     default=False,
     help="Skip PDB searching for the unique-protein report; keep sequence and site checks.",
 )
+@click.option(
+    "--preserve-source-records",
+    is_flag=True,
+    default=False,
+    help="Keep separate input sources that share the same protein residue pair.",
+)
 @click.option("-v", "--verbose-level", default=2)
 def main(input_filepath, input_temppath, projections, uniprot_search,
          xl_residues, search_tool, output_directory, blast_bin, blast_db,
          hhsearch_bin, hhsearch_db, verbose_level,
-         skip_protein_structure_search=False):
+         skip_protein_structure_search=False, preserve_source_records=False):
     """
     Performs preprocessing of input data for CLAUDIO and creates a list of
     unique proteins.
@@ -129,8 +135,10 @@ def main(input_filepath, input_temppath, projections, uniprot_search,
         # Check datapoints for inconsistencies and correct them if possible
         # (creates logfile in the process)
         verbose_print("Check datapoints for inconsistencies", 0, verbose_level)
-        data = double_check_data(data, filename, df_xl_res, output_directory,
-                                 verbose_level)
+        data = double_check_data(
+            data, filename, df_xl_res, output_directory, verbose_level,
+            preserve_source_records=preserve_source_records,
+        )
         verbose_print("Changes made to dataset written to log-file", 0,
                       verbose_level)
 

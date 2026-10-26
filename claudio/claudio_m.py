@@ -205,6 +205,7 @@ def main(input_filepath, input_temppath, projections, read_temps, xl_residues,
         blast_db=blast_db, hhsearch_bin=hhsearch_bin,
         hhsearch_db=hhsearch_db, verbose_level=verbose_level,
         skip_protein_structure_search=af_mode,
+        preserve_source_records=af_mode,
     )
     _require_output(sqcs_path)
 

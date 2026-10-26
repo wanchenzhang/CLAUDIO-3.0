@@ -8,7 +8,8 @@ from claudio.utils.utils import verbose_print, round_self
 
 def double_check_data(data: pd.DataFrame, filename: str,
                       df_xl_res: pd.DataFrame, output_directory: str,
-                      verbose_level: int):
+                      verbose_level: int,
+                      preserve_source_records: bool = False):
     """
     Check given datapoints and correct it, if possible/needed
 
@@ -135,7 +136,10 @@ def double_check_data(data: pd.DataFrame, filename: str,
             (row["unip_id_a"], str(row["pos_a"])),
             (row["unip_id_b"], str(row["pos_b"])),
         )))
-        if interaction_info not in [x for _, x in known_inters]:
+        if (
+            preserve_source_records
+            or interaction_info not in [x for _, x in known_inters]
+        ):
             known_inters.add((i, interaction_info))
 
             # Expand candidates only for retained records.
