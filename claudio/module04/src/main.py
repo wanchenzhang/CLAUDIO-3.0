@@ -17,11 +17,34 @@ from claudio.module04.src.algorithm.structure_assessment import (
 from claudio.module04.src.algorithm.candidate_audit import (
     build_candidate_audit,
 )
+from claudio.module04.src.algorithm.distance_assessment import (
+    assess_distance_interval, annotate_distance_assessments,
+)
 from claudio.utils.utils import (verbose_print, clean_input_paths,
     evaluate_boolean_input, create_out_path, clean_dataset, round_self,
     minimize_dataset)
 
+def _assessment_policies(euclidean, topological):
+    if euclidean is None and topological is None:
+        return None
+    if euclidean is None or topological is None:
+        raise click.UsageError(
+            "Provide both --euclidean-assessment and --topological-assessment"
+        )
 
+    policies = {}
+    for metric, values in (
+        ("euclidean", euclidean), ("topological", topological),
+    ):
+        policy = dict(zip(("minimum", "maximum", "boundary"), values))
+        try:
+            assess_distance_interval(None, None, **policy)
+        except ValueError as error:
+            raise click.BadParameter(
+                str(error), param_hint=f"--{metric}-assessment",
+            ) from error
+        policies[metric] = policy
+    return policies
 @click.command()
 @click.option("-i", "--input-filepath",
               default="test/out/sample/sample_data_random.sqcs_structdi.csv")
@@ -36,9 +59,22 @@ from claudio.utils.utils import (verbose_print, clean_input_paths,
 @click.option("-o", "--output-directory", default="test/out/sample/")
 @click.option("-s", "--compute-scoring", default=False)
 @click.option("-v", "--verbose-level", default=2)
+@click.option(
+    "--euclidean-assessment",
+    type=(float, float, click.Choice(["inclusive", "exclusive"])),
+    default=None,
+    help="Euclidean MIN MAX BOUNDARY; provide both assessment options to enable.",
+)
+@click.option(
+    "--topological-assessment",
+    type=(float, float, click.Choice(["inclusive", "exclusive"])),
+    default=None,
+    help="TopoLink MIN MAX BOUNDARY; provide both assessment options to enable.",
+)
 def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum,
          linker_maximum, euclidean_strictness, distance_maximum, cutoff,
-         output_directory, compute_scoring, verbose_level):
+         output_directory, compute_scoring, verbose_level,
+         euclidean_assessment=None, topological_assessment=None):
     """
     Combines the results from the structural and the OPS analysis and
     collects further evidence for the formation of homo-complexes
@@ -62,7 +98,9 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum,
     None
 
     """
-
+    assessment_policies = _assessment_policies(
+        euclidean_assessment, topological_assessment,
+    )
     verbose_print("[4] Start Result Combination", 0, verbose_level, start='')
     start_time = time.time()
 
@@ -118,6 +156,13 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum,
             verbose_print("Retrieve known oligomeric states from SWISS-MODEL",
                           0, verbose_level)
             data = retrieve_oligomeric_states(data, verbose_level)
+        if assessment_policies is not None:
+            data = annotate_distance_assessments(
+                data,
+                euclidean_policy=assessment_policies["euclidean"],
+                topological_policy=assessment_policies["topological"],
+                plddt_cutoff=plddt_cutoff,
+            )
         all_candidates = data.copy(deep=True)
         selection_log = []
         if af_complex_input:
@@ -131,6 +176,10 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum,
             ]
             if "source_crosslink_type" in data.columns:
                 trace_columns.append("source_crosslink_type")
+            trace_columns.extend(
+                column for column in data.columns
+                if column.startswith(("eucl_assessment_", "topo_assessment_"))
+            )
             data[[
                 "unip_id_a", "unip_id_b", "pos_a", "pos_b", "pep_a", "pep_b",
                 "res_pos_a", "res_pos_b", "pdb_id", "pdb_method",
