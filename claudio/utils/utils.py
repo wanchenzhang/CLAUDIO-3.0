@@ -186,8 +186,23 @@ def round_self(value: float, decimals: int):
     rounded_value = float(f"{int((value * (10 ** decimals)) + .5) / (10 ** decimals):.{decimals}f}")
     return rounded_value
 
+def _record_candidate_exclusions(
+    selection_log, removed_indices, preferred_indices, stage, rule,
+):
+    if selection_log is None:
+        return
 
-def clean_dataset(data: pd.DataFrame):
+    for index in dict.fromkeys(removed_indices):
+        selection_log.append({
+            "removed_index": str(index),
+            "stage": stage,
+            "rule": rule,
+            "preferred_indices": [
+                str(value) for value in preferred_indices
+            ],
+            "rule_version": "legacy-m4-selection-v1",
+        })
+def clean_dataset(data: pd.DataFrame, *, selection_log=None):
     """
     Cleaning of structure data dataset for outputs
 
@@ -229,7 +244,15 @@ def clean_dataset(data: pd.DataFrame):
                                     & (data.evidence == row.evidence))
 
                 if len(data[drop_criteria].index) > 1:
-                    drop_indeces.extend(list(data[drop_criteria].index)[1:])
+                    matches = list(data[drop_criteria].index)
+                    drop_indeces.extend(matches[1:])
+                    _record_candidate_exclusions(
+                        selection_log,
+                        matches[1:],
+                        matches[:1],
+                        "clean_dataset",
+                        "duplicate_structural_candidate",
+                    )
                 already_checked.extend(list(data[drop_criteria].index))
         data = data.drop(index=drop_indeces)
 
@@ -288,9 +311,47 @@ def clean_dataset(data: pd.DataFrame):
                                         (data.pep_b == row.pep_b)
                 multi_chain_set = data[multi_chain_criteria]
                 if not multi_chain_set[multi_chain_set.XL_confirmed].empty:
-                    drop_indeces.extend(list(multi_chain_set[~multi_chain_set.XL_confirmed].index))
-                    if not multi_chain_set[multi_chain_set.XL_confirmed & (multi_chain_set.evidence == '')].empty:
-                        drop_indeces.extend(list(multi_chain_set[multi_chain_set.evidence != ''].index))
+                    unconfirmed = list(
+                        multi_chain_set[~multi_chain_set.XL_confirmed].index
+                    )
+                    confirmed = list(
+                        multi_chain_set[multi_chain_set.XL_confirmed].index
+                    )
+                    drop_indeces.extend(unconfirmed)
+
+                    _record_candidate_exclusions(
+                        selection_log,
+                        [index for index in unconfirmed if "_" in str(index)],
+                        confirmed,
+                        "clean_dataset",
+                        "unconfirmed_alternative",
+                    )
+
+                    preferred_mask = (
+                        multi_chain_set.XL_confirmed
+                        & (multi_chain_set.evidence == "")
+                    )
+                    if not multi_chain_set[preferred_mask].empty:
+                        alternatives = list(
+                            multi_chain_set[
+                                multi_chain_set.evidence != ""
+                            ].index
+                        )
+                        preferred = list(
+                            multi_chain_set[preferred_mask].index
+                        )
+                        drop_indeces.extend(alternatives)
+
+                        _record_candidate_exclusions(
+                            selection_log,
+                            [
+                                index for index in alternatives
+                                if "_" in str(index)
+                            ],
+                            preferred,
+                            "clean_dataset",
+                            "alternative_with_evidence",
+                        )
                 already_checked.extend(list(multi_chain_set.index))
         data = data.drop(index=[drop_index for drop_index in drop_indeces if '_' in drop_index])
 
