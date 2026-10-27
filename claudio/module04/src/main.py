@@ -14,6 +14,9 @@ from claudio.module04.src.io.write_outs import write_outputs
 from claudio.module04.src.algorithm.structure_assessment import (
     annotate_structure_relationships,
 )
+from claudio.module04.src.algorithm.candidate_audit import (
+    build_candidate_audit,
+)
 from claudio.utils.utils import (verbose_print, clean_input_paths,
     evaluate_boolean_input, create_out_path, clean_dataset, round_self,
     minimize_dataset)
@@ -115,12 +118,13 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum,
             verbose_print("Retrieve known oligomeric states from SWISS-MODEL",
                           0, verbose_level)
             data = retrieve_oligomeric_states(data, verbose_level)
-
+        all_candidates = data.copy(deep=True)
+        selection_log = []
         if af_complex_input:
             # Preserve every source/model/chain candidate for later assessment.
             data.to_csv(f"{output_directory}{filename}_extended.csv")
         else:
-            data = clean_dataset(data)
+            data = clean_dataset(data, selection_log=selection_log)
             trace_columns = [
                 "structure_source", "model_chain_relation",
                 "model_chain_relation_reason", "chain_relation_rule_version",
@@ -139,7 +143,7 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum,
 
             verbose_print("Write pymol scripts", 0, verbose_level)
             setup_pml_scripts(data)
-            data = minimize_dataset(data)
+            data = minimize_dataset(data, selection_log=selection_log)
 
             verbose_print("Create score histogram", 0, verbose_level)
             create_plots(
@@ -152,6 +156,8 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum,
         # restraints
         verbose_print("Write full outputs", 0, verbose_level)
         write_outputs(data, filename, compute_scoring, output_directory)
+        audit = build_candidate_audit(all_candidates, data, selection_log)
+        audit.to_csv(f"{output_directory}{filename}_candidate_audit.csv")
     runtime = round_self(time.time() - start_time, 2)
     verbose_print(f"Finished successfully (Elapsed time: {runtime}s)", 0, verbose_level, start='')
     verbose_print("===================================", 0, verbose_level, start='')
