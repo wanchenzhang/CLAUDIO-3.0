@@ -3,7 +3,9 @@ from math import isfinite
 from numbers import Real
 import numpy as np
 import pandas as pd
-
+from claudio.module04.src.algorithm.structure_assessment import (
+    annotate_structure_relationships,
+)
 
 def _finite_nonnegative(value):
     return (
@@ -150,3 +152,91 @@ def check_endpoint_eligibility(row, *, structure_source, plddt_cutoff):
                 return outcome("low_plddt", site)
 
     return outcome("endpoints_evaluable")
+def assess_candidate_distance(
+    row, *, metric, minimum, maximum, boundary, plddt_cutoff,
+):
+    """Assess one method using existing M2 assignments and stage results."""
+    prefixes = {"euclidean": "eucl", "topological": "topo"}
+    if metric not in prefixes:
+        raise ValueError("Unsupported distance metric")
+
+    result = assess_distance_interval(
+        None, None, minimum=minimum, maximum=maximum, boundary=boundary,
+    )
+    if not _finite_nonnegative(plddt_cutoff) or plddt_cutoff > 100:
+        raise ValueError("pLDDT cutoff must be between 0 and 100")
+
+    context = annotate_structure_relationships(pd.DataFrame([row])).iloc[0]
+    source = context["structure_source"]
+    stage_status = row.get("distance_status")
+    if _missing_endpoint_value(stage_status):
+        stage_status = None
+
+    result.update({
+        "metric": metric,
+        "structure_source": source,
+        "model_chain_relation": context["model_chain_relation"],
+        "chain_relation_rule_version": context["chain_relation_rule_version"],
+        "plddt_cutoff": float(plddt_cutoff),
+        "upstream_distance_status": stage_status,
+        "site": None,
+        "upstream_reason": None,
+        "interval_rule_version": result["rule_version"],
+        "endpoint_rule_version": None,
+        "rule_version": "candidate-distance-v1",
+    })
+
+    def stop(reason, stage, *, site=None, upstream=None):
+        result.update(
+            status="not_evaluable", reason=reason, assessment_stage=stage,
+            site=site, upstream_reason=upstream,
+        )
+        return result
+
+    if context["model_chain_relation"] == "unknown":
+        return stop(context["model_chain_relation_reason"], "structure")
+
+    gate = check_endpoint_eligibility(
+        row, structure_source=source, plddt_cutoff=plddt_cutoff,
+    )
+    result["endpoint_rule_version"] = gate["rule_version"]
+    if not gate["eligible"]:
+        return stop(
+            gate["reason"], "endpoints",
+            site=gate["site"], upstream=gate["upstream_reason"],
+        )
+
+    if stage_status is None:
+        if source == "af_complex":
+            return stop("missing_distance_status", "distance")
+    elif stage_status == "not_evaluable":
+        upstream = row.get("distance_reason")
+        return stop(
+            "upstream_distance_not_evaluable", "distance",
+            upstream=None if _missing_endpoint_value(upstream) else upstream,
+        )
+    elif stage_status not in ("computed", "lower_bound"):
+        return stop("unrecognized_distance_status", "distance")
+
+    bounds = [row.get(f"{prefix}_dist_lower_bound") for prefix in ("eucl", "topo")]
+    exact = [row.get(f"{prefix}_dist") for prefix in ("eucl", "topo")]
+    if stage_status == "computed" and (
+        any(pd.notna(value) for value in bounds)
+        or not all(_finite_nonnegative(value) for value in exact)
+    ):
+        return stop("inconsistent_distance_status", "distance")
+    if stage_status == "lower_bound" and not any(
+        _finite_nonnegative(value) for value in bounds
+    ):
+        return stop("inconsistent_distance_status", "distance")
+
+    prefix = prefixes[metric]
+    interval = assess_distance_interval(
+        row.get(f"{prefix}_dist"), row.get(f"{prefix}_dist_lower_bound"),
+        minimum=minimum, maximum=maximum, boundary=boundary,
+    )
+    result.update(
+        status=interval["status"], reason=interval["reason"],
+        assessment_stage="interval",
+    )
+    return result
