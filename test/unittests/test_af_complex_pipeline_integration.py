@@ -314,5 +314,34 @@ class TestAFComplexPipelineIntegration(unittest.TestCase):
         self.assertIsNone(manifest["executable"]["version"])
 
 
+    def test_numeric_native_tokens_keep_their_text_in_final_outputs(self):
+        native_output = (
+            "  LINK: LYS A 67 CB LYS B 11 CB 62.907 66.750 "
+            "YES 0.000 35.000 BAD: LONG\n"
+            "  LINK: LYS A 67 CB LYS B 23 CB 75.957 80.000 "
+            "YES 0.000 35.000 BAD: LONG\n"
+        )
+        output = self.root / "raw_tokens"
+        with patch.object(
+            self, "run_topolink", return_value=subprocess.CompletedProcess(
+                [], 0, stdout=native_output, stderr="",
+            ),
+        ):
+            self.run_pipeline(output, ["--af-complex-auto"])
+        self.check_source_outputs(output)
+        for suffix in (".sqcs_structdi.csv", "_final.csv", "_extended.csv"):
+            saved = pd.read_csv(
+                output / f"crosslinks.run1{suffix}", index_col=0,
+                dtype={"eucl_dist_raw": str, "topo_dist_raw": str},
+            )
+            self.assertEqual(saved["topo_dist_raw"].iloc[:2].tolist(),
+                             ["66.750", "80.000"])
+            self.assertEqual(saved["topo_dist_raw"].iloc[3], "66.750")
+            self.assertTrue(pd.isna(saved["topo_dist_raw"].iloc[2]))
+            self.assertEqual(saved["topo_dist"].iloc[:2].tolist(), [66.75, 80.0])
+            self.assertEqual(saved["distance_status"].iloc[:2].tolist(),
+                             ["computed", "computed"])
+
+
 if __name__ == "__main__":
     unittest.main()

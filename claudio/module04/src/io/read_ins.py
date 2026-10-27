@@ -16,7 +16,10 @@ def read_inputs(file1: str, file2: str):
     data : pd.DataFrame
     """
 
-    data1 = pd.read_csv(file1, index_col=0, low_memory=False)
+    data1 = pd.read_csv(
+        file1, index_col=0, low_memory=False,
+        dtype={"eucl_dist_raw": str, "topo_dist_raw": str},
+    )
     data2 = pd.read_csv(file2, index_col=0)
     data = merge_datasets(data1, data2)
     different_chains = data["chain_a"] != data["chain_b"]
