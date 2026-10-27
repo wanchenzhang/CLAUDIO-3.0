@@ -2,6 +2,7 @@
 
 import subprocess
 import importlib
+import hashlib
 import json
 import unittest
 from pathlib import Path
@@ -288,6 +289,29 @@ class TestAFComplexPipelineIntegration(unittest.TestCase):
         self.assertTrue(final[["eucl_dist", "topo_dist"]].isna().all().all())
         self.assertFalse((output / "homomers").exists())
         self.assertFalse((output / "heteromers").exists())
+
+
+    def test_full_cli_records_the_requested_seed_in_native_input(self):
+        output = self.root / "fixed_seed"
+        topolink = self.run_pipeline(output, [
+            "--af-complex-auto", "--topolink-seed", "20261026",
+        ])
+        topolink.assert_called_once()
+        self.check_source_outputs(output)
+        manifests = list(output.rglob("topolink_run.json"))
+        self.assertEqual(len(manifests), 1)
+        manifest = json.loads(manifests[0].read_text())
+        self.assertEqual(manifest["requested_seed"], 20261026)
+        self.assertEqual(manifest["effective_seed"], "20261026")
+        self.assertEqual(manifest["state"], "completed")
+        self.assertEqual(manifest["return_code"], 0)
+        native_input = manifests[0].parent / manifest["input"]["path"]
+        self.assertEqual(manifest["input"]["sha256"],
+                         hashlib.sha256(native_input.read_bytes()).hexdigest())
+        seed_lines = [line.strip() for line in native_input.read_text().splitlines()
+                      if line.split()[:1] == ["seed"]]
+        self.assertEqual(seed_lines, ["seed 20261026"])
+        self.assertIsNone(manifest["executable"]["version"])
 
 
 if __name__ == "__main__":

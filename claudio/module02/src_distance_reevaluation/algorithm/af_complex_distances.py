@@ -10,12 +10,18 @@ from claudio.module02.src_distance_reevaluation.algorithm.af_complex_mapping imp
 )
 from claudio.module02.src_distance_reevaluation.algorithm.calc_site_distances import (
     calculate_site_dists,
+    validate_topolink_seed,
 )
 
 
 def calculate_complex_site_dists(
-    data, temp_dir, xl_residues, plddt_cutoff, topolink_bin, verbose_level
+    data, temp_dir, xl_residues, plddt_cutoff, topolink_bin, verbose_level,
+    topolink_seed=None,
 ):
+    topolink_seed = validate_topolink_seed(topolink_seed)
+    seed_options = (
+        {} if topolink_seed is None else {"topolink_seed": topolink_seed}
+    )
     cutoff = float(plddt_cutoff)
     if not isfinite(cutoff) or not 0 <= cutoff <= 100:
         raise ValueError("pLDDT cutoff must be between 0 and 100")
@@ -74,7 +80,8 @@ def calculate_complex_site_dists(
     # violations are not removed by the legacy proximity prefilter.
     selected["is_interfaced"] = True
     computed = calculate_site_dists(
-        selected, temp_dir, rules, cutoff, topolink_bin, verbose_level
+        selected, temp_dir, rules, cutoff, topolink_bin, verbose_level,
+        **seed_options,
     )
 
     distance_columns = [

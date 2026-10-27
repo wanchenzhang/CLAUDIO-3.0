@@ -175,5 +175,35 @@ class TestAFComplexPipelineCLI(unittest.TestCase):
         self.assertEqual(received, [(42.5, False)])
 
 
+    def test_topolink_seed_is_forwarded_only_to_m2(self):
+        for mode in ([], ["--af-complex-auto"],
+                     ["--af-complex-model", "AF-0000000208747029"]):
+            with self.subTest(mode=mode), ExitStack() as stack:
+                stages = self.mock_stages(stack)
+                result = self.invoke([*mode, "--topolink-seed", "20261026"])
+                self.assertEqual(result.exit_code, 0,
+                                 result.output + repr(result.exception))
+                self.assertEqual(
+                    stages["run_claudio_structdi"].call_args.kwargs["topolink_seed"],
+                    20261026,
+                )
+                for name in ("db_updater", "run_claudio_lists", "run_claudio_ops",
+                             "run_claudio_xl"):
+                    if stages[name].called:
+                        self.assertNotIn("topolink_seed", stages[name].call_args.kwargs)
+
+    def test_invalid_topolink_seed_stops_before_any_pipeline_stage(self):
+        for seed in ("0", "-1", "2147483648", "1.5", "random"):
+            with self.subTest(seed=seed), ExitStack() as stack:
+                stages = self.mock_stages(stack)
+                result = self.invoke(["--topolink-seed", seed])
+                self.assertEqual(result.exit_code, 2, result.output)
+                self.assertIn("--topolink-seed", result.output)
+                self.assertIn("Invalid value", result.output)
+                for stage in stages.values():
+                    stage.assert_not_called()
+                self.assertFalse(self.output.exists())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -78,10 +78,10 @@ class TestAFComplexIdenticalEndpoints(unittest.TestCase):
         result["topo_dist_tplk"] = values
         return result
 
-    def calculate(self, rows):
+    def calculate(self, rows, **options):
         return algorithm.calculate_complex_site_dists(
             pd.DataFrame(rows), str(self.root / "work") + "/",
-            "K:CA:0", 70, None, 0,
+            "K:CA:0", 70, None, 0, **options,
         )
 
     def test_same_atom_is_retained_without_a_distance(self):
@@ -129,6 +129,27 @@ class TestAFComplexIdenticalEndpoints(unittest.TestCase):
         backend.assert_called_once()
         self.assertEqual(result.iloc[0]["distance_status"], "computed")
         self.assertEqual(result.iloc[0]["eucl_dist_tplk"], 0.0)
+
+
+    def test_explicit_seed_is_forwarded_after_strict_endpoint_checks(self):
+        with patch.object(
+            algorithm, "calculate_site_dists",
+            side_effect=lambda data, *args, **kwargs: self.distance_backend(data),
+        ) as backend:
+            result = self.calculate([{**self.row, "chain_b": "B"}], topolink_seed=42)
+        self.assertEqual(result.iloc[0]["distance_status"], "computed")
+        self.assertEqual(backend.call_args.kwargs["topolink_seed"], 42)
+
+    def test_invalid_seed_is_rejected_before_mapping_or_eligibility_checks(self):
+        for seed in (0, -1, 2147483648, True, 1.5, "42"):
+            with self.subTest(seed=seed), patch.object(
+                algorithm, "prepare_complex_distance_input",
+                side_effect=AssertionError("Mapping started before seed validation"),
+            ) as mapping, patch.object(algorithm, "calculate_site_dists") as backend:
+                with self.assertRaisesRegex(ValueError, "seed"):
+                    self.calculate([self.row], topolink_seed=seed)
+                mapping.assert_not_called()
+                backend.assert_not_called()
 
 
 if __name__ == "__main__":

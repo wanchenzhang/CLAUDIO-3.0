@@ -31,9 +31,15 @@ from claudio.utils.utils import (verbose_print, create_out_path, clean_input_pat
 @click.option("-o", "--output-directory", default="test/out/sample")
 @click.option("-tl", "--topolink-bin", default=None)
 @click.option("-v", "--verbose-level", default=2)
+@click.option(
+    "--topolink-seed",
+    type=click.IntRange(1, 2147483647),
+    default=None,
+    help="Fixed TopoLink seed; omitted values use the native input template.",
+)
 def main(input_directory, input_filepath, input_temppath, search_tool,
          xl_residues, plddt_cutoff, linker_minimum, linker_maximum,
-         output_directory, topolink_bin, verbose_level):
+         output_directory, topolink_bin, verbose_level, topolink_seed = None):
     """
     Performs distance evaluation as part of the structural analysis
     
@@ -56,6 +62,9 @@ def main(input_directory, input_filepath, input_temppath, search_tool,
     None
 
     """
+    seed_options = (
+        {} if topolink_seed is None else {"topolink_seed": topolink_seed}
+    )
     verbose_print("[3.2] Start Structural Analysis", 0, verbose_level, start='')
     start_time = time.time()
 
@@ -89,7 +98,7 @@ def main(input_directory, input_filepath, input_temppath, search_tool,
                           0, verbose_level)
             data = calculate_complex_site_dists(
                 data, temp_dir, xl_residues, plddt_cutoff,
-                topolink_bin, verbose_level,
+                topolink_bin, verbose_level, **seed_options,
             )
             # Preserve every AF source/candidate row and replace old results
             # if this file is being processed again.
@@ -103,7 +112,7 @@ def main(input_directory, input_filepath, input_temppath, search_tool,
                           0, verbose_level)
             data = calculate_site_dists(
                 data, temp_dir, df_xl_res, plddt_cutoff,
-                topolink_bin, verbose_level,
+                topolink_bin, verbose_level, **seed_options,
             )
             data = clean_dataset(data)
 

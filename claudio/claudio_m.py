@@ -96,12 +96,18 @@ def _require_output(path):
 @click.option("--af-complex-auto", is_flag=True, default=False)
 @click.option("-c", "--config",
               help="filepath to configuration file containing all input parameters")
+@click.option(
+    "--topolink-seed",
+    type=click.IntRange(1, 2147483647),
+    default=None,
+    help="Fixed TopoLink seed; omitted values use the native input template.",
+)
 def main(input_filepath, input_temppath, projections, read_temps, xl_residues,
          search_tool, e_value, query_id, coverage, res_cutoff, plddt_cutoff,
          linker_minimum, linker_maximum, euclidean_strictness, distance_maximum,
          cutoff, output_directory, blast_bin, blast_db, hhsearch_bin,
          hhsearch_db, topolink_bin, compute_scoring, verbose_level, config,
-         af_complex_model=None, af_complex_auto=False):
+         af_complex_model=None, af_complex_auto=False, topolink_seed=None):
     """
     
     wrapper function for the full CLAUDIO pipeline, which includes the following modules:
@@ -227,6 +233,7 @@ def main(input_filepath, input_temppath, projections, read_temps, xl_residues,
         hhsearch_bin=hhsearch_bin, hhsearch_db=hhsearch_db,
         topolink_bin=topolink_bin, verbose_level=verbose_level,
         af_complex_model=af_complex_model, af_complex_auto=af_complex_auto,
+        topolink_seed=topolink_seed
     )
     _require_output(structure_path)
 
