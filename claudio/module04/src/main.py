@@ -11,7 +11,9 @@ from claudio.module04.src.algorithm.retrieve_oligo_state import retrieve_oligome
 from claudio.module04.src.algorithm.create_plots import create_plots
 from claudio.module04.src.io.create_pymol_scripts import setup_pml_scripts
 from claudio.module04.src.io.write_outs import write_outputs
-
+from claudio.module04.src.algorithm.structure_assessment import (
+    annotate_structure_relationships,
+)
 from claudio.utils.utils import (verbose_print, clean_input_paths,
     evaluate_boolean_input, create_out_path, clean_dataset, round_self,
     minimize_dataset)
@@ -89,6 +91,7 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum,
         # Read inputs
         verbose_print("Read inputs", 0, verbose_level)
         data = read_inputs(input_filepath, input_filepath2)
+        data = annotate_structure_relationships(data)
 
         af_complex_input = "af_match_status" in data.columns
         if af_complex_input and data.empty:
@@ -118,13 +121,21 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum,
             data.to_csv(f"{output_directory}{filename}_extended.csv")
         else:
             data = clean_dataset(data)
+            trace_columns = [
+                "structure_source", "model_chain_relation",
+                "model_chain_relation_reason", "chain_relation_rule_version",
+            ]
+            if "source_crosslink_type" in data.columns:
+                trace_columns.append("source_crosslink_type")
             data[[
                 "unip_id_a", "unip_id_b", "pos_a", "pos_b", "pep_a", "pep_b",
                 "res_pos_a", "res_pos_b", "pdb_id", "pdb_method",
                 "pdb_resolution", "chain_a", "chain_b", "pdb_pos_a", "pdb_pos_b",
                 "pLDDT_a", "pLDDT_b", "topo_dist", "eucl_dist", "homo_pep_overl",
                 "evidence", "XL_type", "XL_confirmed", "swiss_model_homology",
-            ]].to_csv(f"{output_directory}{filename}_extended.csv")
+            ] + trace_columns].to_csv(
+                f"{output_directory}{filename}_extended.csv"
+            )
 
             verbose_print("Write pymol scripts", 0, verbose_level)
             setup_pml_scripts(data)

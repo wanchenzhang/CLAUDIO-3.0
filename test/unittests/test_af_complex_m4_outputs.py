@@ -155,6 +155,10 @@ class TestAFComplexM4Outputs(unittest.TestCase):
         self.assertEqual(row["distance_reason"], "no_candidate_model")
         self.assertTrue(pd.isna(row["eucl_dist"]))
         self.assertTrue(pd.isna(row["topo_dist"]))
+        self.assertIn("structure_source", saved.columns)
+        self.assertEqual(row["structure_source"], "af_complex")
+        self.assertEqual(row["model_chain_relation"], "unknown")
+        self.assertEqual(row["model_chain_relation_reason"], "no_candidate_model")
 
     def test_empty_af_input_writes_result_headers_with_or_without_scoring(self):
         for scoring in (False, True):
@@ -167,7 +171,10 @@ class TestAFComplexM4Outputs(unittest.TestCase):
                     self.assertTrue(saved.empty)
                     for column in ("source_record_id", "af_model_id",
                                    "distance_status", "distance_reason",
-                                   "homo_pep_overl", "XL_type", "XL_confirmed"):
+                                   "homo_pep_overl", "XL_type", "XL_confirmed",
+                                   "structure_source", "model_chain_relation",
+                                   "model_chain_relation_reason",
+                                   "chain_relation_rule_version"):
                         self.assertIn(column, saved.columns)
                 pymol.assert_not_called()
                 plots.assert_not_called()
@@ -192,6 +199,84 @@ class TestAFComplexM4Outputs(unittest.TestCase):
         output, _, _ = self.run_m4(self.structural, stem="sample.run1")
         self.assertTrue((output / "sample.run1_extended.csv").is_file())
         self.assertTrue((output / "sample.run1_final.csv").is_file())
+
+
+    def test_af_outputs_include_relationships_and_reported_classification(self):
+        structural = self.structural.copy()
+        labels = ["Intra", "Intra", "Intra", "Intra", "Homodimer", "Homodimer", "Intra"]
+        structural["source_crosslink_type"] = labels
+        output, _, _ = self.run_m4(structural, stem="af_relations")
+        for suffix in ("extended", "final"):
+            with self.subTest(output=suffix):
+                saved = pd.read_csv(output / f"af_relations_{suffix}.csv", index_col=0)
+                for column in ("structure_source", "model_chain_relation",
+                               "model_chain_relation_reason", "chain_relation_rule_version"):
+                    self.assertIn(column, saved.columns)
+                self.assertEqual(saved["structure_source"].tolist(), ["af_complex"] * 7)
+                self.assertEqual(saved["model_chain_relation"].tolist(),
+                                 ["same_chain", "cross_chain", "cross_chain", "cross_chain",
+                                  "cross_chain", "cross_chain", "same_chain"])
+                self.assertEqual(saved["source_crosslink_type"].tolist(), labels)
+                self.assertTrue(saved["chain_relation_rule_version"].eq("structure-chain-v1").all())
+                self.assertEqual(saved["model_chain_relation_reason"].iloc[0], "same_model_chain")
+                self.assertEqual(saved["model_chain_relation_reason"].iloc[1], "different_model_chains")
+                self.assertEqual(saved["XL_type"].tolist(),
+                                 ["intra", "inter", "inter", "inter", "inter", "inter", "intra"])
+                self.assertEqual(saved["distance_reason"].iloc[-1], "unresolved_position")
+                self.assertEqual(saved["source_record_id"].tolist(), structural.source_record_id.tolist())
+
+    def test_ordinary_pdb_and_af_monomer_outputs_include_relationships(self):
+        cases = [
+            ("pdb_same", "1ABC", "X-RAY DIFFRACTION", "A", "P1", "pdb", "same_chain", "Homodimer"),
+            ("pdb_cross", "1ABC", "X-RAY DIFFRACTION", "B", "P2", "pdb", "cross_chain", "Inter"),
+            ("af_monomer", "afP1", "ALPHAFOLD", "A", "P1", "af_monomer", "same_chain", "Intra"),
+        ]
+        for stem, model_id, method, chain_b, protein_b, source, relation, label in cases:
+            with self.subTest(case=stem):
+                structural = self.structural.loc[["7"]].drop(columns=[
+                    column for column in self.structural if column.startswith("af_")
+                ]).copy()
+                structural["pdb_id"] = model_id
+                structural["pdb_method"] = method
+                structural["path"] = f"/archive/{model_id}.cif"
+                structural["chain_b"] = chain_b
+                structural["unip_id_b"] = protein_b
+                structural["source_crosslink_type"] = label
+                if source == "pdb":
+                    structural["pLDDT_a"] = "-"
+                    structural["pLDDT_b"] = "-"
+                ops = self.ops.loc[[7]].copy()
+                ops["unip_id_b"] = protein_b
+                output, _, _ = self.run_m4(structural, ops, stem=stem)
+                for suffix in ("extended", "final"):
+                    saved = pd.read_csv(output / f"{stem}_{suffix}.csv", index_col=0)
+                    self.assertEqual(len(saved), 1)
+                    for column in ("structure_source", "model_chain_relation",
+                                   "model_chain_relation_reason", "chain_relation_rule_version",
+                                   "source_crosslink_type"):
+                        self.assertIn(column, saved.columns)
+                    self.assertEqual(saved.iloc[0]["structure_source"], source)
+                    self.assertEqual(saved.iloc[0]["model_chain_relation"], relation)
+                    self.assertEqual(saved.iloc[0]["source_crosslink_type"], label)
+                    self.assertEqual(saved.iloc[0]["model_chain_relation_reason"],
+                                     "same_model_chain" if relation == "same_chain" else "different_model_chains")
+                    self.assertEqual(saved.iloc[0]["chain_relation_rule_version"], "structure-chain-v1")
+                    self.assertEqual(saved.iloc[0]["eucl_dist"], 15.0)
+                    self.assertEqual(saved.iloc[0]["topo_dist"], 20.0)
+
+    def test_rerunning_m4_refreshes_stale_relationship_fields(self):
+        structural = self.structural.loc[["7"]].copy()
+        for column in ("structure_source", "model_chain_relation",
+                       "model_chain_relation_reason", "chain_relation_rule_version"):
+            structural[column] = "stale"
+        output, _, _ = self.run_m4(structural, self.ops.loc[[7]], stem="refresh")
+        for suffix in ("extended", "final"):
+            saved = pd.read_csv(output / f"refresh_{suffix}.csv", index_col=0)
+            self.assertEqual(saved.iloc[0]["structure_source"], "af_complex")
+            self.assertEqual(saved.iloc[0]["model_chain_relation"], "same_chain")
+            self.assertEqual(saved.iloc[0]["model_chain_relation_reason"], "same_model_chain")
+            self.assertEqual(saved.iloc[0]["chain_relation_rule_version"], "structure-chain-v1")
+            self.assertNotIn("source_crosslink_type", saved.columns)
 
 
 if __name__ == "__main__":

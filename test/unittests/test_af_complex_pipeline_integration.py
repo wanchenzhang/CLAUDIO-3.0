@@ -171,6 +171,14 @@ class TestAFComplexPipelineIntegration(unittest.TestCase):
         self.assertEqual(final["original_pos_a"].tolist(), [76, 23, 100, 76])
         self.assertEqual(final["pos_a"].tolist(), [67, 23, 100, 67])
         self.assertTrue(pd.isna(final.iloc[2]["candidate_id"]))
+        self.assertTrue(final["structure_source"].eq("af_complex").all())
+        expected_relations = (["unknown"] * 4 if self.no_candidates
+                              else ["cross_chain"] * 4)
+        expected_reason = ("no_candidate_model" if self.no_candidates
+                           else "different_model_chains")
+        self.assertEqual(final["model_chain_relation"].tolist(), expected_relations)
+        self.assertTrue(final["model_chain_relation_reason"].eq(expected_reason).all())
+        self.assertTrue(final["chain_relation_rule_version"].eq("structure-chain-v1").all())
         duplicates = pd.read_csv(output / f"{stem}_duplicate_sources.csv")
         self.assertTrue(duplicates.empty)
         self.assertEqual(final.iloc[0]["candidate_id"], final.iloc[3]["candidate_id"])
