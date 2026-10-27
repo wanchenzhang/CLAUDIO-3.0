@@ -363,7 +363,7 @@ def clean_dataset(data: pd.DataFrame, *, selection_log=None):
 
     return data
 
-def minimize_dataset(data: pd.DataFrame):
+def minimize_dataset(data: pd.DataFrame, *, selection_log=None):
     """
     Cleaning of structure data dataset for outputs
 
@@ -403,7 +403,24 @@ def minimize_dataset(data: pd.DataFrame):
 
         if all((i in drop_indeces for i in data_ind_snippet.index)):
             drop_indeces.remove(data_ind_snippet.index[0])
-
+        if selection_log is not None:
+            preferred = [
+                i for i in data_ind_snippet.index if i not in drop_indeces
+            ]
+            for candidate in data_ind_snippet.itertuples():
+                if candidate.Index in drop_indeces:
+                    same_type = (candidate.XL_type == "intra") == is_intra
+                    rule = (
+                        "lower_ranked_chain_candidate" if same_type
+                        else "different_crosslink_type"
+                    )
+                    _record_candidate_exclusions(
+                        selection_log,
+                        [candidate.Index],
+                        preferred,
+                        "minimize_dataset",
+                        rule,
+                    )
     data = data.drop(index=drop_indeces)
 
     for row in data.itertuples():
@@ -416,6 +433,13 @@ def minimize_dataset(data: pd.DataFrame):
                     same_proteins = (row.unip_id_a == next_row.unip_id_a) and (row.unip_id_b == next_row.unip_id_b)
                     same_peptides = (row.pep_a == next_row.pep_a) and (row.pep_b == next_row.pep_b)
                     if same_proteins and same_peptides:
+                        _record_candidate_exclusions(
+                            selection_log,
+                            [next_i],
+                            [i],
+                            "minimize_dataset",
+                            "repeated_peptide_source",
+                        )
                         data = data.drop(index=next_i)
 
     return data
