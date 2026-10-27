@@ -86,6 +86,7 @@ class TestDistanceAssessmentPipelineCLI(unittest.TestCase):
                         self.assertNotIn("euclidean_assessment", params)
                         self.assertNotIn("topological_assessment", params)
                 self.assertEqual(by_stage["run_claudio_structdi"]["topolink_seed"], 20261026)
+                self.assertTrue(by_stage["run_claudio_lists"]["preserve_source_records"])
                 self.assertEqual("db_updater" in by_stage, not bool(mode))
 
     def test_omitted_policies_leave_the_existing_m4_call_unchanged(self):

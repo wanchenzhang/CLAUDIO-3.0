@@ -34,37 +34,10 @@ def read_inputs(file1: str, file2: str):
 
 
 def merge_datasets(df1: pd.DataFrame, df2: pd.DataFrame):
-    """
-    merge ops analysis dataset into structural distance analysis dataset. 
-    Furthermore, ensure that results of ops analysis are integrated for new
-    datapoints of structural distance analysis
+    """Attach M3 evidence by parent M1 row and validate shared identities."""
+    return _merge_structural_candidates(df1, df2)
 
-    Parameters
-    ----------
-    df1 : pd.DataFrame,
-    df2 : pd.DataFrame
-
-    Returns
-    -------
-    df1 : pd.DataFrame
-    """
-    if "af_match_status" in df1.columns:
-        return _merge_af_candidates(df1, df2)
-    for column in df2.columns:
-        if column not in df1.columns:
-            if isinstance(df1.index[0],str):
-                df1[column] = False
-                for i in df1.index:
-                    if '_' in str(i):
-                        df1.loc[i, column] = df2.loc[int(str(i).split('_',maxsplit=1)[0]),
-                                                     column]
-                    else:
-                        df1.loc[i, column] = df2.loc[int(i), column]
-            else:
-                df1[column] = df2[column].tolist()
-    return df1
-
-def _merge_af_candidates(structural, ops):
+def _merge_structural_candidates(structural, ops):
     """Attach M3 results using the original M1 row behind each AF candidate."""
     if not ops.index.is_unique:
         raise ValueError("M3 input indices must be unique")

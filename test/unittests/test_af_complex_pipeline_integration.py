@@ -179,6 +179,12 @@ class TestAFComplexPipelineIntegration(unittest.TestCase):
         self.assertEqual(final["model_chain_relation"].tolist(), expected_relations)
         self.assertTrue(final["model_chain_relation_reason"].eq(expected_reason).all())
         self.assertTrue(final["chain_relation_rule_version"].eq("structure-chain-v1").all())
+        self.assertTrue(final["XL_type_scope"].eq("model_candidate").all())
+        self.assertEqual(final["XL_type"].tolist(),
+                         ["undetermined"] * 4 if self.no_candidates
+                         else ["inter", "inter", "undetermined", "inter"])
+        self.assertIn("legacy_XL_type", final)
+        self.assertNotIn("XL_confirmed", final)
         duplicates = pd.read_csv(output / f"{stem}_duplicate_sources.csv")
         self.assertTrue(duplicates.empty)
         self.assertEqual(final.iloc[0]["candidate_id"], final.iloc[3]["candidate_id"])
@@ -254,7 +260,7 @@ class TestAFComplexPipelineIntegration(unittest.TestCase):
         self.assertEqual(bounded["topo_dist_raw"], ">75.957")
         self.assertAlmostEqual(bounded["topo_dist_lower_bound"], 75.957)
         self.assertTrue(pd.isna(bounded["topo_dist"]))
-        self.assertFalse(bounded["XL_confirmed"])
+        self.assertFalse(bounded["legacy_XL_confirmed"])
         self.assertEqual(unresolved["distance_reason"], "unresolved_position")
         self.assertTrue(pd.isna(unresolved["topo_dist_lower_bound"]))
 

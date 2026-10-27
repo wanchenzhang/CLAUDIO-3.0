@@ -75,7 +75,7 @@ class TestM4DistanceAssessmentCLI(unittest.TestCase):
             for suffix in ("extended", "final", "candidate_audit")
         }
 
-    def test_ordinary_outputs_and_excluded_candidates_keep_assessments(self):
+    def test_ordinary_outputs_keep_all_assessed_candidates_and_conditions(self):
         data = pd.DataFrame([
             self.row,
             {**self.row, "chain_b": "C", "topo_dist": 25.0, "topo_dist_raw": "25.000"},
@@ -97,7 +97,7 @@ class TestM4DistanceAssessmentCLI(unittest.TestCase):
         self.assertEqual(audit["topo_assessment_status"].tolist(),
                          ["satisfied", "violated", "satisfied"])
         self.assertEqual(audit["m4_selection_status"].tolist(),
-                         ["retained", "excluded", "excluded"])
+                         ["retained", "retained", "retained"])
         self.assertEqual(audit.loc["12_1", "experiment"], "condition_B")
         self.assertEqual(audit.loc["12_1", "source_crosslink_type"], "Homodimer")
         self.assertTrue(audit["topo_assessment_maximum"].eq(22.0).all())

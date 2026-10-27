@@ -7,7 +7,9 @@ from collections.abc import Mapping
 from claudio.module04.src.algorithm.structure_assessment import (
     annotate_structure_relationships,
 )
-
+from claudio.module04.src.algorithm.relationship_classification import (
+    classify_model_candidates,
+)
 def _finite_nonnegative(value):
     return (
         isinstance(value, Real)
@@ -167,7 +169,11 @@ def assess_candidate_distance(
     if not _finite_nonnegative(plddt_cutoff) or plddt_cutoff > 100:
         raise ValueError("pLDDT cutoff must be between 0 and 100")
 
-    context = annotate_structure_relationships(pd.DataFrame([row])).iloc[0]
+    context = (
+        classify_model_candidates(pd.DataFrame([row]))
+        if "XL_type_scope" in row
+        else annotate_structure_relationships(pd.DataFrame([row]))
+    ).iloc[0]
     source = context["structure_source"]
     stage_status = row.get("distance_status")
     if _missing_endpoint_value(stage_status):
@@ -184,7 +190,11 @@ def assess_candidate_distance(
         "upstream_reason": None,
         "interval_rule_version": result["rule_version"],
         "endpoint_rule_version": None,
-        "rule_version": "candidate-distance-v1",
+        "relationship_rule_version": context.get("XL_type_rule_version"),
+        "rule_version": (
+            "candidate-distance-v2" if "XL_type_scope" in row
+            else "candidate-distance-v1"
+        ),
     })
 
     def stop(reason, stage, *, site=None, upstream=None):
@@ -218,7 +228,8 @@ def assess_candidate_distance(
         )
     elif stage_status not in ("computed", "lower_bound"):
         return stop("unrecognized_distance_status", "distance")
-
+    if context.get("XL_type") == "undetermined" and "XL_type_scope" in row:
+        return stop(context["XL_type_reason"], "relationship")
     bounds = [row.get(f"{prefix}_dist_lower_bound") for prefix in ("eucl", "topo")]
     exact = [row.get(f"{prefix}_dist") for prefix in ("eucl", "topo")]
     if stage_status == "computed" and (
@@ -261,7 +272,11 @@ def annotate_distance_assessments(
     if not data.columns.is_unique:
         raise ValueError("Candidate input column names must be unique")
 
-    result = annotate_structure_relationships(data)
+    result = (
+        classify_model_candidates(data)
+        if "XL_type_scope" in data.columns
+        else annotate_structure_relationships(data)
+    )
     fields = {
         "status": "status",
         "reason": "reason",
@@ -278,6 +293,7 @@ def annotate_distance_assessments(
         "interval_rule_version": "interval_rule_version",
         "endpoint_rule_version": "endpoint_rule_version",
         "chain_relation_rule_version": "chain_relation_rule_version",
+        "relationship_rule_version": "relationship_rule_version",
     }
     for metric, prefix, policy in methods:
         decisions = [

@@ -40,6 +40,7 @@ class TestAFComplexM4Outputs(unittest.TestCase):
             "pdb_hetflag_a": " ", "pdb_icode_a": "A",
             "pdb_hetflag_b": " ", "pdb_icode_b": " ",
             "mapping_status_a": "mapped", "mapping_status_b": "mapped",
+            "res_crit_a": True, "res_crit_b": True,
             "mapping_reason_a": None, "mapping_reason_b": None,
             "mapped_atom_name_a": "CB", "mapped_atom_name_b": "CB",
             "mapped_residue_id_a": "(' ', 104, 'A')",
@@ -171,7 +172,8 @@ class TestAFComplexM4Outputs(unittest.TestCase):
                     self.assertTrue(saved.empty)
                     for column in ("source_record_id", "af_model_id",
                                    "distance_status", "distance_reason",
-                                   "homo_pep_overl", "XL_type", "XL_confirmed",
+                                   "homo_pep_overl", "XL_type", "legacy_XL_confirmed",
+                                   "XL_type_scope", "XL_type_reason",
                                    "structure_source", "model_chain_relation",
                                    "model_chain_relation_reason",
                                    "chain_relation_rule_version"):
@@ -179,7 +181,7 @@ class TestAFComplexM4Outputs(unittest.TestCase):
                 pymol.assert_not_called()
                 plots.assert_not_called()
 
-    def test_non_af_input_keeps_legacy_cleanup_and_outputs(self):
+    def test_non_af_input_keeps_candidates_without_legacy_selection(self):
         data = self.structural.loc[["7"]].drop(columns=[
             column for column in self.structural.columns if column.startswith("af_")
         ])
@@ -189,10 +191,10 @@ class TestAFComplexM4Outputs(unittest.TestCase):
             m4, "minimize_dataset", wraps=m4.minimize_dataset,
         ) as minimize:
             output, pymol, plots = self.run_m4(data, self.ops.loc[[7]])
-        clean.assert_called_once()
-        minimize.assert_called_once()
-        pymol.assert_called_once()
-        plots.assert_called_once()
+        clean.assert_not_called()
+        minimize.assert_not_called()
+        pymol.assert_not_called()
+        plots.assert_not_called()
         self.assertTrue((output / "input_final.csv").is_file())
 
     def test_input_stem_with_dots_is_preserved_in_output_names(self):
@@ -221,7 +223,10 @@ class TestAFComplexM4Outputs(unittest.TestCase):
                 self.assertEqual(saved["model_chain_relation_reason"].iloc[0], "same_model_chain")
                 self.assertEqual(saved["model_chain_relation_reason"].iloc[1], "different_model_chains")
                 self.assertEqual(saved["XL_type"].tolist(),
+                                 ["intra", "inter", "inter", "inter", "inter", "inter", "undetermined"])
+                self.assertEqual(saved["legacy_XL_type"].tolist(),
                                  ["intra", "inter", "inter", "inter", "inter", "inter", "intra"])
+                self.assertTrue(saved["XL_type_scope"].eq("model_candidate").all())
                 self.assertEqual(saved["distance_reason"].iloc[-1], "unresolved_position")
                 self.assertEqual(saved["source_record_id"].tolist(), structural.source_record_id.tolist())
 

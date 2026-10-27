@@ -134,28 +134,15 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum,
         data = read_inputs(input_filepath, input_filepath2)
         data = annotate_structure_relationships(data)
 
-        af_complex_input = "af_match_status" in data.columns
-        if af_complex_input and data.empty:
-            data = data.assign(
-                evidence="", XL_type="", XL_confirmed=False,
-                swiss_model_homology="",
-            )
-            if compute_scoring:
-                data = data.assign(
-                    inter_score=float("nan"), score_XL_type="",
-                )
+        data = combine_inter_reevaluations(
+            data, plddt_cutoff, linker_minimum, linker_maximum,
+            euclidean_strictness, distance_maximum, cutoff, compute_scoring,
+        )
+        if data.empty:
+            data["swiss_model_homology"] = ""
         else:
-            verbose_print("Combine results of both reevaluations",
-                          0, verbose_level)
-            data = combine_inter_reevaluations(
-                data, plddt_cutoff, linker_minimum, linker_maximum,
-                euclidean_strictness, distance_maximum, cutoff,
-                compute_scoring,
-            )
-
-            verbose_print("Retrieve known oligomeric states from SWISS-MODEL",
-                          0, verbose_level)
             data = retrieve_oligomeric_states(data, verbose_level)
+
         if assessment_policies is not None:
             data = annotate_distance_assessments(
                 data,
@@ -163,47 +150,12 @@ def main(input_filepath, input_filepath2, plddt_cutoff, linker_minimum,
                 topological_policy=assessment_policies["topological"],
                 plddt_cutoff=plddt_cutoff,
             )
+
         all_candidates = data.copy(deep=True)
         selection_log = []
-        if af_complex_input:
-            # Preserve every source/model/chain candidate for later assessment.
-            data.to_csv(f"{output_directory}{filename}_extended.csv")
-        else:
-            data = clean_dataset(data, selection_log=selection_log)
-            trace_columns = [
-                "structure_source", "model_chain_relation",
-                "model_chain_relation_reason", "chain_relation_rule_version",
-            ]
-            if "source_crosslink_type" in data.columns:
-                trace_columns.append("source_crosslink_type")
-            trace_columns.extend(
-                column for column in data.columns
-                if column.startswith(("eucl_assessment_", "topo_assessment_"))
-            )
-            data[[
-                "unip_id_a", "unip_id_b", "pos_a", "pos_b", "pep_a", "pep_b",
-                "res_pos_a", "res_pos_b", "pdb_id", "pdb_method",
-                "pdb_resolution", "chain_a", "chain_b", "pdb_pos_a", "pdb_pos_b",
-                "pLDDT_a", "pLDDT_b", "topo_dist", "eucl_dist", "homo_pep_overl",
-                "evidence", "XL_type", "XL_confirmed", "swiss_model_homology",
-            ] + trace_columns].to_csv(
-                f"{output_directory}{filename}_extended.csv"
-            )
+        data.to_csv(f"{output_directory}{filename}_extended.csv")
 
-            verbose_print("Write pymol scripts", 0, verbose_level)
-            setup_pml_scripts(data)
-            data = minimize_dataset(data, selection_log=selection_log)
-
-            verbose_print("Create score histogram", 0, verbose_level)
-            create_plots(
-                data, filename, cutoff, compute_scoring,
-                output_directory, linker_minimum, linker_maximum,
-            )
-
-        # Write final csv containing all computed information,
-        # fastas for alphafold and protein-specific csv with interaction
-        # restraints
-        verbose_print("Write full outputs", 0, verbose_level)
+        verbose_print("Write model candidate tables", 0, verbose_level)
         write_outputs(data, filename, compute_scoring, output_directory)
         audit = build_candidate_audit(all_candidates, data, selection_log)
         audit.to_csv(f"{output_directory}{filename}_candidate_audit.csv")

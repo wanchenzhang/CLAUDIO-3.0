@@ -214,7 +214,10 @@ def clean_dataset(data: pd.DataFrame, *, selection_log=None):
     -------
     data : pd.DataFrame
     """
-
+    if "XL_type_scope" in data.columns:
+        if not data["XL_type_scope"].eq("model_candidate").all():
+            raise ValueError("Unsupported or mixed XL_type_scope")
+        return data.copy(deep=True)
     # Drop datapoints with ident index, if data values are all identical
     if "pdb_id" in data.columns:
         drop_indeces,\
@@ -375,7 +378,10 @@ def minimize_dataset(data: pd.DataFrame, *, selection_log=None):
     -------
     data : pd.DataFrame
     """
-
+    if "XL_type_scope" in data.columns:
+        if not data["XL_type_scope"].eq("model_candidate").all():
+            raise ValueError("Unsupported or mixed XL_type_scope")
+        return data.copy(deep=True)
     drop_indeces = []
     for ind in [i for i in data.index if '_' not in str(i)]:
         is_intra = data.loc[ind].XL_type == "intra"

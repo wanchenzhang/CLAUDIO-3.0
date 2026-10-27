@@ -34,6 +34,7 @@ class TestM4CandidateAuditCLI(unittest.TestCase):
             "pdb_method": "X-RAY DIFFRACTION", "pdb_resolution": 2.0,
             "chain_a": "A", "chain_b": "B", "pdb_pos_a": 4, "pdb_pos_b": 8,
             "pLDDT_a": "-", "pLDDT_b": "-",
+            "res_crit_a": True, "res_crit_b": True,
             "eucl_dist": 15.0, "topo_dist": 20.0,
             "eucl_dist_raw": "15.000", "topo_dist_raw": "20.000",
             "is_interfaced": True, "method_a": "realigning",
@@ -68,7 +69,7 @@ class TestM4CandidateAuditCLI(unittest.TestCase):
         return pd.read_csv(path, index_col=0,
                            dtype={"eucl_dist_raw": str, "topo_dist_raw": str})
 
-    def test_audit_spans_cleanup_and_minimization_without_losing_conditions(self):
+    def test_preserves_chain_candidates_and_conditions_without_legacy_selection(self):
         data = pd.DataFrame([
             self.row,
             {**self.row, "chain_b": "C", "topo_dist": 25.0, "topo_dist_raw": "25.000"},
@@ -78,27 +79,22 @@ class TestM4CandidateAuditCLI(unittest.TestCase):
         saved = self.run_m4(data)
         self.assertEqual(saved.index.astype(str).tolist(), ["7", "7_1", "12_1"])
         self.assertEqual(saved["m4_selection_status"].tolist(),
-                         ["retained", "excluded", "excluded"])
+                         ["retained", "retained", "retained"])
         self.assertEqual(saved["experiment"].tolist(),
                          ["condition_A", "condition_A", "condition_B"])
         self.assertEqual(saved.loc["12_1", "source_crosslink_type"], "Homodimer")
         self.assertEqual(saved.loc["12_1", "source_record_id"], "record_000002")
         self.assertEqual(saved["topo_dist_raw"].tolist(), ["20.000", "25.000", "20.000"])
-        first = json.loads(saved.loc["7_1", "m4_exclusion_events"])[0]
-        second = json.loads(saved.loc["12_1", "m4_exclusion_events"])[0]
-        self.assertEqual((first["stage"], first["rule"], first["preferred_indices"]),
-                         ("minimize_dataset", "lower_ranked_chain_candidate", ["7"]))
-        self.assertEqual((second["stage"], second["rule"], second["preferred_indices"]),
-                         ("clean_dataset", "duplicate_structural_candidate", ["7"]))
+        self.assertTrue(all(json.loads(value) == [] for value in saved["m4_exclusion_events"]))
         self.assertIn("method_a", saved.columns)
         self.assertEqual(saved["model_chain_relation"].tolist(), ["cross_chain"] * 3)
         final = pd.read_csv(self.root / "out/input_final.csv", index_col=0)
         extended = pd.read_csv(self.root / "out/input_extended.csv", index_col=0)
-        self.assertEqual(final.index.astype(str).tolist(), ["7"])
-        self.assertEqual(extended.index.astype(str).tolist(), ["7", "7_1"])
+        self.assertEqual(final.index.astype(str).tolist(), ["7", "7_1", "12_1"])
+        self.assertEqual(extended.index.astype(str).tolist(), ["7", "7_1", "12_1"])
         self.assertNotIn("m4_selection_status", final.columns)
 
-    def test_repeated_peptide_source_has_its_own_exclusion_reason(self):
+    def test_repeated_peptide_sources_keep_their_conditions(self):
         data = pd.DataFrame([
             {**self.row, "seq_a": "MAAKTAAKTGGK"},
             {**self.row, "seq_a": "MAAKTAAKTGGK", "chain_b": "C",
@@ -108,10 +104,8 @@ class TestM4CandidateAuditCLI(unittest.TestCase):
         ], index=["7", "7_1", "12"])
         saved = self.run_m4(data)
         self.assertEqual(saved["m4_selection_status"].tolist(),
-                         ["retained", "excluded", "excluded"])
-        event = json.loads(saved.loc["12", "m4_exclusion_events"])[0]
-        self.assertEqual(event["rule"], "repeated_peptide_source")
-        self.assertEqual(event["preferred_indices"], ["7"])
+                         ["retained", "retained", "retained"])
+        self.assertEqual(json.loads(saved.loc["12", "m4_exclusion_events"]), [])
         self.assertEqual(saved.loc["12", "experiment"], "condition_B")
 
     def test_af_candidates_and_unresolved_positions_are_retained(self):
@@ -151,7 +145,7 @@ class TestM4CandidateAuditCLI(unittest.TestCase):
             self.row, {**self.row, "chain_b": "C", "topo_dist": 25.0},
         ], index=["7", "7_1"])
         first = self.run_m4(data)
-        self.assertEqual(first["m4_selection_status"].tolist(), ["retained", "excluded"])
+        self.assertEqual(first["m4_selection_status"].tolist(), ["retained", "retained"])
         second = self.run_m4(data.iloc[[0]])
         self.assertEqual(len(second), 1)
         self.assertEqual(second.iloc[0]["m4_selection_status"], "retained")
