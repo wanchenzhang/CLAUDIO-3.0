@@ -351,5 +351,76 @@ class TestAFComplexPipelineIntegration(unittest.TestCase):
                              ["computed", "computed"])
 
 
+    def test_explicit_assessments_survive_manual_and_auto_full_pipeline(self):
+        policies = [
+            "--euclidean-assessment", "0", "100", "inclusive",
+            "--topological-assessment", "0", "70", "inclusive",
+        ]
+        for label, mode in (
+            ("manual", ["--af-complex-model", MODEL_ID]),
+            ("auto", ["--af-complex-auto"]),
+        ):
+            with self.subTest(mode=label):
+                output = self.root / f"assessment_{label}"
+                self.run_pipeline(output, [*mode, *policies])
+                final = self.check_source_outputs(output)
+                self.assertEqual(final["eucl_assessment_status"].tolist(),
+                                 ["satisfied", "satisfied", "not_evaluable", "satisfied"])
+                self.assertEqual(final["topo_assessment_status"].tolist(),
+                                 ["satisfied", "violated", "not_evaluable", "satisfied"])
+                self.assertEqual(final.iloc[2]["topo_assessment_reason"], "unresolved_position")
+                self.assertTrue(final["eucl_assessment_maximum"].eq(100.0).all())
+                self.assertTrue(final["topo_assessment_maximum"].eq(70.0).all())
+                self.assertTrue(final["topo_assessment_plddt_cutoff"].eq(0.0).all())
+                audit = pd.read_csv(output / "crosslinks.run1_candidate_audit.csv", index_col=0)
+                pd.testing.assert_frame_equal(audit[final.columns], final)
+                self.assertTrue(audit["m4_selection_status"].eq("retained").all())
+                plt.close("all")
+
+    def test_explicit_assessments_keep_native_bounds_through_full_pipeline(self):
+        native_output = (
+            "  LINK: LYS A 67 CB LYS B 11 CB 62.907 66.751 "
+            "YES 0.000 35.000 BAD: LONG\n"
+            "  LINK: LYS A 67 CB LYS B 23 CB 75.957 >75.957 "
+            "YES 0.000 35.000 BAD: EUCL\n"
+        )
+        output = self.root / "assessed_bounds"
+        with patch.object(
+            self, "run_topolink", return_value=subprocess.CompletedProcess(
+                [], 0, stdout=native_output, stderr="",
+            ),
+        ):
+            self.run_pipeline(output, [
+                "--af-complex-auto",
+                "--euclidean-assessment", "0", "100", "inclusive",
+                "--topological-assessment", "0", "70", "inclusive",
+            ])
+        final = self.check_source_outputs(output)
+        bounded = final.iloc[1]
+        self.assertEqual(bounded["eucl_assessment_status"], "satisfied")
+        self.assertEqual(bounded["topo_assessment_status"], "violated")
+        self.assertEqual(bounded["topo_assessment_reason"], "lower_bound_above_range")
+        self.assertTrue(pd.isna(bounded["topo_dist"]))
+        self.assertEqual(bounded["topo_dist_raw"], ">75.957")
+        self.assertEqual(bounded["distance_status"], "lower_bound")
+
+    def test_full_assessment_mode_retains_sources_without_a_candidate_model(self):
+        self.no_candidates = True
+        output = self.root / "assessed_no_candidates"
+        self.run_pipeline(output, [
+            "--af-complex-auto",
+            "--euclidean-assessment", "0", "100", "inclusive",
+            "--topological-assessment", "0", "70", "inclusive",
+        ])
+        final = self.check_source_outputs(output)
+        for prefix in ("eucl", "topo"):
+            self.assertTrue(final[f"{prefix}_assessment_status"].eq("not_evaluable").all())
+            self.assertTrue(final[f"{prefix}_assessment_reason"].eq("no_candidate_model").all())
+        audit = pd.read_csv(output / "crosslinks.run1_candidate_audit.csv", index_col=0)
+        self.assertEqual(audit["experiment"].tolist(),
+                         ["condition_A", "condition_B", "condition_C", "condition_D"])
+        self.assertTrue(audit["m4_selection_status"].eq("retained").all())
+
+
 if __name__ == "__main__":
     unittest.main()

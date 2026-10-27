@@ -7,7 +7,9 @@ from importlib.metadata import version as _pkg_version
 from claudio.module01.src.main import main as run_claudio_lists
 from claudio.module02.run_module02_intra import main as run_claudio_structdi
 from claudio.module03.src.main import main as run_claudio_ops
-from claudio.module04.src.main import main as run_claudio_xl
+from claudio.module04.src.main import (
+    main as run_claudio_xl, _assessment_policies,
+)
 
 from claudio.utils.utils import verbose_print, round_self, evaluate_boolean_input, clean_input_paths, create_out_path
 from claudio.utils.db_updater import main as db_updater
@@ -102,12 +104,25 @@ def _require_output(path):
     default=None,
     help="Fixed TopoLink seed; omitted values use the native input template.",
 )
+@click.option(
+    "--euclidean-assessment",
+    type=(float, float, click.Choice(["inclusive", "exclusive"])),
+    default=None,
+    help="Euclidean MIN MAX BOUNDARY; provide both assessment options to enable.",
+)
+@click.option(
+    "--topological-assessment",
+    type=(float, float, click.Choice(["inclusive", "exclusive"])),
+    default=None,
+    help="TopoLink MIN MAX BOUNDARY; provide both assessment options to enable.",
+)
 def main(input_filepath, input_temppath, projections, read_temps, xl_residues,
          search_tool, e_value, query_id, coverage, res_cutoff, plddt_cutoff,
          linker_minimum, linker_maximum, euclidean_strictness, distance_maximum,
          cutoff, output_directory, blast_bin, blast_db, hhsearch_bin,
          hhsearch_db, topolink_bin, compute_scoring, verbose_level, config,
-         af_complex_model=None, af_complex_auto=False, topolink_seed=None):
+         af_complex_model=None, af_complex_auto=False, topolink_seed=None,
+         euclidean_assessment=None, topological_assessment=None):
     """
     
     wrapper function for the full CLAUDIO pipeline, which includes the following modules:
@@ -149,7 +164,15 @@ def main(input_filepath, input_temppath, projections, read_temps, xl_residues,
     None
 
     """
-
+    policies = _assessment_policies(
+        euclidean_assessment, topological_assessment,
+    )
+    assessment_options = {}
+    if policies is not None:
+        assessment_options = {
+            "euclidean_assessment": euclidean_assessment,
+            "topological_assessment": topological_assessment,
+        }
     if af_complex_auto and af_complex_model is not None:
         raise click.UsageError(
             "--af-complex-auto and --af-complex-model are mutually exclusive."
@@ -246,6 +269,7 @@ def main(input_filepath, input_temppath, projections, read_temps, xl_residues,
         distance_maximum=distance_maximum, cutoff=cutoff,
         output_directory=output_directory, compute_scoring=compute_scoring,
         verbose_level=verbose_level,
+        **assessment_options,
     )
     _require_output(final_path)
 
