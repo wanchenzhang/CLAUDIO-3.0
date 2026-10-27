@@ -3,6 +3,7 @@ from math import isfinite
 from numbers import Real
 import numpy as np
 import pandas as pd
+from collections.abc import Mapping
 from claudio.module04.src.algorithm.structure_assessment import (
     annotate_structure_relationships,
 )
@@ -239,4 +240,61 @@ def assess_candidate_distance(
         status=interval["status"], reason=interval["reason"],
         assessment_stage="interval",
     )
+    return result
+def annotate_distance_assessments(
+    data, *, euclidean_policy, topological_policy, plddt_cutoff,
+):
+    """Append per-method assessments while retaining every candidate row."""
+    methods = (
+        ("euclidean", "eucl", euclidean_policy),
+        ("topological", "topo", topological_policy),
+    )
+    required = {"minimum", "maximum", "boundary"}
+    for metric, _, policy in methods:
+        if not isinstance(policy, Mapping) or set(policy) != required:
+            raise ValueError(
+                f"{metric} policy requires minimum, maximum and boundary"
+            )
+        assess_distance_interval(None, None, **policy)
+    if not _finite_nonnegative(plddt_cutoff) or plddt_cutoff > 100:
+        raise ValueError("pLDDT cutoff must be between 0 and 100")
+    if not data.columns.is_unique:
+        raise ValueError("Candidate input column names must be unique")
+
+    result = annotate_structure_relationships(data)
+    fields = {
+        "status": "status",
+        "reason": "reason",
+        "stage": "assessment_stage",
+        "site": "site",
+        "upstream_reason": "upstream_reason",
+        "minimum": "minimum",
+        "maximum": "maximum",
+        "boundary": "boundary",
+        "plddt_cutoff": "plddt_cutoff",
+        "upstream_distance_status": "upstream_distance_status",
+        "metric": "metric",
+        "rule_version": "rule_version",
+        "interval_rule_version": "interval_rule_version",
+        "endpoint_rule_version": "endpoint_rule_version",
+        "chain_relation_rule_version": "chain_relation_rule_version",
+    }
+    for metric, prefix, policy in methods:
+        decisions = [
+            assess_candidate_distance(
+                row, metric=metric, plddt_cutoff=plddt_cutoff, **policy,
+            )
+            for _, row in result.iterrows()
+        ]
+        for column, field in fields.items():
+            dtype = (
+                "float64"
+                if column in ("minimum", "maximum", "plddt_cutoff")
+                else "object"
+            )
+            result[f"{prefix}_assessment_{column}"] = pd.Series(
+                [decision[field] for decision in decisions],
+                index=result.index,
+                dtype=dtype,
+            )
     return result
