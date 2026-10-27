@@ -10,14 +10,151 @@ from pathlib import Path
 from tempfile import mkdtemp
 from Bio.PDB import Polypeptide, Select, PDBIO
 import subprocess
+import hashlib
+import json
+import re
+import shutil
+from datetime import datetime, timezone
+from numbers import Integral
 from claudio.utils.utils import verbose_print, round_self
 from claudio.utils.structure_io import read_structure_models
 warnings.filterwarnings("ignore")
 
+def validate_topolink_seed(seed):
+    """Accept an optional positive seed supported by the native integer type."""
+    if seed is None:
+        return None
+    if (
+        isinstance(seed, bool)
+        or not isinstance(seed, Integral)
+        or not 1 <= seed <= 2147483647
+    ):
+        raise ValueError(
+            "TopoLink seed must be an integer between 1 and 2147483647"
+        )
+    return int(seed)
 
+
+def _file_sha256(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _run_topolink(task_dir, pdb_id, source_structure, structure, topo_in,
+                  df_xl_res, plddt_cutoff, topolink_bin, topolink_seed):
+    """Run one native job and retain its effective input and execution record."""
+    task = Path(task_dir).resolve()
+    call = (
+        "topolink" if topolink_bin is None
+        else str((Path(topolink_bin) / "topolink").resolve())
+    )
+    executable = shutil.which(call)
+    command = [
+        str(Path(executable).resolve()) if executable else call,
+        "in/topolink.tmp",
+    ]
+    log_path = task / f"topo_{pdb_id[:32]}.log"
+    manifest_path = task / "topolink_run.json"
+    seed_values = [
+        line.split()[1]
+        for line in topo_in.splitlines()
+        if line.split()[:1] == ["seed"] and len(line.split()) > 1
+    ]
+    manifest = {
+        "schema_version": 1,
+        "state": "prepared",
+        "requested_seed": topolink_seed,
+        "effective_seed": seed_values[0] if len(seed_values) == 1 else None,
+        "parameters": {
+            "plddt_cutoff": float(plddt_cutoff),
+            "xl_residues": json.loads(
+                df_xl_res.to_json(orient="records")
+            ),
+        },
+        "source_structure": {
+            "path": str(Path(source_structure).resolve()),
+            "sha256": _file_sha256(source_structure),
+        },
+        "exported_structure": {
+            "path": Path(structure).resolve().relative_to(task).as_posix(),
+            "sha256": _file_sha256(structure),
+        },
+        "input": {
+            "path": "in/topolink.tmp",
+            "text": topo_in,
+            "sha256": _file_sha256(task / "in/topolink.tmp"),
+        },
+        "executable": {
+            "path": command[0],
+            "version": None,
+            "sha256": _file_sha256(executable) if executable else None,
+        },
+        "command": command,
+        "cwd": str(task),
+        "log_path": str(log_path),
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "finished_at": None,
+        "return_code": None,
+    }
+
+    def save_manifest():
+        manifest_path.write_text(
+            json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
+        )
+
+    save_manifest()
+    log_header = (
+        f"SOURCE STRUCTURE: {source_structure}\n"
+        f"WORKDIR: {task}\nIN:\n{topo_in}\n"
+    )
+    try:
+        completed = subprocess.run(
+            command, cwd=task_dir, capture_output=True, text=True,
+            encoding="utf-8", errors="replace", check=False,
+        )
+    except OSError as error:
+        log_path.write_text(
+            f"{log_header}\nSTART ERROR:\n{error}\n", encoding="utf-8"
+        )
+        manifest.update(
+            state="failed_to_start",
+            finished_at=datetime.now(timezone.utc).isoformat(),
+        )
+        save_manifest()
+        raise RuntimeError(
+            f"Could not start TopoLink for {pdb_id}; see {log_path}"
+        ) from error
+
+    log_path.write_text(
+        f"{log_header}\nRETURN CODE: {completed.returncode}\n"
+        f"OUT:\n{completed.stdout}\nSTDERR:\n{completed.stderr}\n",
+        encoding="utf-8",
+    )
+    version = re.search(
+        r"\bVersion\s*[:=]?\s*(\d+(?:\.\d+)+)",
+        completed.stdout,
+        re.IGNORECASE,
+    )
+    manifest["executable"]["version"] = version.group(1) if version else None
+    manifest.update(
+        state="completed" if completed.returncode == 0 else "failed",
+        return_code=completed.returncode,
+        finished_at=datetime.now(timezone.utc).isoformat(),
+    )
+    save_manifest()
+    if completed.returncode != 0:
+        raise RuntimeError(
+            f"TopoLink failed for {pdb_id} "
+            f"(exit code {completed.returncode}); see {log_path}"
+        )
+    return completed.stdout
 def calculate_site_dists(data: pd.DataFrame, temp_dir: str,
                          df_xl_res: pd.DataFrame, plddt_cutoff: float,
-                         topolink_bin: str | None, verbose_level: int):
+                         topolink_bin: str | None, verbose_level: int,
+                         topolink_seed=None):
     """
     calculate distances between interaction sites, and extend input dataset 
     by res_criteria, e.g. whether the found sites satisfy the criteria of 
@@ -43,7 +180,7 @@ def calculate_site_dists(data: pd.DataFrame, temp_dir: str,
     # topolink and add them all to the dataset
     data = compute_dists_with_topolink(data, temp_dir, df_xl_res,
                                        plddt_cutoff, topolink_bin,
-                                       verbose_level)
+                                       verbose_level, topolink_seed=topolink_seed)
 
     return data
 
@@ -65,7 +202,7 @@ def parse_topolink_distance(token):
 
 def compute_dists_with_topolink(data: pd.DataFrame, temp_dir: str,
                                 df_xl_res: pd.DataFrame, plddt_cutoff: float,
-                                topolink_bin: str | None, verbose_level: int):
+                                topolink_bin: str | None, verbose_level: int, topolink_seed=None):
     """
     compute euclidean and topological distances between residues utilizing 
     topolink software, also saves logs of topolink computation into temporary 
@@ -85,7 +222,7 @@ def compute_dists_with_topolink(data: pd.DataFrame, temp_dir: str,
     -------
     data : pd.DataFrame
     """
-
+    topolink_seed = validate_topolink_seed(topolink_seed)
     toplink_dists = []
     ind = 0
 
@@ -207,8 +344,20 @@ def compute_dists_with_topolink(data: pd.DataFrame, temp_dir: str,
                 line for line in template_file if not line.startswith("#")
             ]
 
+        if topolink_seed is not None:
+            seed_lines = [
+                line for line in template_lines
+                if line.split()[:1] == ["seed"]
+            ]
+            if len(seed_lines) != 1:
+                raise ValueError(
+                    "TopoLink template must contain exactly one seed directive"
+                )
+
         for line in template_lines:
-            if line.startswith("linkdir"):
+            if topolink_seed is not None and line.split()[:1] == ["seed"]:
+                topo_in.append(f"seed {topolink_seed}\n")
+            elif line.startswith("linkdir"):
                 continue
             elif line.startswith("structure"):
                 relative_structure = Path(structure).relative_to(task_dir).as_posix()
@@ -236,41 +385,11 @@ def compute_dists_with_topolink(data: pd.DataFrame, temp_dir: str,
         with open(topo_input_path, 'w', encoding="utf-8") as f:
             f.write(topo_in)
 
-        # Run each native process from its own directory using short paths.
-        topolink_call = (
-            "topolink" if topolink_bin is None
-            else str((Path(topolink_bin) / "topolink").resolve())
-        )
-        log_path = Path(task_dir) / f"topo_{pdb_id[:32]}.log"
-        log_header = (
-            f"SOURCE STRUCTURE: {source_structure}\n"
-            f"WORKDIR: {Path(task_dir).resolve()}\nIN:\n{topo_in}\n"
-        )
-        try:
-            completed = subprocess.run(
-                [topolink_call, "in/topolink.tmp"],
-                cwd=task_dir, capture_output=True, text=True,
-                encoding="utf-8", errors="replace", check=False,
-            )
-        except OSError as error:
-            log_path.write_text(
-                f"{log_header}\nSTART ERROR:\n{error}\n", encoding="utf-8"
-            )
-            raise RuntimeError(
-                f"Could not start TopoLink for {pdb_id}; see {log_path}"
-            ) from error
 
-        res = completed.stdout
-        log_path.write_text(
-            f"{log_header}\nRETURN CODE: {completed.returncode}\n"
-            f"OUT:\n{res}\nSTDERR:\n{completed.stderr}\n",
-            encoding="utf-8",
+        res = _run_topolink(
+            task_dir, pdb_id, source_structure, structure, topo_in,
+            df_xl_res, plddt_cutoff, topolink_bin, topolink_seed,
         )
-        if completed.returncode != 0:
-            raise RuntimeError(
-                f"TopoLink failed for {pdb_id} "
-                f"(exit code {completed.returncode}); see {log_path}"
-            )
         # zip topolink results with obs_inds
         # -> toplink_dists = [(index, eucl_dist, top_dist), ...]
         link_results = [' '.join(line.split())
