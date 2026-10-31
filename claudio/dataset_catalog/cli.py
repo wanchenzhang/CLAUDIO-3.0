@@ -9,7 +9,13 @@ import requests
 from .outputs import write_discovery_outputs
 from .proteomecentral import fetch_dataset_pages
 
-
+DEFAULT_SEARCH_TERMS = (
+    "XL-MS",
+    "crosslinking",
+    "cross-linking",
+    "cross linking",
+    "crosslinked",
+)
 @click.group()
 def main():
     """Manage the public dataset candidate catalog."""
@@ -19,8 +25,9 @@ def main():
 @click.option(
     "--search-term", "search_terms",
     multiple=True,
-    required=True,
-    help="Search term. Repeat this option to search multiple terms.",
+    default=DEFAULT_SEARCH_TERMS,
+    show_default=True,
+    help="Override the built-in search terms. Repeat for multiple terms.",
 )
 @click.option(
     "--output", "output_dir",

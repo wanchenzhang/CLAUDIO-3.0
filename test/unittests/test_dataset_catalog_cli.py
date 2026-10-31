@@ -138,7 +138,6 @@ class TestDatasetCatalogCLI(unittest.TestCase):
     @patch("claudio.dataset_catalog.proteomecentral.requests.get")
     def test_rejects_invalid_arguments_before_querying(self, mock_get):
         cases = [
-            ([], "--search-term"),
             (["--search-term", "   "], "--search-term"),
             (["--search-term", "XL-MS", "--page-size", "0"], "--page-size"),
         ]
@@ -233,6 +232,46 @@ class TestDatasetCatalogCLI(unittest.TestCase):
             self.assertEqual(manifest["status"], "complete")
             self.assertEqual(manifest["candidate_count"], 0)
             self.assertEqual(len(manifest["searches"][0]["pages"]), 1)
+    @patch("claudio.dataset_catalog.proteomecentral.requests.get")
+    def test_uses_builtin_terms_when_none_are_supplied(self, mock_get):
+        def respond(url, *, params, timeout):
+            return make_response(url, params, [
+                ["PXD000001", "First study", "PRIDE", "Homo sapiens"],
+            ])
 
+        mock_get.side_effect = respond
+        expected_terms = [
+            "XL-MS",
+            "crosslinking",
+            "cross-linking",
+            "cross linking",
+            "crosslinked",
+        ]
+
+        with TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir) / "run"
+            result = CliRunner().invoke(main, [
+                "discover", "--output", str(output_dir),
+            ])
+
+            self.assertEqual(result.exit_code, 0, result.output)
+            manifest = json.loads(
+                (output_dir / "manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                [search["search_term"] for search in manifest["searches"]],
+                expected_terms,
+            )
+            candidates = json.loads(
+                (output_dir / "candidates.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(len(candidates), 1)
+            self.assertEqual(candidates[0]["search_terms"], expected_terms)
+
+        self.assertEqual(
+            [call.kwargs["params"]["search"]
+             for call in mock_get.call_args_list],
+            expected_terms,
+        )
 if __name__ == "__main__":
     unittest.main()
