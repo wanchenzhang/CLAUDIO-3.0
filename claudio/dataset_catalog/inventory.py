@@ -11,9 +11,11 @@ from pathlib import Path
 import requests
 
 from . import _write_json
-from .pride import (
-    FILE_COLUMNS, PrideResponse, _file_row, _validated_files,
-    fetch_pride_project, fetch_pride_file_pages, write_pride_outputs,
+from .repositories import (
+    FILE_COLUMNS, RepositoryResponse, _file_row, _repository_files,
+    _massive_identifiers, _parse_massive_file_page,
+    fetch_pride_project, fetch_pride_file_pages,
+    fetch_massive_project, fetch_massive_file_pages, write_repository_outputs,
 )
 
 
@@ -44,7 +46,8 @@ def inspect_candidate(candidate, output_dir):
         "finished_at_utc": "",
     })
 
-    if candidate.get("repository") != "PRIDE":
+    repository = candidate.get("repository")
+    if repository not in ("PRIDE", "MassIVE"):
         result["finished_at_utc"] = datetime.now(timezone.utc).isoformat()
         return result
 
@@ -55,18 +58,26 @@ def inspect_candidate(candidate, output_dir):
             raise ValueError("Candidate has no valid project accession")
 
         stage = "project_metadata"
-        project = fetch_pride_project(accession)
+        if repository == "PRIDE":
+            project = fetch_pride_project(accession)
+        else:
+            project = fetch_massive_project(accession)
 
         stage = "file_list"
-        pages = fetch_pride_file_pages(accession)
+        if repository == "PRIDE":
+            pages = fetch_pride_file_pages(accession)
+        else:
+            msv = _massive_identifiers(project.data)["msv"]
+            pages = fetch_massive_file_pages(msv)
 
         stage = "output"
-        destination = write_pride_outputs(
-            accession, project, pages, output_dir
+        destination = write_repository_outputs(
+            repository, accession, project, pages, output_dir
         )
+        manifest = json.loads((destination / "manifest.json").read_bytes())
         result.update({
             "inspection_status": "collected",
-            "file_count": sum(len(page.data) for page in pages),
+            "file_count": manifest["file_count"],
             "inventory_path": str(destination),
         })
     except (requests.exceptions.RequestException, ValueError, OSError) as error:
@@ -167,7 +178,7 @@ def inspect_catalog(catalog_path, output_dir, *, resume=False):
         )
         result["candidate_index"] = number
         result["attempt_number"] = (
-            attempt if candidate.get("repository") == "PRIDE" else 0
+            0 if result["inspection_status"] == "adapter_pending" else attempt
         )
         result["attempt_path"] = (
             relative_path.as_posix() if result["attempt_number"] else ""
@@ -209,27 +220,35 @@ def _check_inventory(output_dir, result):
         manifest["schema_version"] != 1
         or manifest["status"] != "complete"
         or manifest["project_accession"] != accession
+        or manifest["source"] != result["repository"]
     ):
         raise ValueError(f"Incomplete or mismatched inventory for {accession}")
 
     sources = [manifest["project_response"], *manifest["file_responses"]]
     responses = []
-    for source in sources:
+    repository = manifest["source"]
+    for number, source in enumerate(sources):
         raw = _saved_path(root, source["path"]).read_bytes()
         if hashlib.sha256(raw).hexdigest() != source["sha256"]:
             raise ValueError(f"Saved response checksum mismatch for {accession}")
-        responses.append(PrideResponse(
+        data = (
+            _parse_massive_file_page(raw)
+            if repository == "MassIVE" and number > 0 else json.loads(raw)
+        )
+        responses.append(RepositoryResponse(
             request_url=source["request_url"],
             retrieved_at_utc=source["retrieved_at_utc"],
             raw_body=raw,
             headers=requests.structures.CaseInsensitiveDict(source["headers"]),
-            data=json.loads(raw),
+            data=data,
         ))
 
+    files, total = _repository_files(repository, accession, responses[0], responses[1:])
     project = responses[0].data
-    if not isinstance(project, dict) or project.get("accession") != accession:
-        raise ValueError(f"Saved project identity mismatch for {accession}")
-    files, total = _validated_files(accession, responses[1:])
+    if repository == "MassIVE" and (
+        manifest.get("repository_accession") != _massive_identifiers(project)["msv"]
+    ):
+        raise ValueError(f"Saved native project identity mismatch for {accession}")
     if (
         json.loads((root / "project.json").read_bytes()) != project
         or json.loads((root / "files.json").read_bytes()) != files

@@ -1,12 +1,14 @@
-"""Retrieve and save PRIDE project metadata and file inventories."""
+"""Retrieve and save public repository metadata and file inventories."""
 
 import csv
 import hashlib
 import json
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Mapping, Union
+from urllib.parse import urlencode
 
 import requests
 
@@ -14,15 +16,162 @@ from . import _write_json
 
 
 PRIDE_API_URL = "https://www.ebi.ac.uk/pride/ws/archive/v3"
+MASSIVE_API_URL = "https://massive.ucsd.edu/ProteoSAFe/proxi/v0.1"
+MASSIVE_FILES_URL = "https://massive.ucsd.edu/ProteoSAFe/dataset_files.jsp"
+MASSIVE_DOWNLOAD_URL = "https://massive.ucsd.edu/ProteoSAFe/DownloadResultFile"
 
 
 @dataclass(frozen=True)
-class PrideResponse:
+class RepositoryResponse:
     request_url: str
     retrieved_at_utc: str
     raw_body: bytes
     headers: Mapping[str, str]
     data: Union[dict, list]
+
+
+# Existing PRIDE callers use the same response fields.
+PrideResponse = RepositoryResponse
+
+
+def _massive_identifiers(data):
+    if not isinstance(data, dict):
+        raise ValueError("MassIVE project response must be a JSON object")
+    entries = data.get("accession")
+    if not isinstance(entries, list):
+        raise ValueError("MassIVE project has no identifier list")
+
+    identifiers = {}
+    for name, cv_id, pattern in (
+        ("pxd", "MS:1001919", r"PXD\d{6,}"),
+        ("msv", "MS:1002487", r"MSV\d{9}"),
+    ):
+        values = [
+            entry.get("value") for entry in entries
+            if isinstance(entry, dict) and entry.get("accession") == cv_id
+        ]
+        if not values or any(
+            not isinstance(value, str) or not re.fullmatch(pattern, value)
+            for value in values
+        ):
+            raise ValueError(f"MassIVE project has no valid {name.upper()} identifier")
+        if len(set(values)) != 1:
+            raise ValueError(f"MassIVE project has conflicting {name.upper()} identifiers")
+        identifiers[name] = values[0]
+    return identifiers
+
+
+def fetch_massive_project(accession: str) -> RepositoryResponse:
+    """Fetch MassIVE metadata by PXD and verify its repository identifiers.
+
+    Parameters
+    ----------
+    accession : str
+        ProteomeXchange accession from the candidate catalog.
+
+    Returns
+    -------
+    project : RepositoryResponse
+        Original metadata, including the PXD and native MSV identifiers.
+    """
+    if not isinstance(accession, str) or not re.fullmatch(r"PXD\d{6,}", accession):
+        raise ValueError("A valid PXD accession is required")
+
+    response = requests.get(
+        f"{MASSIVE_API_URL}/datasets/{accession}", timeout=(15, 120)
+    )
+    response.raise_for_status()
+    retrieved_at = datetime.now(timezone.utc).isoformat()
+    data = json.loads(response.content)
+    identifiers = _massive_identifiers(data)
+    if identifiers["pxd"] != accession:
+        raise ValueError(
+            f"MassIVE project accession mismatch: requested {accession}, "
+            f"received {identifiers['pxd']}"
+        )
+
+    return RepositoryResponse(
+        request_url=response.url,
+        retrieved_at_utc=retrieved_at,
+        raw_body=response.content,
+        headers=response.headers.copy(),
+        data=data,
+    )
+
+
+def _parse_massive_file_page(raw_body):
+    """Read the embedded JSON without evaluating the page's JavaScript."""
+    text = raw_body.decode("utf-8")
+    marker = re.search(r"\bvar\s+dataset_files\s*=\s*", text)
+    if marker is None:
+        raise ValueError("MassIVE page has no embedded file listing")
+    data, _ = json.JSONDecoder().raw_decode(text, marker.end())
+    if not isinstance(data, dict):
+        raise ValueError("MassIVE file listing must be a JSON object")
+    return data
+
+
+def _massive_file_records(msv, data):
+    records = data.get("row_data")
+    total = data.get("total_rows")
+    if not isinstance(records, list):
+        raise ValueError("MassIVE file listing has no row_data array")
+    if not isinstance(total, int) or isinstance(total, bool) or total < 0:
+        raise ValueError("MassIVE file listing has no valid total_rows count")
+    if len(records) != total:
+        raise ValueError(
+            f"MassIVE file count mismatch: received {len(records)}, expected {total}"
+        )
+
+    seen = set()
+    prefix = f"f.{msv}/"
+    for record in records:
+        if not isinstance(record, dict) or record.get("type") != "File":
+            raise ValueError("MassIVE listing contains an invalid file record")
+        descriptor = record.get("file_descriptor")
+        if not isinstance(descriptor, str) or not descriptor.startswith(prefix):
+            raise ValueError(f"MassIVE file does not belong to {msv}")
+        relative_path = descriptor[len(prefix):]
+        if any(part in ("", ".", "..") for part in relative_path.split("/")):
+            raise ValueError("MassIVE file has an invalid relative path")
+        if descriptor in seen:
+            raise ValueError(f"Repeated MassIVE file: {descriptor}")
+        seen.add(descriptor)
+        size = record.get("size")
+        if not isinstance(size, int) or isinstance(size, bool) or size < 0:
+            raise ValueError(f"MassIVE file has no valid byte size: {descriptor}")
+    return records, total
+
+
+def fetch_massive_file_pages(msv: str) -> List[RepositoryResponse]:
+    """Fetch the main-site file listing and retain its original HTML.
+
+    Parameters
+    ----------
+    msv : str
+        Native identifier verified in the project's metadata.
+
+    Returns
+    -------
+    pages : list of RepositoryResponse
+        The current main-site page embeds the complete file list.
+    """
+    if not isinstance(msv, str) or not re.fullmatch(r"MSV\d{9}", msv):
+        raise ValueError("A valid MSV accession is required")
+    response = requests.get(
+        MASSIVE_FILES_URL, params={"accession": msv}, timeout=(15, 120)
+    )
+    response.raise_for_status()
+    retrieved_at = datetime.now(timezone.utc).isoformat()
+    data = _parse_massive_file_page(response.content)
+    _massive_file_records(msv, data)
+    return [RepositoryResponse(
+        request_url=response.url,
+        retrieved_at_utc=retrieved_at,
+        raw_body=response.content,
+        headers=response.headers.copy(),
+        data=data,
+    )]
 
 
 def fetch_pride_project(accession: str) -> PrideResponse:
@@ -247,16 +396,68 @@ def _file_row(accession, record):
     }
 
 
+def _repository_files(repository, accession, project, file_pages):
+    """Validate raw sources and produce the common file records."""
+    if json.loads(project.raw_body) != project.data:
+        raise ValueError("Parsed project metadata differs from its raw response")
+    if repository == "PRIDE":
+        if not isinstance(project.data, dict) or project.data.get("accession") != accession:
+            raise ValueError("PRIDE project accession mismatch")
+        return _validated_files(accession, file_pages)
+    if repository != "MassIVE":
+        raise ValueError(f"Unsupported repository: {repository}")
+
+    identifiers = _massive_identifiers(project.data)
+    if identifiers["pxd"] != accession:
+        raise ValueError("MassIVE project accession mismatch")
+    if len(file_pages) != 1:
+        raise ValueError("A complete MassIVE main-site file response is required")
+    page = file_pages[0]
+    if _parse_massive_file_page(page.raw_body) != page.data:
+        raise ValueError("Parsed file metadata differs from its raw response")
+    msv = identifiers["msv"]
+    records, total = _massive_file_records(msv, page.data)
+    prefix = f"f.{msv}/"
+    files = []
+    for record in records:
+        descriptor = record["file_descriptor"]
+        relative_path = descriptor[len(prefix):]
+        files.append({
+            **record,
+            "accession": descriptor,
+            "projectAccessions": [accession],
+            "repositoryAccessions": [msv],
+            "relativePath": relative_path,
+            "fileName": relative_path.rsplit("/", 1)[-1],
+            "fileCategory": {"value": record.get("collection", "")},
+            "fileSizeBytes": record["size"],
+            "publicFileLocations": [{
+                "name": "HTTPS",
+                "value": MASSIVE_DOWNLOAD_URL + "?" + urlencode({
+                    "forceDownload": "true", "file": descriptor,
+                }),
+            }],
+        })
+    return files, total
+
+
 def write_pride_outputs(accession, project, file_pages, output_dir):
-    """Write a complete PRIDE project snapshot into a new directory.
+    """Write a PRIDE snapshot using the shared repository output format."""
+    return write_repository_outputs("PRIDE", accession, project, file_pages, output_dir)
+
+
+def write_repository_outputs(repository, accession, project, file_pages, output_dir):
+    """Write a complete repository project snapshot into a new directory.
 
     Parameters
     ----------
+    repository : str
+        Supported repository name: PRIDE or MassIVE.
     accession : str
         ProteomeXchange project accession.
-    project : PrideResponse
+    project : RepositoryResponse
         Retrieved project metadata.
-    file_pages : list of PrideResponse
+    file_pages : list of RepositoryResponse
         Complete retrieved file-list responses.
     output_dir : str or pathlib.Path
         New directory for the snapshot.
@@ -265,15 +466,7 @@ def write_pride_outputs(accession, project, file_pages, output_dir):
     -------
     output_dir : pathlib.Path
     """
-    if (
-        not isinstance(project.data, dict)
-        or project.data.get("accession") != accession
-    ):
-        raise ValueError("PRIDE project accession mismatch")
-    if json.loads(project.raw_body) != project.data:
-        raise ValueError("Parsed project metadata differs from its raw response")
-
-    files, reported_total = _validated_files(accession, file_pages)
+    files, reported_total = _repository_files(repository, accession, project, file_pages)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=False)
     (output_dir / "raw").mkdir()
@@ -284,7 +477,10 @@ def write_pride_outputs(accession, project, file_pages, output_dir):
     file_sources = [
         _save_response(
             output_dir,
-            Path("raw") / f"files_page_{number:04d}.json",
+            Path("raw") / (
+                f"files_page_{number:04d}.html" if repository == "MassIVE"
+                else f"files_page_{number:04d}.json"
+            ),
             page,
         )
         for number, page in enumerate(file_pages)
@@ -303,7 +499,7 @@ def write_pride_outputs(accession, project, file_pages, output_dir):
 
     manifest = {
         "schema_version": 1,
-        "source": "PRIDE",
+        "source": repository,
         "project_accession": accession,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": "complete",
@@ -313,5 +509,7 @@ def write_pride_outputs(accession, project, file_pages, output_dir):
         "project_response": project_source,
         "file_responses": file_sources,
     }
+    if repository == "MassIVE":
+        manifest["repository_accession"] = _massive_identifiers(project.data)["msv"]
     _write_json(output_dir / "manifest.json", manifest)
     return output_dir

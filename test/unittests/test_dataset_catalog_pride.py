@@ -5,14 +5,14 @@ from unittest.mock import patch
 
 import requests
 
-from claudio.dataset_catalog.pride import (
+from claudio.dataset_catalog.repositories import (
     fetch_pride_file_pages,
     fetch_pride_project,
 )
 
 
 class TestDatasetCatalogPride(unittest.TestCase):
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_fetches_project_metadata_and_preserves_raw_response(self, mock_get):
         payload = {
             "accession": "PXD035844",
@@ -66,7 +66,7 @@ class TestDatasetCatalogPride(unittest.TestCase):
         response._content = body
         return response
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_propagates_missing_project_error(self, mock_get):
         mock_get.return_value = self._response(
             b'{"status":404,"error":"Not Found"}', status_code=404
@@ -75,7 +75,7 @@ class TestDatasetCatalogPride(unittest.TestCase):
         with self.assertRaises(requests.exceptions.HTTPError):
             fetch_pride_project("PXD035844")
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_rejects_wrong_or_missing_project_accession(self, mock_get):
         cases = [
             {"accession": "PXD013928", "title": "Another project"},
@@ -90,7 +90,7 @@ class TestDatasetCatalogPride(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "accession mismatch"):
                     fetch_pride_project("PXD035844")
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_rejects_invalid_project_responses(self, mock_get):
         bodies = [
             b"",
@@ -120,7 +120,7 @@ class TestDatasetCatalogPride(unittest.TestCase):
         ).encode("utf-8")
         return response
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_fetches_all_file_pages_without_losing_file_metadata(self, mock_get):
         first_records = [
             {
@@ -179,7 +179,7 @@ class TestDatasetCatalogPride(unittest.TestCase):
              for call in mock_get.call_args_list],
             [2, 2],
         )
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_preserves_empty_file_list_response(self, mock_get):
         response = self._file_response(0, [], total_records=0)
         mock_get.return_value = response
@@ -192,7 +192,7 @@ class TestDatasetCatalogPride(unittest.TestCase):
         self.assertEqual(pages[0].headers["total_records"], "0")
         self.assertEqual(mock_get.call_count, 1)
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_rejects_file_list_that_ends_before_reported_total(self, mock_get):
         record = {
             "accession": "file-1",
@@ -206,7 +206,7 @@ class TestDatasetCatalogPride(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Incomplete PRIDE file list"):
             fetch_pride_file_pages("PXD035844", page_size=2)
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_rejects_repeated_files_within_or_across_pages(self, mock_get):
         record = {
             "accession": "file-1",
@@ -222,7 +222,7 @@ class TestDatasetCatalogPride(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "repeated file"):
                     fetch_pride_file_pages("PXD035844", page_size=2)
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_rejects_files_without_the_requested_project(self, mock_get):
         for projects in (["PXD013928"], [], None):
             with self.subTest(projects=projects):
@@ -237,7 +237,7 @@ class TestDatasetCatalogPride(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "does not belong"):
                     fetch_pride_file_pages("PXD035844", page_size=2)
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_preserves_files_assigned_to_multiple_projects(self, mock_get):
         record = {
             "accession": "shared-file",
@@ -252,7 +252,7 @@ class TestDatasetCatalogPride(unittest.TestCase):
         self.assertEqual(len(pages), 1)
         self.assertEqual(pages[0].data, [record])
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_rejects_missing_or_invalid_file_counts(self, mock_get):
         for count in (None, "not-a-number", "-1"):
             with self.subTest(count=count):
@@ -266,7 +266,7 @@ class TestDatasetCatalogPride(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     fetch_pride_file_pages("PXD035844", page_size=2)
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_rejects_file_count_changes_between_pages(self, mock_get):
         mock_get.side_effect = [
             self._file_response(0, [{

@@ -31,7 +31,7 @@ class TestDatasetCatalogInventory(unittest.TestCase):
             "review_status": "pending",
         }
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_collects_pride_inventory_and_preserves_candidate_provenance(self, mock_get):
         base_url = (
             "https://www.ebi.ac.uk/pride/ws/archive/v3/projects/PXD000001"
@@ -81,9 +81,9 @@ class TestDatasetCatalogInventory(unittest.TestCase):
             )
             self.assertEqual(candidate, original)
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_retains_candidates_from_repositories_without_an_adapter(self, mock_get):
-        candidate = self._candidate(repository="MassIVE")
+        candidate = self._candidate(repository="jPOST")
 
         with TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir) / "PXD000001"
@@ -91,14 +91,14 @@ class TestDatasetCatalogInventory(unittest.TestCase):
 
             self.assertIsNotNone(result)
             self.assertEqual(result["inspection_status"], "adapter_pending")
-            self.assertEqual(result["repository"], "MassIVE")
+            self.assertEqual(result["repository"], "jPOST")
             self.assertEqual(result["review_status"], "pending")
             self.assertIsNone(result["file_count"])
             self.assertFalse(output_dir.exists())
 
         mock_get.assert_not_called()
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_records_request_failure_without_excluding_the_candidate(self, mock_get):
         mock_get.side_effect = requests.exceptions.Timeout("read timed out")
 
@@ -132,7 +132,7 @@ class TestDatasetCatalogInventory(unittest.TestCase):
             ),
         ]
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_records_file_list_failure_at_the_correct_stage(self, mock_get):
         mock_get.side_effect = [
             self._pride_responses([])[0],
@@ -151,7 +151,7 @@ class TestDatasetCatalogInventory(unittest.TestCase):
             self.assertIsNone(result["file_count"])
             self.assertFalse(output_dir.exists())
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_records_write_failure_without_marking_partial_output_collected(self, mock_get):
         mock_get.side_effect = self._pride_responses([{
             "accession": "file-1",
@@ -162,7 +162,7 @@ class TestDatasetCatalogInventory(unittest.TestCase):
         with TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir) / "PXD000001"
             with patch(
-                "claudio.dataset_catalog.pride.csv.DictWriter.writeheader",
+                "claudio.dataset_catalog.repositories.csv.DictWriter.writeheader",
                 side_effect=OSError("No space left on device"),
             ):
                 result = inspect_candidate(self._candidate(), output_dir)
@@ -176,7 +176,7 @@ class TestDatasetCatalogInventory(unittest.TestCase):
             self.assertTrue((output_dir / "files.json").is_file())
             self.assertFalse((output_dir / "manifest.json").exists())
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_preserves_confirmed_zero_files_as_a_collected_inventory(self, mock_get):
         mock_get.side_effect = self._pride_responses([])
 
@@ -193,12 +193,12 @@ class TestDatasetCatalogInventory(unittest.TestCase):
             )
             self.assertEqual(manifest["status"], "complete")
             self.assertEqual(manifest["file_count"], 0)
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_batch_retains_failed_unsupported_and_collected_candidates(self, mock_get):
         base_url = "https://www.ebi.ac.uk/pride/ws/archive/v3/projects"
         candidates = [
             self._candidate(),
-            dict(self._candidate("MassIVE"), accession="PXD000002"),
+            dict(self._candidate("jPOST"), accession="PXD000002"),
             dict(self._candidate(), accession="PXD000003"),
         ]
 
@@ -285,7 +285,7 @@ class TestDatasetCatalogInventory(unittest.TestCase):
                 (output_dir / relative_path / "manifest.json").is_file()
             )
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_batch_saves_progress_before_starting_the_next_candidate(self, mock_get):
         files = [{
             "accession": "file-1",
@@ -319,7 +319,7 @@ class TestDatasetCatalogInventory(unittest.TestCase):
                 checkpoint["results"][0]["inspection_status"], "collected"
             )
             self.assertFalse((output_dir / "manifest.json").exists())
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_resume_reuses_completed_inventory_and_continues_after_interrupt(self, mock_get):
         first_files = [{
             "accession": "file-1",
@@ -393,7 +393,7 @@ class TestDatasetCatalogInventory(unittest.TestCase):
                 [second_url, f"{second_url}/files"],
             )
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_resume_rejects_a_changed_catalog_without_modifying_the_run(self, mock_get):
         files = [{
             "accession": "file-1",
@@ -432,7 +432,7 @@ class TestDatasetCatalogInventory(unittest.TestCase):
             self.assertEqual(checkpoint_path.read_bytes(), original_checkpoint)
             self.assertEqual(manifest_path.read_bytes(), original_manifest)
             self.assertEqual(input_path.read_bytes(), original_input)
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_resume_rejects_damaged_saved_files_before_making_requests(self, mock_get):
         files = [{
             "accession": "file-1",
@@ -470,7 +470,7 @@ class TestDatasetCatalogInventory(unittest.TestCase):
                     for p in output_dir.rglob("*") if p.is_file()
                 }, before)
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_resume_keeps_partial_attempt_and_writes_to_a_new_directory(self, mock_get):
         mock_get.side_effect = KeyboardInterrupt()
         with TemporaryDirectory() as temp_dir:
@@ -501,11 +501,11 @@ class TestDatasetCatalogInventory(unittest.TestCase):
                 output_dir / results[0]["inventory_path"] / "manifest.json"
             ).is_file())
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_resume_keeps_recorded_failures_and_unsupported_candidates(self, mock_get):
         candidates = [
             self._candidate(),
-            dict(self._candidate("MassIVE"), accession="PXD000002"),
+            dict(self._candidate("jPOST"), accession="PXD000002"),
             dict(self._candidate(), accession="PXD000003"),
         ]
         mock_get.side_effect = [requests.exceptions.Timeout("timed out"), KeyboardInterrupt()]
@@ -535,7 +535,7 @@ class TestDatasetCatalogInventory(unittest.TestCase):
                 [base_url, base_url + "/files"],
             )
 
-    @patch("claudio.dataset_catalog.pride.requests.get")
+    @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_resuming_a_finished_inventory_preserves_existing_reports(self, mock_get):
         mock_get.side_effect = self._pride_responses([])
         with TemporaryDirectory() as temp_dir:
