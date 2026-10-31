@@ -20,6 +20,7 @@ from .repositories import (
     fetch_massive_project, fetch_massive_file_pages, write_repository_outputs,
     fetch_jpost_project,
     fetch_iprox_project,
+    _panorama_project, fetch_panorama_project, fetch_panorama_file_pages,
 )
 
 
@@ -51,7 +52,7 @@ def inspect_candidate(candidate, output_dir):
     })
 
     repository = candidate.get("repository")
-    if repository not in ("PRIDE", "MassIVE", "jPOST", "iProX"):
+    if repository not in ("PRIDE", "MassIVE", "jPOST", "iProX", "PanoramaPublic"):
         result["finished_at_utc"] = datetime.now(timezone.utc).isoformat()
         return result
 
@@ -68,8 +69,10 @@ def inspect_candidate(candidate, output_dir):
             project = fetch_massive_project(accession)
         elif repository == "jPOST":
             project = fetch_jpost_project(accession)
-        else:
+        elif repository == "iProX":
             project = fetch_iprox_project(accession)
+        else:
+            project = fetch_panorama_project(accession)
 
         stage = "file_list"
         if repository == "PRIDE":
@@ -80,9 +83,11 @@ def inspect_candidate(candidate, output_dir):
         elif repository == "jPOST":
             _jpost_files(accession, project.data)
             pages = []
-        else:
+        elif repository == "iProX":
             _iprox_files(accession, project.data)
             pages = []
+        else:
+            pages = fetch_panorama_file_pages(accession, project)
 
         stage = "output"
         destination = write_repository_outputs(
@@ -277,6 +282,14 @@ def _check_inventory(output_dir, result):
         or manifest.get("file_inventory_scope") != "repository_reported_links"
     ):
         raise ValueError(f"Saved native project identity mismatch for {accession}")
+    if repository == "PanoramaPublic":
+        context = _panorama_project(project, accession)
+        if (
+            manifest.get("repository_accession") != context["native_id"]
+            or manifest.get("repository_project_url") != context["project_url"]
+            or manifest.get("file_inventory_scope") != "recursive_webdav_listing"
+        ):
+            raise ValueError(f"Saved native project identity mismatch for {accession}")
     if (
         json.loads((root / "project.json").read_bytes()) != project
         or json.loads((root / "files.json").read_bytes()) != files

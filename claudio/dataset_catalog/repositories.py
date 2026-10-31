@@ -4,11 +4,12 @@ import csv
 import hashlib
 import json
 import re
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Mapping, Union
-from urllib.parse import urlencode, urlsplit, unquote, parse_qs
+from urllib.parse import urlencode, urlsplit, unquote, parse_qs, urljoin, quote
 
 import requests
 
@@ -21,6 +22,8 @@ MASSIVE_FILES_URL = "https://massive.ucsd.edu/ProteoSAFe/dataset_files.jsp"
 MASSIVE_DOWNLOAD_URL = "https://massive.ucsd.edu/ProteoSAFe/DownloadResultFile"
 JPOST_API_URL = "https://repository.jpostdb.org/proxi/datasets"
 IPROX_API_URL = "https://www.iprox.cn/proxi/datasets"
+PANORAMA_ORIGIN = "https://panoramaweb.org"
+PANORAMA_QUERY_URL = PANORAMA_ORIGIN + "/Panorama%20Public/query-selectRows.api"
 
 
 @dataclass(frozen=True)
@@ -34,6 +37,196 @@ class RepositoryResponse:
 
 # Existing PRIDE callers use the same response fields.
 PrideResponse = RepositoryResponse
+
+
+def _panorama_url(base, value, directory=False):
+    if not isinstance(value, str) or not value:
+        raise ValueError("Panorama resource has no valid URL")
+    uri = urlsplit(urljoin(base, value))
+    if (
+        uri.scheme != "https" or uri.hostname != "panoramaweb.org"
+        or uri.port not in (None, 443)
+        or uri.username is not None or uri.password is not None
+        or uri.query or uri.fragment
+    ):
+        raise ValueError("Panorama resource URL must belong to the public server")
+    path = unquote(uri.path, errors="strict")
+    if any(part in ("", ".", "..") for part in path.strip("/").split("/")):
+        raise ValueError("Panorama resource has an invalid path")
+    if directory:
+        path = path.rstrip("/") + "/"
+    elif path.endswith("/"):
+        raise ValueError("Panorama file URL points to a directory")
+    return PANORAMA_ORIGIN + quote(path, safe="/@")
+
+
+def _panorama_project(data, accession):
+    if not isinstance(data, dict) or not isinstance(data.get("rows"), list):
+        raise ValueError("Panorama project query has no rows array")
+    rows = data["rows"]
+    if len(rows) != 1 or type(data.get("rowCount")) is not int or data["rowCount"] != 1:
+        raise ValueError(f"Panorama query must return one current project for {accession}")
+    row = rows[0]
+    if not isinstance(row, dict) or row.get("pxid") != accession:
+        raise ValueError("Panorama project accession mismatch")
+    native_id = row.get("Id")
+    if not isinstance(native_id, int) or isinstance(native_id, bool) or native_id < 1:
+        raise ValueError("Panorama project has no valid native identifier")
+    project_url = _panorama_url(PANORAMA_ORIGIN, row.get("_labkeyurl_Title"))
+    path = unquote(urlsplit(project_url).path, errors="strict")
+    suffix = "/project-begin.view"
+    if not path.startswith("/Panorama Public/") or not path.endswith(suffix):
+        raise ValueError("Panorama project URL does not identify a public project folder")
+    root = _panorama_url(
+        PANORAMA_ORIGIN, "/_webdav" + path[:-len(suffix)] + "/", directory=True
+    )
+    return {"native_id": str(native_id), "project_url": project_url, "root_url": root}
+
+
+def _panorama_get(url, params):
+    """Retry only when the server supplies a short numeric Retry-After."""
+    for attempt in range(3):
+        response = requests.get(url, params=params, timeout=(15, 120))
+        if response.status_code == 429 and attempt < 2:
+            delay = response.headers.get("Retry-After", "")
+            if delay.isdigit() and int(delay) <= 60:
+                time.sleep(int(delay))
+                continue
+        response.raise_for_status()
+        return response
+
+
+def fetch_panorama_project(accession: str) -> RepositoryResponse:
+    """Resolve one current Panorama Public project by its PXD accession."""
+    if not isinstance(accession, str) or not re.fullmatch(r"PXD\d{6,}", accession):
+        raise ValueError("A valid PXD accession is required")
+    response = _panorama_get(
+        PANORAMA_QUERY_URL,
+        params={
+            "schemaName": "panoramapublic", "queryName": "ExperimentAnnotations",
+            "containerFilter": "CurrentAndSubfolders",
+            "query.pxid~eq": accession, "query.Version~contains": "Current",
+            "maxRows": 2,
+        },
+    )
+    retrieved_at = datetime.now(timezone.utc).isoformat()
+    data = json.loads(response.content)
+    _panorama_project(data, accession)
+    return RepositoryResponse(
+        response.url, retrieved_at, response.content, response.headers.copy(), data
+    )
+
+
+def _panorama_children(directory, data, context, accession):
+    if (
+        not isinstance(data, dict) or not isinstance(data.get("files"), list)
+        or data.get("success") is False or data.get("exception")
+    ):
+        raise ValueError("Panorama directory response has no files array")
+    in_file_store = "/@files/" in unquote(urlsplit(directory).path, errors="strict")
+    folders, files = [], []
+    for entry in data["files"]:
+        if not isinstance(entry, dict) or not isinstance(entry.get("collection"), bool):
+            raise ValueError("Panorama directory contains an invalid resource")
+        collection = entry["collection"]
+        url = _panorama_url(directory, entry.get("href"), directory=collection)
+        if not url.startswith(context["root_url"]) or not url.startswith(directory):
+            raise ValueError("Panorama resource lies outside its directory or project")
+        if url == directory and collection:
+            continue
+        if not in_file_store:
+            # Container roots expose virtual resources; submitted files live
+            # in @files. Ordinary child containers may have their own stores.
+            name = unquote(url.rstrip("/").rsplit("/", 1)[-1], errors="strict")
+            if not collection or (name.startswith("@") and name != "@files"):
+                continue
+        if entry.get("canRead") is False:
+            raise PermissionError(f"Panorama resource is not publicly readable: {url}")
+        if collection:
+            folders.append(url)
+            continue
+        size = entry.get("contentlength", entry.get("size"))
+        if size is not None and (
+            not isinstance(size, int) or isinstance(size, bool) or size < 0
+        ):
+            raise ValueError("Panorama file has an invalid byte size")
+        relative_path = unquote(url[len(context["root_url"]):], errors="strict")
+        files.append({
+            "accession": url,
+            "projectAccessions": [accession],
+            "repositoryAccessions": [context["native_id"]],
+            "relativePath": relative_path,
+            "fileName": relative_path.rsplit("/", 1)[-1],
+            "fileCategory": {"value": ""},
+            "fileSizeBytes": size,
+            "checksum": None,
+            "publicFileLocations": [{"name": "HTTPS", "value": url}],
+            "repositoryMetadata": entry,
+        })
+    return folders, files
+
+
+def fetch_panorama_file_pages(accession, project):
+    """Read public file stores and child containers, retaining each listing."""
+    if json.loads(project.raw_body) != project.data:
+        raise ValueError("Parsed project metadata differs from its raw response")
+    context = _panorama_project(project.data, accession)
+    pending = [context["root_url"]]
+    seen, pages = set(), []
+    while pending:
+        directory = pending.pop()
+        if directory in seen:
+            continue
+        response = _panorama_get(directory, {"method": "json"})
+        retrieved_at = datetime.now(timezone.utc).isoformat()
+        data = json.loads(response.content)
+        folders, _ = _panorama_children(directory, data, context, accession)
+        pages.append(RepositoryResponse(
+            response.url, retrieved_at, response.content, response.headers.copy(), data
+        ))
+        seen.add(directory)
+        pending.extend(folders)
+    _panorama_files(accession, project, pages)
+    return pages
+
+
+def _panorama_files(accession, project, pages):
+    """Require a saved response for every directory reached from the project."""
+    context = _panorama_project(project.data, accession)
+    by_directory = {}
+    for page in pages:
+        if json.loads(page.raw_body) != page.data:
+            raise ValueError("Parsed file metadata differs from its raw response")
+        directory = _panorama_url(
+            PANORAMA_ORIGIN, page.request_url.split("?", 1)[0], directory=True
+        )
+        if not directory.startswith(context["root_url"]) or directory in by_directory:
+            raise ValueError("Panorama directory response is repeated or outside the project")
+        by_directory[directory] = page
+
+    pending = [context["root_url"]]
+    seen, file_ids, files = set(), set(), []
+    has_file_store = False
+    while pending:
+        directory = pending.pop()
+        if directory in seen:
+            continue
+        if directory not in by_directory:
+            raise ValueError(f"Incomplete Panorama inventory: missing {directory}")
+        seen.add(directory)
+        has_file_store |= "/@files/" in unquote(urlsplit(directory).path, errors="strict")
+        folders, records = _panorama_children(
+            directory, by_directory[directory].data, context, accession
+        )
+        pending.extend(folders)
+        for record in records:
+            if record["accession"] in file_ids:
+                raise ValueError("Panorama inventory contains a repeated file URL")
+            file_ids.add(record["accession"])
+            files.append(record)
+    if not has_file_store or seen != set(by_directory):
+        raise ValueError("Panorama inventory has no file store or has unrelated responses")
+    return files, None
 
 
 def _proxi_identifiers(data, repository, native_name, native_cv, native_pattern):
@@ -649,6 +842,8 @@ def _repository_files(repository, accession, project, file_pages):
         if file_pages:
             raise ValueError("iProX file links must come from its project response")
         return _iprox_files(accession, project.data)
+    if repository == "PanoramaPublic":
+        return _panorama_files(accession, project, file_pages)
     if repository != "MassIVE":
         raise ValueError(f"Unsupported repository: {repository}")
 
@@ -697,7 +892,7 @@ def write_repository_outputs(repository, accession, project, file_pages, output_
     Parameters
     ----------
     repository : str
-        Supported repository name: PRIDE, MassIVE, jPOST or iProX.
+        Supported repository name: PRIDE, MassIVE, jPOST, iProX or PanoramaPublic.
     accession : str
         ProteomeXchange project accession.
     project : RepositoryResponse
@@ -766,5 +961,10 @@ def write_repository_outputs(repository, accession, project, file_pages, output_
             _select_proxi_project(project.data, accession, repository)
         )["ipx"]
         manifest["file_inventory_scope"] = "repository_reported_links"
+    elif repository == "PanoramaPublic":
+        context = _panorama_project(project.data, accession)
+        manifest["repository_accession"] = context["native_id"]
+        manifest["repository_project_url"] = context["project_url"]
+        manifest["file_inventory_scope"] = "recursive_webdav_listing"
     _write_json(output_dir / "manifest.json", manifest)
     return output_dir
