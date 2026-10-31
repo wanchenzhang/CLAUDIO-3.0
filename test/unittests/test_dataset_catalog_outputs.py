@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
-from claudio.dataset_catalog.outputs import write_discovery_outputs
+from claudio.dataset_catalog.proteomecentral import write_discovery_outputs
 from claudio.dataset_catalog.proteomecentral import CatalogPage
 
 
@@ -183,7 +183,7 @@ class TestDatasetCatalogOutputs(unittest.TestCase):
         with TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir) / "run"
             with patch(
-                "claudio.dataset_catalog.outputs.csv.DictWriter.writeheader",
+                "claudio.dataset_catalog.proteomecentral.csv.DictWriter.writeheader",
                 side_effect=OSError("No space left on device"),
             ):
                 with self.assertRaises(OSError):

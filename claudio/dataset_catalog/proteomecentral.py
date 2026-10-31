@@ -1,11 +1,16 @@
-"""Retrieve dataset search results from ProteomeCentral."""
+"""Search ProteomeCentral and save candidate catalogs with their sources."""
 
+import csv
+import hashlib
 import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import List
 
 import requests
+
+from . import _write_json
 
 
 DATASETS_URL = (
@@ -96,3 +101,147 @@ def fetch_dataset_pages(
         )
 
     return pages
+
+
+def merge_search_results(searches):
+    """Merge candidates and retain metadata variants with their search sources."""
+    candidates = {}
+
+    for search_term, pages in searches.items():
+        for page in pages:
+            columns = page.data["result_set"]["datasets_title_list"]
+
+            for values in page.data["datasets"]:
+                if len(values) != len(columns):
+                    raise ValueError(
+                        "Dataset row does not match its column headers"
+                    )
+
+                metadata = dict(zip(columns, values))
+                accession = metadata.pop("dataset identifier")
+
+                if accession not in candidates:
+                    candidates[accession] = {
+                        **metadata,
+                        "accession": accession,
+                        "search_terms": [],
+                        "review_status": "pending",
+                        "metadata_conflict": False,
+                        "metadata_variants": [],
+                    }
+
+                candidate = candidates[accession]
+                if search_term not in candidate["search_terms"]:
+                    candidate["search_terms"].append(search_term)
+
+                variants = candidate["metadata_variants"]
+                for variant in variants:
+                    if variant["metadata"] == metadata:
+                        if search_term not in variant["search_terms"]:
+                            variant["search_terms"].append(search_term)
+                        break
+                else:
+                    variants.append({
+                        "metadata": metadata,
+                        "search_terms": [search_term],
+                    })
+
+                candidate["metadata_conflict"] = len(variants) > 1
+
+    return [candidates[accession] for accession in sorted(candidates)]
+
+
+CSV_COLUMNS = [
+    "accession",
+    "title",
+    "repository",
+    "species",
+    "search_terms",
+    "review_status",
+    "metadata_conflict",
+    "metadata_variant_count",
+]
+
+
+
+
+def write_discovery_outputs(searches, output_dir):
+    """Write a discovery snapshot into a new directory.
+
+    Parameters
+    ----------
+    searches : dict
+        Search terms mapped to their retrieved CatalogPage objects.
+    output_dir : str or pathlib.Path
+        New directory for the snapshot.
+
+    Returns
+    -------
+    output_dir : pathlib.Path
+    """
+    if not searches or any(not pages for pages in searches.values()):
+        raise ValueError("Each search must include at least one response page")
+
+    candidates = merge_search_results(searches)
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=False)
+    (output_dir / "raw").mkdir()
+
+    manifest = {
+        "schema_version": 1,
+        "source": "ProteomeCentral",
+        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+        "status": "complete",
+        "candidate_count": len(candidates),
+        "searches": [],
+    }
+
+    for search_number, (search_term, pages) in enumerate(
+        searches.items(), start=1
+    ):
+        search = {
+            "search_term": search_term,
+            "reported_total": pages[0].data["result_set"]["n_available_rows"],
+            "downloaded_records": sum(
+                len(page.data["datasets"]) for page in pages
+            ),
+            "pages": [],
+        }
+
+        for page_number, page in enumerate(pages, start=1):
+            relative_path = Path("raw") / (
+                f"search_{search_number:03d}_page_{page_number:04d}.json"
+            )
+            (output_dir / relative_path).write_bytes(page.raw_body)
+            search["pages"].append({
+                "path": relative_path.as_posix(),
+                "request_url": page.request_url,
+                "retrieved_at_utc": page.retrieved_at_utc,
+                "query": page.data["query"],
+                "sha256": hashlib.sha256(page.raw_body).hexdigest(),
+            })
+
+        manifest["searches"].append(search)
+
+    _write_json(output_dir / "candidates.json", candidates)
+
+    with (output_dir / "candidates.csv").open(
+        "w", encoding="utf-8", newline=""
+    ) as handle:
+        writer = csv.DictWriter(handle, fieldnames=CSV_COLUMNS)
+        writer.writeheader()
+        for candidate in candidates:
+            row = {
+                column: candidate.get(column, "")
+                for column in CSV_COLUMNS
+            }
+            row["search_terms"] = json.dumps(
+                candidate["search_terms"], ensure_ascii=False
+            )
+            row["metadata_variant_count"] = len(
+                candidate["metadata_variants"]
+            )
+            writer.writerow(row)
+
+    _write_json(output_dir / "manifest.json", manifest)
+    return output_dir

@@ -6,8 +6,7 @@ from pathlib import Path
 import click
 import requests
 
-from .outputs import write_discovery_outputs
-from .proteomecentral import fetch_dataset_pages
+from .proteomecentral import fetch_dataset_pages, write_discovery_outputs
 
 DEFAULT_SEARCH_TERMS = (
     "XL-MS",
@@ -16,6 +15,8 @@ DEFAULT_SEARCH_TERMS = (
     "cross linking",
     "crosslinked",
 )
+
+
 @click.group()
 def main():
     """Manage the public dataset candidate catalog."""
