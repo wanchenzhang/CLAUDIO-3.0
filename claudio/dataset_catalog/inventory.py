@@ -15,9 +15,11 @@ from .repositories import (
     FILE_COLUMNS, RepositoryResponse, _file_row, _repository_files,
     _massive_identifiers, _parse_massive_file_page,
     _jpost_identifiers, _jpost_files, _select_jpost_project,
+    _iprox_identifiers, _iprox_files, _select_proxi_project,
     fetch_pride_project, fetch_pride_file_pages,
     fetch_massive_project, fetch_massive_file_pages, write_repository_outputs,
     fetch_jpost_project,
+    fetch_iprox_project,
 )
 
 
@@ -49,7 +51,7 @@ def inspect_candidate(candidate, output_dir):
     })
 
     repository = candidate.get("repository")
-    if repository not in ("PRIDE", "MassIVE", "jPOST"):
+    if repository not in ("PRIDE", "MassIVE", "jPOST", "iProX"):
         result["finished_at_utc"] = datetime.now(timezone.utc).isoformat()
         return result
 
@@ -64,8 +66,10 @@ def inspect_candidate(candidate, output_dir):
             project = fetch_pride_project(accession)
         elif repository == "MassIVE":
             project = fetch_massive_project(accession)
-        else:
+        elif repository == "jPOST":
             project = fetch_jpost_project(accession)
+        else:
+            project = fetch_iprox_project(accession)
 
         stage = "file_list"
         if repository == "PRIDE":
@@ -73,8 +77,11 @@ def inspect_candidate(candidate, output_dir):
         elif repository == "MassIVE":
             msv = _massive_identifiers(project.data)["msv"]
             pages = fetch_massive_file_pages(msv)
-        else:
+        elif repository == "jPOST":
             _jpost_files(accession, project.data)
+            pages = []
+        else:
+            _iprox_files(accession, project.data)
             pages = []
 
         stage = "output"
@@ -260,6 +267,13 @@ def _check_inventory(output_dir, result):
         manifest.get("repository_accession") != _jpost_identifiers(
             _select_jpost_project(project, accession)
         )["jpst"]
+        or manifest.get("file_inventory_scope") != "repository_reported_links"
+    ):
+        raise ValueError(f"Saved native project identity mismatch for {accession}")
+    if repository == "iProX" and (
+        manifest.get("repository_accession") != _iprox_identifiers(
+            _select_proxi_project(project, accession, repository)
+        )["ipx"]
         or manifest.get("file_inventory_scope") != "repository_reported_links"
     ):
         raise ValueError(f"Saved native project identity mismatch for {accession}")

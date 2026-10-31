@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Mapping, Union
-from urllib.parse import urlencode, urlsplit, unquote
+from urllib.parse import urlencode, urlsplit, unquote, parse_qs
 
 import requests
 
@@ -20,6 +20,7 @@ MASSIVE_API_URL = "https://massive.ucsd.edu/ProteoSAFe/proxi/v0.1"
 MASSIVE_FILES_URL = "https://massive.ucsd.edu/ProteoSAFe/dataset_files.jsp"
 MASSIVE_DOWNLOAD_URL = "https://massive.ucsd.edu/ProteoSAFe/DownloadResultFile"
 JPOST_API_URL = "https://repository.jpostdb.org/proxi/datasets"
+IPROX_API_URL = "https://www.iprox.cn/proxi/datasets"
 
 
 @dataclass(frozen=True)
@@ -70,21 +71,68 @@ def _jpost_identifiers(data):
     return _proxi_identifiers(data, "jPOST", "jpst", "MS:1002632", r"JPST\d{6,}")
 
 
-def _select_jpost_project(data, accession):
+def _iprox_identifiers(data):
+    if not isinstance(data, dict):
+        raise ValueError("iProX project response must be a JSON object")
+    entries = data.get("accession")
+    if isinstance(entries, dict):
+        entries = [entries]
+    if not isinstance(entries, list):
+        raise ValueError("iProX project has no accession information")
+    values = [
+        entry.get("value") for entry in entries
+        if isinstance(entry, dict) and entry.get("accession") == "MS:1001919"
+    ]
+    if not values or any(
+        not isinstance(value, str) or not re.fullmatch(r"PXD\d{6,}", value)
+        for value in values
+    ) or len(set(values)) != 1:
+        raise ValueError("iProX project has no unique valid PXD identifier")
+
+    links = data.get("datasetLink")
+    if isinstance(links, dict):
+        links = [links]
+    if not isinstance(links, list):
+        raise ValueError("iProX project has no datasetLink information")
+    native_ids = []
+    for link in links:
+        if not isinstance(link, dict) or link.get("accession") != "MS:1002837":
+            continue
+        if not isinstance(link.get("value"), str):
+            raise ValueError("iProX dataset URI is invalid")
+        uri = urlsplit(link["value"])
+        identifiers = parse_qs(uri.query).get("id", [])
+        if (
+            uri.scheme not in ("http", "https")
+            or uri.hostname not in ("iprox.org", "www.iprox.org", "iprox.cn", "www.iprox.cn")
+            or uri.username is not None or uri.password is not None
+            or not identifiers
+            or any(not re.fullmatch(r"IPX\d{7,10}", value) for value in identifiers)
+        ):
+            raise ValueError("iProX dataset URI has no valid IPX identifier")
+        native_ids.extend(identifiers)
+    if len(set(native_ids)) != 1:
+        raise ValueError("iProX project has no unique IPX identifier")
+    return {"pxd": values[0], "ipx": native_ids[0]}
+
+
+def _select_proxi_project(data, accession, repository):
     """Find one matching project while keeping the original response intact."""
     if isinstance(data, dict):
         projects = [data]
     elif isinstance(data, list):
         projects = data
     else:
-        raise ValueError("jPOST response must be a project object or an array")
+        raise ValueError(f"{repository} response must be a project object or an array")
     matches = []
     for project in projects:
         if not isinstance(project, dict):
-            raise ValueError("jPOST response contains an invalid project object")
+            raise ValueError(f"{repository} response contains an invalid project object")
         identifiers = project.get("accession")
+        if isinstance(identifiers, dict):
+            identifiers = [identifiers]
         if not isinstance(identifiers, list):
-            raise ValueError("jPOST project has no identifier list")
+            raise ValueError(f"{repository} project has no identifier list")
         if any(
             isinstance(entry, dict)
             and entry.get("accession") == "MS:1001919"
@@ -94,10 +142,49 @@ def _select_jpost_project(data, accession):
             matches.append(project)
     if len(matches) != 1:
         raise ValueError(
-            f"jPOST response must contain one unique project matching {accession}; "
+            f"{repository} response must contain one unique project matching {accession}; "
             f"found {len(matches)}"
         )
     return matches[0]
+
+
+def _select_jpost_project(data, accession):
+    return _select_proxi_project(data, accession, "jPOST")
+
+
+def fetch_iprox_project(accession: str) -> RepositoryResponse:
+    """Fetch iProX metadata and reported file links by PXD.
+
+    Parameters
+    ----------
+    accession : str
+        ProteomeXchange accession from the candidate catalog.
+
+    Returns
+    -------
+    project : RepositoryResponse
+        Original response with a verified PXD-to-IPX association.
+    """
+    if not isinstance(accession, str) or not re.fullmatch(r"PXD\d{6,}", accession):
+        raise ValueError("A valid PXD accession is required")
+    response = requests.get(
+        f"{IPROX_API_URL}/{accession}",
+        headers={"Accept": "application/json"}, timeout=(15, 120),
+    )
+    response.raise_for_status()
+    retrieved_at = datetime.now(timezone.utc).isoformat()
+    data = json.loads(response.content)
+    project = _select_proxi_project(data, accession, "iProX")
+    identifiers = _iprox_identifiers(project)
+    if identifiers["pxd"] != accession:
+        raise ValueError("iProX project accession mismatch")
+    return RepositoryResponse(
+        request_url=response.url,
+        retrieved_at_utc=retrieved_at,
+        raw_body=response.content,
+        headers=response.headers.copy(),
+        data=data,
+    )
 
 
 def fetch_jpost_project(accession: str) -> RepositoryResponse:
@@ -146,40 +233,66 @@ def _jpost_files(accession, data):
     entries = data.get("datasetFiles")
     if not isinstance(entries, list):
         raise ValueError("jPOST response has no datasetFiles array")
-    jpst = identifiers["jpst"]
-    prefix = f"/{jpst}/"
+    return _reported_links(
+        "jPOST", accession, identifiers["jpst"], entries,
+        "ftp.jpostdb.org", ("ftp", "ftps"),
+    )
+
+
+def _iprox_files(accession, data):
+    data = _select_proxi_project(data, accession, "iProX")
+    identifiers = _iprox_identifiers(data)
+    if identifiers["pxd"] != accession:
+        raise ValueError("iProX project accession mismatch")
+    entries = data.get("dataFiles")
+    if isinstance(entries, dict):
+        entries = [entries]
+    if not isinstance(entries, list):
+        raise ValueError("iProX response has no dataFiles array or object")
+    return _reported_links(
+        "iProX", accession, identifiers["ipx"], entries,
+        "download.iprox.org", ("http", "https"),
+    )
+
+
+def _reported_links(repository, accession, native_id, entries, host, schemes):
+    """Keep reported URLs and paths without inferring missing file metadata."""
+    prefix = f"/{native_id}/"
     files = []
     seen = set()
     for entry in entries:
         if not isinstance(entry, dict) or not isinstance(entry.get("value"), str):
-            raise ValueError("jPOST file link has no valid URI")
+            raise ValueError(f"{repository} file link has no valid URI")
         uri = entry["value"]
         parsed = urlsplit(uri)
         path = unquote(parsed.path, errors="strict")
         if (
-            parsed.scheme not in ("ftp", "ftps")
-            or parsed.hostname != "ftp.jpostdb.org"
+            parsed.scheme not in schemes
+            or parsed.hostname != host
             or parsed.username is not None or parsed.password is not None
             or parsed.query or parsed.fragment
             or not path.startswith(prefix)
         ):
-            raise ValueError(f"jPOST file link does not belong to {jpst}: {uri}")
+            raise ValueError(f"{repository} file link does not belong to {native_id}: {uri}")
         relative_path = path[len(prefix):]
         if any(part in ("", ".", "..") for part in relative_path.split("/")):
-            raise ValueError("jPOST file link has an invalid relative path")
+            raise ValueError(f"{repository} file link has an invalid relative path")
         if uri in seen:
-            raise ValueError(f"Repeated jPOST file link: {uri}")
+            raise ValueError(f"Repeated {repository} file link: {uri}")
         seen.add(uri)
         files.append({
             "accession": uri,
             "projectAccessions": [accession],
-            "repositoryAccessions": [jpst],
+            "repositoryAccessions": [native_id],
             "relativePath": relative_path,
             "fileName": relative_path.rsplit("/", 1)[-1],
             "fileCategory": {"value": entry.get("name", "")},
             "fileSizeBytes": None,
             "checksum": None,
-            "publicFileLocations": [{"name": "FTP", "value": uri}],
+            "publicFileLocations": [{
+                "name": "FTP" if repository == "jPOST" else parsed.scheme.upper(),
+                "value": uri,
+            }],
             "repositoryMetadata": entry,
         })
     return files, None
@@ -532,6 +645,10 @@ def _repository_files(repository, accession, project, file_pages):
         if file_pages:
             raise ValueError("jPOST file links must come from its project response")
         return _jpost_files(accession, project.data)
+    if repository == "iProX":
+        if file_pages:
+            raise ValueError("iProX file links must come from its project response")
+        return _iprox_files(accession, project.data)
     if repository != "MassIVE":
         raise ValueError(f"Unsupported repository: {repository}")
 
@@ -580,7 +697,7 @@ def write_repository_outputs(repository, accession, project, file_pages, output_
     Parameters
     ----------
     repository : str
-        Supported repository name: PRIDE, MassIVE or jPOST.
+        Supported repository name: PRIDE, MassIVE, jPOST or iProX.
     accession : str
         ProteomeXchange project accession.
     project : RepositoryResponse
@@ -643,6 +760,11 @@ def write_repository_outputs(repository, accession, project, file_pages, output_
         manifest["repository_accession"] = _jpost_identifiers(
             _select_jpost_project(project.data, accession)
         )["jpst"]
+        manifest["file_inventory_scope"] = "repository_reported_links"
+    elif repository == "iProX":
+        manifest["repository_accession"] = _iprox_identifiers(
+            _select_proxi_project(project.data, accession, repository)
+        )["ipx"]
         manifest["file_inventory_scope"] = "repository_reported_links"
     _write_json(output_dir / "manifest.json", manifest)
     return output_dir
