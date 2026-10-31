@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from claudio.dataset_catalog.discovery import merge_search_results
+from claudio.dataset_catalog.proteomecentral import merge_search_results
 from claudio.dataset_catalog.proteomecentral import CatalogPage
 
 

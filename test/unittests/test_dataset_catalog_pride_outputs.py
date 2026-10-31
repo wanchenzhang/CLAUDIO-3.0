@@ -6,7 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from claudio.dataset_catalog.pride import PrideResponse
-from claudio.dataset_catalog.pride_outputs import write_pride_outputs
+from claudio.dataset_catalog.pride import write_pride_outputs
 
 
 def make_snapshot(url, data, headers=None):
@@ -291,7 +291,7 @@ class TestDatasetCatalogPrideOutputs(unittest.TestCase):
         with TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir) / "run"
             with patch(
-                "claudio.dataset_catalog.pride_outputs.csv.DictWriter.writeheader",
+                "claudio.dataset_catalog.pride.csv.DictWriter.writeheader",
                 side_effect=OSError("No space left on device"),
             ):
                 with self.assertRaises(OSError):
