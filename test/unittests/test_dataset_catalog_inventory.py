@@ -83,7 +83,7 @@ class TestDatasetCatalogInventory(unittest.TestCase):
 
     @patch("claudio.dataset_catalog.repositories.requests.get")
     def test_retains_candidates_from_repositories_without_an_adapter(self, mock_get):
-        candidate = self._candidate(repository="jPOST")
+        candidate = self._candidate(repository="iProX")
 
         with TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir) / "PXD000001"
@@ -91,7 +91,7 @@ class TestDatasetCatalogInventory(unittest.TestCase):
 
             self.assertIsNotNone(result)
             self.assertEqual(result["inspection_status"], "adapter_pending")
-            self.assertEqual(result["repository"], "jPOST")
+            self.assertEqual(result["repository"], "iProX")
             self.assertEqual(result["review_status"], "pending")
             self.assertIsNone(result["file_count"])
             self.assertFalse(output_dir.exists())
@@ -198,7 +198,7 @@ class TestDatasetCatalogInventory(unittest.TestCase):
         base_url = "https://www.ebi.ac.uk/pride/ws/archive/v3/projects"
         candidates = [
             self._candidate(),
-            dict(self._candidate("jPOST"), accession="PXD000002"),
+            dict(self._candidate("iProX"), accession="PXD000002"),
             dict(self._candidate(), accession="PXD000003"),
         ]
 
@@ -505,7 +505,7 @@ class TestDatasetCatalogInventory(unittest.TestCase):
     def test_resume_keeps_recorded_failures_and_unsupported_candidates(self, mock_get):
         candidates = [
             self._candidate(),
-            dict(self._candidate("jPOST"), accession="PXD000002"),
+            dict(self._candidate("iProX"), accession="PXD000002"),
             dict(self._candidate(), accession="PXD000003"),
         ]
         mock_get.side_effect = [requests.exceptions.Timeout("timed out"), KeyboardInterrupt()]

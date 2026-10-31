@@ -14,8 +14,10 @@ from . import _write_json
 from .repositories import (
     FILE_COLUMNS, RepositoryResponse, _file_row, _repository_files,
     _massive_identifiers, _parse_massive_file_page,
+    _jpost_identifiers, _jpost_files, _select_jpost_project,
     fetch_pride_project, fetch_pride_file_pages,
     fetch_massive_project, fetch_massive_file_pages, write_repository_outputs,
+    fetch_jpost_project,
 )
 
 
@@ -47,7 +49,7 @@ def inspect_candidate(candidate, output_dir):
     })
 
     repository = candidate.get("repository")
-    if repository not in ("PRIDE", "MassIVE"):
+    if repository not in ("PRIDE", "MassIVE", "jPOST"):
         result["finished_at_utc"] = datetime.now(timezone.utc).isoformat()
         return result
 
@@ -60,15 +62,20 @@ def inspect_candidate(candidate, output_dir):
         stage = "project_metadata"
         if repository == "PRIDE":
             project = fetch_pride_project(accession)
-        else:
+        elif repository == "MassIVE":
             project = fetch_massive_project(accession)
+        else:
+            project = fetch_jpost_project(accession)
 
         stage = "file_list"
         if repository == "PRIDE":
             pages = fetch_pride_file_pages(accession)
-        else:
+        elif repository == "MassIVE":
             msv = _massive_identifiers(project.data)["msv"]
             pages = fetch_massive_file_pages(msv)
+        else:
+            _jpost_files(accession, project.data)
+            pages = []
 
         stage = "output"
         destination = write_repository_outputs(
@@ -243,18 +250,25 @@ def _check_inventory(output_dir, result):
             data=data,
         ))
 
-    files, total = _repository_files(repository, accession, responses[0], responses[1:])
+    files, reported_total = _repository_files(repository, accession, responses[0], responses[1:])
     project = responses[0].data
     if repository == "MassIVE" and (
         manifest.get("repository_accession") != _massive_identifiers(project)["msv"]
     ):
         raise ValueError(f"Saved native project identity mismatch for {accession}")
+    if repository == "jPOST" and (
+        manifest.get("repository_accession") != _jpost_identifiers(
+            _select_jpost_project(project, accession)
+        )["jpst"]
+        or manifest.get("file_inventory_scope") != "repository_reported_links"
+    ):
+        raise ValueError(f"Saved native project identity mismatch for {accession}")
     if (
         json.loads((root / "project.json").read_bytes()) != project
         or json.loads((root / "files.json").read_bytes()) != files
-        or manifest["file_count"] != total
-        or manifest["reported_file_count"] != total
-        or result["file_count"] != total
+        or manifest["file_count"] != len(files)
+        or manifest["reported_file_count"] != reported_total
+        or result["file_count"] != len(files)
     ):
         raise ValueError(f"Saved project files differ from their sources: {accession}")
 

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Mapping, Union
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit, unquote
 
 import requests
 
@@ -19,6 +19,7 @@ PRIDE_API_URL = "https://www.ebi.ac.uk/pride/ws/archive/v3"
 MASSIVE_API_URL = "https://massive.ucsd.edu/ProteoSAFe/proxi/v0.1"
 MASSIVE_FILES_URL = "https://massive.ucsd.edu/ProteoSAFe/dataset_files.jsp"
 MASSIVE_DOWNLOAD_URL = "https://massive.ucsd.edu/ProteoSAFe/DownloadResultFile"
+JPOST_API_URL = "https://repository.jpostdb.org/proxi/datasets"
 
 
 @dataclass(frozen=True)
@@ -34,17 +35,17 @@ class RepositoryResponse:
 PrideResponse = RepositoryResponse
 
 
-def _massive_identifiers(data):
+def _proxi_identifiers(data, repository, native_name, native_cv, native_pattern):
     if not isinstance(data, dict):
-        raise ValueError("MassIVE project response must be a JSON object")
+        raise ValueError(f"{repository} project response must be a JSON object")
     entries = data.get("accession")
     if not isinstance(entries, list):
-        raise ValueError("MassIVE project has no identifier list")
+        raise ValueError(f"{repository} project has no identifier list")
 
     identifiers = {}
     for name, cv_id, pattern in (
         ("pxd", "MS:1001919", r"PXD\d{6,}"),
-        ("msv", "MS:1002487", r"MSV\d{9}"),
+        (native_name, native_cv, native_pattern),
     ):
         values = [
             entry.get("value") for entry in entries
@@ -54,11 +55,134 @@ def _massive_identifiers(data):
             not isinstance(value, str) or not re.fullmatch(pattern, value)
             for value in values
         ):
-            raise ValueError(f"MassIVE project has no valid {name.upper()} identifier")
+            raise ValueError(f"{repository} project has no valid {name.upper()} identifier")
         if len(set(values)) != 1:
-            raise ValueError(f"MassIVE project has conflicting {name.upper()} identifiers")
+            raise ValueError(f"{repository} project has conflicting {name.upper()} identifiers")
         identifiers[name] = values[0]
     return identifiers
+
+
+def _massive_identifiers(data):
+    return _proxi_identifiers(data, "MassIVE", "msv", "MS:1002487", r"MSV\d{9}")
+
+
+def _jpost_identifiers(data):
+    return _proxi_identifiers(data, "jPOST", "jpst", "MS:1002632", r"JPST\d{6,}")
+
+
+def _select_jpost_project(data, accession):
+    """Find one matching project while keeping the original response intact."""
+    if isinstance(data, dict):
+        projects = [data]
+    elif isinstance(data, list):
+        projects = data
+    else:
+        raise ValueError("jPOST response must be a project object or an array")
+    matches = []
+    for project in projects:
+        if not isinstance(project, dict):
+            raise ValueError("jPOST response contains an invalid project object")
+        identifiers = project.get("accession")
+        if not isinstance(identifiers, list):
+            raise ValueError("jPOST project has no identifier list")
+        if any(
+            isinstance(entry, dict)
+            and entry.get("accession") == "MS:1001919"
+            and entry.get("value") == accession
+            for entry in identifiers
+        ):
+            matches.append(project)
+    if len(matches) != 1:
+        raise ValueError(
+            f"jPOST response must contain one unique project matching {accession}; "
+            f"found {len(matches)}"
+        )
+    return matches[0]
+
+
+def fetch_jpost_project(accession: str) -> RepositoryResponse:
+    """Fetch jPOST metadata and its reported file links by PXD.
+
+    Parameters
+    ----------
+    accession : str
+        ProteomeXchange accession from the candidate catalog.
+
+    Returns
+    -------
+    project : RepositoryResponse
+        Original metadata with verified PXD and JPST identifiers.
+    """
+    if not isinstance(accession, str) or not re.fullmatch(r"PXD\d{6,}", accession):
+        raise ValueError("A valid PXD accession is required")
+    response = requests.get(
+        JPOST_API_URL, params={"accession": accession, "resultType": "full"},
+        headers={"Accept": "application/json"}, timeout=(15, 120),
+    )
+    response.raise_for_status()
+    retrieved_at = datetime.now(timezone.utc).isoformat()
+    data = json.loads(response.content)
+    identifiers = _jpost_identifiers(_select_jpost_project(data, accession))
+    if identifiers["pxd"] != accession:
+        raise ValueError(
+            f"jPOST project accession mismatch: requested {accession}, "
+            f"received {identifiers['pxd']}"
+        )
+    return RepositoryResponse(
+        request_url=response.url,
+        retrieved_at_utc=retrieved_at,
+        raw_body=response.content,
+        headers=response.headers.copy(),
+        data=data,
+    )
+
+
+def _jpost_files(accession, data):
+    """Normalize reported file links without inventing sizes or a total."""
+    data = _select_jpost_project(data, accession)
+    identifiers = _jpost_identifiers(data)
+    if identifiers["pxd"] != accession:
+        raise ValueError("jPOST project accession mismatch")
+    entries = data.get("datasetFiles")
+    if not isinstance(entries, list):
+        raise ValueError("jPOST response has no datasetFiles array")
+    jpst = identifiers["jpst"]
+    prefix = f"/{jpst}/"
+    files = []
+    seen = set()
+    for entry in entries:
+        if not isinstance(entry, dict) or not isinstance(entry.get("value"), str):
+            raise ValueError("jPOST file link has no valid URI")
+        uri = entry["value"]
+        parsed = urlsplit(uri)
+        path = unquote(parsed.path, errors="strict")
+        if (
+            parsed.scheme not in ("ftp", "ftps")
+            or parsed.hostname != "ftp.jpostdb.org"
+            or parsed.username is not None or parsed.password is not None
+            or parsed.query or parsed.fragment
+            or not path.startswith(prefix)
+        ):
+            raise ValueError(f"jPOST file link does not belong to {jpst}: {uri}")
+        relative_path = path[len(prefix):]
+        if any(part in ("", ".", "..") for part in relative_path.split("/")):
+            raise ValueError("jPOST file link has an invalid relative path")
+        if uri in seen:
+            raise ValueError(f"Repeated jPOST file link: {uri}")
+        seen.add(uri)
+        files.append({
+            "accession": uri,
+            "projectAccessions": [accession],
+            "repositoryAccessions": [jpst],
+            "relativePath": relative_path,
+            "fileName": relative_path.rsplit("/", 1)[-1],
+            "fileCategory": {"value": entry.get("name", "")},
+            "fileSizeBytes": None,
+            "checksum": None,
+            "publicFileLocations": [{"name": "FTP", "value": uri}],
+            "repositoryMetadata": entry,
+        })
+    return files, None
 
 
 def fetch_massive_project(accession: str) -> RepositoryResponse:
@@ -404,6 +528,10 @@ def _repository_files(repository, accession, project, file_pages):
         if not isinstance(project.data, dict) or project.data.get("accession") != accession:
             raise ValueError("PRIDE project accession mismatch")
         return _validated_files(accession, file_pages)
+    if repository == "jPOST":
+        if file_pages:
+            raise ValueError("jPOST file links must come from its project response")
+        return _jpost_files(accession, project.data)
     if repository != "MassIVE":
         raise ValueError(f"Unsupported repository: {repository}")
 
@@ -452,7 +580,7 @@ def write_repository_outputs(repository, accession, project, file_pages, output_
     Parameters
     ----------
     repository : str
-        Supported repository name: PRIDE or MassIVE.
+        Supported repository name: PRIDE, MassIVE or jPOST.
     accession : str
         ProteomeXchange project accession.
     project : RepositoryResponse
@@ -511,5 +639,10 @@ def write_repository_outputs(repository, accession, project, file_pages, output_
     }
     if repository == "MassIVE":
         manifest["repository_accession"] = _massive_identifiers(project.data)["msv"]
+    elif repository == "jPOST":
+        manifest["repository_accession"] = _jpost_identifiers(
+            _select_jpost_project(project.data, accession)
+        )["jpst"]
+        manifest["file_inventory_scope"] = "repository_reported_links"
     _write_json(output_dir / "manifest.json", manifest)
     return output_dir
