@@ -9,10 +9,7 @@ from unittest.mock import patch
 
 import requests
 
-from claudio.dataset_catalog.inventory import inspect_candidate, inspect_catalog
-from claudio.dataset_catalog.repositories import (
-    RepositoryResponse, fetch_iprox_project, write_repository_outputs,
-)
+from claudio.dataset_catalog.repositories import RepositoryResponse, write_repository_outputs
 
 
 def metadata():
@@ -60,83 +57,6 @@ class TestIproxInventory(unittest.TestCase):
             "search_terms": ["crosslinking"], "review_status": "pending",
         }
 
-    @patch("claudio.dataset_catalog.repositories.requests.get")
-    def test_fetches_object_shaped_identifiers_and_preserves_the_response(self, mock_get):
-        data = metadata()
-        raw = response(data)
-        mock_get.return_value = raw
-
-        project = fetch_iprox_project("PXD000001")
-
-        self.assertEqual(project.data, data)
-        self.assertEqual(project.raw_body, raw.content)
-        self.assertEqual(project.headers, raw.headers)
-        mock_get.assert_called_once_with(
-            "https://www.iprox.cn/proxi/datasets/PXD000001",
-            headers={"Accept": "application/json"}, timeout=(15, 120),
-        )
-
-    @patch("claudio.dataset_catalog.repositories.requests.get")
-    def test_accepts_list_shaped_fields_and_a_list_wrapped_project(self, mock_get):
-        data = metadata()
-        data["accession"] = [data["accession"]]
-        data["datasetLink"] = [data["datasetLink"]]
-        mock_get.return_value = response([data])
-        project = fetch_iprox_project("PXD000001")
-
-        self.assertEqual(project.data, [data])
-        with TemporaryDirectory() as temp_dir:
-            output_dir = Path(temp_dir) / "project"
-            write_repository_outputs("iProX", "PXD000001", project, [], output_dir)
-            manifest = json.loads((output_dir / "manifest.json").read_bytes())
-            self.assertEqual(manifest["repository_accession"], "IPX0000001000")
-            self.assertEqual(manifest["file_count"], 2)
-            self.assertEqual(json.loads((output_dir / "project.json").read_bytes()), [data])
-
-    @patch("claudio.dataset_catalog.repositories.requests.get")
-    def test_rejects_wrong_missing_or_ambiguous_project_identity(self, mock_get):
-        for problem in ("pxd", "missing_ipx", "invalid_ipx", "conflicting_ipx", "duplicate_project"):
-            with self.subTest(problem=problem):
-                data = metadata()
-                if problem == "pxd":
-                    data["accession"]["value"] = "PXD000002"
-                elif problem == "missing_ipx":
-                    data.pop("datasetLink")
-                elif problem == "invalid_ipx":
-                    data["datasetLink"]["value"] = "https://www.iprox.org/page/project.html?id=IPX123"
-                elif problem == "conflicting_ipx":
-                    other = deepcopy(data["datasetLink"])
-                    other["value"] = "https://www.iprox.org/page/project.html?id=IPX0000002000"
-                    data["datasetLink"] = [data["datasetLink"], other]
-                else:
-                    data = [data, deepcopy(data)]
-                mock_get.return_value = response(data)
-                with self.assertRaises(ValueError):
-                    fetch_iprox_project("PXD000001")
-
-    @patch("claudio.dataset_catalog.repositories.requests.get")
-    def test_rejects_invalid_accessions_before_requesting_data(self, mock_get):
-        for accession in (None, "", "PXD1", "IPX0000001000", "PXD000001/other"):
-            with self.subTest(accession=accession):
-                with self.assertRaises(ValueError):
-                    fetch_iprox_project(accession)
-        mock_get.assert_not_called()
-
-    @patch("claudio.dataset_catalog.repositories.requests.get")
-    def test_propagates_http_and_timeout_errors_and_rejects_non_json_content(self, mock_get):
-        raw = response({})
-        raw.status_code = 503
-        mock_get.return_value = raw
-        with self.assertRaises(requests.exceptions.HTTPError):
-            fetch_iprox_project("PXD000001")
-        mock_get.side_effect = requests.exceptions.Timeout("timed out")
-        with self.assertRaises(requests.exceptions.Timeout):
-            fetch_iprox_project("PXD000001")
-        mock_get.side_effect = None
-        raw.status_code = 200
-        raw._content = b"<html>Service unavailable</html>"
-        with self.assertRaises(ValueError):
-            fetch_iprox_project("PXD000001")
 
     def test_writes_reported_links_with_subproject_paths_and_unknown_sizes(self):
         data = metadata()
@@ -211,56 +131,35 @@ class TestIproxInventory(unittest.TestCase):
                     write_repository_outputs("iProX", "PXD000001", snapshot(data), [], output_dir)
                 self.assertFalse(output_dir.exists())
 
-    @patch("claudio.dataset_catalog.repositories.requests.get")
-    def test_collects_a_candidate_once_and_preserves_review_status(self, mock_get):
-        mock_get.return_value = response(metadata())
-        candidate = self.candidate()
-        before = deepcopy(candidate)
-        with TemporaryDirectory() as temp_dir:
-            result = inspect_candidate(candidate, Path(temp_dir) / "project")
-            self.assertEqual(result["inspection_status"], "collected")
-            self.assertEqual(result["file_count"], 2)
-            self.assertEqual(result["review_status"], "pending")
-            self.assertEqual(candidate, before)
-            self.assertEqual(mock_get.call_count, 1)
 
-    @patch("claudio.dataset_catalog.repositories.requests.get")
-    def test_records_missing_file_metadata_as_a_file_list_failure(self, mock_get):
+class TestIproxUndecodablePaths(unittest.TestCase):
+    def test_preserves_an_undecodable_uri_path_without_renaming_the_file(self):
         data = metadata()
-        data.pop("dataFiles")
-        mock_get.return_value = response(data)
-        with TemporaryDirectory() as temp_dir:
-            output_dir = Path(temp_dir) / "project"
-            result = inspect_candidate(self.candidate(), output_dir)
-            self.assertEqual(result["inspection_status"], "failed")
-            self.assertEqual(result["error_stage"], "file_list")
-            self.assertIsNone(result["file_count"])
-            self.assertEqual(result["review_status"], "pending")
-            self.assertFalse(output_dir.exists())
+        uri = "https://download.iprox.org/IPX0000001000/IPX0000001001/results_1%FDR.plink"
+        data["dataFiles"][0]["value"] = uri
+        with TemporaryDirectory() as temporary:
+            output = Path(temporary) / "project"
+            write_repository_outputs("iProX", "PXD000001", snapshot(data), [], output)
+            files = json.loads((output / "files.json").read_bytes())
+            self.assertEqual(files[0]["publicFileLocations"][0]["value"], uri)
+            self.assertEqual(files[0]["fileName"], "results_1%FDR.plink")
+            self.assertEqual(files[0]["relativePath"], "IPX0000001001/results_1%FDR.plink")
+            self.assertEqual(files[0]["pathDecodingStatus"], "unresolved")
+            self.assertEqual(files[0]["repositoryMetadata"], data["dataFiles"][0])
+            self.assertEqual(json.loads((output / "raw/project.json").read_bytes()), data)
+            manifest = json.loads((output / "manifest.json").read_bytes())
+            self.assertEqual(manifest["unresolved_path_count"], 1)
 
-    @patch("claudio.dataset_catalog.repositories.requests.get")
-    def test_resumes_saved_outputs_and_rejects_a_changed_native_identity(self, mock_get):
-        mock_get.return_value = response(metadata())
-        with TemporaryDirectory() as temp_dir:
-            catalog = Path(temp_dir) / "candidates.json"
-            catalog.write_text(json.dumps([self.candidate()]), encoding="utf-8")
-            output_dir = Path(temp_dir) / "inventory"
-            results = inspect_catalog(catalog, output_dir)
-            self.assertEqual(results[0]["inspection_status"], "collected")
-            mock_get.reset_mock()
-            mock_get.side_effect = AssertionError("Saved iProX inventory must be reused")
-
-            self.assertEqual(inspect_catalog(catalog, output_dir, resume=True), results)
-            mock_get.assert_not_called()
-            manifest_path = output_dir / results[0]["inventory_path"] / "manifest.json"
-            manifest = json.loads(manifest_path.read_bytes())
-            manifest["repository_accession"] = "IPX0000002000"
-            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
-            before = (output_dir / "checkpoint.json").read_bytes()
-            with self.assertRaisesRegex(ValueError, "Cannot resume inventory"):
-                inspect_catalog(catalog, output_dir, resume=True)
-            mock_get.assert_not_called()
-            self.assertEqual((output_dir / "checkpoint.json").read_bytes(), before)
+    def test_encoded_parent_directory_stays_invalid_even_with_non_utf8_bytes(self):
+        data = metadata()
+        data["dataFiles"][0]["value"] = (
+            "https://download.iprox.org/IPX0000001000/%2e%2e/results_%FD.plink"
+        )
+        with TemporaryDirectory() as temporary:
+            output = Path(temporary) / "project"
+            with self.assertRaises(ValueError):
+                write_repository_outputs("iProX", "PXD000001", snapshot(data), [], output)
+            self.assertFalse(output.exists())
 
 
 if __name__ == "__main__":

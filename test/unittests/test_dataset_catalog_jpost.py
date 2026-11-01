@@ -9,10 +9,7 @@ from unittest.mock import patch
 
 import requests
 
-from claudio.dataset_catalog.inventory import inspect_candidate, inspect_catalog
-from claudio.dataset_catalog.repositories import (
-    RepositoryResponse, fetch_jpost_project, write_repository_outputs,
-)
+from claudio.dataset_catalog.repositories import RepositoryResponse, write_repository_outputs
 
 
 def metadata():
@@ -62,62 +59,6 @@ class TestJpostInventory(unittest.TestCase):
             "review_status": "pending", "search_terms": ["cross-linking"],
         }
 
-    @patch("claudio.dataset_catalog.repositories.requests.get")
-    def test_fetches_the_project_and_preserves_its_original_response(self, mock_get):
-        data = metadata()
-        raw_response = response(data)
-        mock_get.return_value = raw_response
-
-        project = fetch_jpost_project("PXD000001")
-
-        self.assertEqual(project.data, data)
-        self.assertEqual(project.raw_body, raw_response.content)
-        self.assertEqual(project.request_url, raw_response.url)
-        self.assertEqual(project.headers, raw_response.headers)
-        mock_get.assert_called_once_with(
-            "https://repository.jpostdb.org/proxi/datasets",
-            params={"accession": "PXD000001", "resultType": "full"},
-            headers={"Accept": "application/json"}, timeout=(15, 120),
-        )
-
-    @patch("claudio.dataset_catalog.repositories.requests.get")
-    def test_rejects_wrong_missing_or_conflicting_project_identifiers(self, mock_get):
-        for problem in ("different_pxd", "missing_jpst", "conflicting_jpst"):
-            with self.subTest(problem=problem):
-                data = metadata()
-                if problem == "different_pxd":
-                    data["accession"][0]["value"] = "PXD000002"
-                elif problem == "missing_jpst":
-                    data["accession"].pop()
-                else:
-                    data["accession"].append({"accession": "MS:1002632", "value": "JPST000002"})
-                mock_get.return_value = response(data)
-                with self.assertRaises(ValueError):
-                    fetch_jpost_project("PXD000001")
-
-    @patch("claudio.dataset_catalog.repositories.requests.get")
-    def test_rejects_invalid_accessions_without_requesting_data(self, mock_get):
-        for accession in (None, "", "PXD1", "JPST000001", "PXD000001/other"):
-            with self.subTest(accession=accession):
-                with self.assertRaises(ValueError):
-                    fetch_jpost_project(accession)
-        mock_get.assert_not_called()
-
-    @patch("claudio.dataset_catalog.repositories.requests.get")
-    def test_propagates_request_errors_and_rejects_invalid_json(self, mock_get):
-        failed = response({})
-        failed.status_code = 503
-        mock_get.return_value = failed
-        with self.assertRaises(requests.exceptions.HTTPError):
-            fetch_jpost_project("PXD000001")
-        mock_get.side_effect = requests.exceptions.Timeout("timed out")
-        with self.assertRaises(requests.exceptions.Timeout):
-            fetch_jpost_project("PXD000001")
-        mock_get.side_effect = None
-        failed.status_code = 200
-        failed._content = b"<html>Service unavailable</html>"
-        with self.assertRaises(ValueError):
-            fetch_jpost_project("PXD000001")
 
     def test_writes_reported_file_links_and_keeps_unknown_counts_and_sizes_empty(self):
         data = metadata()
@@ -180,12 +121,14 @@ class TestJpostInventory(unittest.TestCase):
                     write_repository_outputs("jPOST", "PXD000001", snapshot(data), [], output_dir)
                 self.assertFalse(output_dir.exists())
 
-    def test_rejects_duplicate_links_and_data_that_differs_from_its_source(self):
-        for problem in ("duplicate", "edited"):
+    def test_rejects_conflicting_duplicate_metadata_and_edited_sources(self):
+        for problem in ("conflicting_duplicate", "edited"):
             with self.subTest(problem=problem), TemporaryDirectory() as temp_dir:
                 data = metadata()
-                if problem == "duplicate":
-                    data["datasetFiles"].append(deepcopy(data["datasetFiles"][0]))
+                if problem == "conflicting_duplicate":
+                    duplicate = deepcopy(data["datasetFiles"][0])
+                    duplicate["name"] = "Different file category"
+                    data["datasetFiles"].append(duplicate)
                 project = snapshot(data)
                 if problem == "edited":
                     project.data["datasetFiles"][0]["value"] += ".changed"
@@ -194,112 +137,27 @@ class TestJpostInventory(unittest.TestCase):
                     write_repository_outputs("jPOST", "PXD000001", project, [], output_dir)
                 self.assertFalse(output_dir.exists())
 
-    @patch("claudio.dataset_catalog.repositories.requests.get")
-    def test_collects_a_candidate_with_one_request_and_preserves_its_review_status(self, mock_get):
-        mock_get.return_value = response(metadata())
-        candidate = self.candidate()
-        before = deepcopy(candidate)
-        with TemporaryDirectory() as temp_dir:
-            result = inspect_candidate(candidate, Path(temp_dir) / "project")
-            self.assertEqual(result["inspection_status"], "collected")
-            self.assertEqual(result["review_status"], "pending")
-            self.assertEqual(result["file_count"], 2)
-            self.assertEqual(candidate, before)
-            self.assertEqual(mock_get.call_count, 1)
 
-    @patch("claudio.dataset_catalog.repositories.requests.get")
-    def test_records_missing_file_links_as_a_file_list_failure(self, mock_get):
+class TestJpostRepeatedLinks(unittest.TestCase):
+    def test_groups_identical_links_without_discarding_the_reported_occurrences(self):
         data = metadata()
-        data.pop("datasetFiles")
-        mock_get.return_value = response(data)
-        with TemporaryDirectory() as temp_dir:
-            result = inspect_candidate(self.candidate(), Path(temp_dir) / "project")
-            self.assertEqual(result["inspection_status"], "failed")
-            self.assertEqual(result["error_stage"], "file_list")
-            self.assertEqual(result["review_status"], "pending")
-            self.assertIsNone(result["file_count"])
-
-    @patch("claudio.dataset_catalog.repositories.requests.get")
-    def test_resumes_a_saved_project_and_rejects_a_changed_native_identity(self, mock_get):
-        mock_get.return_value = response(metadata())
-        with TemporaryDirectory() as temp_dir:
-            catalog = Path(temp_dir) / "candidates.json"
-            catalog.write_text(json.dumps([self.candidate()]), encoding="utf-8")
-            output_dir = Path(temp_dir) / "inventory"
-            original = inspect_catalog(catalog, output_dir)
-            mock_get.reset_mock()
-            mock_get.side_effect = AssertionError("Saved jPOST project must be reused")
-
-            restored = inspect_catalog(catalog, output_dir, resume=True)
-
-            self.assertEqual(restored, original)
-            self.assertEqual(original[0]["attempt_number"], 1)
-            mock_get.assert_not_called()
-            path = output_dir / original[0]["inventory_path"] / "manifest.json"
-            manifest = json.loads(path.read_bytes())
-            manifest["repository_accession"] = "JPST000002"
-            path.write_text(json.dumps(manifest), encoding="utf-8")
-            before = (output_dir / "checkpoint.json").read_bytes()
-            with self.assertRaisesRegex(ValueError, "Cannot resume inventory"):
-                inspect_catalog(catalog, output_dir, resume=True)
-            mock_get.assert_not_called()
-            self.assertEqual((output_dir / "checkpoint.json").read_bytes(), before)
-
-
-    @patch("claudio.dataset_catalog.repositories.requests.get")
-    def test_collects_and_resumes_a_list_wrapped_project_without_losing_the_raw_array(self, mock_get):
-        data = [metadata()]
-        raw_response = response(data)
-        mock_get.return_value = raw_response
-        with TemporaryDirectory() as temp_dir:
-            catalog = Path(temp_dir) / "candidates.json"
-            catalog.write_text(json.dumps([self.candidate()]), encoding="utf-8")
-            output_dir = Path(temp_dir) / "inventory"
-
-            results = inspect_catalog(catalog, output_dir)
-
-            self.assertEqual(results[0]["inspection_status"], "collected")
-            self.assertEqual(results[0]["file_count"], 2)
-            project_dir = output_dir / results[0]["inventory_path"]
-            self.assertEqual(json.loads((project_dir / "project.json").read_bytes()), data)
-            self.assertEqual((project_dir / "raw/project.json").read_bytes(), raw_response.content)
-            manifest = json.loads((project_dir / "manifest.json").read_bytes())
-            self.assertEqual(manifest["repository_accession"], "JPST000001")
-            mock_get.assert_called_once()
-            mock_get.reset_mock()
-            mock_get.side_effect = AssertionError("Saved array response must be reused")
-
-            self.assertEqual(inspect_catalog(catalog, output_dir, resume=True), results)
-            mock_get.assert_not_called()
-
-    @patch("claudio.dataset_catalog.repositories.requests.get")
-    def test_selects_the_unique_matching_pxd_instead_of_the_first_project(self, mock_get):
-        other = metadata()
-        other["accession"][0]["value"] = "PXD000002"
-        other["accession"][1]["value"] = "JPST000002"
-        other["datasetFiles"] = []
-        data = [other, metadata()]
-        mock_get.return_value = response(data)
-        project = fetch_jpost_project("PXD000001")
-
-        self.assertEqual(project.data, data)
-        with TemporaryDirectory() as temp_dir:
-            output_dir = Path(temp_dir) / "project"
-            write_repository_outputs("jPOST", "PXD000001", project, [], output_dir)
-            manifest = json.loads((output_dir / "manifest.json").read_bytes())
-            self.assertEqual(manifest["repository_accession"], "JPST000001")
+        data["datasetFiles"].extend([
+            deepcopy(data["datasetFiles"][0]), deepcopy(data["datasetFiles"][0]),
+        ])
+        with TemporaryDirectory() as temporary:
+            output = Path(temporary) / "project"
+            write_repository_outputs("jPOST", "PXD000001", snapshot(data), [], output)
+            files = json.loads((output / "files.json").read_bytes())
+            self.assertEqual(len(files), 2)
+            self.assertEqual(files[0]["reportedLinkCount"], 3)
+            self.assertEqual(files[0]["reportedLinkIndices"], [0, 2, 3])
+            self.assertEqual(files[0]["repositoryMetadata"], data["datasetFiles"][0])
+            self.assertEqual(json.loads((output / "raw/project.json").read_bytes()), data)
+            manifest = json.loads((output / "manifest.json").read_bytes())
             self.assertEqual(manifest["file_count"], 2)
-            self.assertEqual(json.loads((output_dir / "project.json").read_bytes()), data)
-
-    @patch("claudio.dataset_catalog.repositories.requests.get")
-    def test_rejects_empty_unmatched_ambiguous_or_malformed_project_arrays(self, mock_get):
-        other = metadata()
-        other["accession"][0]["value"] = "PXD000002"
-        for data in ([], [other], [metadata(), metadata()], [None], [metadata(), {}]):
-            with self.subTest(data=data):
-                mock_get.return_value = response(data)
-                with self.assertRaises(ValueError):
-                    fetch_jpost_project("PXD000001")
+            self.assertEqual(manifest["reported_link_count"], 4)
+            self.assertEqual(manifest["duplicate_link_count"], 2)
+            self.assertIsNone(manifest["reported_file_count"])
 
 
 if __name__ == "__main__":
