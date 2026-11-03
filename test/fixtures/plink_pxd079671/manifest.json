@@ -1,0 +1,14 @@
+{
+  "dataset_accession": "PXD079671",
+  "native_accession": "MSV000102144",
+  "files": {
+    "spectra.csv": {
+      "reported_file_name": "BH2531_2024.10.15.filtered_cross-linked_spectra.csv",
+      "sha256": "b1071d89c11fce9f0f79b031314805b4424a5e4652939b0fbe96a789cc272fcb"
+    },
+    "search.fasta": {
+      "reported_file_name": "bh2531.fasta",
+      "sha256": "a32e748ba4890b1d60f6030c4f904f94fd0b1e40ecae74d16f12c5b9c4c6b7d6"
+    }
+  }
+}

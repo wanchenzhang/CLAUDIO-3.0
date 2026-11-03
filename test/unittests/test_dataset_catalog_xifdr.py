@@ -18,6 +18,7 @@ from claudio.dataset_catalog.xifdr import (
     project_xifdr_candidates, write_projection_outputs, write_claudio_input,
 )
 from claudio.dataset_catalog.cli import main as catalog_main
+from claudio.dataset_catalog import xifdr
 
 
 COLUMNS = [
@@ -1140,3 +1141,183 @@ class TestDatasetStandardizeCLI(unittest.TestCase):
         audit = json.loads((self.output / "psm_audit.json").read_text())
         self.assertEqual(len(audit), 2)
         self.assertIn("outside_selected_source_proteins", audit[0]["input_reasons"])
+
+class TestPlinkPSM(unittest.TestCase):
+    def setUp(self):
+        self.temp = TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        fixture = Path(__file__).resolve().parents[1] / "fixtures" / "plink_pxd079671"
+        manifest = json.loads((fixture / "manifest.json").read_text())
+        for name, source in manifest["files"].items():
+            raw = (fixture / name).read_bytes()
+            self.assertEqual(hashlib.sha256(raw).hexdigest(), source["sha256"])
+            (self.root / name).write_bytes(raw)
+        self.psms = self.root / "spectra.csv"
+        self.fasta = self.root / "search.fasta"
+        with self.psms.open(encoding="utf-8-sig", newline="") as handle:
+            reader = csv.DictReader(handle)
+            self.columns = reader.fieldnames
+            self.original_rows = list(reader)
+
+    def read(self, path=None, **options):
+        return xifdr.read_plink_psms(
+            self.psms if path is None else path, self.fasta,
+            dataset_accession="PXD079671", **options,
+        )
+
+    def toy_row(self, **changes):
+        row = dict(self.original_rows[0])
+        row.update(Peptide="ACK(3)-KPEP(3)", Proteins="customA(4)-customB(5)/",
+                   Modifications="null", ReportedPSMFDR="0.005")
+        row.update(changes)
+        return row
+
+    def write_rows(self, rows, columns=None):
+        columns = self.columns + ["ReportedPSMFDR"] if columns is None else columns
+        with self.psms.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=columns, extrasaction="ignore")
+            writer.writeheader()
+            writer.writerows(rows)
+
+    def test_real_psms_keep_their_titles_and_missing_confidence_information(self):
+        with patch.object(pyxlms_parser, "parse_sites_from_plink", wraps=pyxlms_parser.parse_sites_from_plink) as parse_sites:
+            bundle = self.read()
+
+        self.assertEqual(parse_sites.call_count, 3)
+        self.assertEqual(bundle["format"], "plink_psm")
+        self.assertEqual(bundle["parser"]["name"], "pyXLMS")
+        self.assertEqual(bundle["parser"]["version"], version("pyXLMS"))
+        self.assertFalse(bundle["parser"]["modification_masses_assessed"])
+        self.assertEqual(bundle["provenance"]["psm_sha256"], hashlib.sha256(self.psms.read_bytes()).hexdigest())
+        self.assertEqual(bundle["source_columns"], self.columns)
+        records = bundle["records"]
+        self.assertEqual(len(records), 3)
+        self.assertEqual([r["source_fields"] for r in records], self.original_rows)
+        self.assertEqual([r["source_record_number"] for r in records], [1, 2, 3])
+        for record in records:
+            self.assertIsNone(record.get("source_scan"))
+            self.assertEqual(record["decoy_status"], "unknown")
+            self.assertTrue(all(value["status"] == "missing" and value["value"] is None
+                                for value in record["fdr"].values()))
+        prepared = prepare_af_input(bundle, {}, fdr_level="psm", fdr_cutoff=0.01)
+        self.assertEqual(prepared["rows"], [])
+        self.assertEqual(len(prepared["audit"]), 3)
+        self.assertTrue(all("selected_fdr_missing" in row["input_reasons"] for row in prepared["audit"]))
+
+    def test_peptide_and_position_matches_do_not_silently_rename_a_protein(self):
+        record = self.read()["records"][0]
+        first, second = record["endpoints"]["a"], record["endpoints"]["b"]
+
+        self.assertEqual(first["source_protein_id"], "sp|P02787|TRFE_HUMAN")
+        self.assertEqual((first["peptide"], first["link_position"], first["protein_position"]),
+                         ("KDSGFQMNQLRGK", 1, 122))
+        self.assertEqual(second["source_protein_id"], "BH2531|CThomas|Karst|")
+        self.assertEqual((second["peptide"], second["peptide_start"], second["protein_position"]),
+                         ("DEVSVQGHQK", 354, 354))
+        self.assertIsNone(second["source_fasta_id"])
+        self.assertEqual(second["status"], "not_evaluable")
+        self.assertEqual(second["reason"], "protein_not_in_search_fasta")
+        self.assertEqual(record["record_status"], "not_evaluable")
+
+    def test_reported_modifications_are_retained_without_claiming_they_were_parsed(self):
+        record = self.read()["records"][1]
+
+        self.assertEqual(record["source_fields"]["Modifications"],
+                         "Oxidation[M](5);Carbamidomethyl[C](15);Carbamidomethyl[C](16)")
+        self.assertEqual(record["modification_status"], "not_parsed")
+        self.assertIsNone(record["endpoints"]["a"]["modifications"])
+        self.assertIsNone(record["endpoints"]["b"]["modifications"])
+        self.assertEqual(record["endpoints"]["a"]["peptide"], "PVATMWESKGK")
+        self.assertEqual(record["endpoints"]["b"]["peptide"], "CCTKPESER")
+
+    def test_exports_validated_sites_with_explicit_fdr_and_identity_evidence(self):
+        self.fasta.write_text(FASTA, encoding="utf-8")
+        self.write_rows([self.toy_row()])
+        bundle = self.read(decoy_prefix="REV_", fdr_columns={"psm": "ReportedPSMFDR"})
+        record = bundle["records"][0]
+
+        self.assertEqual(record["record_status"], "valid")
+        self.assertEqual(record["decoy_status"], "target_target")
+        self.assertEqual(record["fdr"]["psm"]["value"], 0.005)
+        self.assertEqual(record["fdr"]["link"]["status"], "missing")
+        references = self.root / "references.fasta"
+        references.write_text(REFERENCES, encoding="utf-8")
+        mappings = map_reference_proteins(bundle["proteins"], read_search_fasta(references), taxon_id=9031)
+        output = write_claudio_input(
+            bundle, mappings, self.root / "input", fdr_level="psm", fdr_cutoff=0.01,
+            allowed_crosslinkers={"EDC-DE"}, allowed_residues={"K", "E"},
+        )
+        with (output / "claudio_input.csv").open(encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle)
+            self.assertEqual(reader.fieldnames[:8], CLAUDIO_COLUMNS)
+            rows = list(reader)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual((rows[0]["entry1"], rows[0]["entry2"]), ("P12345", "Q99999"))
+        self.assertEqual((rows[0]["position1"], rows[0]["position2"]), ("4", "5"))
+        self.assertEqual((rows[0]["k_pos1"], rows[0]["k_pos2"]), ("3", "3"))
+        self.assertEqual(rows[0]["source_crosslinker"], "EDC-DE")
+        self.assertEqual(rows[0]["source_psm_id"], "1")
+        self.assertEqual(rows[0]["source_spectrum_title"], self.original_rows[0]["Title"])
+        self.assertEqual(rows[0]["source_scan"], "")
+        manifest = json.loads((output / "manifest.json").read_text())
+        self.assertEqual(manifest["kind"], "plink_claudio_input")
+        self.assertEqual(manifest["parser"]["name"], "pyXLMS")
+        self.assertFalse(manifest["assessment_performed"])
+        for name, digest in manifest["output_sha256"].items():
+            self.assertEqual(hashlib.sha256((output / name).read_bytes()).hexdigest(), digest)
+
+    def test_duplicate_orders_keep_distinct_and_relocatable_source_records(self):
+        self.fasta.write_text(FASTA, encoding="utf-8")
+        row = self.toy_row()
+        self.write_rows([row, row])
+        first = self.read(decoy_prefix="REV_")
+        relocated = self.root / "renamed.csv"
+        relocated.write_bytes(self.psms.read_bytes())
+        second = self.read(path=relocated, decoy_prefix="REV_")
+        ids = [record["source_record_id"] for record in first["records"]]
+
+        self.assertEqual(len(ids), 2)
+        self.assertNotEqual(ids[0], ids[1])
+        self.assertEqual(ids, [record["source_record_id"] for record in second["records"]])
+        self.assertEqual([record["source_fields"]["Order"] for record in first["records"]], ["1", "1"])
+
+    def test_protein_alternatives_do_not_create_unreported_pairings(self):
+        self.fasta.write_text(FASTA + ">customC\nMACKRTAK\n>customD\nGGKPEPK\n", encoding="utf-8")
+        self.write_rows([self.toy_row(Proteins="customA(4)-customB(5)/customC(4)-customD(5)/")])
+        record = self.read(decoy_prefix="REV_")["records"][0]
+        pairs = [(pair["a"]["source_protein_id"], pair["b"]["source_protein_id"])
+                 for pair in record["protein_pairs"]]
+
+        self.assertEqual(pairs, [("customA", "customB"), ("customC", "customD")])
+        self.assertEqual(record["record_status"], "not_evaluable")
+        self.assertIsNone(record["endpoints"]["a"]["source_fasta_id"])
+        self.assertIsNone(record["endpoints"]["b"]["source_fasta_id"])
+
+    def test_ragged_records_stay_in_the_audit_without_shifted_fields(self):
+        with self.psms.open("a", encoding="utf-8", newline="") as handle:
+            csv.writer(handle).writerow(["broken", "short"])
+        records = self.read()["records"]
+
+        self.assertEqual(len(records), 4)
+        self.assertEqual(records[3]["record_reason"], "row_width_mismatch")
+        self.assertEqual(records[3]["source_fields"], {})
+        self.assertEqual(records[3]["source_values"], ["broken", "short"])
+        self.assertEqual(records[0]["source_fields"], self.original_rows[0])
+
+    def test_incorrect_protein_coordinates_are_not_realigned_automatically(self):
+        self.fasta.write_text(FASTA, encoding="utf-8")
+        self.write_rows([self.toy_row(Proteins="customA(5)-customB(5)/")])
+        record = self.read(decoy_prefix="REV_")["records"][0]
+
+        self.assertEqual(record["record_status"], "not_evaluable")
+        self.assertEqual(record["endpoints"]["a"]["protein_position"], 5)
+        self.assertEqual(record["endpoints"]["a"]["reason"], "peptide_sequence_mismatch")
+        self.assertEqual(record["source_fields"]["Proteins"], "customA(5)-customB(5)/")
+
+    def test_a_crosslink_level_table_is_not_imported_as_psms(self):
+        columns = [column for column in self.columns if column != "Title"]
+        self.write_rows([self.original_rows[0]], columns=columns)
+
+        with self.assertRaisesRegex(ValueError, "PSM|spectra"):
+            self.read()

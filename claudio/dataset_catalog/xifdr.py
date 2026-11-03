@@ -1,4 +1,4 @@
-"""Import xiFDR PSMs, verify source coordinates, and prepare existing AF analysis.
+"""Import XL-MS PSMs, verify source coordinates, and prepare CLAUDIO inputs.
 
 Coordinates are 1-based. Identity resolution requires full sequence equality.
 FDR levels and source classifications are preserved rather than inferred.
@@ -348,6 +348,148 @@ def _read_with_pyxlms(bundle):
                 record["endpoints"][site].update(update)
         except (ValueError, TypeError, KeyError, RuntimeError, IndexError, AttributeError, OverflowError) as error:
             reject(record, "pyxlms_parse_failed", f"{type(error).__name__}: {error}")
+
+
+def _plink_endpoint(site, proteins, modification_status):
+    """Validate one reported alternative with the existing FASTA checks."""
+    if len(site["proteins"]) != 1 or len(site["protein_positions"]) != 1:
+        raise ValueError("A pLink protein alternative must contain one site per endpoint")
+    peptide, link = site["peptide"], site["peptide_position"]
+    position = site["protein_positions"][0]
+    fields = {"Protein1": site["proteins"][0], "PepSeq1": peptide,
+              "PepPos1": str(position - link + 1), "PeptideLength1": str(len(peptide)),
+              "LinkPos1": str(link), "ProteinLinkPos1": str(position)}
+    endpoint = _endpoint(fields, "a", proteins, ())
+    endpoint["modifications"] = [] if modification_status == "none_reported" else None
+    return endpoint
+
+
+def read_plink_psms(psm_path, fasta_path, *, dataset_accession,
+                    decoy_prefix=None, fdr_columns=None):
+    """Read pLink spectra tables while retaining unverified source information.
+
+    Protein alternatives keep their original pairings. The caller must supply
+    the decoy prefix and any mapping from FDR levels to reported column names;
+    missing policies stay unresolved. Scores are not interpreted as FDR.
+    Modification strings and spectrum titles are retained without inventing
+    modification masses or numeric scan identifiers.
+    """
+    if not isinstance(dataset_accession, str) or re.fullmatch(r"PXD\d{6,}", dataset_accession) is None:
+        raise ValueError("A ProteomeXchange PXD accession is required")
+    if decoy_prefix is not None and (not isinstance(decoy_prefix, str)
+                                    or not decoy_prefix or decoy_prefix != decoy_prefix.strip()):
+        raise ValueError("decoy_prefix must be a nonempty prefix or None")
+    fdr_columns = {} if fdr_columns is None else fdr_columns
+    if (not isinstance(fdr_columns, dict)
+            or any(level not in FDR_COLUMNS or not isinstance(column, str) or not column
+                   for level, column in fdr_columns.items())):
+        raise ValueError("FDR columns must map supported levels to reported column names")
+    try:
+        from importlib.metadata import version
+        from pyXLMS import parser
+    except ImportError as error:
+        raise RuntimeError("Reading pLink PSMs requires pyXLMS==2.0.7") from error
+
+    psm_path, fasta_path = Path(psm_path), Path(fasta_path)
+    raw = psm_path.read_bytes()
+    digest = hashlib.sha256(raw).hexdigest()
+    proteins = read_search_fasta(fasta_path)
+    reader = csv.reader(io.StringIO(raw.decode("utf-8-sig")))
+    columns = next(reader, [])
+    named = [column for column in columns if column]
+    if len(named) != len(set(named)):
+        raise ValueError("pLink PSM table has duplicate named columns")
+    required = {"Title", "Peptide", "Proteins", "Peptide_Type", "Linker"}
+    if not required <= set(columns):
+        raise ValueError("Not a supported pLink PSM spectra table; missing columns: "
+                         + ", ".join(sorted(required - set(columns))))
+    if not set(fdr_columns.values()) <= set(columns):
+        raise ValueError("Selected FDR columns are missing from the pLink PSM table")
+
+    records, previous_line = [], reader.line_num
+    for number, values in enumerate(reader, 1):
+        line_start, line_end = previous_line + 1, reader.line_num
+        previous_line = line_end
+        if not any(value.strip() for value in values):
+            continue
+        fields = {key: value for key, value in zip(columns, values) if key} if len(values) == len(columns) else {}
+        annotation = fields.get("Modifications", "").strip().lower()
+        modification_status = ("none_reported" if annotation in ("null", "none", "nan")
+                               else "not_parsed" if annotation else "not_provided")
+        record = {"source_record_id": f"{dataset_accession}:{digest}:{number:06d}",
+                  "source_record_number": number, "source_line_start": line_start, "source_line_end": line_end,
+                  "source_values": values, "source_fields": fields, "source_scan": None,
+                  "decoy_status": "unknown", "decoy_reason": "decoy_policy_not_provided" if decoy_prefix is None else "",
+                  "fdr": {level: _fdr_value(fields.get(fdr_columns.get(level))) for level in FDR_COLUMNS},
+                  "endpoints": {}, "protein_pairs": [], "modification_status": modification_status,
+                  "record_status": "not_evaluable", "record_reason": ""}
+        records.append(record)
+        if len(values) != len(columns):
+            record["record_reason"] = "row_width_mismatch"
+            continue
+        if fields["Peptide_Type"].strip().lower() != "cross-linked":
+            record["record_reason"] = "unsupported_peptide_type"
+            continue
+        peptide = fields["Peptide"].strip()
+        expected = re.fullmatch(r"([A-Z]+)\(([0-9]+)\)-([A-Z]+)\(([0-9]+)\)", peptide)
+        if expected is None:
+            record["record_reason"] = "unsupported_peptide_annotation"
+            continue
+        try:
+            # Parse each alternative separately to avoid introducing a Cartesian product.
+            alternatives = fields["Proteins"].strip().rstrip("/").split("/")
+            for alternative in alternatives:
+                sites = parser.parse_sites_from_plink(peptide, alternative.strip())
+                if ((sites[0]["peptide"], sites[0]["peptide_position"],
+                     sites[1]["peptide"], sites[1]["peptide_position"])
+                        != (expected[1], int(expected[2]), expected[3], int(expected[4]))):
+                    raise ValueError("Parsed peptide annotations differ from the reported pLink sites")
+                record["protein_pairs"].append({
+                    "a": _plink_endpoint(sites[0], proteins, modification_status),
+                    "b": _plink_endpoint(sites[1], proteins, modification_status),
+                })
+        except (ValueError, TypeError, KeyError, RuntimeError, IndexError, AttributeError, OverflowError) as error:
+            record.update(record_reason="pyxlms_parse_failed", parser_error=f"{type(error).__name__}: {error}")
+            continue
+
+        for side in ("a", "b"):
+            candidates = {}
+            for pair in record["protein_pairs"]:
+                endpoint = pair[side]
+                key = (endpoint["source_protein_id"], endpoint["protein_position"],
+                       endpoint["link_position"], endpoint["peptide_start"])
+                candidates[key] = endpoint
+            endpoint = deepcopy(next(iter(candidates.values())))
+            if len(candidates) > 1:
+                endpoint.update(source_protein_id=None, source_fasta_id=None,
+                                protein_position=None, peptide_start=None, status="not_evaluable",
+                                reason="protein_identity_ambiguous", candidates=list(candidates.values()))
+            record["endpoints"][side] = endpoint
+
+        if decoy_prefix is not None:
+            categories = set()
+            for pair in record["protein_pairs"]:
+                a, b = (pair[side]["source_protein_id"].startswith(decoy_prefix) for side in ("a", "b"))
+                categories.add("decoy_decoy" if a and b else "target_decoy" if a or b else "target_target")
+            if len(categories) == 1:
+                record["decoy_status"] = categories.pop()
+            else:
+                record["decoy_reason"] = "ambiguous_decoy_status"
+        if any(endpoint["status"] != "valid" for endpoint in record["endpoints"].values()):
+            record["record_reason"] = "source_endpoint_unresolved"
+        elif record["decoy_status"] == "unknown":
+            record["record_reason"] = record["decoy_reason"]
+        else:
+            record.update(record_status="valid", record_reason="")
+
+    return {"format": "plink_psm", "format_version": 1, "source_columns": columns,
+            "records": records, "proteins": proteins,
+            "parser": {"name": "pyXLMS", "version": version("pyXLMS"),
+                       "entrypoint": "parse_sites_from_plink", "modification_masses_assessed": False,
+                       "decoy_prefix": decoy_prefix, "fdr_columns": dict(fdr_columns)},
+            "provenance": {"dataset_accession": dataset_accession, "psm_path": str(psm_path.resolve()),
+                           "psm_sha256": digest, "fasta_path": str(fasta_path.resolve()),
+                           "fasta_sha256": next(iter(proteins.values()))["fasta_sha256"]}}
 
 
 def target_proteins(bundle):
@@ -914,7 +1056,7 @@ def prepare_af_input(bundle, mappings, *, fdr_level, fdr_cutoff):
     for record in bundle["records"]:
         entry, reasons = deepcopy(record), []
         if record["decoy_status"] == "unknown":
-            reasons.append("invalid_decoy_flags")
+            reasons.append(record.get("decoy_reason") or "invalid_decoy_flags")
         elif record["decoy_status"] != "target_target":
             reasons.append("decoy_record")
         if record["record_status"] != "valid":
@@ -939,13 +1081,17 @@ def prepare_af_input(bundle, mappings, *, fdr_level, fdr_cutoff):
         if reasons:
             continue
         fields = record["source_fields"]
+        plink = bundle.get("format") == "plink_psm"
         row = {"source_record_id": record["source_record_id"], "dataset_accession": bundle["provenance"]["dataset_accession"],
                "source_psm_sha256": bundle["provenance"]["psm_sha256"], "source_fasta_sha256": bundle["provenance"]["fasta_sha256"],
-               "source_record_number": record["source_record_number"], "source_psm_id": fields.get("PSMID", ""),
+               "source_record_number": record["source_record_number"], "source_psm_id": fields.get("Order" if plink else "PSMID", ""),
                "source_run": fields.get("run", ""), "source_scan": fields.get("scan", ""),
-               "source_crosslinker": fields.get("Crosslinker", ""), "source_fdr_group": fields.get("fdrGroup", ""),
+               "source_crosslinker": fields.get("Linker" if plink else "Crosslinker", ""), "source_fdr_group": fields.get("fdrGroup", ""),
                "source_fields_json": json.dumps(fields, ensure_ascii=False),
                "selected_fdr_level": fdr_level, "selected_fdr_value": confidence["value"], "selected_fdr_cutoff": float(fdr_cutoff)}
+        if plink:
+            row.update(source_spectrum_title=fields.get("Title", ""),
+                       source_modifications=fields.get("Modifications", ""))
         for site in ("a", "b"):
             endpoint, identity = record["endpoints"][site], selected[site]
             row.update({f"unip_id_{site}": identity["accession"], f"seq_{site}": identity["sequence"],
@@ -1057,7 +1203,8 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
         writer.writeheader()
         writer.writerows(rows)
     names = ["psm_audit.json", "search_proteins.json", "protein_mapping.json", "source_columns.json", input_name, *source_bodies]
-    manifest = {"schema_version": 1, "kind": "xifdr_claudio_input" if pipeline else "xifdr_prepared_input", "status": "complete",
+    format_name = "plink" if bundle.get("format") == "plink_psm" else "xifdr"
+    manifest = {"schema_version": 1, "kind": format_name + ("_claudio_input" if pipeline else "_prepared_input"), "status": "complete",
                 "provenance": bundle["provenance"], "fdr_policy": prepared["fdr_policy"],
                 "counts": {"source_records": len(bundle["records"]),
                            "pipeline_input_rows" if pipeline else "af_input_rows": len(rows),
