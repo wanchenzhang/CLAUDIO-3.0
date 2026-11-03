@@ -2,11 +2,13 @@ import csv
 import hashlib
 import json
 import unittest
+from importlib.metadata import version
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, Mock, call, patch
 
 import requests
+from pyXLMS import parser as pyxlms_parser
 
 from claudio.dataset_catalog.xifdr import (
     read_xifdr_psms, read_search_fasta, normalize_xifdr_peptide, target_proteins,
@@ -83,6 +85,11 @@ class TestXiFDRPSM(unittest.TestCase):
             self.root / "pipeline", fdr_level="link", fdr_cutoff=0.01,
             allowed_crosslinkers={"BS3"}, allowed_residues={"K"}, **options,
         )
+
+
+
+
+
 
     def test_pipeline_input_leaves_tracking_ids_for_m1_to_assign(self):
         bundle = self.read()
@@ -780,3 +787,221 @@ class TestXiFDRCandidateProjection(unittest.TestCase):
         self.assertEqual(result["protein_lookup_states"]["customA"]["selected_candidate_report_index"], 0)
         recovered = project_xifdr_candidates(bundle, self.exact(bundle), [failure, success])
         self.assertEqual(recovered["protein_lookup_states"]["customA"]["selected_candidate_report_index"], 1)
+
+class TestXiFDRPyXLMS(unittest.TestCase):
+    def setUp(self):
+        self.temp = TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.psms = self.root / "PSM.csv"
+        self.fasta = self.root / "search.fasta"
+        self.fasta.write_text(FASTA, encoding="utf-8")
+
+    def write_psms(self, rows):
+        # Older exports can omit CrosslinkerModMass while retaining charge.
+        columns = COLUMNS + ["exp charge"]
+        with self.psms.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(columns)
+            for row in rows:
+                writer.writerow([
+                    row.get(column, "3" if column == "exp charge" else "")
+                    for column in columns
+                ])
+
+    def read(self):
+        return read_xifdr_psms(
+            self.psms, self.fasta, dataset_accession="PXD000001", backend="pyxlms"
+        )
+
+    def reversed_psm(self, **changes):
+        row = psm(
+            Protein1="customB", Protein2="customA",
+            PepSeq1="KPEP", PepSeq2="ACcmK", PepPos1="3", PepPos2="2",
+            PeptideLength1="4", PeptideLength2="3", LinkPos1="1", LinkPos2="3",
+            ProteinLinkPos1="3", ProteinLinkPos2="4",
+        )
+        row.update(changes)
+        return row
+
+    def test_reads_without_mass_and_keeps_source_modifications_and_fdr(self):
+        self.write_psms([psm()])
+        original = self.psms.read_bytes()
+        with patch.object(pyxlms_parser, "read_xi", wraps=pyxlms_parser.read_xi) as reader:
+            bundle = self.read()
+
+        self.assertEqual(reader.call_count, 1)
+        self.assertIs(reader.call_args.kwargs["parse_modifications"], False)
+        self.assertEqual(bundle["parser"]["name"], "pyXLMS")
+        self.assertEqual(bundle["parser"]["version"], version("pyXLMS"))
+        self.assertFalse(bundle["parser"]["modification_masses_assessed"])
+        record = bundle["records"][0]
+        self.assertEqual(record["record_status"], "valid")
+        self.assertEqual(record["endpoints"]["a"]["peptide"], "ACK")
+        self.assertEqual(record["endpoints"]["a"]["modifications"], [
+            {"position": 2, "residue": "C", "token": "cm"},
+        ])
+        self.assertEqual(record["source_fields"]["PepSeq1"], "ACcmK")
+        self.assertNotIn("CrosslinkerModMass", record["source_fields"])
+        self.assertEqual(record["fdr"]["psm"]["value"], 0.02)
+        self.assertEqual(record["fdr"]["link"]["value"], 0.005)
+        self.assertEqual(record["fdr"]["protein_pair"]["raw"], "0.125")
+        self.assertEqual(self.psms.read_bytes(), original)
+
+    def test_restores_the_original_endpoint_order(self):
+        self.write_psms([self.reversed_psm()])
+        bundle = self.read()
+        record = bundle["records"][0]
+
+        self.assertEqual(record["parser_orientation"], "swapped")
+        self.assertEqual(record["endpoints"]["a"]["peptide"], "KPEP")
+        self.assertEqual(record["endpoints"]["a"]["source_protein_id"], "customB")
+        self.assertEqual(record["endpoints"]["a"]["protein_position"], 3)
+        self.assertEqual(record["endpoints"]["b"]["source_peptide"], "ACcmK")
+        self.assertEqual(record["endpoints"]["b"]["protein_position"], 4)
+        self.assertEqual(record["source_fields"]["Protein1"], "customB")
+        self.assertEqual(record["record_status"], "valid")
+
+    def test_identical_peptides_are_matched_using_their_positions(self):
+        self.fasta.write_text(">customA\nMACKACK\n", encoding="utf-8")
+        self.write_psms([psm(
+            Protein2="customA", PepSeq1="ACcmK", PepSeq2="ACcmK",
+            PepPos1="2", PepPos2="5", PeptideLength2="3",
+            LinkPos1="3", LinkPos2="1", ProteinLinkPos1="4", ProteinLinkPos2="5",
+        )])
+        record = self.read()["records"][0]
+
+        self.assertEqual(record["record_status"], "valid")
+        self.assertEqual(record["parser_orientation"], "swapped")
+        self.assertEqual(record["endpoints"]["a"]["link_position"], 3)
+        self.assertEqual(record["endpoints"]["b"]["link_position"], 1)
+        self.assertEqual(record["endpoints"]["a"]["protein_position"], 4)
+        self.assertEqual(record["endpoints"]["b"]["protein_position"], 5)
+
+    def test_decoy_flags_follow_the_original_source_endpoints(self):
+        self.write_psms([self.reversed_psm(
+            Decoy1="true", isDecoy="true", isTT="false", isTD="true",
+        )])
+        bundle = self.read()
+        record = bundle["records"][0]
+
+        self.assertEqual(record["parser_orientation"], "swapped")
+        self.assertEqual(record["decoy_status"], "target_decoy")
+        self.assertEqual(record["source_fields"]["Decoy1"], "true")
+        self.assertEqual(record["source_fields"]["Decoy2"], "false")
+        self.assertEqual(record["endpoints"]["a"]["source_protein_id"], "customB")
+        self.assertEqual(prepare_af_input(bundle, {}, fdr_level="link", fdr_cutoff=0.01)["rows"], [])
+
+    def test_duplicate_psms_and_different_runs_keep_distinct_source_rows(self):
+        row = self.reversed_psm()
+        self.write_psms([row, row, self.reversed_psm(run="replicate-2")])
+        bundle = self.read()
+        records = bundle["records"]
+
+        self.assertEqual(len(records), 3)
+        self.assertEqual([r["source_record_number"] for r in records], [1, 2, 3])
+        self.assertEqual(len({r["source_record_id"] for r in records}), 3)
+        self.assertEqual([r["source_fields"]["run"] for r in records], [
+            "replicate-1", "replicate-1", "replicate-2",
+        ])
+        self.assertTrue(all(r["record_status"] == "valid" for r in records))
+
+    def test_invalid_and_ambiguous_rows_remain_in_the_audit(self):
+        self.write_psms([
+            psm(), psm(LinkPos1="0"),
+            psm(Protein1="customA;customB", PepPos1="2;3", ProteinLinkPos1="4;5"),
+        ])
+        bundle = self.read()
+        records = bundle["records"]
+
+        self.assertEqual(len(records), 3)
+        self.assertEqual(records[0]["record_status"], "valid")
+        self.assertEqual(records[1]["record_status"], "not_evaluable")
+        self.assertEqual(records[2]["record_status"], "not_evaluable")
+        self.assertEqual(records[1]["source_fields"]["LinkPos1"], "0")
+        self.assertEqual(records[2]["source_fields"]["Protein1"], "customA;customB")
+        self.assertEqual([r["source_record_number"] for r in records], [1, 2, 3])
+
+    def test_parser_failure_is_reported_without_accepting_native_results(self):
+        self.write_psms([psm()])
+        with patch.object(pyxlms_parser, "read_xi", side_effect=ValueError("unsupported export")):
+            bundle = self.read()
+        record = bundle["records"][0]
+
+        self.assertEqual(record["record_status"], "not_evaluable")
+        self.assertEqual(record["record_reason"], "pyxlms_parse_failed")
+        self.assertEqual(record["source_fields"]["PSMID"], "psm-1")
+        self.assertIn("unsupported export", record["parser_error"])
+
+    def test_a_different_parsed_protein_cannot_pass_the_endpoint_check(self):
+        self.write_psms([psm()])
+        read_xi = pyxlms_parser.read_xi
+
+        def change_protein(*args, **kwargs):
+            result = read_xi(*args, **kwargs)
+            first = result["crosslink-spectrum-matches"][0]
+            fields = (
+                "peptide", "peptide_crosslink_position", "proteins",
+                "proteins_crosslink_positions", "proteins_peptide_positions", "decoy",
+            )
+            parsed = {f"{side}_{field}": first[f"{side}_{field}"]
+                      for side in ("alpha", "beta") for field in fields}
+            parsed["additional_information"] = first["additional_information"]
+            parsed["alpha_proteins"] = ["another_protein"]
+            return {"crosslink-spectrum-matches": [parsed], "crosslinks": None}
+
+        with patch.object(pyxlms_parser, "read_xi", side_effect=change_protein):
+            bundle = self.read()
+        record = bundle["records"][0]
+
+        self.assertEqual(record["record_status"], "not_evaluable")
+        self.assertEqual(record["record_reason"], "pyxlms_endpoint_mismatch")
+        self.assertEqual(record["source_fields"]["Protein1"], "customA")
+
+    def test_decoy_prefix_is_preserved_as_part_of_the_fasta_identifier(self):
+        self.fasta.write_text(FASTA + ">decoy:customA\nMACKRTAK\n", encoding="utf-8")
+        self.write_psms([psm(
+            Protein1="decoy:customA", Decoy1="true",
+            isDecoy="true", isTT="false", isTD="true",
+        )])
+        record = self.read()["records"][0]
+
+        self.assertEqual(record["record_status"], "valid")
+        self.assertEqual(record["endpoints"]["a"]["source_fasta_id"], "decoy:customA")
+        self.assertEqual(record["endpoints"]["a"]["source_protein_id"], "decoy:customA")
+        self.assertEqual(record["decoy_status"], "target_decoy")
+
+    def test_parser_result_order_does_not_change_source_associations(self):
+        self.write_psms([psm(), self.reversed_psm(run="replicate-2")])
+        read_xi = pyxlms_parser.read_xi
+
+        def reverse_results(*args, **kwargs):
+            result = read_xi(*args, **kwargs)
+            return {"crosslink-spectrum-matches": result["crosslink-spectrum-matches"][::-1],
+                    "crosslinks": None}
+
+        with patch.object(pyxlms_parser, "read_xi", side_effect=reverse_results):
+            records = self.read()["records"]
+
+        self.assertTrue(all(record["record_status"] == "valid" for record in records))
+        self.assertEqual([r["source_fields"]["run"] for r in records], ["replicate-1", "replicate-2"])
+        self.assertEqual([r["endpoints"]["a"]["peptide"] for r in records], ["ACK", "KPEP"])
+        self.assertTrue(all("__claudio_source_record_id" not in r["source_fields"] for r in records))
+
+    def test_a_row_missing_from_parser_output_stays_unresolved(self):
+        self.write_psms([psm(), psm(run="replicate-2")])
+        read_xi = pyxlms_parser.read_xi
+
+        def drop_first_result(*args, **kwargs):
+            result = read_xi(*args, **kwargs)
+            return {"crosslink-spectrum-matches": result["crosslink-spectrum-matches"][1:],
+                    "crosslinks": None}
+
+        with patch.object(pyxlms_parser, "read_xi", side_effect=drop_first_result):
+            records = self.read()["records"]
+
+        self.assertEqual(len(records), 2)
+        self.assertEqual(records[0]["record_status"], "not_evaluable")
+        self.assertEqual(records[0]["record_reason"], "pyxlms_parse_failed")
+        self.assertEqual(records[1]["record_status"], "valid")
+        self.assertEqual(records[1]["source_fields"]["run"], "replicate-2")

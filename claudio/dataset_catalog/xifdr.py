@@ -196,12 +196,17 @@ def _endpoint(fields, site, proteins, allowed_modifications):
     return result
 
 
-def read_xifdr_psms(psm_path, fasta_path, *, dataset_accession, allowed_modifications=None):
+def read_xifdr_psms(psm_path, fasta_path, *, dataset_accession,
+                    allowed_modifications=None, backend="native"):
     """Keep all nonblank PSM records, including decoys and unresolved source rows.
 
     Missing or duplicated required column labels reject the file. Ragged data
     records stay in the audit without assigning possibly shifted field values.
+    The pyxlms backend checks parsed endpoints against the source FASTA and
+    restores the original endpoint order. Modification masses are not assessed.
     """
+    if backend not in ("native", "pyxlms"):
+        raise ValueError("backend must be 'native' or 'pyxlms'")
     if not isinstance(dataset_accession, str) or re.fullmatch(r"PXD\d{6,}", dataset_accession) is None:
         raise ValueError("A ProteomeXchange PXD accession is required")
     psm_path, fasta_path = Path(psm_path), Path(fasta_path)
@@ -240,11 +245,109 @@ def read_xifdr_psms(psm_path, fasta_path, *, dataset_accession, allowed_modifica
             else:
                 record["record_status"] = "valid"
         records.append(record)
-    return {"format": "xifdr_psm", "format_version": 1, "source_columns": columns,
-            "records": records, "proteins": proteins,
-            "provenance": {"dataset_accession": dataset_accession, "psm_path": str(psm_path.resolve()),
-                           "psm_sha256": digest, "fasta_path": str(fasta_path.resolve()),
-                           "fasta_sha256": hashlib.sha256(fasta_path.read_bytes()).hexdigest()}}
+    bundle = {"format": "xifdr_psm", "format_version": 1, "source_columns": columns,
+              "records": records, "proteins": proteins,
+              "provenance": {"dataset_accession": dataset_accession, "psm_path": str(psm_path.resolve()),
+                             "psm_sha256": digest, "fasta_path": str(fasta_path.resolve()),
+                             "fasta_sha256": hashlib.sha256(fasta_path.read_bytes()).hexdigest()}}
+    if backend == "pyxlms":
+        _read_with_pyxlms(bundle)
+    return bundle
+
+
+def _read_with_pyxlms(bundle):
+    """Read validated rows with pyXLMS, retaining the original source ledger."""
+    try:
+        from importlib.metadata import version
+        from pyXLMS import parser
+    except ImportError as error:
+        raise RuntimeError("The pyxlms backend requires pyXLMS==2.0.7") from error
+
+    bundle["parser"] = {"name": "pyXLMS", "version": version("pyXLMS"),
+                        "modification_masses_assessed": False}
+    records = [record for record in bundle["records"] if record["record_status"] == "valid"]
+    if not records:
+        return
+
+    # The marker exists only in the in-memory copy; original fields stay intact.
+    marker = "__claudio_source_record_id"
+    while marker in bundle["source_columns"]:
+        marker += "_"
+    stream = io.StringIO()
+    writer = csv.writer(stream)
+    writer.writerow(bundle["source_columns"] + [marker])
+    for record in records:
+        writer.writerow(record["source_values"] + [record["source_record_id"]])
+    stream.seek(0)
+
+    def reject(record, reason, message):
+        record.update(record_status="not_evaluable", record_reason=reason,
+                      parser_error=message)
+
+    try:
+        result = parser.read_xi(stream, decoy_prefix="", parse_modifications=False,
+                                dtype=str, keep_default_na=False)
+        parsed = result["crosslink-spectrum-matches"] or []
+        by_source = {}
+        expected_ids = {record["source_record_id"] for record in records}
+        for csm in parsed:
+            source = (csm["additional_information"] or {}).get("source", {})
+            source_id = source.get(marker)
+            if source_id not in expected_ids or source_id in by_source:
+                raise ValueError("pyXLMS returned an unknown or repeated source record")
+            by_source[source_id] = csm
+    except (ValueError, TypeError, KeyError, RuntimeError, IndexError, AttributeError, OverflowError) as error:
+        for record in records:
+            reject(record, "pyxlms_parse_failed", f"{type(error).__name__}: {error}")
+        return
+
+    def original_endpoint(endpoint, decoy):
+        return (endpoint["peptide"], endpoint["link_position"],
+                (endpoint["source_protein_id"],), (endpoint["protein_position"],),
+                (endpoint["peptide_start"],), decoy)
+
+    def parsed_endpoint(csm, prefix):
+        return (csm[prefix + "_peptide"], csm[prefix + "_peptide_crosslink_position"],
+                tuple(csm[prefix + "_proteins"] or []),
+                tuple(csm[prefix + "_proteins_crosslink_positions"] or []),
+                tuple(csm[prefix + "_proteins_peptide_positions"] or []),
+                csm[prefix + "_decoy"])
+
+    for record in records:
+        csm = by_source.get(record["source_record_id"])
+        if csm is None:
+            reject(record, "pyxlms_parse_failed", "pyXLMS did not return this source record")
+            continue
+        fields = record["source_fields"]
+        expected = tuple(original_endpoint(record["endpoints"][site], _boolean(fields["Decoy" + index]))
+                         for site, index in (("a", "1"), ("b", "2")))
+        try:
+            actual = tuple(parsed_endpoint(csm, prefix) for prefix in ("alpha", "beta"))
+            direct, swapped = expected == actual, expected == actual[::-1]
+            if not (direct or swapped):
+                reject(record, "pyxlms_endpoint_mismatch", "Parsed endpoints differ from the validated source")
+                continue
+            record["parser_orientation"] = "indistinguishable" if direct and swapped else "same" if direct else "swapped"
+            prefixes = ("alpha", "beta") if direct else ("beta", "alpha")
+            updates = {}
+            for site, prefix in zip(("a", "b"), prefixes):
+                endpoint = record["endpoints"][site]
+                tokens = parser.parse_modifications_from_xi_sequence(endpoint["source_peptide"])
+                if tokens != {mod["position"]: mod["token"] for mod in endpoint["modifications"]}:
+                    raise ValueError("Parsed modification tokens differ from the source")
+                peptide = csm[prefix + "_peptide"]
+                updates[site] = {
+                    "peptide": peptide,
+                    "link_position": csm[prefix + "_peptide_crosslink_position"],
+                    "protein_position": csm[prefix + "_proteins_crosslink_positions"][0],
+                    "peptide_start": csm[prefix + "_proteins_peptide_positions"][0],
+                    "modifications": [{"position": position, "residue": peptide[position - 1], "token": token}
+                                      for position, token in tokens.items()],
+                }
+            for site, update in updates.items():
+                record["endpoints"][site].update(update)
+        except (ValueError, TypeError, KeyError, RuntimeError, IndexError, AttributeError, OverflowError) as error:
+            reject(record, "pyxlms_parse_failed", f"{type(error).__name__}: {error}")
 
 
 def target_proteins(bundle):
@@ -961,6 +1064,8 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
                            "protein_mapping_statuses": dict(Counter(m["status"] for m in mappings.values()))},
                 "assessment_performed": False,
                 "output_sha256": {name: hashlib.sha256((output_dir / name).read_bytes()).hexdigest() for name in names}}
+    if "parser" in bundle:
+        manifest["parser"] = deepcopy(bundle["parser"])
     if pipeline:
         manifest["selection_policy"] = pipeline_policy
         manifest["pipeline_input"] = {
