@@ -10,6 +10,7 @@ import requests
 
 from .inventory import inspect_catalog, summarize_inventories, inspect_content_plan
 from .proteomecentral import fetch_dataset_pages, write_discovery_outputs
+from .xifdr import FDR_COLUMNS, read_xifdr_psms, write_claudio_input
 
 DEFAULT_SEARCH_TERMS = (
     "XL-MS",
@@ -239,6 +240,113 @@ def summarize_command(catalog_path, run_dirs, output_dir):
     click.echo(f"Priority download candidates: {screening['download_candidate_count']}")
     click.echo("Scientific review: unchanged")
     click.echo(f"Output: {destination}")
+
+
+def _read_protein_mapping(mapping_path):
+    """Load live lookup results or an exported mapping with copied evidence."""
+    try:
+        mappings = json.loads(mapping_path.read_text(encoding="utf-8-sig"))
+    except ValueError as error:
+        raise ValueError(f"Invalid protein mapping JSON: {error}") from error
+    if not isinstance(mappings, dict):
+        raise ValueError("Protein mapping must be a JSON object keyed by search FASTA identifier.")
+    for identifier, identity in mappings.items():
+        if (not isinstance(identity, dict) or not isinstance(identity.get("status"), str)
+                or not isinstance(identity.get("sources"), list)):
+            raise ValueError(f"Invalid protein mapping for {identifier}.")
+        for source in identity["sources"]:
+            if not isinstance(source, dict) or not isinstance(source.get("sha256"), str):
+                raise ValueError(f"Invalid evidence source in protein mapping for {identifier}.")
+            saved_path = source.get("path")
+            saved = mapping_path.parent / saved_path if isinstance(saved_path, str) and saved_path else None
+            original_path = source.get("absolute_path")
+            if saved is not None and saved.is_file():
+                path = saved
+            elif isinstance(original_path, str) and original_path:
+                path = Path(original_path)
+            else:
+                raise ValueError(f"Protein mapping evidence file is missing for {identifier}.")
+            if not path.is_file():
+                raise ValueError(f"Protein mapping evidence file is missing: {path}")
+            source["absolute_path"] = str(path.resolve())
+    return mappings
+
+
+@main.command(name="standardize")
+@click.option(
+    "--results", "results_path", required=True,
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="xiFDR PSM results CSV.",
+)
+@click.option(
+    "--fasta", "fasta_path", required=True,
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="FASTA used for the original search.",
+)
+@click.option(
+    "--mapping", "mapping_path", required=True,
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Saved protein_mapping.json with its identity evidence files.",
+)
+@click.option("--dataset-accession", required=True, help="ProteomeXchange PXD accession.")
+@click.option(
+    "--fdr-level", type=click.Choice(tuple(FDR_COLUMNS)), required=True,
+    help="Author-reported FDR field used to select records.",
+)
+@click.option(
+    "--fdr-cutoff", type=click.FloatRange(min=0.0, max=1.0), required=True,
+    help="Inclusive FDR cutoff as a fraction; 0.01 means 1%.",
+)
+@click.option(
+    "--crosslinker", "crosslinkers", multiple=True, required=True,
+    help="Crosslinker label to include. Repeat for multiple labels.",
+)
+@click.option(
+    "--residue", "residues", multiple=True, required=True,
+    type=click.Choice(tuple("ABCDEFGHIJKLMNOPQRSTUVWXYZ")),
+    help="Residue letter to include at both sites. Repeat for multiple letters.",
+)
+@click.option(
+    "--source-protein", "source_proteins", multiple=True,
+    help="Search FASTA identifier to include; omit to include all resolved proteins.",
+)
+@click.option(
+    "--output", "output_dir", required=True,
+    type=click.Path(file_okay=False, path_type=Path),
+    help="New directory for the CLAUDIO input, audit, and evidence files.",
+)
+def standardize_command(results_path, fasta_path, mapping_path, dataset_accession,
+                        fdr_level, fdr_cutoff, crosslinkers, residues, source_proteins, output_dir):
+    """Convert xiFDR PSMs into CLAUDIO input using pyXLMS and saved identities."""
+    if output_dir.exists():
+        raise click.BadParameter("Output directory already exists; choose a new directory.", param_hint="--output")
+    if not math.isfinite(fdr_cutoff):
+        raise click.BadParameter("Must be a finite fraction between 0 and 1.", param_hint="--fdr-cutoff")
+    if any(not label.strip() for label in crosslinkers):
+        raise click.BadParameter("Crosslinker labels must not be empty.", param_hint="--crosslinker")
+    if any(not identifier.strip() for identifier in source_proteins):
+        raise click.BadParameter("Protein identifiers must not be empty.", param_hint="--source-protein")
+    try:
+        mappings = _read_protein_mapping(mapping_path)
+        bundle = read_xifdr_psms(results_path, fasta_path, dataset_accession=dataset_accession,
+                                 backend="pyxlms")
+        destination = write_claudio_input(
+            bundle, mappings, output_dir,
+            fdr_level=fdr_level, fdr_cutoff=fdr_cutoff,
+            allowed_crosslinkers=crosslinkers, allowed_residues=residues,
+            source_protein_ids=source_proteins or None,
+        )
+        manifest = json.loads((destination / "manifest.json").read_text(encoding="utf-8"))
+    except (ValueError, OSError, RuntimeError) as error:
+        raise click.ClickException(str(error)) from error
+
+    click.echo(f"Source PSM records: {manifest['counts']['source_records']}")
+    click.echo(f"Standardized input rows: {manifest['counts']['pipeline_input_rows']}")
+    failures = sum(record["record_reason"].startswith("pyxlms_") for record in bundle["records"])
+    click.echo(f"Records with parser errors: {failures}")
+    click.echo(f"Input: {(destination / 'claudio_input.csv').resolve()}")
+    click.echo(f"Audit: {(destination / 'psm_audit.json').resolve()}")
+    click.echo(f"Output: {destination.resolve()}")
 
 
 if __name__ == "__main__":

@@ -1,1 +1,3 @@
 pridepy==0.0.16
+pyXLMS==2.0.7
+numpy==1.24.4

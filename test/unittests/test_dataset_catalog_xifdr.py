@@ -8,6 +8,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, Mock, call, patch
 
 import requests
+from click.testing import CliRunner
 from pyXLMS import parser as pyxlms_parser
 
 from claudio.dataset_catalog.xifdr import (
@@ -16,6 +17,7 @@ from claudio.dataset_catalog.xifdr import (
     write_xifdr_outputs, assess_af_complexes, compare_protein_sequences, search_uniprot_candidates,
     project_xifdr_candidates, write_projection_outputs, write_claudio_input,
 )
+from claudio.dataset_catalog.cli import main as catalog_main
 
 
 COLUMNS = [
@@ -1005,3 +1007,136 @@ class TestXiFDRPyXLMS(unittest.TestCase):
         self.assertEqual(records[0]["record_reason"], "pyxlms_parse_failed")
         self.assertEqual(records[1]["record_status"], "valid")
         self.assertEqual(records[1]["source_fields"]["run"], "replicate-2")
+
+class TestDatasetStandardizeCLI(unittest.TestCase):
+    def setUp(self):
+        self.temp = TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.psms = self.root / "PSM.csv"
+        self.fasta = self.root / "search.fasta"
+        self.references = self.root / "uniprot.fasta"
+        self.mapping_path = self.root / "mapping.json"
+        self.output = self.root / "standardized"
+        self.fasta.write_text(FASTA, encoding="utf-8")
+        self.references.write_text(REFERENCES, encoding="utf-8")
+        self.prepare_inputs([psm(), psm(run="replicate-2"), psm(LinkPos1="0")])
+
+    def prepare_inputs(self, rows):
+        columns = COLUMNS + ["exp charge"]
+        with self.psms.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(columns)
+            for row in rows:
+                writer.writerow([row.get(key, "3" if key == "exp charge" else "") for key in columns])
+        bundle = read_xifdr_psms(self.psms, self.fasta, dataset_accession="PXD000001")
+        mappings = map_reference_proteins(bundle["proteins"], read_search_fasta(self.references), taxon_id=9031)
+        self.mapping_path.write_text(json.dumps(mappings), encoding="utf-8")
+
+    def arguments(self, mapping=None, output=None):
+        return [
+            "standardize", "--results", str(self.psms), "--fasta", str(self.fasta),
+            "--mapping", str(self.mapping_path if mapping is None else mapping),
+            "--dataset-accession", "PXD000001",
+            "--fdr-level", "link", "--fdr-cutoff", "0.01",
+            "--crosslinker", "BS3", "--residue", "K",
+            "--output", str(self.output if output is None else output),
+        ]
+
+    def run_command(self, arguments):
+        result = CliRunner().invoke(catalog_main, arguments)
+        self.assertEqual(result.exit_code, 0, result.output + repr(result.exception))
+        return result
+
+    def test_exports_default_m1_columns_with_pyxlms_and_keeps_the_full_audit(self):
+        result = self.run_command(self.arguments())
+
+        self.assertIn("Source PSM records: 3", result.output)
+        self.assertIn("Standardized input rows: 2", result.output)
+        with (self.output / "claudio_input.csv").open(newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle)
+            self.assertEqual(reader.fieldnames[:8], CLAUDIO_COLUMNS)
+            rows = list(reader)
+        self.assertEqual([row["source_run"] for row in rows], ["replicate-1", "replicate-2"])
+        self.assertEqual(len({row["xlms_source_record_id"] for row in rows}), 2)
+        self.assertNotIn("source_record_id", reader.fieldnames)
+        audit = json.loads((self.output / "psm_audit.json").read_text())
+        self.assertEqual(len(audit), 3)
+        self.assertEqual(audit[2]["record_status"], "not_evaluable")
+        manifest = json.loads((self.output / "manifest.json").read_text())
+        self.assertEqual(manifest["parser"]["name"], "pyXLMS")
+        self.assertEqual(manifest["fdr_policy"]["level"], "link")
+        self.assertFalse(manifest["assessment_performed"])
+        for name, digest in manifest["output_sha256"].items():
+            self.assertEqual(hashlib.sha256((self.output / name).read_bytes()).hexdigest(), digest)
+
+    def test_reads_identity_sources_from_a_previous_export(self):
+        previous = self.root / "previous"
+        self.run_command(self.arguments(output=previous))
+        self.references.unlink()
+
+        self.run_command(self.arguments(mapping=previous / "protein_mapping.json"))
+
+        self.assertEqual((self.output / "claudio_input.csv").read_bytes(),
+                         (previous / "claudio_input.csv").read_bytes())
+        manifest = json.loads((self.output / "manifest.json").read_text())
+        for name, digest in manifest["output_sha256"].items():
+            self.assertEqual(hashlib.sha256((self.output / name).read_bytes()).hexdigest(), digest)
+
+    def test_existing_output_is_left_untouched(self):
+        self.output.mkdir()
+        marker = self.output / "keep.txt"
+        marker.write_text("previous output", encoding="utf-8")
+
+        result = CliRunner().invoke(catalog_main, self.arguments())
+
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertIn("exist", result.output.lower())
+        self.assertEqual(marker.read_text(), "previous output")
+        self.assertEqual(list(self.output.iterdir()), [marker])
+
+    def test_requires_the_user_to_specify_the_fdr_level_and_cutoff(self):
+        arguments = self.arguments()
+        for flag in ("--fdr-level", "--fdr-cutoff"):
+            index = arguments.index(flag)
+            del arguments[index:index + 2]
+
+        result = CliRunner().invoke(catalog_main, arguments)
+
+        self.assertEqual(result.exit_code, 2)
+        self.assertIn("fdr", result.output.lower())
+        self.assertFalse(self.output.exists())
+
+    def test_reports_invalid_mapping_json_without_creating_output(self):
+        self.mapping_path.write_text("[]", encoding="utf-8")
+
+        result = CliRunner().invoke(catalog_main, self.arguments())
+
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertIn("mapping", result.output.lower())
+        self.assertFalse(self.output.exists())
+
+    def test_rejects_an_identity_source_changed_after_mapping(self):
+        self.references.write_text(REFERENCES + "\n", encoding="utf-8")
+
+        result = CliRunner().invoke(catalog_main, self.arguments())
+
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertRegex(result.output.lower(), r"checksum|source|changed")
+        self.assertFalse(self.output.exists())
+
+    def test_applies_the_selected_source_proteins_without_dropping_audit_rows(self):
+        self.prepare_inputs([
+            psm(),
+            psm(Protein2="customA", PepSeq2="RTAK", PepPos2="5", PeptideLength2="4",
+                LinkPos2="4", ProteinLinkPos2="8"),
+        ])
+        self.run_command(self.arguments() + ["--source-protein", "customA"])
+
+        with (self.output / "claudio_input.csv").open(newline="", encoding="utf-8") as handle:
+            rows = list(csv.DictReader(handle))
+        self.assertEqual(len(rows), 1)
+        self.assertEqual((rows[0]["entry1"], rows[0]["entry2"]), ("P12345", "P12345"))
+        audit = json.loads((self.output / "psm_audit.json").read_text())
+        self.assertEqual(len(audit), 2)
+        self.assertIn("outside_selected_source_proteins", audit[0]["input_reasons"])
