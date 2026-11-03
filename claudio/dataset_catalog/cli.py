@@ -1,5 +1,6 @@
 """Command-line tools for discovering public XL-MS dataset candidates."""
 
+import csv
 import json
 import math
 from collections import Counter
@@ -10,7 +11,7 @@ import requests
 
 from .inventory import inspect_catalog, summarize_inventories, inspect_content_plan
 from .proteomecentral import fetch_dataset_pages, write_discovery_outputs
-from .xifdr import FDR_COLUMNS, read_xifdr_psms, write_claudio_input
+from .xifdr import FDR_COLUMNS, read_xifdr_psms, read_plink_psms, write_claudio_input, write_import_report
 
 DEFAULT_SEARCH_TERMS = (
     "XL-MS",
@@ -272,11 +273,25 @@ def _read_protein_mapping(mapping_path):
     return mappings
 
 
+def _detect_psm_format(results_path):
+    """Recognize supported PSM tables from their columns rather than filenames."""
+    with results_path.open(encoding="utf-8-sig", newline="") as handle:
+        columns = set(next(csv.reader(handle), []))
+    signatures = {
+        "xifdr_psm": {"PSMID", "PepSeq1", "PepSeq2", "ProteinLinkPos1", "ProteinLinkPos2"},
+        "plink_psm": {"Title", "Peptide", "Proteins", "Peptide_Type", "Linker"},
+    }
+    matches = [name for name, required in signatures.items() if required <= columns]
+    if len(matches) != 1:
+        raise ValueError("Cannot identify a unique results format; supported formats are xiFDR PSM and pLink PSM CSV tables.")
+    return matches[0]
+
+
 @main.command(name="standardize")
 @click.option(
     "--results", "results_path", required=True,
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    help="xiFDR PSM results CSV.",
+    help="xiFDR or pLink PSM results CSV; format is detected from its columns.",
 )
 @click.option(
     "--fasta", "fasta_path", required=True,
@@ -284,27 +299,39 @@ def _read_protein_mapping(mapping_path):
     help="FASTA used for the original search.",
 )
 @click.option(
-    "--mapping", "mapping_path", required=True,
+    "--mapping", "mapping_path",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    help="Saved protein_mapping.json with its identity evidence files.",
+    help="Saved protein_mapping.json with its identity evidence files; required for input export.",
 )
 @click.option("--dataset-accession", required=True, help="ProteomeXchange PXD accession.")
 @click.option(
-    "--fdr-level", type=click.Choice(tuple(FDR_COLUMNS)), required=True,
-    help="Author-reported FDR field used to select records.",
+    "--fdr-level", type=click.Choice(tuple(FDR_COLUMNS)),
+    help="Reported FDR level; required for export or when labeling a pLink --fdr-column.",
 )
 @click.option(
-    "--fdr-cutoff", type=click.FloatRange(min=0.0, max=1.0), required=True,
-    help="Inclusive FDR cutoff as a fraction; 0.01 means 1%.",
+    "--fdr-cutoff", type=click.FloatRange(min=0.0, max=1.0),
+    help="Inclusive FDR cutoff as a fraction; required for export. 0.01 means 1%.",
 )
 @click.option(
-    "--crosslinker", "crosslinkers", multiple=True, required=True,
-    help="Crosslinker label to include. Repeat for multiple labels.",
+    "--fdr-column",
+    help="Reported pLink column corresponding to --fdr-level; required for pLink export.",
 )
 @click.option(
-    "--residue", "residues", multiple=True, required=True,
+    "--decoy-prefix",
+    help="Declared pLink decoy protein prefix; required for pLink export.",
+)
+@click.option(
+    "--crosslinker", "crosslinkers", multiple=True,
+    help="Crosslinker label to include; required for export. Repeat for multiple labels.",
+)
+@click.option(
+    "--residue", "residues", multiple=True,
     type=click.Choice(tuple("ABCDEFGHIJKLMNOPQRSTUVWXYZ")),
-    help="Residue letter to include at both sites. Repeat for multiple letters.",
+    help="Residue letter to include at both sites; required for export. Repeat for multiple letters.",
+)
+@click.option(
+    "--audit-only", is_flag=True,
+    help="Save every imported record without identity mapping, filtering, or input export.",
 )
 @click.option(
     "--source-protein", "source_proteins", multiple=True,
@@ -313,23 +340,69 @@ def _read_protein_mapping(mapping_path):
 @click.option(
     "--output", "output_dir", required=True,
     type=click.Path(file_okay=False, path_type=Path),
-    help="New directory for the CLAUDIO input, audit, and evidence files.",
+    help="New directory for the input export or import audit.",
 )
 def standardize_command(results_path, fasta_path, mapping_path, dataset_accession,
-                        fdr_level, fdr_cutoff, crosslinkers, residues, source_proteins, output_dir):
-    """Convert xiFDR PSMs into CLAUDIO input using pyXLMS and saved identities."""
+                        fdr_level, fdr_cutoff, fdr_column, decoy_prefix, crosslinkers,
+                        residues, source_proteins, audit_only, output_dir):
+    """Import xiFDR or pLink PSMs and export validated CLAUDIO inputs or a full audit."""
     if output_dir.exists():
         raise click.BadParameter("Output directory already exists; choose a new directory.", param_hint="--output")
-    if not math.isfinite(fdr_cutoff):
+    if fdr_cutoff is not None and not math.isfinite(fdr_cutoff):
         raise click.BadParameter("Must be a finite fraction between 0 and 1.", param_hint="--fdr-cutoff")
     if any(not label.strip() for label in crosslinkers):
         raise click.BadParameter("Crosslinker labels must not be empty.", param_hint="--crosslinker")
     if any(not identifier.strip() for identifier in source_proteins):
         raise click.BadParameter("Protein identifiers must not be empty.", param_hint="--source-protein")
     try:
+        source_format = _detect_psm_format(results_path)
+    except (ValueError, OSError) as error:
+        raise click.ClickException(str(error)) from error
+    plink = source_format == "plink_psm"
+    if not plink and (fdr_column is not None or decoy_prefix is not None):
+        raise click.UsageError("--fdr-column and --decoy-prefix are only supported for pLink PSM inputs.")
+    if audit_only:
+        selection = {"--mapping": mapping_path is not None, "--fdr-cutoff": fdr_cutoff is not None,
+                     "--crosslinker": bool(crosslinkers), "--residue": bool(residues),
+                     "--source-protein": bool(source_proteins)}
+        conflicts = [option for option, present in selection.items() if present]
+        if conflicts:
+            raise click.UsageError("Selection options cannot be used with --audit-only: " + ", ".join(conflicts))
+        if plink and (fdr_level is None) != (fdr_column is None):
+            raise click.UsageError("Provide --fdr-level and --fdr-column together to label reported pLink FDR values.")
+        if not plink and fdr_level is not None:
+            raise click.UsageError("--fdr-level is not used with --audit-only for xiFDR; all reported levels are retained.")
+    else:
+        required = {"--mapping": mapping_path is None, "--fdr-level": fdr_level is None,
+                    "--fdr-cutoff": fdr_cutoff is None, "--crosslinker": not crosslinkers,
+                    "--residue": not residues}
+        if plink:
+            required.update({"--fdr-column": fdr_column is None, "--decoy-prefix": decoy_prefix is None})
+        missing = [option for option, absent in required.items() if absent]
+        if missing:
+            raise click.UsageError("Input export requires " + ", ".join(missing) + ".")
+
+    click.echo("Detected format: " + ("pLink PSM" if plink else "xiFDR PSM"))
+    try:
+        if plink:
+            bundle = read_plink_psms(
+                results_path, fasta_path, dataset_accession=dataset_accession,
+                decoy_prefix=decoy_prefix,
+                fdr_columns={fdr_level: fdr_column} if fdr_column is not None else None,
+            )
+        else:
+            bundle = read_xifdr_psms(results_path, fasta_path, dataset_accession=dataset_accession,
+                                     backend="pyxlms")
+        if audit_only:
+            destination = write_import_report(bundle, output_dir)
+            manifest = json.loads((destination / "manifest.json").read_text(encoding="utf-8"))
+            click.echo(f"Source PSM records: {manifest['counts']['source_records']}")
+            click.echo(f"Unresolved source records: {manifest['counts']['unresolved_source_records']}")
+            click.echo(f"Records with parser errors: {manifest['counts']['parser_errors']}")
+            click.echo(f"Audit report: {(destination / 'import_report.json').resolve()}")
+            click.echo(f"Output: {destination.resolve()}")
+            return
         mappings = _read_protein_mapping(mapping_path)
-        bundle = read_xifdr_psms(results_path, fasta_path, dataset_accession=dataset_accession,
-                                 backend="pyxlms")
         destination = write_claudio_input(
             bundle, mappings, output_dir,
             fdr_level=fdr_level, fdr_cutoff=fdr_cutoff,

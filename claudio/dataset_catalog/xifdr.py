@@ -492,6 +492,40 @@ def read_plink_psms(psm_path, fasta_path, *, dataset_accession,
                            "fasta_sha256": next(iter(proteins.values()))["fasta_sha256"]}}
 
 
+def write_import_report(bundle, output_dir):
+    """Save the complete import without selecting records or applying identities."""
+    output_dir = Path(output_dir)
+    if output_dir.exists():
+        raise FileExistsError("Import report output directory already exists")
+    for kind in ("psm", "fasta"):
+        source = Path(bundle["provenance"][kind + "_path"])
+        digest = hashlib.sha256()
+        with source.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        if digest.hexdigest() != bundle["provenance"][kind + "_sha256"]:
+            raise ValueError(f"An import source changed after parsing: {source}")
+
+    output_dir.mkdir(parents=True, exist_ok=False)
+    report = output_dir / "import_report.json"
+    _write_json(report, bundle)
+    records = bundle["records"]
+    valid = sum(record["record_status"] == "valid" for record in records)
+    errors = sum(record["record_reason"].startswith("pyxlms_") for record in records)
+    _write_json(output_dir / "manifest.json", {
+        "schema_version": 1, "kind": "xlms_psm_import", "format": bundle["format"],
+        "provenance": deepcopy(bundle["provenance"]), "parser": deepcopy(bundle.get("parser")),
+        "counts": {"source_records": len(records), "validated_source_records": valid,
+                   "unresolved_source_records": len(records) - valid, "parser_errors": errors},
+        "record_reason_counts": dict(Counter(record["record_reason"] for record in records
+                                             if record["record_reason"])),
+        "fdr_filter_applied": False, "identity_mapping_applied": False,
+        "input_exported": False, "assessment_performed": False,
+        "output_sha256": {"import_report.json": hashlib.sha256(report.read_bytes()).hexdigest()},
+    })
+    return output_dir
+
+
 def target_proteins(bundle):
     """Select only proteins used by valid target PSMs, not the entire search FASTA."""
     used = {endpoint["source_fasta_id"] for row in bundle["records"]

@@ -1321,3 +1321,205 @@ class TestPlinkPSM(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "PSM|spectra"):
             self.read()
+
+class TestStandardizeFormatsCLI(unittest.TestCase):
+    def setUp(self):
+        self.temp = TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        fixture = Path(__file__).resolve().parents[1] / "fixtures" / "plink_pxd079671"
+        self.psms = self.root / "renamed_results.csv"
+        self.fasta = self.root / "search.fasta"
+        self.psms.write_bytes((fixture / "spectra.csv").read_bytes())
+        self.fasta.write_bytes((fixture / "search.fasta").read_bytes())
+        with self.psms.open(encoding="utf-8-sig", newline="") as handle:
+            reader = csv.DictReader(handle)
+            self.columns = reader.fieldnames
+            self.original_rows = list(reader)
+        self.mapping = self.root / "mapping.json"
+        self.mapping.write_text("{}", encoding="utf-8")
+        self.output = self.root / "output"
+
+    def arguments(self):
+        return [
+            "standardize", "--results", str(self.psms), "--fasta", str(self.fasta),
+            "--dataset-accession", "PXD079671", "--output", str(self.output),
+        ]
+
+    def run_command(self, arguments):
+        result = CliRunner().invoke(catalog_main, arguments)
+        self.assertEqual(result.exit_code, 0, result.output + repr(result.exception))
+        return result
+
+    def save_mapping(self):
+        references = self.root / "references.fasta"
+        references.write_text(REFERENCES, encoding="utf-8")
+        mappings = map_reference_proteins(read_search_fasta(self.fasta), read_search_fasta(references), taxon_id=9031)
+        self.mapping.write_text(json.dumps(mappings), encoding="utf-8")
+
+    def prepare_plink_example(self):
+        self.fasta.write_text(FASTA, encoding="utf-8")
+        row = dict(self.original_rows[0])
+        row.update(Peptide="ACK(3)-KPEP(3)", Proteins="customA(4)-customB(5)/",
+                   Modifications="null", ReportedPSMFDR="0.005")
+        with self.psms.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=self.columns + ["ReportedPSMFDR"])
+            writer.writeheader()
+            writer.writerow(row)
+        self.save_mapping()
+
+    def prepare_xifdr_example(self):
+        self.fasta.write_text(FASTA, encoding="utf-8")
+        columns = COLUMNS + ["exp charge"]
+        with self.psms.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=columns)
+            writer.writeheader()
+            writer.writerow({**psm(), "exp charge": "3"})
+        self.save_mapping()
+
+    def plink_export_arguments(self):
+        return self.arguments() + [
+            "--mapping", str(self.mapping), "--fdr-level", "psm", "--fdr-cutoff", "0.01",
+            "--fdr-column", "ReportedPSMFDR", "--decoy-prefix", "REV_",
+            "--crosslinker", "EDC-DE", "--residue", "K", "--residue", "E",
+        ]
+
+    def test_real_plink_audit_requires_no_mapping_or_filter_policy(self):
+        result = self.run_command(self.arguments() + ["--audit-only"])
+
+        self.assertIn("Detected format: pLink PSM", result.output)
+        self.assertIn("Source PSM records: 3", result.output)
+        report = json.loads((self.output / "import_report.json").read_text())
+        self.assertEqual(report["format"], "plink_psm")
+        self.assertEqual([r["source_fields"] for r in report["records"]], self.original_rows)
+        self.assertTrue(all(r["fdr"]["psm"]["status"] == "missing" for r in report["records"]))
+        self.assertFalse((self.output / "claudio_input.csv").exists())
+        manifest = json.loads((self.output / "manifest.json").read_text())
+        self.assertEqual(manifest["kind"], "xlms_psm_import")
+        self.assertEqual(manifest["format"], "plink_psm")
+        self.assertEqual(manifest["counts"]["source_records"], 3)
+        self.assertEqual(manifest["counts"]["unresolved_source_records"], 3)
+        self.assertFalse(manifest["fdr_filter_applied"])
+        self.assertFalse(manifest["identity_mapping_applied"])
+        self.assertFalse(manifest["input_exported"])
+        self.assertFalse(manifest["assessment_performed"])
+        self.assertIsNone(manifest.get("fdr_policy"))
+        for name, digest in manifest["output_sha256"].items():
+            self.assertEqual(hashlib.sha256((self.output / name).read_bytes()).hexdigest(), digest)
+
+    def test_xifdr_audit_preserves_reported_fdr_without_selecting_a_level(self):
+        self.prepare_xifdr_example()
+        result = self.run_command(self.arguments() + ["--audit-only"])
+
+        self.assertIn("Detected format: xiFDR PSM", result.output)
+        report = json.loads((self.output / "import_report.json").read_text())
+        self.assertEqual(report["format"], "xifdr_psm")
+        self.assertEqual(report["parser"]["name"], "pyXLMS")
+        self.assertEqual(len(report["records"]), 1)
+        self.assertEqual(report["records"][0]["fdr"]["psm"]["value"], 0.02)
+        self.assertEqual(report["records"][0]["fdr"]["link"]["value"], 0.005)
+        manifest = json.loads((self.output / "manifest.json").read_text())
+        self.assertFalse(manifest["fdr_filter_applied"])
+        self.assertFalse(manifest["input_exported"])
+        self.assertFalse((self.output / "claudio_input.csv").exists())
+
+    def test_plink_export_uses_explicit_fdr_and_saved_identities(self):
+        self.prepare_plink_example()
+        result = self.run_command(self.plink_export_arguments())
+
+        self.assertIn("Detected format: pLink PSM", result.output)
+        self.assertIn("Standardized input rows: 1", result.output)
+        with (self.output / "claudio_input.csv").open(encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle)
+            self.assertEqual(reader.fieldnames[:8], CLAUDIO_COLUMNS)
+            rows = list(reader)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual((rows[0]["entry1"], rows[0]["entry2"]), ("P12345", "Q99999"))
+        self.assertEqual((rows[0]["position1"], rows[0]["position2"]), ("4", "5"))
+        self.assertEqual(rows[0]["source_spectrum_title"], self.original_rows[0]["Title"])
+        manifest = json.loads((self.output / "manifest.json").read_text())
+        self.assertEqual(manifest["kind"], "plink_claudio_input")
+        self.assertEqual(manifest["parser"]["fdr_columns"], {"psm": "ReportedPSMFDR"})
+        self.assertEqual(manifest["parser"]["decoy_prefix"], "REV_")
+        self.assertEqual(manifest["fdr_policy"]["level"], "psm")
+        self.assertFalse(manifest["assessment_performed"])
+
+    def test_plink_export_requires_a_reported_fdr_column_and_decoy_prefix(self):
+        self.prepare_plink_example()
+        for flag in ("--fdr-column", "--decoy-prefix"):
+            with self.subTest(missing=flag):
+                arguments = self.plink_export_arguments()
+                index = arguments.index(flag)
+                del arguments[index:index + 2]
+                result = CliRunner().invoke(catalog_main, arguments)
+                self.assertEqual(result.exit_code, 2)
+                self.assertIn(flag, result.output)
+                self.assertFalse(self.output.exists())
+
+    def test_audit_rejects_selection_options_instead_of_ignoring_them(self):
+        for flag, value in (("--fdr-cutoff", "0.01"), ("--mapping", str(self.mapping)),
+                            ("--source-protein", "bh2531")):
+            with self.subTest(option=flag):
+                result = CliRunner().invoke(catalog_main, self.arguments() + ["--audit-only", flag, value])
+                self.assertEqual(result.exit_code, 2)
+                self.assertIn("--audit-only", result.output)
+                self.assertIn(flag, result.output)
+                self.assertFalse(self.output.exists())
+
+    def test_audit_keeps_existing_outputs_untouched(self):
+        self.output.mkdir()
+        marker = self.output / "keep.txt"
+        marker.write_text("previous output", encoding="utf-8")
+
+        result = CliRunner().invoke(catalog_main, self.arguments() + ["--audit-only"])
+
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertIn("exist", result.output.lower())
+        self.assertEqual(marker.read_text(), "previous output")
+        self.assertEqual(list(self.output.iterdir()), [marker])
+
+    def test_unknown_table_format_is_rejected_without_creating_output(self):
+        self.psms.write_text("ID,Value\n1,2\n", encoding="utf-8")
+
+        result = CliRunner().invoke(catalog_main, self.arguments() + ["--audit-only"])
+
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertIn("format", result.output.lower())
+        self.assertFalse(self.output.exists())
+
+    def test_report_writer_checks_source_hashes_before_creating_output(self):
+        bundle = xifdr.read_plink_psms(self.psms, self.fasta, dataset_accession="PXD079671")
+        self.psms.write_bytes(self.psms.read_bytes() + b"\n")
+
+        with self.assertRaisesRegex(ValueError, "source|checksum|changed"):
+            xifdr.write_import_report(bundle, self.output)
+
+        self.assertFalse(self.output.exists())
+
+    def test_xifdr_export_rejects_plink_interpretation_options(self):
+        self.prepare_xifdr_example()
+        arguments = self.arguments() + [
+            "--mapping", str(self.mapping), "--fdr-level", "link", "--fdr-cutoff", "0.01",
+            "--crosslinker", "BS3", "--residue", "K",
+        ]
+        for flag, value in (("--decoy-prefix", "REV_"), ("--fdr-column", "LinkFDR")):
+            with self.subTest(option=flag):
+                result = CliRunner().invoke(catalog_main, arguments + [flag, value])
+                self.assertEqual(result.exit_code, 2)
+                self.assertIn("pLink", result.output)
+                self.assertFalse(self.output.exists())
+
+    def test_plink_audit_can_label_a_declared_fdr_field_without_filtering(self):
+        self.prepare_plink_example()
+        self.run_command(self.arguments() + [
+            "--audit-only", "--decoy-prefix", "REV_",
+            "--fdr-level", "psm", "--fdr-column", "ReportedPSMFDR",
+        ])
+
+        report = json.loads((self.output / "import_report.json").read_text())
+        self.assertEqual(report["records"][0]["fdr"]["psm"]["value"], 0.005)
+        self.assertEqual(report["parser"]["fdr_columns"], {"psm": "ReportedPSMFDR"})
+        manifest = json.loads((self.output / "manifest.json").read_text())
+        self.assertFalse(manifest["fdr_filter_applied"])
+        self.assertIsNone(manifest.get("fdr_policy"))
+        self.assertFalse((self.output / "claudio_input.csv").exists())
