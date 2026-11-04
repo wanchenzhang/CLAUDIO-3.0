@@ -4,6 +4,7 @@ Coordinates are 1-based. Identity resolution requires full sequence equality.
 FDR levels and source classifications are preserved rather than inferred.
 """
 
+import configparser
 import csv
 import hashlib
 import io
@@ -364,18 +365,174 @@ def _plink_endpoint(site, proteins, modification_status):
     return endpoint
 
 
+PLINK_JOIN_FIELDS = ("Title", "Charge", "Peptide", "Proteins", "FileID", "Modifications")
+
+
+def _plink_filter_policy(path):
+    """Read the author's settings without treating them as independent validation."""
+    path = Path(path)
+    raw = path.read_bytes()
+    settings = configparser.ConfigParser(interpolation=None)
+    try:
+        settings.read_string(raw.decode("utf-8-sig"))
+        software_version = settings.get("version", "version")
+        if not re.fullmatch(r"2(?:\.[0-9]+)+", software_version):
+            raise ValueError("Native evidence currently supports pLink 2 parameter files")
+        cutoff = _fdr_value(settings.get("filter", "FDR"))
+        if cutoff["status"] != "valid":
+            raise ValueError("The pLink parameter FDR must be a finite fraction between 0 and 1")
+        count = _positive_integer(settings.get("linker", "linker_total"))
+        linkers = [settings.get("linker", f"linker{number}") for number in range(1, count + 1)]
+        grouping = settings.get("filter", "fdr_separate_or_global")
+        database = settings.get("database", "db_name")
+        if not grouping.strip() or not database.strip() or any(not linker.strip() for linker in linkers):
+            raise ValueError("The pLink parameters have empty database, linker or FDR grouping settings")
+    except configparser.Error as error:
+        raise ValueError(f"Invalid pLink parameters: {error}") from error
+    return {
+        "level": "psm", "cutoff": cutoff["value"], "cutoff_raw": cutoff["raw"],
+        "grouping_raw": grouping, "software_version": software_version,
+        "database_name": database, "crosslinkers": linkers,
+        "filter_tolerance_raw": settings.get("filter", "filter_tol", fallback=None),
+        "filter_tolerance_unit_raw": settings.get("filter", "filter_tol_type", fallback=None),
+        "evalue_setting_raw": settings.get("filter", "evalue", fallback=None),
+        "independent_validation_performed": False,
+    }, hashlib.sha256(raw).hexdigest()
+
+
+def _add_plink_native_evidence(bundle, unfiltered_path, parameters_path):
+    """Join native rows by source fields; never transfer confidence by row order."""
+    unfiltered_path, parameters_path = Path(unfiltered_path), Path(parameters_path)
+    policy, parameters_hash = _plink_filter_policy(parameters_path)
+    raw = unfiltered_path.read_bytes()
+    reader = csv.reader(io.StringIO(raw.decode("utf-8-sig")))
+    columns = next(reader, [])
+    named = [name for name in columns if name]
+    required = set(PLINK_JOIN_FIELDS) | {"Peptide_Type", "Target_Decoy", "Q-value", "Protein_Type"}
+    if len(named) != len(set(named)):
+        raise ValueError("The native pLink unfiltered table has duplicate named columns")
+    if not required <= set(columns):
+        raise ValueError("The native pLink unfiltered table is missing columns: "
+                         + ", ".join(sorted(required - set(columns))))
+
+    wanted = {tuple(record["source_fields"][name] for name in PLINK_JOIN_FIELDS)
+              for record in bundle["records"] if set(PLINK_JOIN_FIELDS) <= record["source_fields"].keys()}
+    index, previous_line, ragged = {}, reader.line_num, []
+    for number, values in enumerate(reader, 1):
+        start, end = previous_line + 1, reader.line_num
+        previous_line = end
+        if not any(value.strip() for value in values):
+            continue
+        if len(values) != len(columns):
+            ragged.append(number)
+            continue
+        fields = {name: value for name, value in zip(columns, values) if name}
+        key = tuple(fields[name] for name in PLINK_JOIN_FIELDS)
+        if key not in wanted:
+            continue
+        entry = {"source_record_number": number, "source_line_start": start,
+                 "source_line_end": end, "source_values": values, "source_fields": fields}
+        index.setdefault(key, []).append(entry)
+
+    bundle["native_filter_policy"] = policy
+    bundle["provenance"].update(
+        plink_unfiltered_path=str(unfiltered_path.resolve()),
+        plink_unfiltered_sha256=hashlib.sha256(raw).hexdigest(),
+        plink_parameters_path=str(parameters_path.resolve()),
+        plink_parameters_sha256=parameters_hash,
+    )
+    bundle["parser"]["native_evidence"] = {
+        "join_fields": list(PLINK_JOIN_FIELDS), "q_value_level": "psm",
+        "unfiltered_ragged_record_numbers": ragged,
+    }
+    decoy_codes = {"0": "decoy_decoy", "1": "target_decoy", "2": "target_target"}
+    for record in bundle["records"]:
+        fields = record["source_fields"]
+        evidence = {"status": "not_evaluable", "reason": "", "candidate_record_numbers": [],
+                    "within_reported_fdr_cutoff": None}
+        record["native_evidence"] = evidence
+        if (not set(PLINK_JOIN_FIELDS) <= fields.keys()
+                or any(not fields[name].strip() for name in PLINK_JOIN_FIELDS[:-1])):
+            evidence["reason"] = "missing_source_join_fields"
+            continue
+        if fields.get("Peptide_Type", "").strip().lower() != "cross-linked":
+            evidence["reason"] = "unsupported_source_peptide_type"
+            continue
+        if fields.get("Linker") not in policy["crosslinkers"]:
+            evidence["reason"] = "crosslinker_conflict"
+            continue
+        matches = index.get(tuple(fields[name] for name in PLINK_JOIN_FIELDS), [])
+        evidence["candidate_record_numbers"] = [entry["source_record_number"] for entry in matches]
+        if len(matches) != 1:
+            evidence["reason"] = "ambiguous_native_psm" if matches else "native_psm_not_found"
+            continue
+        native = matches[0]
+        reported = native["source_fields"]
+        evidence.update(deepcopy(native))
+        evidence["native_order"] = reported.get("Order")
+        evidence["q_value"] = _fdr_value(reported["Q-value"])
+        if reported["Peptide_Type"].strip() != "3":
+            evidence["reason"] = "native_record_not_crosslinked"
+            continue
+        source_type = fields.get("Protein_Type", "").strip().lower()
+        expected_type = {"intra-protein": "1", "inter-protein": "2"}.get(source_type)
+        if expected_type is not None and reported["Protein_Type"].strip() != expected_type:
+            evidence["reason"] = "native_protein_type_conflict"
+            continue
+        record["decoy_status"] = decoy_codes.get(reported["Target_Decoy"].strip(), "unknown")
+        record["fdr"]["psm"] = deepcopy(evidence["q_value"])
+        if record["decoy_status"] == "unknown":
+            evidence["reason"] = "unknown_native_decoy_code"
+            record["decoy_reason"] = evidence["reason"]
+        elif evidence["q_value"]["status"] != "valid":
+            evidence["reason"] = "invalid_native_q_value"
+            record["decoy_reason"] = ""
+        elif reported["Protein_Type"].strip() not in ("1", "2"):
+            evidence["reason"] = "unknown_native_protein_type"
+            record["decoy_reason"] = ""
+        else:
+            evidence.update(status="verified", reason="",
+                            within_reported_fdr_cutoff=(record["decoy_status"] == "target_target"
+                                                       and evidence["q_value"]["value"] <= policy["cutoff"]))
+            record["decoy_reason"] = ""
+        if record["record_reason"] == "decoy_policy_not_provided":
+            if evidence["status"] == "verified":
+                record.update(record_status="valid", record_reason="")
+            else:
+                record["record_reason"] = evidence["reason"]
+    return bundle
+
+
+def _verify_plink_native_sources(bundle):
+    if "native_filter_policy" not in bundle:
+        return
+    for kind in ("plink_unfiltered", "plink_parameters"):
+        source = Path(bundle["provenance"][kind + "_path"])
+        digest = hashlib.sha256()
+        with source.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        if digest.hexdigest() != bundle["provenance"][kind + "_sha256"]:
+            raise ValueError(f"A native pLink source changed after parsing: {source}")
+
+
 def read_plink_psms(psm_path, fasta_path, *, dataset_accession,
-                    decoy_prefix=None, fdr_columns=None):
+                    decoy_prefix=None, fdr_columns=None, unfiltered_path=None, parameters_path=None):
     """Read pLink spectra tables while retaining unverified source information.
 
     Protein alternatives keep their original pairings. The caller must supply
-    the decoy prefix and any mapping from FDR levels to reported column names;
-    missing policies stay unresolved. Scores are not interpreted as FDR.
+    the decoy prefix and mappings from FDR levels to reported column names, or
+    provide the paired native unfiltered results and pLink 2 parameters.
+    Missing policies stay unresolved. Scores are not interpreted as FDR.
     Modification strings and spectrum titles are retained without inventing
     modification masses or numeric scan identifiers.
     """
     if not isinstance(dataset_accession, str) or re.fullmatch(r"PXD\d{6,}", dataset_accession) is None:
         raise ValueError("A ProteomeXchange PXD accession is required")
+    if (unfiltered_path is None) != (parameters_path is None):
+        raise ValueError("Provide unfiltered_path and parameters_path together for native pLink evidence")
+    if unfiltered_path is not None and (decoy_prefix is not None or fdr_columns):
+        raise ValueError("Do not mix native pLink evidence with manual decoy or FDR column policies")
     if decoy_prefix is not None and (not isinstance(decoy_prefix, str)
                                     or not decoy_prefix or decoy_prefix != decoy_prefix.strip()):
         raise ValueError("decoy_prefix must be a nonempty prefix or None")
@@ -482,7 +639,7 @@ def read_plink_psms(psm_path, fasta_path, *, dataset_accession,
         else:
             record.update(record_status="valid", record_reason="")
 
-    return {"format": "plink_psm", "format_version": 1, "source_columns": columns,
+    bundle = {"format": "plink_psm", "format_version": 1, "source_columns": columns,
             "records": records, "proteins": proteins,
             "parser": {"name": "pyXLMS", "version": version("pyXLMS"),
                        "entrypoint": "parse_sites_from_plink", "modification_masses_assessed": False,
@@ -490,6 +647,9 @@ def read_plink_psms(psm_path, fasta_path, *, dataset_accession,
             "provenance": {"dataset_accession": dataset_accession, "psm_path": str(psm_path.resolve()),
                            "psm_sha256": digest, "fasta_path": str(fasta_path.resolve()),
                            "fasta_sha256": next(iter(proteins.values()))["fasta_sha256"]}}
+    if unfiltered_path is not None:
+        return _add_plink_native_evidence(bundle, unfiltered_path, parameters_path)
+    return bundle
 
 
 def write_import_report(bundle, output_dir):
@@ -497,6 +657,7 @@ def write_import_report(bundle, output_dir):
     output_dir = Path(output_dir)
     if output_dir.exists():
         raise FileExistsError("Import report output directory already exists")
+    _verify_plink_native_sources(bundle)
     for kind in ("psm", "fasta"):
         source = Path(bundle["provenance"][kind + "_path"])
         digest = hashlib.sha256()
@@ -512,7 +673,7 @@ def write_import_report(bundle, output_dir):
     records = bundle["records"]
     valid = sum(record["record_status"] == "valid" for record in records)
     errors = sum(record["record_reason"].startswith("pyxlms_") for record in records)
-    _write_json(output_dir / "manifest.json", {
+    manifest = {
         "schema_version": 1, "kind": "xlms_psm_import", "format": bundle["format"],
         "provenance": deepcopy(bundle["provenance"]), "parser": deepcopy(bundle.get("parser")),
         "counts": {"source_records": len(records), "validated_source_records": valid,
@@ -522,7 +683,11 @@ def write_import_report(bundle, output_dir):
         "fdr_filter_applied": False, "identity_mapping_applied": False,
         "input_exported": False, "assessment_performed": False,
         "output_sha256": {"import_report.json": hashlib.sha256(report.read_bytes()).hexdigest()},
-    })
+    }
+    if "native_filter_policy" in bundle:
+        manifest["native_filter_policy"] = deepcopy(bundle["native_filter_policy"])
+        manifest["native_evidence_counts"] = dict(Counter(record["native_evidence"]["status"] for record in records))
+    _write_json(output_dir / "manifest.json", manifest)
     return output_dir
 
 
@@ -1194,6 +1359,7 @@ def write_claudio_input(bundle, mappings, output_dir, *, fdr_level, fdr_cutoff,
 def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_policy=None):
     """Write source/audit snapshots and the eligible input table to a new directory."""
     output_dir = Path(output_dir)
+    _verify_plink_native_sources(bundle)
     copied = deepcopy(mappings)
     source_bodies = {}
     for identity in copied.values():
@@ -1247,6 +1413,8 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
                 "output_sha256": {name: hashlib.sha256((output_dir / name).read_bytes()).hexdigest() for name in names}}
     if "parser" in bundle:
         manifest["parser"] = deepcopy(bundle["parser"])
+    if "native_filter_policy" in bundle:
+        manifest["native_filter_policy"] = deepcopy(bundle["native_filter_policy"])
     if pipeline:
         manifest["selection_policy"] = pipeline_policy
         manifest["pipeline_input"] = {

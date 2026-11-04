@@ -1523,3 +1523,337 @@ class TestStandardizeFormatsCLI(unittest.TestCase):
         self.assertFalse(manifest["fdr_filter_applied"])
         self.assertIsNone(manifest.get("fdr_policy"))
         self.assertFalse((self.output / "claudio_input.csv").exists())
+
+
+class TestPlinkNativeEvidence(unittest.TestCase):
+    def setUp(self):
+        self.temp = TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        fixture = Path(__file__).resolve().parents[1] / "fixtures" / "plink_pxd079671"
+        self.psms = self.root / "spectra.csv"
+        self.fasta = self.root / "search.fasta"
+        self.native = self.root / "unfiltered.csv"
+        self.parameters = self.root / "search.plink"
+        for destination, relative in (
+            (self.psms, "spectra.csv"), (self.fasta, "search.fasta"),
+            (self.native, "native/unfiltered.csv"),
+            (self.parameters, "native/parameters.plink"),
+        ):
+            destination.write_bytes((fixture / relative).read_bytes())
+        checksums = json.loads((fixture / "native/source_checksums.json").read_text())
+        for name, path in (("BH2531_2024.10.15.csv", self.native),
+                           ("pLink_task_2024.10.15.11.45.41_G1_3A.plink", self.parameters)):
+            expected = next(item for item in checksums if item["file_name"] == name)
+            self.assertEqual(path.stat().st_size, expected["bytes"])
+            self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), expected["sha256"])
+        with self.native.open(encoding="utf-8-sig", newline="") as handle:
+            reader = csv.DictReader(handle)
+            self.columns, self.native_rows = reader.fieldnames, list(reader)
+        with self.psms.open(encoding="utf-8-sig", newline="") as handle:
+            reader = csv.DictReader(handle)
+            self.source_columns, self.source_rows = reader.fieldnames, list(reader)
+        self.output = self.root / "output"
+
+    def read(self, **options):
+        return xifdr.read_plink_psms(
+            self.psms, self.fasta, dataset_accession="PXD079671",
+            unfiltered_path=self.native, parameters_path=self.parameters, **options,
+        )
+
+    def save_native(self, rows=None, columns=None):
+        with self.native.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=columns or self.columns, extrasaction="ignore")
+            writer.writeheader()
+            writer.writerows(self.native_rows if rows is None else rows)
+
+    def change_first_match(self, **changes):
+        rows = [dict(row) for row in self.native_rows]
+        next(row for row in rows if row["Order"] == "1194").update(changes)
+        self.save_native(rows)
+
+    def arguments(self):
+        return [
+            "standardize", "--results", str(self.psms), "--fasta", str(self.fasta),
+            "--dataset-accession", "PXD079671", "--plink-unfiltered", str(self.native),
+            "--plink-parameters", str(self.parameters), "--output", str(self.output),
+        ]
+
+    def prepare_complete_example(self):
+        self.fasta.write_text(FASTA, encoding="utf-8")
+        source = dict(self.source_rows[0])
+        source.update(Peptide="ACK(3)-KPEP(3)", Proteins="customA(4)-customB(5)/", Modifications="null")
+        with self.psms.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=self.source_columns)
+            writer.writeheader()
+            writer.writerow(source)
+        native = dict(self.native_rows[1193])
+        native.update({key: source[key] for key in (
+            "Title", "Charge", "Peptide", "Proteins", "FileID", "Modifications"
+        )})
+        native.update({"Target_Decoy": "2", "Q-value": "0.005", "Peptide_Type": "3"})
+        self.save_native([native])
+        references = self.root / "references.fasta"
+        references.write_text(REFERENCES, encoding="utf-8")
+        mappings = map_reference_proteins(read_search_fasta(self.fasta), read_search_fasta(references), taxon_id=9031)
+        mapping = self.root / "mapping.json"
+        mapping.write_text(json.dumps(mappings), encoding="utf-8")
+        return mappings, mapping
+
+    def test_real_matches_add_confidence_without_accepting_missing_sequences(self):
+        before = xifdr.read_plink_psms(self.psms, self.fasta, dataset_accession="PXD079671")
+        bundle = self.read()
+
+        self.assertEqual([r["source_record_id"] for r in bundle["records"]],
+                         [r["source_record_id"] for r in before["records"]])
+        self.assertEqual([r["source_fields"] for r in bundle["records"]], self.source_rows)
+        self.assertEqual([r["endpoints"] for r in bundle["records"]],
+                         [r["endpoints"] for r in before["records"]])
+        self.assertEqual(bundle["native_filter_policy"]["cutoff"], 0.05)
+        self.assertEqual(bundle["native_filter_policy"]["level"], "psm")
+        self.assertEqual(bundle["native_filter_policy"]["grouping_raw"], "EFT_INTRA_INTER_SEPARATE_FDR")
+        self.assertEqual(bundle["native_filter_policy"]["software_version"], "2.3.11")
+        self.assertEqual(bundle["native_filter_policy"]["crosslinkers"], ["EDC-DE"])
+        self.assertEqual([r["native_evidence"]["native_order"] for r in bundle["records"]],
+                         ["1194", "1205", "1206"])
+        for record in bundle["records"]:
+            self.assertEqual(record["native_evidence"]["status"], "verified")
+            self.assertTrue(record["native_evidence"]["within_reported_fdr_cutoff"])
+            self.assertEqual(record["decoy_status"], "target_target")
+            self.assertEqual(record["fdr"]["psm"], {"raw": "0.000000", "value": 0.0, "status": "valid"})
+            self.assertEqual(record["fdr"]["link"]["status"], "missing")
+            self.assertEqual(record["record_status"], "not_evaluable")
+            self.assertEqual(record["record_reason"], "source_endpoint_unresolved")
+        prepared = prepare_af_input(bundle, {}, fdr_level="psm", fdr_cutoff=0.05)
+        self.assertEqual(prepared["rows"], [])
+        self.assertEqual(len(prepared["audit"]), 3)
+
+    def test_native_table_order_does_not_determine_source_associations(self):
+        first = self.read()
+        self.save_native(list(reversed(self.native_rows)))
+        second = self.read()
+        self.assertEqual([r["source_record_id"] for r in first["records"]],
+                         [r["source_record_id"] for r in second["records"]])
+        self.assertEqual([r["native_evidence"]["native_order"] for r in second["records"]],
+                         ["1194", "1205", "1206"])
+
+    def test_the_same_title_with_other_sites_is_not_a_match(self):
+        extra = dict(self.native_rows[1193])
+        extra.update(Order="other", Proteins="differentA(122)-differentB(354)/")
+        self.save_native([extra] + self.native_rows)
+        record = self.read()["records"][0]
+        self.assertEqual(record["native_evidence"]["native_order"], "1194")
+        self.assertEqual(record["native_evidence"]["status"], "verified")
+
+    def test_duplicate_native_matches_stay_ambiguous(self):
+        self.save_native(self.native_rows + [self.native_rows[1193]])
+        records = self.read()["records"]
+        self.assertEqual(records[0]["native_evidence"]["reason"], "ambiguous_native_psm")
+        self.assertEqual(len(records[0]["native_evidence"]["candidate_record_numbers"]), 2)
+        self.assertEqual(records[0]["decoy_status"], "unknown")
+        self.assertEqual(records[0]["fdr"]["psm"]["status"], "missing")
+        self.assertEqual(records[1]["native_evidence"]["status"], "verified")
+
+    def test_a_missing_native_record_does_not_remove_the_source(self):
+        self.save_native([r for r in self.native_rows if r["Order"] != "1194"])
+        records = self.read()["records"]
+        self.assertEqual(len(records), 3)
+        self.assertEqual(records[0]["native_evidence"]["reason"], "native_psm_not_found")
+        self.assertEqual(records[0]["source_fields"], self.source_rows[0])
+        self.assertEqual(records[0]["decoy_status"], "unknown")
+
+    def test_missing_source_identifiers_are_not_completed_from_native_rows(self):
+        rows = [dict(row) for row in self.source_rows]
+        rows[0]["Title"] = ""
+        with self.psms.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=self.source_columns)
+            writer.writeheader()
+            writer.writerows(rows)
+        self.change_first_match(Title="")
+        record = self.read()["records"][0]
+        self.assertEqual(record["source_fields"]["Title"], "")
+        self.assertEqual(record["native_evidence"]["reason"], "missing_source_join_fields")
+        self.assertEqual(record["decoy_status"], "unknown")
+
+    def test_native_q_values_are_not_rescaled_or_replaced(self):
+        for raw, status in (("100.000000", "out_of_range"), ("NaN", "non_finite"),
+                            ("", "missing"), ("bad", "invalid")):
+            with self.subTest(raw=raw):
+                self.change_first_match(**{"Q-value": raw})
+                record = self.read()["records"][0]
+                self.assertEqual(record["native_evidence"]["status"], "not_evaluable")
+                self.assertEqual(record["native_evidence"]["q_value"]["raw"], raw)
+                self.assertEqual(record["native_evidence"]["q_value"]["status"], status)
+                self.assertIsNone(record["native_evidence"]["within_reported_fdr_cutoff"])
+                self.assertEqual(record["fdr"]["psm"]["raw"], raw)
+
+    def test_decoy_codes_are_read_without_guessing_a_prefix(self):
+        for code, expected in (("0", "decoy_decoy"), ("1", "target_decoy"),
+                               ("2", "target_target"), ("7", "unknown")):
+            with self.subTest(code=code):
+                self.change_first_match(Target_Decoy=code)
+                record = self.read()["records"][0]
+                self.assertEqual(record["decoy_status"], expected)
+                self.assertEqual(record["native_evidence"]["source_fields"]["Target_Decoy"], code)
+                if code == "7":
+                    self.assertEqual(record["native_evidence"]["reason"], "unknown_native_decoy_code")
+
+    def test_cutoff_is_reported_separately_from_record_retention(self):
+        self.change_first_match(**{"Q-value": "0.08"})
+        bundle = self.read()
+        self.assertEqual(len(bundle["records"]), 3)
+        self.assertEqual(bundle["native_filter_policy"]["cutoff"], 0.05)
+        record = bundle["records"][0]
+        self.assertEqual(record["fdr"]["psm"]["value"], 0.08)
+        self.assertFalse(record["native_evidence"]["within_reported_fdr_cutoff"])
+
+    def test_isFilterIn_alone_is_not_used_as_fdr_acceptance(self):
+        self.change_first_match(**{"Q-value": "0.08", "isFilterIn": "1"})
+        record = self.read()["records"][0]
+        self.assertEqual(record["native_evidence"]["source_fields"]["isFilterIn"], "1")
+        self.assertFalse(record["native_evidence"]["within_reported_fdr_cutoff"])
+
+    def test_a_modification_conflict_is_not_joined_by_title(self):
+        self.change_first_match(Modifications="Oxidation[M](1)")
+        record = self.read()["records"][0]
+        self.assertEqual(record["native_evidence"]["reason"], "native_psm_not_found")
+        self.assertEqual(record["decoy_status"], "unknown")
+
+    def test_conflicting_native_peptide_or_protein_types_do_not_supply_confidence(self):
+        for changes, reason in (({"Peptide_Type": "0"}, "native_record_not_crosslinked"),
+                                ({"Protein_Type": "1"}, "native_protein_type_conflict")):
+            with self.subTest(changes=changes):
+                self.change_first_match(**changes)
+                record = self.read()["records"][0]
+                self.assertEqual(record["native_evidence"]["reason"], reason)
+                self.assertEqual(record["decoy_status"], "unknown")
+                self.assertEqual(record["fdr"]["psm"]["status"], "missing")
+
+    def test_parameters_for_another_crosslinker_do_not_supply_confidence(self):
+        self.parameters.write_text(self.parameters.read_text().replace("EDC-DE", "DSS"), encoding="utf-8")
+        record = self.read()["records"][0]
+        self.assertEqual(record["native_evidence"]["reason"], "crosslinker_conflict")
+        self.assertEqual(record["decoy_status"], "unknown")
+        self.assertEqual(record["fdr"]["psm"]["status"], "missing")
+
+    def test_invalid_parameter_fdr_is_not_replaced_with_a_default(self):
+        original = self.parameters.read_text()
+        for value in ("NaN", "5", ""):
+            with self.subTest(value=value):
+                self.parameters.write_text(original.replace("FDR = 0.05", "FDR = " + value), encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "FDR"):
+                    self.read()
+
+    def test_native_headers_must_be_complete_and_unique(self):
+        for columns in ([c for c in self.columns if c != "Target_Decoy"], self.columns + ["Q-value"]):
+            with self.subTest(columns=columns):
+                self.save_native(columns=columns)
+                with self.assertRaisesRegex(ValueError, "native|unfiltered|duplicate"):
+                    self.read()
+
+    def test_native_files_are_checked_again_before_writing_the_audit(self):
+        for changed in (self.native, self.parameters):
+            with self.subTest(path=changed.name):
+                bundle = self.read()
+                original = changed.read_bytes()
+                changed.write_bytes(original + b"\n")
+                with self.assertRaisesRegex(ValueError, "source|checksum|changed"):
+                    xifdr.write_import_report(bundle, self.output)
+                self.assertFalse(self.output.exists())
+                changed.write_bytes(original)
+
+    def test_native_files_must_be_paired_and_not_mixed_with_manual_policies(self):
+        for options in (
+            {"unfiltered_path": self.native}, {"parameters_path": self.parameters},
+            {"unfiltered_path": self.native, "parameters_path": self.parameters, "decoy_prefix": "REV_"},
+            {"unfiltered_path": self.native, "parameters_path": self.parameters, "fdr_columns": {"psm": "Score"}},
+        ):
+            with self.subTest(options=options):
+                with self.assertRaisesRegex(ValueError, "unfiltered|parameters|native"):
+                    xifdr.read_plink_psms(self.psms, self.fasta, dataset_accession="PXD079671", **options)
+
+    def test_complete_sequences_can_be_exported_using_native_evidence(self):
+        mappings, _ = self.prepare_complete_example()
+        bundle = self.read()
+        self.assertEqual(bundle["records"][0]["record_status"], "valid")
+        output = write_claudio_input(
+            bundle, mappings, self.output, fdr_level="psm", fdr_cutoff=0.01,
+            allowed_crosslinkers={"EDC-DE"}, allowed_residues={"K", "E"},
+        )
+        with (output / "claudio_input.csv").open(encoding="utf-8", newline="") as handle:
+            rows = list(csv.DictReader(handle))
+        self.assertEqual(len(rows), 1)
+        self.assertEqual((rows[0]["entry1"], rows[0]["entry2"]), ("P12345", "Q99999"))
+        manifest = json.loads((output / "manifest.json").read_text())
+        self.assertEqual(manifest["native_filter_policy"]["cutoff"], 0.05)
+        self.assertEqual(manifest["fdr_policy"]["cutoff"], 0.01)
+
+    def test_export_rejects_native_evidence_changed_after_import(self):
+        mappings, _ = self.prepare_complete_example()
+        bundle = self.read()
+        self.native.write_bytes(self.native.read_bytes() + b"\n")
+        with self.assertRaisesRegex(ValueError, "native.*source.*changed"):
+            write_claudio_input(
+                bundle, mappings, self.output, fdr_level="psm", fdr_cutoff=0.01,
+                allowed_crosslinkers={"EDC-DE"}, allowed_residues={"K", "E"},
+            )
+        self.assertFalse(self.output.exists())
+
+    def test_cli_audit_reports_verified_confidence_but_exports_no_input(self):
+        result = CliRunner().invoke(catalog_main, self.arguments() + ["--audit-only"])
+        self.assertEqual(result.exit_code, 0, result.output + repr(result.exception))
+        self.assertIn("Native confidence verified: 3", result.output)
+        report = json.loads((self.output / "import_report.json").read_text())
+        self.assertEqual(report["native_filter_policy"]["cutoff"], 0.05)
+        manifest = json.loads((self.output / "manifest.json").read_text())
+        self.assertEqual(manifest["native_evidence_counts"], {"verified": 3})
+        self.assertEqual(manifest["counts"]["unresolved_source_records"], 3)
+        for flag in ("fdr_filter_applied", "identity_mapping_applied", "input_exported", "assessment_performed"):
+            self.assertFalse(manifest[flag])
+        self.assertFalse((self.output / "claudio_input.csv").exists())
+        for name, digest in manifest["output_sha256"].items():
+            self.assertEqual(hashlib.sha256((self.output / name).read_bytes()).hexdigest(), digest)
+
+    def test_cli_requires_both_native_files_and_rejects_manual_confidence_flags(self):
+        for option in ("--plink-unfiltered", "--plink-parameters"):
+            arguments = self.arguments() + ["--audit-only"]
+            index = arguments.index(option)
+            del arguments[index:index + 2]
+            result = CliRunner().invoke(catalog_main, arguments)
+            self.assertEqual(result.exit_code, 2)
+            self.assertIn("together", result.output)
+            self.assertFalse(self.output.exists())
+        for extra in (["--decoy-prefix", "REV_"], ["--fdr-column", "Q-value", "--fdr-level", "psm"]):
+            result = CliRunner().invoke(catalog_main, self.arguments() + ["--audit-only"] + extra)
+            self.assertEqual(result.exit_code, 2)
+            self.assertIn("native", result.output.lower())
+            self.assertFalse(self.output.exists())
+
+    def test_cli_native_export_uses_the_psm_level_and_requires_an_explicit_cutoff(self):
+        _, mapping = self.prepare_complete_example()
+        selection = ["--mapping", str(mapping), "--fdr-level", "psm", "--fdr-cutoff", "0.01",
+                     "--crosslinker", "EDC-DE", "--residue", "K", "--residue", "E"]
+        result = CliRunner().invoke(catalog_main, self.arguments() + selection)
+        self.assertEqual(result.exit_code, 0, result.output + repr(result.exception))
+        self.assertIn("Standardized input rows: 1", result.output)
+        other = self.root / "other"
+        for level, cutoff in (("link", "0.01"), ("psm", None)):
+            arguments = self.arguments() + selection
+            arguments[arguments.index(str(self.output))] = str(other)
+            arguments[arguments.index("--fdr-level") + 1] = level
+            if cutoff is None:
+                index = arguments.index("--fdr-cutoff")
+                del arguments[index:index + 2]
+            result = CliRunner().invoke(catalog_main, arguments)
+            self.assertEqual(result.exit_code, 2)
+            self.assertFalse(other.exists())
+
+    def test_cli_rejects_native_plink_evidence_for_xifdr_inputs(self):
+        with self.psms.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=COLUMNS + ["exp charge"])
+            writer.writeheader()
+            writer.writerow({**psm(), "exp charge": "3"})
+        result = CliRunner().invoke(catalog_main, self.arguments() + ["--audit-only"])
+        self.assertEqual(result.exit_code, 2)
+        self.assertIn("pLink", result.output)
+        self.assertFalse(self.output.exists())

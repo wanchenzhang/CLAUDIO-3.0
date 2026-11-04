@@ -1,0 +1,44 @@
+[version]
+version = 2.3.11
+[score]
+simple_score_type = ST_XLINK_OBM25
+[flow]
+flow_type = FT_ION_INDEX
+processor_num = 16
+result_output_path = C:\Users\astanley\Documents\pLink\\pLink_task_2024.10.15.11.45.41_G1_3A\
+[database]
+db_name = BH2531
+enzyme_name = Trypsin
+max_miss_site = 3
+min_pep_mass = 600
+max_pep_mass = 8000
+min_pep_len = 6
+max_pep_len = 60
+[modification]
+fix_total = 1
+fix_mod1 = Carbamidomethyl[C]
+var_total = 1
+var_mod1 = Oxidation[M]
+[linker]
+linker_total = 1
+linker1 = EDC-DE
+[ions]
+fragment_tol = 20
+fragment_tol_type = ppm
+peptide_tol = 20
+peptide_tol_type = ppm
+simple_instrument = HCD-basic
+refined_instrument = HCD
+[filter]
+filter_tol = 10
+filter_tol_type = ppm
+FDR = 0.05
+fdr_separate_or_global = EFT_INTRA_INTER_SEPARATE_FDR
+evalue = 0
+[spectrum]
+spec_title = BH2531_2024.10.15
+spec_type = mgf
+spec_num = 1
+spec_path1 = C:\Users\astanley\Documents\mgf\G1\G1_3A_pLinkFormatted.mgf
+[quant]
+quant = 1|None

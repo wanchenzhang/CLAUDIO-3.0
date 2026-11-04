@@ -1,0 +1,27 @@
+[
+  {
+    "file_name": "pLink_task_2024.10.15.11.45.41_G1_3A.plink",
+    "bytes": 973,
+    "sha256": "f0bf2c3ce9c1facb1cfabc2119d3d0c6003db2aa4587883e61ca453980b86c91"
+  },
+  {
+    "file_name": "BH2531_2024.10.15.summary.txt",
+    "bytes": 1065,
+    "sha256": "82db1cb6fc6a28ff21996f894e903576bbc02588a7b3e529391d48f0e42a02de"
+  },
+  {
+    "file_name": "general.html",
+    "bytes": 6302,
+    "sha256": "a618d2819557d3ad969ef099f424baba8577118eca4c302eb9e1030e439f9ca0"
+  },
+  {
+    "file_name": "log.out",
+    "bytes": 33735,
+    "sha256": "8523d9c34a8b797333eea4a196454502b8f7aa6f75630ee7f8fa2cdb2a454bf1"
+  },
+  {
+    "file_name": "BH2531_2024.10.15.csv",
+    "bytes": 509820,
+    "sha256": "dc166f72d53a6afedc3ff59db427b90453b5be092ed4766ae16a9e1b171fba60"
+  }
+]

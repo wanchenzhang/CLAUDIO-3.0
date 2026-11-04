@@ -314,11 +314,21 @@ def _detect_psm_format(results_path):
 )
 @click.option(
     "--fdr-column",
-    help="Reported pLink column corresponding to --fdr-level; required for pLink export.",
+    help="Reported pLink column corresponding to --fdr-level; required for export without native evidence.",
 )
 @click.option(
     "--decoy-prefix",
-    help="Declared pLink decoy protein prefix; required for pLink export.",
+    help="Declared pLink decoy prefix; required for export without native evidence.",
+)
+@click.option(
+    "--plink-unfiltered", "plink_unfiltered_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Native pLink 2 unfiltered PSM CSV with Q-value and Target_Decoy; pair with --plink-parameters.",
+)
+@click.option(
+    "--plink-parameters", "plink_parameters_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Original .plink search parameters; pair with --plink-unfiltered.",
 )
 @click.option(
     "--crosslinker", "crosslinkers", multiple=True,
@@ -344,7 +354,8 @@ def _detect_psm_format(results_path):
 )
 def standardize_command(results_path, fasta_path, mapping_path, dataset_accession,
                         fdr_level, fdr_cutoff, fdr_column, decoy_prefix, crosslinkers,
-                        residues, source_proteins, audit_only, output_dir):
+                        residues, source_proteins, audit_only, output_dir,
+                        plink_unfiltered_path, plink_parameters_path):
     """Import xiFDR or pLink PSMs and export validated CLAUDIO inputs or a full audit."""
     if output_dir.exists():
         raise click.BadParameter("Output directory already exists; choose a new directory.", param_hint="--output")
@@ -359,8 +370,13 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
     except (ValueError, OSError) as error:
         raise click.ClickException(str(error)) from error
     plink = source_format == "plink_psm"
-    if not plink and (fdr_column is not None or decoy_prefix is not None):
-        raise click.UsageError("--fdr-column and --decoy-prefix are only supported for pLink PSM inputs.")
+    native = plink_unfiltered_path is not None or plink_parameters_path is not None
+    if not plink and (fdr_column is not None or decoy_prefix is not None or native):
+        raise click.UsageError("Decoy, FDR-column and native pLink evidence options only support pLink PSM inputs.")
+    if (plink_unfiltered_path is None) != (plink_parameters_path is None):
+        raise click.UsageError("Provide --plink-unfiltered and --plink-parameters together.")
+    if native and (fdr_column is not None or decoy_prefix is not None):
+        raise click.UsageError("Do not mix native pLink evidence with --fdr-column or --decoy-prefix.")
     if audit_only:
         selection = {"--mapping": mapping_path is not None, "--fdr-cutoff": fdr_cutoff is not None,
                      "--crosslinker": bool(crosslinkers), "--residue": bool(residues),
@@ -368,7 +384,9 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
         conflicts = [option for option, present in selection.items() if present]
         if conflicts:
             raise click.UsageError("Selection options cannot be used with --audit-only: " + ", ".join(conflicts))
-        if plink and (fdr_level is None) != (fdr_column is None):
+        if native and fdr_level is not None:
+            raise click.UsageError("Native pLink audit retains PSM confidence; omit --fdr-level with --audit-only.")
+        if plink and not native and (fdr_level is None) != (fdr_column is None):
             raise click.UsageError("Provide --fdr-level and --fdr-column together to label reported pLink FDR values.")
         if not plink and fdr_level is not None:
             raise click.UsageError("--fdr-level is not used with --audit-only for xiFDR; all reported levels are retained.")
@@ -376,11 +394,13 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
         required = {"--mapping": mapping_path is None, "--fdr-level": fdr_level is None,
                     "--fdr-cutoff": fdr_cutoff is None, "--crosslinker": not crosslinkers,
                     "--residue": not residues}
-        if plink:
+        if plink and not native:
             required.update({"--fdr-column": fdr_column is None, "--decoy-prefix": decoy_prefix is None})
         missing = [option for option, absent in required.items() if absent]
         if missing:
             raise click.UsageError("Input export requires " + ", ".join(missing) + ".")
+        if native and fdr_level != "psm":
+            raise click.UsageError("Native pLink Q-value evidence supports --fdr-level psm only.")
 
     click.echo("Detected format: " + ("pLink PSM" if plink else "xiFDR PSM"))
     try:
@@ -389,6 +409,7 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
                 results_path, fasta_path, dataset_accession=dataset_accession,
                 decoy_prefix=decoy_prefix,
                 fdr_columns={fdr_level: fdr_column} if fdr_column is not None else None,
+                unfiltered_path=plink_unfiltered_path, parameters_path=plink_parameters_path,
             )
         else:
             bundle = read_xifdr_psms(results_path, fasta_path, dataset_accession=dataset_accession,
@@ -399,6 +420,9 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
             click.echo(f"Source PSM records: {manifest['counts']['source_records']}")
             click.echo(f"Unresolved source records: {manifest['counts']['unresolved_source_records']}")
             click.echo(f"Records with parser errors: {manifest['counts']['parser_errors']}")
+            if "native_evidence_counts" in manifest:
+                click.echo(f"Native confidence verified: {manifest['native_evidence_counts'].get('verified', 0)}")
+                click.echo(f"Author-reported PSM FDR cutoff: {manifest['native_filter_policy']['cutoff']}")
             click.echo(f"Audit report: {(destination / 'import_report.json').resolve()}")
             click.echo(f"Output: {destination.resolve()}")
             return
