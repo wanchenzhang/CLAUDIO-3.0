@@ -368,6 +368,48 @@ def _plink_endpoint(site, proteins, modification_status):
 PLINK_JOIN_FIELDS = ("Title", "Charge", "Peptide", "Proteins", "FileID", "Modifications")
 
 
+def _plink_source_fields(columns, values):
+    """Recognize pLink's unquoted File/NativeID title without merging arbitrary cells."""
+    if len(values) == len(columns):
+        return {key: value for key, value in zip(columns, values) if key}, None
+    standard = (
+        "Order", "Title", "Charge", "Precursor_Mass", "Peptide", "Peptide_Type", "Linker",
+        "Peptide_Mass", "Modifications", "Evalue", "Score", "Precursor_Mass_Error(Da)",
+        "Precursor_Mass_Error(ppm)", "Proteins", "Protein_Type", "FileID", "LabelID",
+        "Alpha_Matched", "Beta_Matched", "Alpha_Evalue", "Beta_Evalue",
+    )
+    if len(values) <= len(columns) or tuple(columns[:len(standard)]) != standard:
+        return {}, None
+    title_end = 2 + len(values) - len(columns)
+    title = ",".join(values[1:title_end])
+    if re.fullmatch(r'[^,\r\n]+_File:"[^"\r\n]+",_NativeID:"[^"\r\n]+"', title) is None:
+        return {}, None
+    aligned = [values[0], title] + values[title_end:]
+    fields = {key: value for key, value in zip(columns, aligned) if key}
+    if (fields["Peptide_Type"].strip().lower() != "cross-linked"
+            or fields["Protein_Type"].strip().lower() not in ("intra-protein", "inter-protein")
+            or not fields["Linker"].strip() or not fields["Proteins"].strip()
+            or re.fullmatch(r"[A-Z]+\([1-9][0-9]*\)-[A-Z]+\([1-9][0-9]*\)", fields["Peptide"]) is None):
+        return {}, None
+    try:
+        for name in ("Order", "Charge", "FileID", "LabelID"):
+            _positive_integer(fields[name])
+        for name in ("Precursor_Mass", "Peptide_Mass", "Evalue", "Score",
+                     "Precursor_Mass_Error(Da)", "Precursor_Mass_Error(ppm)",
+                     "Alpha_Matched", "Beta_Matched", "Alpha_Evalue", "Beta_Evalue"):
+            value = float(fields[name])
+            signed = name in ("Precursor_Mass_Error(Da)", "Precursor_Mass_Error(ppm)")
+            if not math.isfinite(value) or (not signed and value < 0):
+                return {}, None
+    except ValueError:
+        return {}, None
+    return fields, {
+        "method": "plink_unquoted_title_metadata", "original_field_count": len(values),
+        "interpreted_field_count": len(columns),
+        "title_source_field_indices_zero_based": list(range(1, title_end)),
+    }
+
+
 def _plink_filter_policy(path):
     """Read the author's settings without treating them as independent validation."""
     path = Path(path)
@@ -569,7 +611,7 @@ def read_plink_psms(psm_path, fasta_path, *, dataset_accession,
         previous_line = line_end
         if not any(value.strip() for value in values):
             continue
-        fields = {key: value for key, value in zip(columns, values) if key} if len(values) == len(columns) else {}
+        fields, interpretation = _plink_source_fields(columns, values)
         annotation = fields.get("Modifications", "").strip().lower()
         modification_status = ("none_reported" if annotation in ("null", "none", "nan")
                                else "not_parsed" if annotation else "not_provided")
@@ -581,7 +623,9 @@ def read_plink_psms(psm_path, fasta_path, *, dataset_accession,
                   "endpoints": {}, "protein_pairs": [], "modification_status": modification_status,
                   "record_status": "not_evaluable", "record_reason": ""}
         records.append(record)
-        if len(values) != len(columns):
+        if interpretation is not None:
+            record["source_csv_interpretation"] = interpretation
+        if len(values) != len(columns) and interpretation is None:
             record["record_reason"] = "row_width_mismatch"
             continue
         if fields["Peptide_Type"].strip().lower() != "cross-linked":

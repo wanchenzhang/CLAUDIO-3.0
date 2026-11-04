@@ -1,0 +1,15 @@
+{
+  "dataset_accession": "PXD014520",
+  "files": {
+    "spectra.csv": {
+      "reported_file_name": "pLink2.filtered_cross-linked_spectra.csv",
+      "bytes": 112686,
+      "sha256": "9face9bed1d2f60c6ea1ff71046676c2636745f158e1aff802cd5b4fa2c18ee3"
+    },
+    "search.fasta": {
+      "reported_file_name": "top_128_iBAQ_francis_ribo_fractions.fasta",
+      "bytes": 54468,
+      "sha256": "59971951b1f520e960ab732ef5abb3acde10a9957e8ded7163f5596c0cd259e7"
+    }
+  }
+}
