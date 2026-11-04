@@ -1,0 +1,63 @@
+{
+  "kind": "uniprot_reference_snapshots",
+  "files": {
+    "P27635.json": {
+      "url": "https://rest.uniprot.org/uniprotkb/P27635.json",
+      "retrieved_at_utc": "2026-11-04T13:39:12.028233+00:00",
+      "status": 200,
+      "response_headers": {
+        "Vary": "accept,accept-encoding,x-uniprot-release,x-api-deployment-date, User-Agent",
+        "Cache-Control": "public, max-age=43200",
+        "x-cache": "hit cached",
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Expose-Headers": "Link, X-Total-Results, X-UniProt-Release, X-UniProt-Release-Date, X-API-Deployment-Date",
+        "X-API-Deployment-Date": "04-November-2026",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "Date": "Wed, 04 Nov 2026 13:39:16 GMT",
+        "Access-Control-Max-Age": "1728000",
+        "X-UniProt-Release": "2026_03",
+        "Access-Control-Allow-Origin": "*",
+        "Accept-Ranges": "bytes",
+        "Connection": "close",
+        "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, PATCH, OPTIONS",
+        "Access-Control-Allow-Headers": "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization",
+        "Content-Length": "72742",
+        "X-UniProt-Release-Date": "02-September-2026"
+      },
+      "sha256": "245bbc00b60ee2143cdbf492912d73557d35978e4a23a9af8f76213274b942d1",
+      "primary_accession": "P27635",
+      "taxon_id": 9606,
+      "sequence_version": 5
+    },
+    "P62861.json": {
+      "url": "https://rest.uniprot.org/uniprotkb/P62861.json",
+      "retrieved_at_utc": "2026-11-04T13:39:12.196111+00:00",
+      "status": 200,
+      "response_headers": {
+        "Vary": "accept,accept-encoding,x-uniprot-release,x-api-deployment-date, User-Agent",
+        "Cache-Control": "public, max-age=43200",
+        "x-cache": "hit cached",
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Expose-Headers": "Link, X-Total-Results, X-UniProt-Release, X-UniProt-Release-Date, X-API-Deployment-Date",
+        "X-API-Deployment-Date": "04-November-2026",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "Date": "Wed, 04 Nov 2026 13:39:16 GMT",
+        "Access-Control-Max-Age": "1728000",
+        "X-UniProt-Release": "2026_03",
+        "Access-Control-Allow-Origin": "*",
+        "Accept-Ranges": "bytes",
+        "Connection": "close",
+        "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, PATCH, OPTIONS",
+        "Access-Control-Allow-Headers": "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization",
+        "Content-Length": "98587",
+        "X-UniProt-Release-Date": "02-September-2026"
+      },
+      "sha256": "8f18613700ee5949a5da6024b8c8302853ed7825dab1fef89838d05842159586",
+      "primary_accession": "P62861",
+      "taxon_id": 9606,
+      "sequence_version": 2
+    }
+  }
+}

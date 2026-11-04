@@ -1,6 +1,7 @@
 """Command-line tools for discovering public XL-MS dataset candidates."""
 
 import csv
+import hashlib
 import json
 import math
 from collections import Counter
@@ -273,6 +274,37 @@ def _read_protein_mapping(mapping_path):
     return mappings
 
 
+def _read_reference_projection(path):
+    """Load a saved projection and resolve live or copied evidence paths."""
+    path = path.resolve()
+    projection = json.loads(path.read_text(encoding="utf-8-sig"))
+    if not isinstance(projection, dict):
+        raise ValueError("Reference projection must be a JSON object")
+    manifest_path = path.parent / "manifest.json"
+    if manifest_path.is_file():
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+        expected = manifest.get("output_sha256", {}).get(path.name)
+        if expected is None or hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+            raise ValueError("Reference projection checksum does not match its saved manifest")
+
+    def resolve_sources(value):
+        if isinstance(value, list):
+            for item in value:
+                resolve_sources(item)
+        elif isinstance(value, dict):
+            if "kind" in value and "sha256" in value and "path" in value:
+                saved = path.parent / value["path"]
+                original = value.get("absolute_path")
+                source = saved if saved.is_file() else Path(original) if original else None
+                if source is None or not source.is_file():
+                    raise ValueError("Reference projection evidence file is missing")
+                value["absolute_path"] = str(source.resolve())
+            for child in value.values():
+                resolve_sources(child)
+    resolve_sources(projection)
+    return projection
+
+
 def _detect_psm_format(results_path):
     """Recognize supported PSM tables from their columns rather than filenames."""
     with results_path.open(encoding="utf-8-sig", newline="") as handle:
@@ -302,6 +334,11 @@ def _detect_psm_format(results_path):
     "--mapping", "mapping_path",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
     help="Saved protein_mapping.json with its identity evidence files; required for input export.",
+)
+@click.option(
+    "--reference-projection", "reference_projection_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Optional saved projection report; exports verified declared-accession coordinates as explicit hypotheses.",
 )
 @click.option("--dataset-accession", required=True, help="ProteomeXchange PXD accession.")
 @click.option(
@@ -360,7 +397,8 @@ def _detect_psm_format(results_path):
 def standardize_command(results_path, fasta_path, mapping_path, dataset_accession,
                         fdr_level, fdr_cutoff, fdr_column, decoy_prefix, crosslinkers,
                         residues, source_proteins, audit_only, output_dir,
-                        plink_unfiltered_path, plink_parameters_path, author_filter_path):
+                        plink_unfiltered_path, plink_parameters_path, author_filter_path,
+                        reference_projection_path=None):
     """Import xiFDR or pLink PSMs and export validated CLAUDIO inputs or a full audit."""
     if output_dir.exists():
         raise click.BadParameter("Output directory already exists; choose a new directory.", param_hint="--output")
@@ -389,7 +427,8 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
     if audit_only:
         selection = {"--mapping": mapping_path is not None, "--fdr-cutoff": fdr_cutoff is not None,
                      "--crosslinker": bool(crosslinkers), "--residue": bool(residues),
-                     "--source-protein": bool(source_proteins)}
+                     "--source-protein": bool(source_proteins),
+                     "--reference-projection": reference_projection_path is not None}
         conflicts = [option for option, present in selection.items() if present]
         if conflicts:
             raise click.UsageError("Selection options cannot be used with --audit-only: " + ", ".join(conflicts))
@@ -441,11 +480,13 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
             click.echo(f"Output: {destination.resolve()}")
             return
         mappings = _read_protein_mapping(mapping_path)
+        projection = _read_reference_projection(reference_projection_path) if reference_projection_path is not None else None
         destination = write_claudio_input(
             bundle, mappings, output_dir,
             fdr_level=fdr_level, fdr_cutoff=fdr_cutoff,
             allowed_crosslinkers=crosslinkers, allowed_residues=residues,
             source_protein_ids=source_proteins or None,
+            reference_projection=projection,
         )
         manifest = json.loads((destination / "manifest.json").read_text(encoding="utf-8"))
     except (ValueError, OSError, RuntimeError) as error:

@@ -2292,3 +2292,362 @@ class TestAuthorFilteredPSMs(unittest.TestCase):
         self.assertEqual(result.exit_code, 2)
         self.assertIn("pLink", result.output)
         self.assertFalse(self.output.exists())
+
+
+class TestReferenceProjectionExport(unittest.TestCase):
+    def setUp(self):
+        self.temp = TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.fixture = Path(__file__).resolve().parents[1] / "fixtures"
+        self.psms = self.root / "spectra.csv"
+        self.fasta = self.root / "search.fasta"
+        self.policy_path = self.root / "author_filter.json"
+        self.output = self.root / "input"
+        self.first_id = "sp|P12345|A"
+        self.second_id = "sp|Q99999|B"
+        with (self.fixture / "plink_pxd079671/spectra.csv").open(newline="", encoding="utf-8-sig") as handle:
+            reader = csv.DictReader(handle)
+            self.columns = reader.fieldnames
+            self.template = next(reader)
+
+    def read(self, *, source="MACKRTAK", changes=None, count=1, identifier=None):
+        identifier = identifier or self.first_id
+        self.fasta.write_text(f">{identifier} OX=9606\n{source}\n>{self.second_id} OX=9606\nGGKPEPK\n")
+        row = {**self.template, "Peptide": "ACK(3)-KPEP(1)", "Modifications": "null",
+               "Proteins": f"{identifier}(4)-{self.second_id}(3)/", "Linker": "BS3"}
+        row.update(changes or {})
+        with self.psms.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(handle, fieldnames=self.columns)
+            writer.writeheader()
+            writer.writerows([row] * count)
+        note = self.root / "note.json"
+        note.write_text('{"scope": "Reviewed target-only PSM filtering for this test"}\n')
+        self.policy_path.write_text(json.dumps({
+            "schema_version": 1, "kind": "xlms_author_filter_evidence", "review_status": "reviewed",
+            "dataset_accession": "PXD000001", "result_scope": "author_filtered_psm_table",
+            "target_only": True, "fasta_role": "target_search_database", "filter_level": "psm",
+            "reported_fdr_cutoff": 0.05, "per_record_fdr_available": False,
+            "psm_sha256": hashlib.sha256(self.psms.read_bytes()).hexdigest(),
+            "fasta_sha256": hashlib.sha256(self.fasta.read_bytes()).hexdigest(),
+            "sources": [{"path": note.name, "sha256": hashlib.sha256(note.read_bytes()).hexdigest(),
+                         "role": "reviewed_source_note"}],
+        }))
+        return xifdr.read_plink_psms(self.psms, self.fasta, dataset_accession="PXD000001",
+                                    author_filter_path=self.policy_path)
+
+    def exact(self, bundle):
+        path = self.root / "exact.fasta"
+        path.write_text(f">{self.second_id} OX=9606\nGGKPEPK\n")
+        return map_reference_proteins(bundle["proteins"], read_search_fasta(path), taxon_id=9606)
+
+    def reference_report(self, sequence, *, accession="P12345", identifier=None, taxon=9606):
+        identifier = identifier or self.first_id
+        path = self.root / f"reference_{len(list(self.root.glob('reference_*.json'))) + 1}.json"
+        payload = {"primaryAccession": accession, "organism": {"taxonId": taxon},
+                   "sequence": {"value": sequence}}
+        path.write_text(json.dumps(payload))
+        url = f"https://rest.uniprot.org/uniprotkb/{accession}.json"
+        receipt = {"kind": "uniprot_api", "request_url": url, "response_url": url,
+                   "params": {}, "status": 200, "path": path.name, "absolute_path": str(path.resolve()),
+                   "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+        return {identifier: {"status": "candidates_for_review", "taxon_id": taxon,
+                             "gene_hint": "example", "sources": [receipt],
+                             "candidates": [{"accession": accession, "sequence": sequence, "taxon_id": taxon}]}}
+
+    def project(self, bundle, sequence="GGGMACKRTAK", **options):
+        mappings = self.exact(bundle)
+        projection = project_xifdr_candidates(bundle, mappings, self.reference_report(sequence, **options))
+        return mappings, projection
+
+    def export(self, bundle, mappings, projection):
+        return write_claudio_input(bundle, mappings, self.output, allowed_crosslinkers={"BS3"},
+                                   allowed_residues={"K"}, reference_projection=projection)
+
+    def rows(self, output):
+        with (output / "claudio_input.csv").open(newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle)
+            self.assertEqual(reader.fieldnames[:8], CLAUDIO_COLUMNS)
+            return list(reader)
+
+    def test_export_uses_reference_coordinates_and_keeps_the_source_positions(self):
+        bundle = self.read()
+        mappings, projection = self.project(bundle)
+        original = json.loads(json.dumps({"bundle": bundle, "mappings": mappings, "projection": projection}))
+        output = self.export(bundle, mappings, projection)
+        row, = self.rows(output)
+        self.assertEqual((row["entry1"], row["entry2"]), ("P12345", "Q99999"))
+        self.assertEqual((row["position1"], row["position2"]), ("7", "3"))
+        self.assertEqual((row["peptide1"], row["k_pos1"]), ("ACK", "3"))
+        self.assertEqual(row["source_protein_position_a"], "4")
+        self.assertEqual(row["source_peptide_start_a"], "2")
+        self.assertEqual(row["reference_peptide_start_a"], "5")
+        self.assertEqual(row["reference_mapping_method_a"], "full_source_exact_subsequence")
+        self.assertEqual(row["identity_scope"], "candidate_hypothesis")
+        self.assertEqual(row["projection_candidate_id"], projection["records"][0]["pairs"][0]["projection_candidate_id"])
+        self.assertEqual({"bundle": bundle, "mappings": mappings, "projection": projection}, original)
+
+    def test_audit_and_mapping_keep_the_original_unresolved_identity(self):
+        bundle = self.read()
+        mappings, projection = self.project(bundle)
+        output = self.export(bundle, mappings, projection)
+        audit = json.loads((output / "psm_audit.json").read_text())
+        saved_mapping = json.loads((output / "protein_mapping.json").read_text())
+        self.assertEqual(audit[0]["input_status"], "ready")
+        self.assertEqual(audit[0]["endpoints"]["a"]["protein_position"], 4)
+        self.assertEqual(audit[0]["source_fields"], bundle["records"][0]["source_fields"])
+        self.assertEqual(saved_mapping[self.first_id]["status"], "unmapped")
+        self.assertEqual(self.rows(output)[0]["selected_fdr_value"], "")
+        self.assertIsNone(audit[0]["fdr"]["psm"]["value"])
+
+    def test_explicit_projection_does_not_change_the_default_exact_only_export(self):
+        bundle = self.read()
+        mappings, _ = self.project(bundle)
+        output = write_claudio_input(bundle, mappings, self.output,
+                                     allowed_crosslinkers={"BS3"}, allowed_residues={"K"})
+        self.assertEqual(self.rows(output), [])
+        manifest = json.loads((output / "manifest.json").read_text())
+        self.assertNotIn("reference_projection_policy", manifest)
+
+    def test_duplicate_psms_keep_distinct_source_and_projection_ids(self):
+        bundle = self.read(count=2)
+        mappings, projection = self.project(bundle)
+        rows = self.rows(self.export(bundle, mappings, projection))
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(len({row["xlms_source_record_id"] for row in rows}), 2)
+        self.assertEqual(len({row["projection_candidate_id"] for row in rows}), 2)
+
+    def test_a_sequence_change_outside_the_peptide_is_labelled_as_a_hypothesis(self):
+        bundle = self.read()
+        mappings, projection = self.project(bundle, "MACKRVAK")
+        row, = self.rows(self.export(bundle, mappings, projection))
+        self.assertEqual(row["position1"], "4")
+        self.assertEqual(row["identity_scope"], "candidate_hypothesis")
+        self.assertEqual(row["reference_mapping_method_a"], "optimal_global_alignments")
+
+    def test_a_sequence_change_inside_the_peptide_cannot_be_exported(self):
+        bundle = self.read()
+        mappings, projection = self.project(bundle, "MACERTAK")
+        output = self.export(bundle, mappings, projection)
+        self.assertEqual(self.rows(output), [])
+        audit = json.loads((output / "psm_audit.json").read_text())
+        self.assertEqual(len(audit), 1)
+        self.assertEqual(audit[0]["input_status"], "not_evaluable")
+
+    def test_ambiguous_reference_positions_remain_in_the_audit(self):
+        bundle = self.read()
+        mappings, projection = self.project(bundle, "MACKRTAKMACKRTAK")
+        self.assertEqual(projection["records"][0]["pairs"], [])
+        output = self.export(bundle, mappings, projection)
+        self.assertEqual(self.rows(output), [])
+        self.assertEqual(len(json.loads((output / "psm_audit.json").read_text())), 1)
+
+    def test_projection_must_match_the_input_file_and_source_record_order(self):
+        bundle = self.read(count=2)
+        mappings, projection = self.project(bundle)
+        for change in ("checksum", "order"):
+            with self.subTest(change=change):
+                modified = json.loads(json.dumps(projection))
+                if change == "checksum":
+                    modified["provenance"]["psm_sha256"] = "0" * 64
+                else:
+                    modified["records"].reverse()
+                with self.assertRaisesRegex(ValueError, "projection|Projection"):
+                    self.export(bundle, mappings, modified)
+                self.assertFalse(self.output.exists())
+
+    def test_reported_projection_coordinates_are_rechecked_before_export(self):
+        bundle = self.read()
+        mappings, projection = self.project(bundle)
+        projection["records"][0]["pairs"][0]["reference_position_a"] += 1
+        with self.assertRaisesRegex(ValueError, "projection|Projection"):
+            self.export(bundle, mappings, projection)
+        self.assertFalse(self.output.exists())
+
+    def test_a_candidate_cannot_replace_the_declared_source_accession(self):
+        bundle = self.read()
+        mappings, projection = self.project(bundle, accession="P11111")
+        with self.assertRaisesRegex(ValueError, "accession|declared"):
+            self.export(bundle, mappings, projection)
+        self.assertFalse(self.output.exists())
+
+    def test_custom_protein_names_are_not_automatically_promoted_to_uniprot_identities(self):
+        bundle = self.read(identifier="customA")
+        mappings, projection = self.project(bundle, identifier="customA")
+        with self.assertRaisesRegex(ValueError, "accession|declared"):
+            self.export(bundle, mappings, projection)
+        self.assertFalse(self.output.exists())
+
+    def test_reference_sequence_and_organism_must_match_the_saved_evidence(self):
+        bundle = self.read()
+        for change in ("sequence", "organism"):
+            with self.subTest(change=change):
+                mappings, projection = self.project(bundle)
+                report = projection["identity_evidence"]["candidate_reports"][self.first_id]
+                source = report["sources"][0]
+                path = Path(source["absolute_path"])
+                payload = json.loads(path.read_text())
+                if change == "sequence":
+                    payload["sequence"]["value"] = "OTHERSEQUENCE"
+                else:
+                    payload["organism"]["taxonId"] = 9031
+                path.write_text(json.dumps(payload))
+                source["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+                with self.assertRaisesRegex(ValueError, "reference|evidence|organism|taxon"):
+                    self.export(bundle, mappings, projection)
+                self.assertFalse(self.output.exists())
+
+    def test_missing_or_changed_reference_sources_are_rejected_before_writing(self):
+        bundle = self.read()
+        for change in ("missing", "changed"):
+            with self.subTest(change=change):
+                mappings, projection = self.project(bundle)
+                report = projection["identity_evidence"]["candidate_reports"][self.first_id]
+                path = Path(report["sources"][0]["absolute_path"])
+                if change == "missing":
+                    path.unlink()
+                else:
+                    path.write_bytes(path.read_bytes() + b"\n")
+                with self.assertRaises((ValueError, OSError)):
+                    self.export(bundle, mappings, projection)
+                self.assertFalse(self.output.exists())
+
+    def test_export_includes_reference_evidence_and_checksums(self):
+        bundle = self.read()
+        mappings, projection = self.project(bundle)
+        output = self.export(bundle, mappings, projection)
+        manifest = json.loads((output / "manifest.json").read_text())
+        self.assertEqual(manifest["reference_projection_policy"]["scope"], "declared_source_accession")
+        self.assertTrue(manifest["reference_projection_policy"]["intact_peptide_required"])
+        self.assertFalse(manifest["reference_projection_policy"]["identity_acceptance_performed"])
+        self.assertFalse(manifest["assessment_performed"])
+        self.assertEqual(manifest["counts"]["reference_projected_input_rows"], 1)
+        saved = json.loads((output / "reference_projection.json").read_text())
+        source = saved["identity_evidence"]["candidate_reports"][self.first_id]["sources"][0]
+        self.assertEqual(hashlib.sha256((output / source["path"]).read_bytes()).hexdigest(), source["sha256"])
+        for name, digest in manifest["output_sha256"].items():
+            self.assertEqual(hashlib.sha256((output / name).read_bytes()).hexdigest(), digest)
+
+    def arguments(self, bundle, mappings, projection):
+        mapping_path = self.root / "mapping.json"
+        mapping_path.write_text(json.dumps(mappings))
+        projection_dir = write_projection_outputs(bundle, projection, self.root / "projection")
+        return ["standardize", "--results", str(self.psms), "--fasta", str(self.fasta),
+                "--dataset-accession", "PXD000001", "--author-filter-evidence", str(self.policy_path),
+                "--mapping", str(mapping_path), "--crosslinker", "BS3", "--residue", "K",
+                "--reference-projection", str(projection_dir / "projection_report.json"),
+                "--output", str(self.output)]
+
+    def test_cli_accepts_an_explicit_reference_projection(self):
+        bundle = self.read()
+        mappings, projection = self.project(bundle)
+        result = CliRunner().invoke(catalog_main, self.arguments(bundle, mappings, projection))
+        self.assertEqual(result.exit_code, 0, result.output + repr(result.exception))
+        self.assertIn("Standardized input rows: 1", result.output)
+        self.assertEqual(self.rows(self.output)[0]["position1"], "7")
+
+    def test_cli_does_not_apply_reference_projection_during_import_audit(self):
+        bundle = self.read()
+        mappings, projection = self.project(bundle)
+        arguments = self.arguments(bundle, mappings, projection)
+        for option in ("--mapping", "--crosslinker", "--residue"):
+            index = arguments.index(option)
+            del arguments[index:index + 2]
+        result = CliRunner().invoke(catalog_main, arguments + ["--audit-only"])
+        self.assertEqual(result.exit_code, 2)
+        self.assertIn("--reference-projection", result.output)
+        self.assertFalse(self.output.exists())
+
+    def test_real_plink_psms_keep_252_kk_records_and_all_257_audit_sources(self):
+        fixture = self.fixture / "plink_pxd014520"
+        references = fixture / "reference_projection"
+        source_manifest = json.loads((references / "manifest.json").read_text())
+        for name, source in source_manifest["files"].items():
+            self.assertEqual(hashlib.sha256((references / name).read_bytes()).hexdigest(), source["sha256"])
+        bundle = xifdr.read_plink_psms(
+            fixture / "spectra.csv", fixture / "search.fasta", dataset_accession="PXD014520",
+            author_filter_path=fixture / "author_filter/policy.json",
+        )
+        targets = {"sp|P27635|RL10_HUMAN", "sp|P62861|RS30_HUMAN"}
+        path = self.root / "exact.fasta"
+        path.write_text("".join(
+            f">{identifier} OX=9606\n{protein['sequence']}\n"
+            for identifier, protein in target_proteins(bundle).items() if identifier not in targets
+        ))
+        mappings = map_reference_proteins(bundle["proteins"], read_search_fasta(path), taxon_id=9606)
+        reports = {}
+        for identifier in sorted(targets):
+            accession = bundle["proteins"][identifier]["uniprot_accession"]
+            payload = json.loads((references / f"{accession}.json").read_text())
+            reports.update(self.reference_report(payload["sequence"]["value"], accession=accession, identifier=identifier))
+        projection = project_xifdr_candidates(bundle, mappings, reports)
+        output = self.export(bundle, mappings, projection)
+        rows = self.rows(output)
+        self.assertEqual(len(rows), 252)
+        by_number = {int(row["source_record_number"]): row for row in rows}
+        self.assertTrue({8, 17, 20, 21, 34, 79, 94, 96, 109, 158, 190, 198, 221} <= by_number.keys())
+        self.assertTrue({51, 166, 187, 217, 256}.isdisjoint(by_number))
+        self.assertEqual((by_number[8]["source_protein_position_a"], by_number[8]["position1"]), ("51", "125"))
+        self.assertEqual((by_number[221]["source_protein_position_b"], by_number[221]["position2"]), ("51", "125"))
+        self.assertEqual((by_number[20]["position1"], by_number[20]["position2"]), ("82", "74"))
+        audit = json.loads((output / "psm_audit.json").read_text())
+        self.assertEqual([r["source_record_id"] for r in audit], [r["source_record_id"] for r in bundle["records"]])
+        self.assertEqual(len(audit), 257)
+        self.assertEqual(audit[7]["endpoints"]["a"]["protein_position"], 51)
+        self.assertEqual(sum(row["identity_scope"] == "candidate_hypothesis" for row in rows), 13)
+        manifest = json.loads((output / "manifest.json").read_text())
+        self.assertEqual(manifest["counts"]["reference_projected_input_rows"], 13)
+
+    def test_numeric_fdr_failures_are_not_repaired_by_reference_projection(self):
+        self.read()
+        with self.psms.open(newline="") as handle:
+            original = list(csv.DictReader(handle))[0]
+        for reported, reason in (("0.2", "selected_fdr_above_cutoff"), ("", "selected_fdr_missing")):
+            with self.subTest(reported=reported):
+                with self.psms.open("w", newline="") as handle:
+                    writer = csv.DictWriter(handle, fieldnames=self.columns + ["ReportedPSMFDR"])
+                    writer.writeheader()
+                    writer.writerow({**original, "ReportedPSMFDR": reported})
+                bundle = xifdr.read_plink_psms(
+                    self.psms, self.fasta, dataset_accession="PXD000001",
+                    decoy_prefix="REV_", fdr_columns={"psm": "ReportedPSMFDR"},
+                )
+                mappings, projection = self.project(bundle)
+                output = write_claudio_input(
+                    bundle, mappings, self.root / reason, fdr_level="psm", fdr_cutoff=0.05,
+                    allowed_crosslinkers={"BS3"}, allowed_residues={"K"}, reference_projection=projection,
+                )
+                self.assertEqual(self.rows(output), [])
+                audit = json.loads((output / "psm_audit.json").read_text())
+                self.assertIn(reason, audit[0]["input_reasons"])
+
+    def test_cli_can_reuse_a_moved_export_without_the_original_reference_file(self):
+        bundle = self.read()
+        mappings, projection = self.project(bundle)
+        output = self.export(bundle, mappings, projection)
+        moved = self.root / "moved_export"
+        output.rename(moved)
+        for path in self.root.glob("reference_*.json"):
+            path.unlink()
+        manifest = json.loads((moved / "manifest.json").read_text())
+        result = CliRunner().invoke(catalog_main, [
+            "standardize", "--results", str(self.psms), "--fasta", str(self.fasta),
+            "--dataset-accession", "PXD000001", "--author-filter-evidence",
+            str(moved / manifest["author_filter_evidence_snapshot"]),
+            "--mapping", str(moved / "protein_mapping.json"),
+            "--reference-projection", str(moved / "reference_projection.json"),
+            "--crosslinker", "BS3", "--residue", "K", "--output", str(self.output),
+        ])
+        self.assertEqual(result.exit_code, 0, result.output + repr(result.exception))
+        self.assertEqual(self.rows(self.output)[0]["position1"], "7")
+
+    def test_cli_rejects_a_projection_file_that_no_longer_matches_its_manifest(self):
+        bundle = self.read()
+        mappings, projection = self.project(bundle)
+        arguments = self.arguments(bundle, mappings, projection)
+        path = self.root / "projection/projection_report.json"
+        path.write_bytes(path.read_bytes() + b"\n")
+        result = CliRunner().invoke(catalog_main, arguments)
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertIn("checksum", result.output)
+        self.assertFalse(self.output.exists())

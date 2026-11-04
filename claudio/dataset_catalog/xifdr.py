@@ -1391,6 +1391,38 @@ def write_projection_outputs(bundle, projection, output_dir):
     return output_dir
 
 
+def _input_row(bundle, record, identities, policy):
+    """Build shared source metadata without deciding identity or coordinate eligibility."""
+    author = policy.get("kind") == "author_filtered_psm_table"
+    level = None if author else policy["level"]
+    fields = record["source_fields"]
+    plink = bundle.get("format") == "plink_psm"
+    row = {"source_record_id": record["source_record_id"], "dataset_accession": bundle["provenance"]["dataset_accession"],
+           "source_psm_sha256": bundle["provenance"]["psm_sha256"], "source_fasta_sha256": bundle["provenance"]["fasta_sha256"],
+           "source_record_number": record["source_record_number"], "source_psm_id": fields.get("Order" if plink else "PSMID", ""),
+           "source_run": fields.get("run", ""), "source_scan": fields.get("scan", ""),
+           "source_crosslinker": fields.get("Linker" if plink else "Crosslinker", ""), "source_fdr_group": fields.get("fdrGroup", ""),
+           "source_fields_json": json.dumps(fields, ensure_ascii=False),
+           "selected_fdr_level": level,
+           "selected_fdr_value": None if author else record["fdr"][level]["value"],
+           "selected_fdr_cutoff": None if author else float(policy["cutoff"])}
+    if author:
+        row.update(selection_basis="author_filtered_psm_table", source_filter_level=policy["level"],
+                   source_filter_cutoff=policy["reported_cutoff"],
+                   source_filter_evidence_sha256=bundle["provenance"]["author_filter_sha256"])
+    if plink:
+        row.update(source_spectrum_title=fields.get("Title", ""), source_modifications=fields.get("Modifications", ""))
+    for site in ("a", "b"):
+        endpoint, identity = record["endpoints"][site], identities[site]
+        row.update({f"unip_id_{site}": identity["accession"], f"seq_{site}": identity["sequence"],
+                    f"pep_{site}": endpoint["peptide"], f"pos_{site}": endpoint["protein_position"],
+                    f"res_pos_{site}": endpoint["link_position"], f"position_status_{site}": "valid",
+                    f"source_protein_id_{site}": endpoint["source_protein_id"],
+                    f"source_protein_position_{site}": endpoint["protein_position"],
+                    f"source_modified_peptide_{site}": endpoint["source_peptide"]})
+    return row
+
+
 def prepare_af_input(bundle, mappings, *, fdr_level=None, fdr_cutoff=None):
     """Project validated target PSMs onto exact UniProt identities, retaining all audit rows."""
     author = "author_filter_policy" in bundle
@@ -1435,44 +1467,129 @@ def prepare_af_input(bundle, mappings, *, fdr_level=None, fdr_cutoff=None):
         audit.append(entry)
         if reasons:
             continue
-        fields = record["source_fields"]
-        plink = bundle.get("format") == "plink_psm"
-        row = {"source_record_id": record["source_record_id"], "dataset_accession": bundle["provenance"]["dataset_accession"],
-               "source_psm_sha256": bundle["provenance"]["psm_sha256"], "source_fasta_sha256": bundle["provenance"]["fasta_sha256"],
-               "source_record_number": record["source_record_number"], "source_psm_id": fields.get("Order" if plink else "PSMID", ""),
-               "source_run": fields.get("run", ""), "source_scan": fields.get("scan", ""),
-               "source_crosslinker": fields.get("Linker" if plink else "Crosslinker", ""), "source_fdr_group": fields.get("fdrGroup", ""),
-               "source_fields_json": json.dumps(fields, ensure_ascii=False),
-               "selected_fdr_level": None if author else fdr_level,
-               "selected_fdr_value": None if author else confidence["value"],
-               "selected_fdr_cutoff": None if author else float(fdr_cutoff)}
-        if author:
-            row.update(selection_basis="author_filtered_psm_table", source_filter_level=policy["level"],
-                       source_filter_cutoff=policy["reported_cutoff"],
-                       source_filter_evidence_sha256=bundle["provenance"]["author_filter_sha256"])
-        if plink:
-            row.update(source_spectrum_title=fields.get("Title", ""),
-                       source_modifications=fields.get("Modifications", ""))
-        for site in ("a", "b"):
-            endpoint, identity = record["endpoints"][site], selected[site]
-            row.update({f"unip_id_{site}": identity["accession"], f"seq_{site}": identity["sequence"],
-                        f"pep_{site}": endpoint["peptide"], f"pos_{site}": endpoint["protein_position"],
-                        f"res_pos_{site}": endpoint["link_position"], f"position_status_{site}": "valid",
-                        f"source_protein_id_{site}": endpoint["source_protein_id"],
-                        f"source_protein_position_{site}": endpoint["protein_position"],
-                        f"source_modified_peptide_{site}": endpoint["source_peptide"]})
-        rows.append(row)
+        rows.append(_input_row(bundle, record, selected, policy))
     return {"rows": rows, "audit": audit, "fdr_policy": policy, "provenance": deepcopy(bundle["provenance"])}
 
 
+def _reference_evidence(profile, report, source):
+    """Require the declared accession, organism and full reference sequence in saved evidence."""
+    if not source.get("uniprot_accession") or profile["accession"] != source["uniprot_accession"]:
+        raise ValueError("Reference projection requires the declared source UniProt accession")
+    taxon = profile["taxon_id"]
+    if (type(taxon) is not int or taxon <= 0 or report.get("taxon_id") != taxon
+            or source.get("taxon_id") is not None and source["taxon_id"] != taxon):
+        raise ValueError("Reference projection organism differs from its source or query")
+    matched = False
+    for receipt in report.get("sources", []):
+        raw = Path(receipt["absolute_path"]).read_bytes()
+        if hashlib.sha256(raw).hexdigest() != receipt["sha256"]:
+            raise ValueError("Reference evidence checksum changed after projection")
+        kind = receipt.get("kind")
+        if kind == "uniprot_api":
+            uri = urlsplit(receipt.get("response_url", receipt.get("request_url", "")))
+            if (uri.scheme != "https" or uri.netloc != "rest.uniprot.org"
+                    or not uri.path.startswith("/uniprotkb/") or receipt.get("status") != 200):
+                continue
+        if kind == "reference_fasta" or kind == "uniprot_api" and uri.path.endswith(".fasta"):
+            entries = _fasta_records(raw.decode("utf-8-sig")).values()
+            matched |= any(entry["uniprot_accession"] == profile["accession"]
+                           and entry["taxon_id"] == taxon and entry["sequence"] == profile["reference_sequence"]
+                           for entry in entries)
+        elif kind == "uniprot_api":
+            payload = json.loads(raw)
+            entries = payload.get("results", [payload])
+            if not isinstance(entries, list):
+                raise ValueError("Invalid reference evidence response")
+            matched |= any(isinstance(entry, dict) and entry.get("primaryAccession") == profile["accession"]
+                           and entry.get("organism", {}).get("taxonId") == taxon
+                           and entry.get("sequence", {}).get("value") == profile["reference_sequence"]
+                           for entry in entries)
+    if not matched:
+        raise ValueError("Reference sequence and organism are not confirmed by the saved evidence")
+
+
+def _prepare_reference_input(bundle, mappings, prepared, projection):
+    """Recompute candidate coordinates, retaining the original identity and filtering audit."""
+    if (not isinstance(projection, dict) or projection.get("kind") != "xifdr_reference_projection"
+            or projection.get("projection_rule_version") != "intact-peptide-projection-v1"):
+        raise ValueError("Unsupported reference projection report")
+    source_context = {k: v for k, v in bundle["provenance"].items() if not k.endswith("_path")}
+    projection_context = {k: v for k, v in projection.get("provenance", {}).items() if not k.endswith("_path")}
+    if projection_context != source_context:
+        raise ValueError("Reference projection does not match the input source checksums or policies")
+    for kind in ("psm", "fasta"):
+        raw = Path(bundle["provenance"][kind + "_path"]).read_bytes()
+        if hashlib.sha256(raw).hexdigest() != bundle["provenance"][kind + "_sha256"]:
+            raise ValueError("An input source changed after reference projection")
+    evidence = projection.get("identity_evidence", {})
+    reports = evidence.get("candidate_reports")
+    if not isinstance(reports, dict):
+        raise ValueError("Reference projection has no candidate evidence")
+    checked = project_xifdr_candidates(bundle, mappings, reports,
+                                       max_optimal_alignments=projection.get("max_optimal_alignments"))
+    if checked["records"] != projection.get("records"):
+        raise ValueError("Reference projection record order or coordinates differ from recomputed results")
+    profiles = {profile["profile_id"]: profile
+                for values in checked["protein_candidates"].values() for profile in values}
+    original_profiles = {profile["profile_id"]: profile
+                         for values in projection.get("protein_candidates", {}).values() for profile in values}
+    if (profiles.keys() != original_profiles.keys()
+            or any({k: v for k, v in profile.items() if k != "sources"}
+                   != {k: v for k, v in original_profiles[key].items() if k != "sources"}
+                   for key, profile in profiles.items())):
+        raise ValueError("Reference projection profiles differ from recomputed results")
+    for profile in profiles.values():
+        if profile["identity_scope"] != "exact_sequence":
+            identifier = profile["source_fasta_id"]
+            _reference_evidence(profile, reports[identifier], bundle["proteins"][identifier])
+
+    rows = []
+    for record, entry, projected in zip(bundle["records"], prepared["audit"], checked["records"]):
+        # Projection cannot repair source, decoy, author-filter or numeric FDR failures.
+        reasons = [reason for reason in entry["input_reasons"]
+                   if not reason.startswith("protein_identity_unresolved_")]
+        if reasons:
+            continue
+        if len(projected["pairs"]) != 1:
+            entry["input_reasons"].append("reference_projection_unresolved")
+            entry["input_status"] = "not_evaluable"
+            continue
+        pair = projected["pairs"][0]
+        selected = {site: profiles[pair[f"profile_id_{site}"]] for site in ("a", "b")}
+        identities = {site: {"accession": profile["accession"], "sequence": profile["reference_sequence"]}
+                      for site, profile in selected.items()}
+        row = _input_row(bundle, record, identities, prepared["fdr_policy"])
+        row.update(projection_candidate_id=pair["projection_candidate_id"], identity_scope=pair["identity_scope"])
+        reference_endpoints = {}
+        for site, profile in selected.items():
+            candidate = next(candidate for candidate in projected["endpoint_candidates"][site]
+                             if candidate["profile_id"] == profile["profile_id"])
+            reference_endpoints[site] = deepcopy(candidate)
+            row.update({f"pos_{site}": candidate["reference_protein_position"],
+                        f"source_peptide_start_{site}": candidate["source_peptide_start"],
+                        f"reference_peptide_start_{site}": candidate["reference_peptide_start"],
+                        f"reference_mapping_method_{site}": candidate["mapping_method"],
+                        f"reference_identity_scope_{site}": candidate["identity_scope"]})
+        entry.update(input_status="ready", input_reasons=[], reference_endpoints=reference_endpoints,
+                     projection_candidate_id=pair["projection_candidate_id"], identity_scope=pair["identity_scope"])
+        rows.append(row)
+    prepared.update(rows=rows, reference_projection=deepcopy(projection), reference_projection_policy={
+        "scope": "declared_source_accession", "intact_peptide_required": True,
+        "unique_coordinates_required": True, "identity_acceptance_performed": False,
+    })
+    return prepared
+
+
 def write_claudio_input(bundle, mappings, output_dir, *, fdr_level=None, fdr_cutoff=None,
-                        allowed_crosslinkers, allowed_residues, source_protein_ids=None):
-    """Export exact-identity PSMs for the existing M1 -> M3 -> M2 -> M4 CLI.
+                        allowed_crosslinkers, allowed_residues, source_protein_ids=None,
+                        reference_projection=None):
+    """Export exact identities or explicitly selected reference projections for the full CLI.
 
     The CSV uses M1's default input column names.
     Selection is explicit and every original PSM remains in the audit. The
     original PSM key is named xlms_source_record_id because M1 creates its own
     source_record_id. Use the AF pipeline's source-preserving preprocessing.
+    Reference projections keep identity hypotheses separate from exact mappings.
     This exports inputs only; it does not retrieve or assess an AF model.
     """
     selections = {}
@@ -1493,6 +1610,8 @@ def write_claudio_input(bundle, mappings, output_dir, *, fdr_level=None, fdr_cut
         selections[name] = values
 
     prepared = prepare_af_input(bundle, mappings, fdr_level=fdr_level, fdr_cutoff=fdr_cutoff)
+    if reference_projection is not None:
+        prepared = _prepare_reference_input(bundle, mappings, prepared, reference_projection)
     eligible = {row["source_record_id"]: row for row in prepared["rows"]}
     selected = []
     for record in prepared["audit"]:
@@ -1533,11 +1652,29 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
             name = "identity_sources/" + source["sha256"] + Path(source["absolute_path"]).suffix
             source_bodies[name] = raw
             source["original_path"], source["path"] = source.pop("absolute_path"), name
+    projection = deepcopy(prepared.get("reference_projection"))
+    if projection is not None:
+        def copy_sources(value):
+            if isinstance(value, list):
+                for item in value:
+                    copy_sources(item)
+            elif isinstance(value, dict):
+                if "kind" in value and "sha256" in value and "absolute_path" in value:
+                    raw = Path(value["absolute_path"]).read_bytes()
+                    if hashlib.sha256(raw).hexdigest() != value["sha256"]:
+                        raise ValueError("A reference projection evidence source changed")
+                    name = "reference_sources/" + value["sha256"] + Path(value["absolute_path"]).suffix
+                    source_bodies[name] = raw
+                    value["original_path"], value["path"] = value.pop("absolute_path"), name
+                for child in value.values():
+                    copy_sources(child)
+        copy_sources(projection)
     output_dir.mkdir(parents=True, exist_ok=False)
     if source_bodies:
-        (output_dir / "identity_sources").mkdir()
         for name, raw in source_bodies.items():
-            (output_dir / name).write_bytes(raw)
+            destination = output_dir / name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(raw)
     _write_source_bodies(output_dir, author_sources)
     _write_json(output_dir / "psm_audit.json", prepared["audit"])
     _write_json(output_dir / "search_proteins.json", bundle["proteins"])
@@ -1568,6 +1705,9 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
         writer.writerows(rows)
     names = ["psm_audit.json", "search_proteins.json", "protein_mapping.json", "source_columns.json", input_name,
              *source_bodies, *author_sources]
+    if projection is not None:
+        _write_json(output_dir / "reference_projection.json", projection)
+        names.append("reference_projection.json")
     format_name = "plink" if bundle.get("format") == "plink_psm" else "xifdr"
     manifest = {"schema_version": 1, "kind": format_name + ("_claudio_input" if pipeline else "_prepared_input"), "status": "complete",
                 "provenance": bundle["provenance"], "fdr_policy": prepared["fdr_policy"],
@@ -1576,6 +1716,10 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
                            "protein_mapping_statuses": dict(Counter(m["status"] for m in mappings.values()))},
                 "assessment_performed": False,
                 "output_sha256": {name: hashlib.sha256((output_dir / name).read_bytes()).hexdigest() for name in names}}
+    if projection is not None:
+        manifest["reference_projection_policy"] = deepcopy(prepared["reference_projection_policy"])
+        manifest["counts"]["reference_projected_input_rows"] = sum(
+            row["identity_scope"] == "candidate_hypothesis" for row in rows)
     if "parser" in bundle:
         manifest["parser"] = deepcopy(bundle["parser"])
     if "native_filter_policy" in bundle:
