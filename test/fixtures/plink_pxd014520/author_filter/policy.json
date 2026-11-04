@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "kind": "xlms_author_filter_evidence",
+  "review_status": "reviewed",
+  "dataset_accession": "PXD014520",
+  "psm_sha256": "9face9bed1d2f60c6ea1ff71046676c2636745f158e1aff802cd5b4fa2c18ee3",
+  "fasta_sha256": "59971951b1f520e960ab732ef5abb3acde10a9957e8ded7163f5596c0cd259e7",
+  "result_scope": "author_filtered_psm_table",
+  "target_only": true,
+  "fasta_role": "target_search_database",
+  "filter_level": "psm",
+  "reported_fdr_cutoff": 0.05,
+  "per_record_fdr_available": false,
+  "sources": [
+    {
+      "path": "publication_note.json",
+      "sha256": "d4f457c3a8ad61b0d3afd6ee28539b5666f5f81a2a5545970ca6684821bb9134",
+      "role": "reviewed_publication_note"
+    }
+  ],
+  "downstream_processing_note": "The published residue-pair benchmark uses additional support and sequence-distance filters. This declaration covers the source PSM table, not a reconstruction of the final benchmark residue-pair list.",
+  "scientific_eligibility_review": "unchanged"
+}

@@ -1,0 +1,20 @@
+{
+  "kind": "reviewed_publication_note",
+  "doi": "10.1074/mcp.TIR120.002186",
+  "pmcid": "PMC7710140",
+  "title": "OpenPepXL: An Open-Source Tool for Sensitive Identification of Cross-Linked Peptides in XL-MS",
+  "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7710140/",
+  "section": "Materials and Methods: Data Processing",
+  "review_date": "2026-11-04",
+  "dataset_accession": "PXD014520",
+  "reported_findings": [
+    "The reanalyzed ribosomal fraction dataset was deposited as PXD014520.",
+    "The study reports a 5% cross-link spectrum match (CSM) FDR cutoff for these tool results.",
+    "Only the target database was supplied to pLink2, which generated its own decoys.",
+    "Later benchmark processing collapsed residue pairs, required at least two supporting CSMs, and excluded close intra-peptide or loop links. Those steps are distinct from preserving the deposited PSM table."
+  ],
+  "result_format_reference": "https://github.com/pFindStudio/pLink2/wiki/CSV-result",
+  "result_format_note": "The documented filtered cross-linked spectra output omits decoys; it need not contain per-record Q-values.",
+  "standardization_scope": "Preserve the source PSM table; retain downstream benchmark rules as provenance.",
+  "independent_fdr_validation_performed": false
+}

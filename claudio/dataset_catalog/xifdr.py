@@ -558,19 +558,109 @@ def _verify_plink_native_sources(bundle):
             raise ValueError(f"A native pLink source changed after parsing: {source}")
 
 
+def _author_filter_source_bodies(bundle):
+    """Verify the reviewed declaration and return portable copies of its evidence."""
+    if "author_filter_policy" not in bundle:
+        return {}
+    policy = bundle["author_filter_policy"]
+    path = Path(bundle["provenance"]["author_filter_path"])
+    raw = path.read_bytes()
+    if (hashlib.sha256(raw).hexdigest() != bundle["provenance"]["author_filter_sha256"]
+            or json.loads(raw.decode("utf-8-sig")) != policy):
+        raise ValueError("The author filter source declaration changed after parsing")
+    for kind in ("psm", "fasta"):
+        digest = hashlib.sha256()
+        with Path(bundle["provenance"][kind + "_path"]).open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        if digest.hexdigest() != policy[kind + "_sha256"]:
+            raise ValueError("An input source changed after author filter review")
+    sources = policy.get("sources")
+    if not isinstance(sources, list) or not sources:
+        raise ValueError("Author filter evidence requires supporting sources")
+    bodies = {"author_filter_sources/" + path.name: raw}
+    root = path.parent.resolve()
+    for source in sources:
+        if not isinstance(source, dict) or not isinstance(source.get("path"), str) or not source["path"]:
+            raise ValueError("Invalid author filter source path")
+        relative = Path(source["path"])
+        resolved = (root / relative).resolve()
+        if relative.is_absolute() or ".." in relative.parts or root not in resolved.parents:
+            raise ValueError("Author filter source paths must stay within the evidence directory")
+        name = "author_filter_sources/" + relative.as_posix()
+        if name in bodies or not isinstance(source.get("role"), str) or not source["role"].strip():
+            raise ValueError("Author filter sources must have unique paths and explicit roles")
+        body = resolved.read_bytes()
+        if hashlib.sha256(body).hexdigest() != source.get("sha256"):
+            raise ValueError("An author filter source checksum does not match")
+        bodies[name] = body
+    return bodies
+
+
+def _write_source_bodies(output_dir, bodies):
+    for name, raw in bodies.items():
+        target = output_dir / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(raw)
+
+
+def _add_author_filter_evidence(bundle, path):
+    """Retain an author's table-level acceptance without assigning per-PSM FDR."""
+    path = Path(path)
+    raw = path.read_bytes()
+    policy = json.loads(raw.decode("utf-8-sig"))
+    json.dumps(policy, allow_nan=False)
+    if (not isinstance(policy, dict) or policy.get("schema_version") != 1
+            or policy.get("kind") != "xlms_author_filter_evidence"
+            or policy.get("review_status") != "reviewed"
+            or policy.get("result_scope") != "author_filtered_psm_table"
+            or policy.get("target_only") is not True
+            or policy.get("fasta_role") != "target_search_database"
+            or policy.get("filter_level") != "psm"
+            or policy.get("per_record_fdr_available") is not False):
+        raise ValueError("Unsupported or unreviewed author filter declaration")
+    _fdr_policy(policy["filter_level"], policy.get("reported_fdr_cutoff"))
+    provenance = bundle["provenance"]
+    if any(policy.get(key) != provenance[key] for key in ("dataset_accession", "psm_sha256", "fasta_sha256")):
+        raise ValueError("The author filter dataset or source checksum does not match this import")
+    bundle["author_filter_policy"] = policy
+    provenance.update(author_filter_path=str(path.resolve()), author_filter_sha256=hashlib.sha256(raw).hexdigest())
+    _author_filter_source_bodies(bundle)
+    for record in bundle["records"]:
+        pairs = record["protein_pairs"]
+        target_member = bool(pairs) and all(
+            pair[side]["source_protein_id"] in bundle["proteins"]
+            for pair in pairs for side in ("a", "b")
+        )
+        record["source_filter_status"] = "reported_accepted" if target_member else "not_evaluable"
+        record["source_filter_reason"] = "" if target_member else "target_database_membership_unresolved"
+        if target_member:
+            record.update(decoy_status="target_target", decoy_reason="",
+                          decoy_evidence="author_filtered_table_and_declared_target_database")
+            if record["record_reason"] == "decoy_policy_not_provided":
+                record.update(record_status="valid", record_reason="")
+    return bundle
+
+
 def read_plink_psms(psm_path, fasta_path, *, dataset_accession,
-                    decoy_prefix=None, fdr_columns=None, unfiltered_path=None, parameters_path=None):
+                    decoy_prefix=None, fdr_columns=None, unfiltered_path=None, parameters_path=None,
+                    author_filter_path=None):
     """Read pLink spectra tables while retaining unverified source information.
 
     Protein alternatives keep their original pairings. The caller must supply
     the decoy prefix and mappings from FDR levels to reported column names, or
-    provide the paired native unfiltered results and pLink 2 parameters.
+    provide the paired native unfiltered results and pLink 2 parameters. A
+    reviewed author_filter_path can instead document a target-only filtered
+    PSM table while leaving all unreported per-record FDR values missing.
     Missing policies stay unresolved. Scores are not interpreted as FDR.
     Modification strings and spectrum titles are retained without inventing
     modification masses or numeric scan identifiers.
     """
     if not isinstance(dataset_accession, str) or re.fullmatch(r"PXD\d{6,}", dataset_accession) is None:
         raise ValueError("A ProteomeXchange PXD accession is required")
+    if author_filter_path is not None and (decoy_prefix is not None or fdr_columns
+                                           or unfiltered_path is not None or parameters_path is not None):
+        raise ValueError("Do not mix author filter evidence with native or manual FDR policies")
     if (unfiltered_path is None) != (parameters_path is None):
         raise ValueError("Provide unfiltered_path and parameters_path together for native pLink evidence")
     if unfiltered_path is not None and (decoy_prefix is not None or fdr_columns):
@@ -693,6 +783,8 @@ def read_plink_psms(psm_path, fasta_path, *, dataset_accession,
                            "fasta_sha256": next(iter(proteins.values()))["fasta_sha256"]}}
     if unfiltered_path is not None:
         return _add_plink_native_evidence(bundle, unfiltered_path, parameters_path)
+    if author_filter_path is not None:
+        return _add_author_filter_evidence(bundle, author_filter_path)
     return bundle
 
 
@@ -702,6 +794,7 @@ def write_import_report(bundle, output_dir):
     if output_dir.exists():
         raise FileExistsError("Import report output directory already exists")
     _verify_plink_native_sources(bundle)
+    author_sources = _author_filter_source_bodies(bundle)
     for kind in ("psm", "fasta"):
         source = Path(bundle["provenance"][kind + "_path"])
         digest = hashlib.sha256()
@@ -712,6 +805,7 @@ def write_import_report(bundle, output_dir):
             raise ValueError(f"An import source changed after parsing: {source}")
 
     output_dir.mkdir(parents=True, exist_ok=False)
+    _write_source_bodies(output_dir, author_sources)
     report = output_dir / "import_report.json"
     _write_json(report, bundle)
     records = bundle["records"]
@@ -731,6 +825,11 @@ def write_import_report(bundle, output_dir):
     if "native_filter_policy" in bundle:
         manifest["native_filter_policy"] = deepcopy(bundle["native_filter_policy"])
         manifest["native_evidence_counts"] = dict(Counter(record["native_evidence"]["status"] for record in records))
+    if author_sources:
+        manifest["author_filter_policy"] = deepcopy(bundle["author_filter_policy"])
+        manifest["author_filter_evidence_snapshot"] = "author_filter_sources/" + Path(bundle["provenance"]["author_filter_path"]).name
+        manifest["author_filter_record_counts"] = dict(Counter(record["source_filter_status"] for record in records))
+        manifest["output_sha256"].update({name: hashlib.sha256(raw).hexdigest() for name, raw in author_sources.items()})
     _write_json(output_dir / "manifest.json", manifest)
     return output_dir
 
@@ -1292,9 +1391,18 @@ def write_projection_outputs(bundle, projection, output_dir):
     return output_dir
 
 
-def prepare_af_input(bundle, mappings, *, fdr_level, fdr_cutoff):
+def prepare_af_input(bundle, mappings, *, fdr_level=None, fdr_cutoff=None):
     """Project validated target PSMs onto exact UniProt identities, retaining all audit rows."""
-    policy = _fdr_policy(fdr_level, fdr_cutoff)
+    author = "author_filter_policy" in bundle
+    if author:
+        if fdr_level is not None or fdr_cutoff is not None:
+            raise ValueError("Author filtering cannot be combined with per-record FDR selection")
+        _author_filter_source_bodies(bundle)
+        policy = {"kind": "author_filtered_psm_table", "level": bundle["author_filter_policy"]["filter_level"],
+                  "reported_cutoff": bundle["author_filter_policy"]["reported_fdr_cutoff"],
+                  "per_record_fdr_applied": False}
+    else:
+        policy = _fdr_policy(fdr_level, fdr_cutoff)
     rows, audit = [], []
     for record in bundle["records"]:
         entry, reasons = deepcopy(record), []
@@ -1304,11 +1412,15 @@ def prepare_af_input(bundle, mappings, *, fdr_level, fdr_cutoff):
             reasons.append("decoy_record")
         if record["record_status"] != "valid":
             reasons.append(record["record_reason"])
-        confidence = record["fdr"][fdr_level]
-        if confidence["status"] != "valid":
-            reasons.append("selected_fdr_" + confidence["status"])
-        elif confidence["value"] > fdr_cutoff:
-            reasons.append("selected_fdr_above_cutoff")
+        if author:
+            if record.get("source_filter_status") != "reported_accepted":
+                reasons.append("author_filter_acceptance_unresolved")
+        else:
+            confidence = record["fdr"][fdr_level]
+            if confidence["status"] != "valid":
+                reasons.append("selected_fdr_" + confidence["status"])
+            elif confidence["value"] > fdr_cutoff:
+                reasons.append("selected_fdr_above_cutoff")
         selected = {}
         for site, endpoint in record["endpoints"].items():
             identity = mappings.get(endpoint["source_fasta_id"])
@@ -1331,7 +1443,13 @@ def prepare_af_input(bundle, mappings, *, fdr_level, fdr_cutoff):
                "source_run": fields.get("run", ""), "source_scan": fields.get("scan", ""),
                "source_crosslinker": fields.get("Linker" if plink else "Crosslinker", ""), "source_fdr_group": fields.get("fdrGroup", ""),
                "source_fields_json": json.dumps(fields, ensure_ascii=False),
-               "selected_fdr_level": fdr_level, "selected_fdr_value": confidence["value"], "selected_fdr_cutoff": float(fdr_cutoff)}
+               "selected_fdr_level": None if author else fdr_level,
+               "selected_fdr_value": None if author else confidence["value"],
+               "selected_fdr_cutoff": None if author else float(fdr_cutoff)}
+        if author:
+            row.update(selection_basis="author_filtered_psm_table", source_filter_level=policy["level"],
+                       source_filter_cutoff=policy["reported_cutoff"],
+                       source_filter_evidence_sha256=bundle["provenance"]["author_filter_sha256"])
         if plink:
             row.update(source_spectrum_title=fields.get("Title", ""),
                        source_modifications=fields.get("Modifications", ""))
@@ -1347,7 +1465,7 @@ def prepare_af_input(bundle, mappings, *, fdr_level, fdr_cutoff):
     return {"rows": rows, "audit": audit, "fdr_policy": policy, "provenance": deepcopy(bundle["provenance"])}
 
 
-def write_claudio_input(bundle, mappings, output_dir, *, fdr_level, fdr_cutoff,
+def write_claudio_input(bundle, mappings, output_dir, *, fdr_level=None, fdr_cutoff=None,
                         allowed_crosslinkers, allowed_residues, source_protein_ids=None):
     """Export exact-identity PSMs for the existing M1 -> M3 -> M2 -> M4 CLI.
 
@@ -1404,6 +1522,7 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
     """Write source/audit snapshots and the eligible input table to a new directory."""
     output_dir = Path(output_dir)
     _verify_plink_native_sources(bundle)
+    author_sources = _author_filter_source_bodies(bundle)
     copied = deepcopy(mappings)
     source_bodies = {}
     for identity in copied.values():
@@ -1419,6 +1538,7 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
         (output_dir / "identity_sources").mkdir()
         for name, raw in source_bodies.items():
             (output_dir / name).write_bytes(raw)
+    _write_source_bodies(output_dir, author_sources)
     _write_json(output_dir / "psm_audit.json", prepared["audit"])
     _write_json(output_dir / "search_proteins.json", bundle["proteins"])
     _write_json(output_dir / "protein_mapping.json", copied)
@@ -1446,7 +1566,8 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
         writer = csv.DictWriter(handle, fieldnames=columns)
         writer.writeheader()
         writer.writerows(rows)
-    names = ["psm_audit.json", "search_proteins.json", "protein_mapping.json", "source_columns.json", input_name, *source_bodies]
+    names = ["psm_audit.json", "search_proteins.json", "protein_mapping.json", "source_columns.json", input_name,
+             *source_bodies, *author_sources]
     format_name = "plink" if bundle.get("format") == "plink_psm" else "xifdr"
     manifest = {"schema_version": 1, "kind": format_name + ("_claudio_input" if pipeline else "_prepared_input"), "status": "complete",
                 "provenance": bundle["provenance"], "fdr_policy": prepared["fdr_policy"],
@@ -1459,6 +1580,9 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
         manifest["parser"] = deepcopy(bundle["parser"])
     if "native_filter_policy" in bundle:
         manifest["native_filter_policy"] = deepcopy(bundle["native_filter_policy"])
+    if author_sources:
+        manifest["author_filter_policy"] = deepcopy(bundle["author_filter_policy"])
+        manifest["author_filter_evidence_snapshot"] = "author_filter_sources/" + Path(bundle["provenance"]["author_filter_path"]).name
     if pipeline:
         manifest["selection_policy"] = pipeline_policy
         manifest["pipeline_input"] = {

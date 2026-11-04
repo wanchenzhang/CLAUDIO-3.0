@@ -306,19 +306,19 @@ def _detect_psm_format(results_path):
 @click.option("--dataset-accession", required=True, help="ProteomeXchange PXD accession.")
 @click.option(
     "--fdr-level", type=click.Choice(tuple(FDR_COLUMNS)),
-    help="Reported FDR level; required for export or when labeling a pLink --fdr-column.",
+    help="Per-record FDR level; required for export unless using --author-filter-evidence.",
 )
 @click.option(
     "--fdr-cutoff", type=click.FloatRange(min=0.0, max=1.0),
-    help="Inclusive FDR cutoff as a fraction; required for export. 0.01 means 1%.",
+    help="Inclusive per-record FDR cutoff as a fraction. 0.01 means 1%; omit with --author-filter-evidence.",
 )
 @click.option(
     "--fdr-column",
-    help="Reported pLink column corresponding to --fdr-level; required for export without native evidence.",
+    help="Manual pLink column corresponding to --fdr-level; use with a declared --decoy-prefix.",
 )
 @click.option(
     "--decoy-prefix",
-    help="Declared pLink decoy prefix; required for export without native evidence.",
+    help="Manual pLink decoy prefix; use with a reported --fdr-column.",
 )
 @click.option(
     "--plink-unfiltered", "plink_unfiltered_path",
@@ -329,6 +329,11 @@ def _detect_psm_format(results_path):
     "--plink-parameters", "plink_parameters_path",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
     help="Original .plink search parameters; pair with --plink-unfiltered.",
+)
+@click.option(
+    "--author-filter-evidence", "author_filter_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Reviewed declaration for a target-only author-filtered pLink PSM table; preserves missing per-record FDR.",
 )
 @click.option(
     "--crosslinker", "crosslinkers", multiple=True,
@@ -355,7 +360,7 @@ def _detect_psm_format(results_path):
 def standardize_command(results_path, fasta_path, mapping_path, dataset_accession,
                         fdr_level, fdr_cutoff, fdr_column, decoy_prefix, crosslinkers,
                         residues, source_proteins, audit_only, output_dir,
-                        plink_unfiltered_path, plink_parameters_path):
+                        plink_unfiltered_path, plink_parameters_path, author_filter_path):
     """Import xiFDR or pLink PSMs and export validated CLAUDIO inputs or a full audit."""
     if output_dir.exists():
         raise click.BadParameter("Output directory already exists; choose a new directory.", param_hint="--output")
@@ -371,8 +376,12 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
         raise click.ClickException(str(error)) from error
     plink = source_format == "plink_psm"
     native = plink_unfiltered_path is not None or plink_parameters_path is not None
-    if not plink and (fdr_column is not None or decoy_prefix is not None or native):
+    author = author_filter_path is not None
+    if not plink and (fdr_column is not None or decoy_prefix is not None or native or author):
         raise click.UsageError("Decoy, FDR-column and native pLink evidence options only support pLink PSM inputs.")
+    if author and (native or fdr_column is not None or decoy_prefix is not None
+                   or fdr_level is not None or fdr_cutoff is not None):
+        raise click.UsageError("--author-filter-evidence cannot be mixed with native or per-record FDR options.")
     if (plink_unfiltered_path is None) != (plink_parameters_path is None):
         raise click.UsageError("Provide --plink-unfiltered and --plink-parameters together.")
     if native and (fdr_column is not None or decoy_prefix is not None):
@@ -386,15 +395,16 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
             raise click.UsageError("Selection options cannot be used with --audit-only: " + ", ".join(conflicts))
         if native and fdr_level is not None:
             raise click.UsageError("Native pLink audit retains PSM confidence; omit --fdr-level with --audit-only.")
-        if plink and not native and (fdr_level is None) != (fdr_column is None):
+        if plink and not native and not author and (fdr_level is None) != (fdr_column is None):
             raise click.UsageError("Provide --fdr-level and --fdr-column together to label reported pLink FDR values.")
         if not plink and fdr_level is not None:
             raise click.UsageError("--fdr-level is not used with --audit-only for xiFDR; all reported levels are retained.")
     else:
-        required = {"--mapping": mapping_path is None, "--fdr-level": fdr_level is None,
-                    "--fdr-cutoff": fdr_cutoff is None, "--crosslinker": not crosslinkers,
+        required = {"--mapping": mapping_path is None, "--crosslinker": not crosslinkers,
                     "--residue": not residues}
-        if plink and not native:
+        if not author:
+            required.update({"--fdr-level": fdr_level is None, "--fdr-cutoff": fdr_cutoff is None})
+        if plink and not native and not author:
             required.update({"--fdr-column": fdr_column is None, "--decoy-prefix": decoy_prefix is None})
         missing = [option for option, absent in required.items() if absent]
         if missing:
@@ -410,6 +420,7 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
                 decoy_prefix=decoy_prefix,
                 fdr_columns={fdr_level: fdr_column} if fdr_column is not None else None,
                 unfiltered_path=plink_unfiltered_path, parameters_path=plink_parameters_path,
+                author_filter_path=author_filter_path,
             )
         else:
             bundle = read_xifdr_psms(results_path, fasta_path, dataset_accession=dataset_accession,
@@ -423,6 +434,9 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
             if "native_evidence_counts" in manifest:
                 click.echo(f"Native confidence verified: {manifest['native_evidence_counts'].get('verified', 0)}")
                 click.echo(f"Author-reported PSM FDR cutoff: {manifest['native_filter_policy']['cutoff']}")
+            if "author_filter_record_counts" in manifest:
+                click.echo(f"Author-filtered PSM records: {manifest['author_filter_record_counts'].get('reported_accepted', 0)}")
+                click.echo(f"Author-reported PSM FDR cutoff: {manifest['author_filter_policy']['reported_fdr_cutoff']}")
             click.echo(f"Audit report: {(destination / 'import_report.json').resolve()}")
             click.echo(f"Output: {destination.resolve()}")
             return

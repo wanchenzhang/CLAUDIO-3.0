@@ -2018,3 +2018,277 @@ class TestPlinkTitleMetadata(unittest.TestCase):
         self.assertFalse(manifest["fdr_filter_applied"])
         self.assertFalse(manifest["input_exported"])
         self.assertFalse((output / "claudio_input.csv").exists())
+
+
+class TestAuthorFilteredPSMs(unittest.TestCase):
+    def setUp(self):
+        self.temp = TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.fixture = Path(__file__).resolve().parents[1] / "fixtures"
+        self.psms = self.root / "spectra.csv"
+        self.fasta = self.root / "search.fasta"
+        self.policy_path = self.root / "author_filter.json"
+        self.note = self.root / "source_note.json"
+        self.note.write_text('{"scope": "Reviewed source filtering for this test"}\n', encoding="utf-8")
+        source = self.fixture / "plink_pxd079671"
+        self.psms.write_bytes((source / "spectra.csv").read_bytes())
+        self.fasta.write_bytes((source / "search.fasta").read_bytes())
+        with self.psms.open(encoding="utf-8-sig", newline="") as handle:
+            reader = csv.DictReader(handle)
+            self.columns, self.source_rows = reader.fieldnames, list(reader)
+        self.output = self.root / "output"
+        self.write_policy()
+
+    def write_policy(self, **changes):
+        policy = {
+            "schema_version": 1, "kind": "xlms_author_filter_evidence", "review_status": "reviewed",
+            "dataset_accession": "PXD079671",
+            "psm_sha256": hashlib.sha256(self.psms.read_bytes()).hexdigest(),
+            "fasta_sha256": hashlib.sha256(self.fasta.read_bytes()).hexdigest(),
+            "result_scope": "author_filtered_psm_table", "target_only": True,
+            "fasta_role": "target_search_database", "filter_level": "psm",
+            "reported_fdr_cutoff": 0.05, "per_record_fdr_available": False,
+            "sources": [{"path": self.note.name, "sha256": hashlib.sha256(self.note.read_bytes()).hexdigest(),
+                         "role": "reviewed_source_note"}],
+        }
+        policy.update(changes)
+        self.policy_path.write_text(json.dumps(policy), encoding="utf-8")
+        return policy
+
+    def read(self, **options):
+        return xifdr.read_plink_psms(
+            self.psms, self.fasta, dataset_accession="PXD079671",
+            author_filter_path=self.policy_path, **options,
+        )
+
+    def prepare_complete_example(self, count=1):
+        self.fasta.write_text(FASTA, encoding="utf-8")
+        row = dict(self.source_rows[0])
+        row.update(Peptide="ACK(3)-KPEP(3)", Proteins="customA(4)-customB(5)/", Modifications="null")
+        with self.psms.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=self.columns)
+            writer.writeheader()
+            writer.writerows([row] * count)
+        self.write_policy()
+        reference = self.root / "references.fasta"
+        reference.write_text(REFERENCES, encoding="utf-8")
+        mappings = map_reference_proteins(read_search_fasta(self.fasta), read_search_fasta(reference), taxon_id=9031)
+        mapping = self.root / "mapping.json"
+        mapping.write_text(json.dumps(mappings), encoding="utf-8")
+        return mappings, mapping
+
+    def export(self, bundle, mappings):
+        return write_claudio_input(
+            bundle, mappings, self.output,
+            allowed_crosslinkers={"EDC-DE"}, allowed_residues={"K", "E"},
+        )
+
+    def arguments(self):
+        return [
+            "standardize", "--results", str(self.psms), "--fasta", str(self.fasta),
+            "--dataset-accession", "PXD079671", "--author-filter-evidence", str(self.policy_path),
+            "--output", str(self.output),
+        ]
+
+    def test_real_source_table_keeps_fdr_missing_and_retains_ambiguous_proteins(self):
+        source = self.fixture / "plink_pxd014520"
+        bundle = xifdr.read_plink_psms(
+            source / "spectra.csv", source / "search.fasta", dataset_accession="PXD014520",
+            author_filter_path=source / "author_filter/policy.json",
+        )
+        records = bundle["records"]
+        self.assertEqual(len(records), 257)
+        self.assertEqual(sum(r["record_status"] == "valid" for r in records), 254)
+        self.assertTrue(all(r["source_filter_status"] == "reported_accepted" for r in records))
+        self.assertTrue(all(r["decoy_status"] == "target_target" for r in records))
+        self.assertTrue(all(r["fdr"]["psm"]["status"] == "missing" for r in records))
+        self.assertEqual(bundle["author_filter_policy"]["reported_fdr_cutoff"], 0.05)
+        for number in (166, 187, 217):
+            self.assertEqual(records[number - 1]["record_status"], "not_evaluable")
+            self.assertEqual(records[number - 1]["endpoints"]["b"]["reason"], "protein_identity_ambiguous")
+
+    def test_export_records_the_author_cutoff_without_fabricating_per_psm_values(self):
+        mappings, _ = self.prepare_complete_example()
+        bundle = self.read()
+        output = self.export(bundle, mappings)
+        with (output / "claudio_input.csv").open(encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle)
+            self.assertEqual(reader.fieldnames[:8], CLAUDIO_COLUMNS)
+            rows = list(reader)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual((rows[0]["entry1"], rows[0]["entry2"]), ("P12345", "Q99999"))
+        self.assertEqual(rows[0]["selection_basis"], "author_filtered_psm_table")
+        self.assertEqual(rows[0]["source_filter_level"], "psm")
+        self.assertEqual(float(rows[0]["source_filter_cutoff"]), 0.05)
+        for name in ("selected_fdr_level", "selected_fdr_value", "selected_fdr_cutoff"):
+            self.assertEqual(rows[0][name], "")
+        audit = json.loads((output / "psm_audit.json").read_text())
+        self.assertIsNone(audit[0]["fdr"]["psm"]["value"])
+        manifest = json.loads((output / "manifest.json").read_text())
+        self.assertEqual(manifest["fdr_policy"]["kind"], "author_filtered_psm_table")
+        self.assertFalse(manifest["fdr_policy"]["per_record_fdr_applied"])
+        self.assertEqual(manifest["author_filter_policy"]["reported_fdr_cutoff"], 0.05)
+
+    def test_unresolved_source_proteins_cannot_be_accepted_by_a_filter_declaration(self):
+        bundle = self.read()
+        self.assertTrue(all(r["record_status"] == "not_evaluable" for r in bundle["records"]))
+        self.assertTrue(all(r["source_filter_status"] == "not_evaluable" for r in bundle["records"]))
+        self.assertTrue(all(r["decoy_status"] == "unknown" for r in bundle["records"]))
+        prepared = prepare_af_input(bundle, {})
+        self.assertEqual(prepared["rows"], [])
+        self.assertEqual(len(prepared["audit"]), 3)
+
+    def test_exact_uniprot_sequence_identity_is_still_required(self):
+        self.prepare_complete_example()
+        bundle = self.read()
+        prepared = prepare_af_input(bundle, {})
+        self.assertEqual(prepared["rows"], [])
+        self.assertIn("protein_identity_unresolved_a", prepared["audit"][0]["input_reasons"])
+
+    def test_a_declared_filter_does_not_realign_incorrect_source_positions(self):
+        self.prepare_complete_example()
+        self.psms.write_text(self.psms.read_text().replace("customA(4)", "customA(5)"), encoding="utf-8")
+        self.write_policy()
+        record = self.read()["records"][0]
+        self.assertEqual(record["record_status"], "not_evaluable")
+        self.assertEqual(record["endpoints"]["a"]["reason"], "peptide_sequence_mismatch")
+
+    def test_duplicate_psms_remain_distinct_and_are_not_collapsed_to_residue_pairs(self):
+        mappings, _ = self.prepare_complete_example(count=2)
+        bundle = self.read()
+        self.assertNotEqual(bundle["records"][0]["source_record_id"], bundle["records"][1]["source_record_id"])
+        prepared = prepare_af_input(bundle, mappings)
+        self.assertEqual(len(prepared["rows"]), 2)
+        self.assertEqual(len(prepared["audit"]), 2)
+
+    def test_malformed_rows_are_not_accepted_by_a_table_level_declaration(self):
+        mappings, _ = self.prepare_complete_example()
+        with self.psms.open("a", encoding="utf-8", newline="") as handle:
+            csv.writer(handle).writerow(["broken", "short"])
+        self.write_policy()
+        bundle = self.read()
+        prepared = prepare_af_input(bundle, mappings)
+        self.assertEqual(len(prepared["rows"]), 1)
+        self.assertEqual(len(prepared["audit"]), 2)
+        bad = prepared["audit"][1]
+        self.assertEqual(bad["record_reason"], "row_width_mismatch")
+        self.assertEqual(bad["source_filter_status"], "not_evaluable")
+        self.assertIn("author_filter_acceptance_unresolved", bad["input_reasons"])
+
+    def test_the_declaration_is_bound_to_dataset_and_source_checksums(self):
+        for changes in ({"dataset_accession": "PXD000001"}, {"psm_sha256": "0" * 64},
+                        {"fasta_sha256": "0" * 64}):
+            with self.subTest(changes=changes):
+                self.write_policy(**changes)
+                with self.assertRaisesRegex(ValueError, "author.*(source|dataset)|checksum"):
+                    self.read()
+
+    def test_only_reviewed_target_only_psm_declarations_are_supported(self):
+        for changes in ({"review_status": "pending"}, {"target_only": False},
+                        {"target_only": "true"}, {"result_scope": "final_residue_pairs"},
+                        {"fasta_role": "target_and_decoy_database"}, {"filter_level": "link"},
+                        {"per_record_fdr_available": True}, {"kind": "other"}):
+            with self.subTest(changes=changes):
+                self.write_policy(**changes)
+                with self.assertRaisesRegex(ValueError, "author|Author"):
+                    self.read()
+
+    def test_missing_or_invalid_author_cutoffs_are_not_replaced_with_defaults(self):
+        for cutoff in (None, "0.05", True, float("nan"), -1, 5):
+            with self.subTest(cutoff=cutoff):
+                self.write_policy(reported_fdr_cutoff=cutoff)
+                with self.assertRaises(ValueError):
+                    self.read()
+
+    def test_supporting_sources_must_exist_and_match_their_checksums(self):
+        for sources in ([], [{"path": "missing.json", "sha256": "0" * 64, "role": "publication"}],
+                        [{"path": self.note.name, "sha256": "0" * 64, "role": "publication"}],
+                        [{"path": "../outside.json", "sha256": "0" * 64, "role": "publication"}]):
+            with self.subTest(sources=sources):
+                self.write_policy(sources=sources)
+                with self.assertRaises((ValueError, OSError)):
+                    self.read()
+
+    def test_author_evidence_is_not_mixed_with_native_or_manual_fdr_policies(self):
+        for options in ({"decoy_prefix": "REV_"}, {"fdr_columns": {"psm": "Score"}},
+                        {"unfiltered_path": self.psms, "parameters_path": self.policy_path}):
+            with self.subTest(options=options):
+                with self.assertRaisesRegex(ValueError, "author|Author"):
+                    self.read(**options)
+        self.prepare_complete_example()
+        bundle = self.read()
+        with self.assertRaisesRegex(ValueError, "author|Author"):
+            prepare_af_input(bundle, {}, fdr_level="psm", fdr_cutoff=0.01)
+
+    def test_audit_snapshots_can_replay_the_same_author_declaration(self):
+        bundle = self.read()
+        output = xifdr.write_import_report(bundle, self.output)
+        manifest = json.loads((output / "manifest.json").read_text())
+        snapshot = output / manifest["author_filter_evidence_snapshot"]
+        replay = xifdr.read_plink_psms(
+            self.psms, self.fasta, dataset_accession="PXD079671", author_filter_path=snapshot,
+        )
+        self.assertEqual(replay["author_filter_policy"], bundle["author_filter_policy"])
+        self.assertEqual(replay["records"], bundle["records"])
+        for name, digest in manifest["output_sha256"].items():
+            self.assertEqual(hashlib.sha256((output / name).read_bytes()).hexdigest(), digest)
+        for flag in ("fdr_filter_applied", "identity_mapping_applied", "input_exported", "assessment_performed"):
+            self.assertFalse(manifest[flag])
+
+    def test_changed_sources_are_rejected_before_creating_outputs(self):
+        for path in (self.policy_path, self.note, self.psms, self.fasta):
+            with self.subTest(path=path.name):
+                bundle = self.read()
+                raw = path.read_bytes()
+                path.write_bytes(raw + b"\n")
+                with self.assertRaisesRegex(ValueError, "source|checksum|changed"):
+                    xifdr.write_import_report(bundle, self.output)
+                self.assertFalse(self.output.exists())
+                path.write_bytes(raw)
+
+    def test_export_snapshots_include_the_reviewed_evidence(self):
+        mappings, _ = self.prepare_complete_example()
+        output = self.export(self.read(), mappings)
+        manifest = json.loads((output / "manifest.json").read_text())
+        self.assertEqual((output / manifest["author_filter_evidence_snapshot"]).read_bytes(), self.policy_path.read_bytes())
+        self.assertEqual((output / "author_filter_sources/source_note.json").read_bytes(), self.note.read_bytes())
+        for name, digest in manifest["output_sha256"].items():
+            self.assertEqual(hashlib.sha256((output / name).read_bytes()).hexdigest(), digest)
+
+    def test_cli_exports_without_per_record_fdr_arguments(self):
+        _, mapping = self.prepare_complete_example()
+        result = CliRunner().invoke(catalog_main, self.arguments() + [
+            "--mapping", str(mapping), "--crosslinker", "EDC-DE", "--residue", "K", "--residue", "E",
+        ])
+        self.assertEqual(result.exit_code, 0, result.output + repr(result.exception))
+        self.assertIn("Standardized input rows: 1", result.output)
+
+    def test_cli_audit_reports_author_filtering_without_exporting_inputs(self):
+        self.prepare_complete_example()
+        result = CliRunner().invoke(catalog_main, self.arguments() + ["--audit-only"])
+        self.assertEqual(result.exit_code, 0, result.output + repr(result.exception))
+        self.assertIn("Author-filtered PSM records: 1", result.output)
+        report = json.loads((self.output / "import_report.json").read_text())
+        self.assertEqual(report["records"][0]["fdr"]["psm"]["status"], "missing")
+        self.assertFalse((self.output / "claudio_input.csv").exists())
+
+    def test_cli_rejects_per_record_and_native_options_with_author_evidence(self):
+        for extra in (["--fdr-level", "psm"], ["--fdr-cutoff", "0.01"],
+                      ["--fdr-column", "Score"], ["--decoy-prefix", "REV_"],
+                      ["--plink-unfiltered", str(self.psms), "--plink-parameters", str(self.policy_path)]):
+            with self.subTest(extra=extra):
+                result = CliRunner().invoke(catalog_main, self.arguments() + ["--audit-only"] + extra)
+                self.assertEqual(result.exit_code, 2)
+                self.assertIn("author", result.output.lower())
+                self.assertFalse(self.output.exists())
+
+    def test_cli_rejects_an_author_plink_declaration_for_xifdr_results(self):
+        with self.psms.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=COLUMNS + ["exp charge"])
+            writer.writeheader()
+            writer.writerow({**psm(), "exp charge": "3"})
+        result = CliRunner().invoke(catalog_main, self.arguments() + ["--audit-only"])
+        self.assertEqual(result.exit_code, 2)
+        self.assertIn("pLink", result.output)
+        self.assertFalse(self.output.exists())
