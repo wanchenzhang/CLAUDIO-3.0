@@ -457,6 +457,94 @@ class TestMeroXLocalization(unittest.TestCase):
             candidates[0]["endpoints"],
             candidates[1]["endpoints"],
         )
+class TestMeroXNativeConfidence(unittest.TestCase):
+    def test_saved_filter_evidence_does_not_promote_records(self):
+        from claudio.dataset_catalog.xifdr import read_merox_csms
 
+        report = read_merox_csms(
+            FIXTURE / "velos.zhrm",
+            FIXTURE / "search.fasta",
+            dataset_accession="PXD010895",
+        )
+
+        self.assertEqual(len(report["records"]), 112)
+
+        for record in report["records"]:
+            self.assertIn("native_confidence", record)
+            evidence = record["native_confidence"]
+
+            self.assertEqual(
+                evidence["status"], "within_saved_cutoff"
+            )
+            self.assertEqual(
+                evidence["fdr_level"], "native_unspecified"
+            )
+            self.assertEqual(evidence["cutoff"], 0.05)
+            self.assertEqual(
+                evidence["value"],
+                record["native_local_fdr"]["value"],
+            )
+            self.assertFalse(evidence["application_verified"])
+
+            self.assertEqual(record["decoy_status"], "unknown")
+            self.assertEqual(record["fdr"]["psm"]["status"], "missing")
+            self.assertEqual(record["record_status"], "not_evaluable")
+            self.assertEqual(
+                record["source_fields"]["is Selected in Table"],
+                "false",
+            )
+
+    def test_unusable_settings_or_values_do_not_pass_the_saved_filter(self):
+        from claudio.dataset_catalog import xifdr
+
+        reader = getattr(xifdr, "_merox_confidence_evidence", None)
+        self.assertTrue(
+            callable(reader),
+            "Missing native MeroX confidence evidence reader",
+        )
+
+        settings = {
+            "FDRCUTOFF": "0.05",
+            "APPLYFDR": "1",
+            "PERFORMDECOY": "1",
+        }
+        valid = {"raw": "0.05", "value": 0.05, "status": "valid"}
+
+        cases = [
+            ({}, valid, "within_saved_cutoff"),
+            (
+                {},
+                {"raw": "0.06", "value": 0.06, "status": "valid"},
+                "above_saved_cutoff",
+            ),
+            ({"APPLYFDR": "0"}, valid, "filter_disabled"),
+            ({"APPLYFDR": "unknown"}, valid, "unresolved"),
+            ({"PERFORMDECOY": "0"}, valid, "unresolved"),
+            ({"FDRCUTOFF": ""}, valid, "unresolved"),
+            ({"FDRCUTOFF": "nan"}, valid, "unresolved"),
+            ({"FDRCUTOFF": "1.5"}, valid, "unresolved"),
+            (
+                {},
+                {"raw": "", "value": None, "status": "missing"},
+                "unresolved",
+            ),
+        ]
+
+        for overrides, local_fdr, expected in cases:
+            with self.subTest(overrides=overrides, local_fdr=local_fdr):
+                supplied = dict(settings)
+                supplied.update(overrides)
+                before_settings = dict(supplied)
+                before_fdr = dict(local_fdr)
+
+                evidence = reader(supplied, local_fdr)
+
+                self.assertEqual(evidence["status"], expected)
+                self.assertFalse(evidence["application_verified"])
+                self.assertEqual(
+                    evidence["fdr_level"], "native_unspecified"
+                )
+                self.assertEqual(supplied, before_settings)
+                self.assertEqual(local_fdr, before_fdr)
 if __name__ == "__main__":
     unittest.main()

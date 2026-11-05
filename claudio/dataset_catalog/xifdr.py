@@ -1983,7 +1983,49 @@ def _merox_localization(fields, proteins):
         "source_best_candidate_numbers": best_numbers,
         "candidates": candidates,
     }
+def _merox_confidence_evidence(settings, native_local_fdr):
+    """Compare native local FDR with saved filter settings.
 
+    Configuration and numerical agreement do not prove that filtering
+    was applied, establish an FDR level, or resolve target/decoy identity.
+    """
+    cutoff = _fdr_value(settings.get("FDRCUTOFF"))
+    local_fdr = _fdr_value(native_local_fdr.get("raw"))
+
+    evidence = {
+        "status": "unresolved",
+        "reason": "",
+        "fdr_level": "native_unspecified",
+        "cutoff": cutoff["value"],
+        "value": local_fdr["value"],
+        "application_verified": False,
+    }
+
+    if settings.get("APPLYFDR") == "0":
+        evidence.update(
+            status="filter_disabled",
+            reason="native_fdr_filter_disabled",
+        )
+    elif settings.get("APPLYFDR") != "1":
+        evidence["reason"] = "native_filter_flag_unresolved"
+    elif settings.get("PERFORMDECOY") != "1":
+        evidence["reason"] = "native_decoy_analysis_not_enabled"
+    elif cutoff["status"] != "valid":
+        evidence["reason"] = "native_fdr_cutoff_unresolved"
+    elif (
+        native_local_fdr.get("status") != "valid"
+        or local_fdr["status"] != "valid"
+    ):
+        evidence["reason"] = "native_local_fdr_unresolved"
+    elif local_fdr["value"] <= cutoff["value"]:
+        evidence["status"] = "within_saved_cutoff"
+    else:
+        evidence.update(
+            status="above_saved_cutoff",
+            reason="native_local_fdr_above_saved_cutoff",
+        )
+
+    return evidence
 def read_merox_csms(psm_path, fasta_path, *, dataset_accession):
     """Audit legacy 27-column MeroX native results without selecting crosslinks.
 
@@ -2096,6 +2138,9 @@ def read_merox_csms(psm_path, fasta_path, *, dataset_accession):
 
             record["native_local_fdr"] = _fdr_value(
                 fields["local False discovery rate"]
+            )
+            record["native_confidence"] = _merox_confidence_evidence(
+                settings, record["native_local_fdr"]
             )
             view = fields.copy()
 
