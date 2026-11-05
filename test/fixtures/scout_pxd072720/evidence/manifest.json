@@ -1,0 +1,20 @@
+{
+  "dataset_accession": "PXD072720",
+  "source_csv_sha256": "17a398a98c7ad335b54aa979db45b1fc89cb7fc58fb3d2c937b844ceb4fb98f1",
+  "search_fasta_sha256": "4d274952bde637659fc4d926af00cf43970ee740369cceddaadd67b45f5fab47",
+  "worksheet": "Scout_Gel_CrosslinkedSpectra",
+  "publication_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13142922/",
+  "reported_fdr_cutoff": 0.05,
+  "reported_fdr_level": "unspecified",
+  "per_record_fdr_available": false,
+  "expected_source_records": 72,
+  "expected_pairwise_records": 63,
+  "expected_loop_links": 9,
+  "output_sha256": {
+    "author_results.xlsx": "eb90dd7ec24b2bf65a3e0dc6debf63a29696f2f653d9c9bdcf6f7144a34d82f5",
+    "membership_report.json": "ac60da2e1e435acbcdfe3925b28a79efca065929e21b9997c0b45ae4f9cb04c7",
+    "sources/2cf3012123da1e89702637f5d405fc649adc0243c09c64759d66a21a22e5362d.json": "2cf3012123da1e89702637f5d405fc649adc0243c09c64759d66a21a22e5362d",
+    "candidate_report.json": "87bea48d2c9faac692cffcb9b8c94aba01b6d0d3a1d8a71a9b9db86edaf52eab",
+    ".gitattributes": "0b4de6d707acc97658f1bc4e438f7e47a691669913fdbe168ba475ce42e1a5ad"
+  }
+}

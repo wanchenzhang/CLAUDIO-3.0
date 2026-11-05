@@ -12,7 +12,7 @@ import requests
 import zipfile
 from .inventory import inspect_catalog, summarize_inventories, inspect_content_plan
 from .proteomecentral import fetch_dataset_pages, write_discovery_outputs
-from .xifdr import FDR_COLUMNS, read_xifdr_psms, read_plink_psms, write_claudio_input, write_import_report, read_merox_csms, write_merox_claudio_input, read_scout_csms
+from .xifdr import FDR_COLUMNS, read_xifdr_psms, read_plink_psms, write_claudio_input, write_import_report, read_merox_csms, write_merox_claudio_input, read_scout_csms, write_scout_claudio_input
 
 DEFAULT_SEARCH_TERMS = (
     "XL-MS",
@@ -403,7 +403,7 @@ def _detect_psm_format(results_path):
 @click.option(
     "--author-filter-evidence", "author_filter_path",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    help="Reviewed declaration for a target-only author-filtered pLink PSM table; preserves missing per-record FDR.",
+    help="Reviewed author-result evidence for pLink or Scout; preserves missing per-record FDR.",
 )
 @click.option(
     "--crosslinker", "crosslinkers", multiple=True,
@@ -446,31 +446,53 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
     except (ValueError, OSError) as error:
         raise click.ClickException(str(error)) from error
     if source_format == "scout_csm":
-        if not audit_only:
-            raise click.UsageError(
-                "Scout input currently requires --audit-only."
-            )
         if len(crosslinkers) != 1:
             raise click.UsageError(
                 "Scout import requires exactly one --crosslinker label."
             )
 
-        unsupported = (
-            mapping_path, reference_projection_path,
-            fdr_level, fdr_cutoff, fdr_column, decoy_prefix,
-            plink_unfiltered_path, plink_parameters_path,
-            author_filter_path,
-        )
-        if (
-            any(value is not None for value in unsupported)
-            or residues
-            or source_proteins
-        ):
+        unsupported = {
+            "--mapping": mapping_path is not None,
+            "--fdr-level": fdr_level is not None,
+            "--fdr-cutoff": fdr_cutoff is not None,
+            "--fdr-column": fdr_column is not None,
+            "--decoy-prefix": decoy_prefix is not None,
+            "--plink-unfiltered": plink_unfiltered_path is not None,
+            "--plink-parameters": plink_parameters_path is not None,
+            "--source-protein": bool(source_proteins),
+        }
+        if audit_only:
+            unsupported.update({
+                "--author-filter-evidence": author_filter_path is not None,
+                "--reference-projection": reference_projection_path is not None,
+                "--residue": bool(residues),
+            })
+
+        conflicts = [
+            option for option, present in unsupported.items() if present
+        ]
+        if conflicts:
+            mode = "--audit-only" if audit_only else "input export"
             raise click.UsageError(
-                "Scout --audit-only cannot be combined with "
-                "identity, FDR, residue, source-protein "
-                "or pLink evidence selection options."
+                f"Unsupported options for Scout {mode}: "
+                + ", ".join(conflicts)
             )
+
+        if not audit_only:
+            required = {
+                "--author-filter-evidence": author_filter_path is not None,
+                "--reference-projection": reference_projection_path is not None,
+                "--residue": bool(residues),
+            }
+            missing = [
+                option for option, present in required.items() if not present
+            ]
+            if missing:
+                raise click.UsageError(
+                    "Scout export requires "
+                    + ", ".join(missing)
+                    + "; use --audit-only for an import audit."
+                )
 
         click.echo("Detected format: Scout CSM")
         try:
@@ -480,7 +502,22 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
                 dataset_accession=dataset_accession,
                 crosslinker=crosslinkers[0],
             )
-            destination = write_import_report(bundle, output_dir)
+
+            if audit_only:
+                destination = write_import_report(bundle, output_dir)
+            else:
+                projection = _read_reference_projection(
+                    reference_projection_path
+                )
+                destination = write_scout_claudio_input(
+                    bundle,
+                    projection,
+                    output_dir,
+                    author_filter_path=author_filter_path,
+                    allowed_crosslinkers=crosslinkers,
+                    allowed_residues=residues,
+                )
+
             manifest = json.loads(
                 (destination / "manifest.json").read_bytes()
             )
@@ -492,28 +529,60 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
 
         counts = manifest["counts"]
         loop_links = sum(
-            record["record_kind"] == "loop_link"
+            record.get("record_kind") == "loop_link"
             for record in bundle["records"]
         )
+        parser_errors = sum(
+            record["record_reason"].startswith("pyxlms_")
+            for record in bundle["records"]
+        )
+
         click.echo(f"Source CSM records: {counts['source_records']}")
         click.echo(
             f"Parsed CSM records: {bundle['parser']['parsed_records']}"
         )
-        click.echo(
-            f"Validated source records: {counts['validated_source_records']}"
-        )
         click.echo(f"Loop-link records retained: {loop_links}")
-        click.echo(f"Records with parser errors: {counts['parser_errors']}")
+        click.echo(f"Records with parser errors: {parser_errors}")
         click.echo(
             f"Crosslinker label: {crosslinkers[0]} (caller-declared)"
         )
-        click.echo(
-            "UniProt mapping, FDR filtering and input export: not performed"
-        )
-        click.echo(
-            f"Audit report: "
-            f"{(destination / 'import_report.json').resolve()}"
-        )
+
+        if audit_only:
+            click.echo(
+                f"Validated source records: "
+                f"{counts['validated_source_records']}"
+            )
+            click.echo(
+                "UniProt mapping, FDR filtering and input export: "
+                "not performed"
+            )
+            click.echo(
+                f"Audit report: "
+                f"{(destination / 'import_report.json').resolve()}"
+            )
+        else:
+            policy = manifest["author_filter_policy"]
+            click.echo(
+                f"Standardized input rows: "
+                f"{counts['pipeline_input_rows']}"
+            )
+            click.echo(
+                f"Author-reported FDR cutoff: "
+                f"{policy['reported_fdr_cutoff']}"
+            )
+            click.echo(
+                f"Author-reported FDR level: "
+                f"{policy['reported_fdr_level']}"
+            )
+            click.echo("Per-record FDR filtering: not performed")
+            click.echo("Model assessment: not performed")
+            click.echo(
+                f"Input: {(destination / 'claudio_input.csv').resolve()}"
+            )
+            click.echo(
+                f"Audit: {(destination / 'psm_audit.json').resolve()}"
+            )
+
         click.echo(f"Output: {destination.resolve()}")
         return
     if source_format == "merox_csm":

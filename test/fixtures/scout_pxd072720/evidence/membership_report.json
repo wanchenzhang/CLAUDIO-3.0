@@ -1,0 +1,33 @@
+{
+  "source_csv_sha256": "17a398a98c7ad335b54aa979db45b1fc89cb7fc58fb3d2c937b844ceb4fb98f1",
+  "supplement_xlsx_sha256": "eb90dd7ec24b2bf65a3e0dc6debf63a29696f2f653d9c9bdcf6f7144a34d82f5",
+  "worksheet": "Scout_Gel_CrosslinkedSpectra",
+  "comparison_fields": [
+    "Scan",
+    "File",
+    "Link-Type",
+    "Precursor charge",
+    "Alpha peptide",
+    "Beta peptide",
+    "Alpha peptide position",
+    "Beta peptide position",
+    "Alpha protein(s) position(s)",
+    "Beta protein(s) position(s)",
+    "Alpha protein mapping(s)",
+    "Beta protein mapping(s)",
+    "Alpha modification(s)",
+    "Beta modification(s)",
+    "Alpha gene mapping(s)",
+    "Beta gene mapping(s)",
+    "IsDecoy"
+  ],
+  "source_records": 72,
+  "supplement_records": 72,
+  "matched_records": 72,
+  "missing_records": 0,
+  "extra_records": 0,
+  "same_record_order": true,
+  "missing_examples": [],
+  "extra_examples": [],
+  "per_record_fdr_assessed": false
+}

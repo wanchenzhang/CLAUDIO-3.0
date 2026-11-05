@@ -1471,10 +1471,18 @@ def prepare_af_input(bundle, mappings, *, fdr_level=None, fdr_cutoff=None):
     return {"rows": rows, "audit": audit, "fdr_policy": policy, "provenance": deepcopy(bundle["provenance"])}
 
 
-def _reference_evidence(profile, report, source):
-    """Require the declared accession, organism and full reference sequence in saved evidence."""
-    if not source.get("uniprot_accession") or profile["accession"] != source["uniprot_accession"]:
-        raise ValueError("Reference projection requires the declared source UniProt accession")
+def _reference_evidence(
+    profile, report, source, *, require_declared_accession=True
+):
+    """Verify the reference sequence, organism and optional declared accession."""
+    declared = source.get("uniprot_accession")
+    if (
+        require_declared_accession and not declared
+        or declared and profile["accession"] != declared
+    ):
+        raise ValueError(
+            "Reference projection requires the declared source UniProt accession"
+        )
     taxon = profile["taxon_id"]
     if (type(taxon) is not int or taxon <= 0 or report.get("taxon_id") != taxon
             or source.get("taxon_id") is not None and source["taxon_id"] != taxon):
@@ -1643,7 +1651,7 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
     _verify_plink_native_sources(bundle)
     author_sources = _author_filter_source_bodies(bundle)
     copied = deepcopy(mappings)
-    source_bodies = {}
+    source_bodies = dict(prepared.get("extra_source_bodies", {}))
     for identity in copied.values():
         for source in identity["sources"]:
             raw = Path(source["absolute_path"]).read_bytes()
@@ -1712,6 +1720,8 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
         "plink_psm": "plink",
         "merox_csm": "merox",
     }.get(bundle.get("format"), "xifdr")
+    if bundle.get("format") == "scout_csm":
+        format_name = "scout"
     manifest = {"schema_version": 1, "kind": format_name + ("_claudio_input" if pipeline else "_prepared_input"), "status": "complete",
                 "provenance": bundle["provenance"], "fdr_policy": prepared["fdr_policy"],
                 "counts": {"source_records": len(bundle["records"]),
@@ -1736,6 +1746,13 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
             "path": input_name, "projections": ",".join(core_columns),
             "source_key": "xlms_source_record_id", "requires_source_preservation": True,
         }
+    if "author_filter_policy" in prepared:
+        manifest["author_filter_policy"] = deepcopy(
+            prepared["author_filter_policy"]
+        )
+        manifest["author_filter_evidence_snapshot"] = prepared[
+            "author_filter_evidence_snapshot"
+        ]
     _write_json(output_dir / "manifest.json", manifest)
     return output_dir
 
@@ -3083,3 +3100,460 @@ def read_scout_csms(psm_path, fasta_path, *, dataset_accession, crosslinker):
             "fasta_sha256": next(iter(proteins.values()))["fasta_sha256"],
         },
     }
+def _scout_export_evidence(bundle, manifest_path):
+    """Verify the reviewed supplementary table and portable reference evidence."""
+    from openpyxl import load_workbook
+
+    manifest_path = Path(manifest_path).resolve()
+    root = manifest_path.parent
+    raw_manifest = manifest_path.read_bytes()
+    policy = json.loads(raw_manifest)
+
+    if (
+        policy.get("dataset_accession")
+        != bundle["provenance"]["dataset_accession"]
+        or policy.get("source_csv_sha256")
+        != bundle["provenance"]["psm_sha256"]
+        or policy.get("search_fasta_sha256")
+        != bundle["provenance"]["fasta_sha256"]
+    ):
+        raise ValueError("Scout author evidence source checksum mismatch")
+
+    cutoff = policy.get("reported_fdr_cutoff")
+    if (
+        isinstance(cutoff, bool)
+        or not isinstance(cutoff, (int, float))
+        or not math.isfinite(cutoff)
+        or not 0 <= cutoff <= 1
+        or policy.get("per_record_fdr_available") is not False
+        or policy.get("reported_fdr_level")
+        not in {"unspecified", *FDR_COLUMNS}
+    ):
+        raise ValueError("Unsupported Scout author filtering declaration")
+
+    bodies = {manifest_path.name: raw_manifest}
+    checksums = policy.get("output_sha256")
+    if not isinstance(checksums, dict):
+        raise ValueError("Scout author evidence has no source checksums")
+
+    for name, expected in checksums.items():
+        relative = Path(name)
+        source = (root / relative).resolve()
+        if (
+            relative.is_absolute()
+            or ".." in relative.parts
+            or root not in source.parents
+            or relative.as_posix() == manifest_path.name
+        ):
+            raise ValueError("Scout evidence path leaves its directory")
+        raw = source.read_bytes()
+        if hashlib.sha256(raw).hexdigest() != expected:
+            raise ValueError(f"Scout evidence checksum mismatch: {name}")
+        bodies[relative.as_posix()] = raw
+
+    required = {
+        "author_results.xlsx",
+        "membership_report.json",
+        "candidate_report.json",
+    }
+    if not required <= bodies.keys():
+        raise ValueError("Scout author or reference evidence is incomplete")
+
+    with Path(bundle["provenance"]["psm_path"]).open(
+        encoding="utf-8-sig", newline=""
+    ) as handle:
+        reader = csv.DictReader(handle)
+        columns = reader.fieldnames
+        source_rows = list(reader)
+
+    if (
+        columns != bundle["source_columns"]
+        or source_rows
+        != [record["source_fields"] for record in bundle["records"]]
+    ):
+        raise ValueError("Scout source records differ from their CSV")
+
+    fields = [
+        "Scan", "File", "Link-Type", "Precursor charge",
+        "Alpha peptide", "Beta peptide",
+        "Alpha peptide position", "Beta peptide position",
+        "Alpha protein(s) position(s)", "Beta protein(s) position(s)",
+        "Alpha protein mapping(s)", "Beta protein mapping(s)",
+        "Alpha modification(s)", "Beta modification(s)",
+        "Alpha gene mapping(s)", "Beta gene mapping(s)", "IsDecoy",
+    ]
+
+    def membership_key(row):
+        values = []
+        for field in fields:
+            value = row[field]
+            if value is None:
+                text = ""
+            elif isinstance(value, bool):
+                text = str(value).lower()
+            elif isinstance(value, float) and value.is_integer():
+                text = str(int(value))
+            else:
+                text = str(value).strip()
+            if field == "IsDecoy":
+                text = text.lower()
+            if (
+                row["Link-Type"] == "Looplink"
+                and field.startswith("Beta")
+                and text in ("", "NA")
+            ):
+                text = ""
+            values.append(text)
+        return tuple(values)
+
+    workbook = load_workbook(
+        io.BytesIO(bodies["author_results.xlsx"]),
+        read_only=True,
+        data_only=False,
+    )
+    try:
+        rows = workbook[policy["worksheet"]].iter_rows(values_only=True)
+        headers = list(next(rows))
+        if (
+            len(headers) != len(set(headers))
+            or not set(fields) <= set(headers)
+        ):
+            raise ValueError("Unsupported Scout supplementary columns")
+        author_rows = [
+            dict(zip(headers, values))
+            for values in rows
+            if any(value is not None for value in values)
+        ]
+    finally:
+        workbook.close()
+
+    source_keys = [membership_key(row) for row in source_rows]
+    author_keys = [membership_key(row) for row in author_rows]
+    if Counter(source_keys) != Counter(author_keys):
+        raise ValueError("Scout records differ from the author results table")
+
+    membership = json.loads(bodies["membership_report.json"])
+    workbook_hash = hashlib.sha256(
+        bodies["author_results.xlsx"]
+    ).hexdigest()
+    if (
+        membership.get("source_csv_sha256")
+        != bundle["provenance"]["psm_sha256"]
+        or membership.get("supplement_xlsx_sha256") != workbook_hash
+        or membership.get("worksheet") != policy["worksheet"]
+        or membership.get("comparison_fields") != fields
+        or membership.get("source_records") != len(source_rows)
+        or membership.get("supplement_records") != len(author_rows)
+        or membership.get("matched_records") != len(source_rows)
+        or membership.get("missing_records") != 0
+        or membership.get("extra_records") != 0
+        or membership.get("same_record_order")
+        != (source_keys == author_keys)
+    ):
+        raise ValueError("Scout supplementary membership review differs")
+
+    if policy.get("expected_source_records") != len(source_rows):
+        raise ValueError("Scout author evidence record count differs")
+
+    reports = json.loads(bodies["candidate_report.json"])
+    if not isinstance(reports, dict):
+        raise ValueError("Invalid Scout reference candidate report")
+
+    for report in reports.values():
+        for receipt in report.get("sources", []):
+            relative = Path(receipt["path"])
+            name = relative.as_posix()
+            if name not in bodies:
+                raise ValueError("Scout reference evidence is missing")
+            if hashlib.sha256(bodies[name]).hexdigest() != receipt["sha256"]:
+                raise ValueError("Scout reference evidence checksum mismatch")
+            receipt["absolute_path"] = str((root / relative).resolve())
+
+    return policy, reports, bodies
+
+
+def write_scout_claudio_input(
+    bundle,
+    reference_projection,
+    output_dir,
+    *,
+    author_filter_path,
+    allowed_crosslinkers,
+    allowed_residues,
+):
+    """Export verified Scout pairs while retaining author and reference evidence."""
+    if bundle.get("format") != "scout_csm":
+        raise ValueError("Scout input export requires a Scout CSM import")
+    if Path(output_dir).exists():
+        raise ValueError("Output directory already exists")
+
+    selections = {}
+    for name, values in (
+        ("crosslinkers", allowed_crosslinkers),
+        ("residues", allowed_residues),
+    ):
+        if (
+            not isinstance(values, (set, frozenset, list, tuple))
+            or not values
+            or any(
+                not isinstance(value, str)
+                or not value
+                or value != value.strip()
+                for value in values
+            )
+        ):
+            raise ValueError(f"Explicit nonempty {name} are required")
+        selections[name] = set(values)
+
+    if any(
+        re.fullmatch(r"[A-Z]", residue) is None
+        for residue in selections["residues"]
+    ):
+        raise ValueError("Residues must be uppercase one-letter codes")
+
+    for kind in ("psm", "fasta"):
+        raw = Path(bundle["provenance"][kind + "_path"]).read_bytes()
+        if hashlib.sha256(raw).hexdigest() != \
+                bundle["provenance"][kind + "_sha256"]:
+            raise ValueError(f"Scout {kind} source checksum mismatch")
+
+    proteins = read_search_fasta(bundle["provenance"]["fasta_path"])
+    if (
+        proteins.keys() != bundle["proteins"].keys()
+        or any(
+            protein["sequence"] != bundle["proteins"][identifier]["sequence"]
+            for identifier, protein in proteins.items()
+        )
+    ):
+        raise ValueError("Scout search FASTA sequences changed")
+
+    policy, reports, bodies = _scout_export_evidence(
+        bundle, author_filter_path
+    )
+
+    if (
+        reference_projection.get("kind") != "xifdr_reference_projection"
+        or reference_projection.get("projection_rule_version")
+        != "intact-peptide-projection-v1"
+    ):
+        raise ValueError("Unsupported Scout reference projection")
+
+    def source_context(provenance):
+        return {
+            key: value for key, value in provenance.items()
+            if not key.endswith("_path")
+        }
+
+    if source_context(reference_projection["provenance"]) != \
+            source_context(bundle["provenance"]):
+        raise ValueError("Scout projection source checksums differ")
+
+    mappings = reference_projection.get(
+        "identity_evidence", {}
+    ).get("exact_mappings", {})
+    checked = project_xifdr_candidates(
+        bundle,
+        mappings,
+        reports,
+        max_optimal_alignments=reference_projection.get(
+            "max_optimal_alignments"
+        ),
+    )
+    if checked["records"] != reference_projection.get("records"):
+        raise ValueError("Scout projection coordinates or source order changed")
+
+    def profile_index(projection):
+        profiles = {}
+        for values in projection["protein_candidates"].values():
+            for profile in values:
+                identifier = profile["profile_id"]
+                if identifier in profiles:
+                    raise ValueError("Repeated Scout reference projection profile")
+                profiles[identifier] = profile
+        return profiles
+
+    profiles = profile_index(checked)
+    original_profiles = profile_index(reference_projection)
+    if (
+        profiles.keys() != original_profiles.keys()
+        or any(
+            {key: value for key, value in profile.items() if key != "sources"}
+            != {
+                key: value
+                for key, value in original_profiles[identifier].items()
+                if key != "sources"
+            }
+            for identifier, profile in profiles.items()
+        )
+    ):
+        raise ValueError("Scout reference projection profiles changed")
+
+    for profile in profiles.values():
+        identifier = profile["source_fasta_id"]
+        report = reports.get(identifier)
+        if report is None:
+            report = {
+                "taxon_id": profile["taxon_id"],
+                "sources": mappings.get(identifier, {}).get("sources", []),
+            }
+        _reference_evidence(
+            profile,
+            report,
+            proteins[identifier],
+            require_declared_accession=False,
+        )
+
+    working = deepcopy(bundle)
+    declaration_path = Path(author_filter_path).resolve()
+    declaration_hash = hashlib.sha256(
+        declaration_path.read_bytes()
+    ).hexdigest()
+    working["provenance"].update(
+        author_filter_path=str(declaration_path),
+        author_filter_sha256=declaration_hash,
+    )
+    row_policy = {
+        "kind": "author_filtered_psm_table",
+        "level": policy["reported_fdr_level"],
+        "reported_cutoff": policy["reported_fdr_cutoff"],
+        "per_record_fdr_applied": False,
+    }
+
+    rows, audit = [], []
+    for record, projected in zip(working["records"], checked["records"]):
+        entry = deepcopy(record)
+        reasons = []
+        entry["source_filter_status"] = "author_reported"
+        entry["input_status"] = "not_evaluable"
+        audit.append(entry)
+
+        if record.get("record_kind") != "paired_crosslink_candidate":
+            reasons.append(
+                record.get("record_reason")
+                or "unsupported_scout_record_type"
+            )
+        elif record["record_status"] != "valid":
+            reasons.append(record["record_reason"] or "scout_source_unresolved")
+
+        if (
+            record["decoy_status"] != "target_target"
+            or _boolean(record["source_fields"].get("IsDecoy")) is not False
+        ):
+            reasons.append("source_target_status_unresolved")
+
+        if reasons:
+            entry["input_reasons"] = list(dict.fromkeys(reasons))
+            continue
+
+        for site in ("a", "b"):
+            endpoint = _scout_endpoint(
+                record["source_fields"], site, proteins
+            )
+            if (
+                endpoint["status"] != "valid"
+                or endpoint != record["endpoints"][site]
+            ):
+                reasons.append("source_endpoint_changed_" + site)
+
+        if len(projected["pairs"]) != 1:
+            reasons.append("reference_projection_unresolved")
+
+        if reasons:
+            entry["input_reasons"] = list(dict.fromkeys(reasons))
+            continue
+
+        pair = projected["pairs"][0]
+        selected = {
+            site: profiles[pair["profile_id_" + site]]
+            for site in ("a", "b")
+        }
+        identities = {
+            site: {
+                "accession": profile["accession"],
+                "sequence": profile["reference_sequence"],
+            }
+            for site, profile in selected.items()
+        }
+        row = _input_row(working, record, identities, row_policy)
+        row.update(
+            source_psm_id=record["source_fields"]["Scan"],
+            source_scan=record["source_fields"]["Scan"],
+            source_run=record["source_fields"]["File"],
+            source_crosslinker=bundle["crosslinker"],
+            source_link_type=record["source_fields"]["Link-Type"],
+            selection_basis="author_reported_csm_table",
+            projection_candidate_id=pair["projection_candidate_id"],
+            identity_scope=pair["identity_scope"],
+        )
+        reference_endpoints = {}
+        for site, label in (("a", "Alpha"), ("b", "Beta")):
+            candidate = next(
+                endpoint
+                for endpoint in projected["endpoint_candidates"][site]
+                if endpoint["profile_id"] == pair["profile_id_" + site]
+            )
+            reference_endpoints[site] = deepcopy(candidate)
+            row.update({
+                "pos_" + site: candidate["reference_protein_position"],
+                "source_peptide_start_" + site:
+                    candidate["source_peptide_start"],
+                "reference_peptide_start_" + site:
+                    candidate["reference_peptide_start"],
+                "reference_mapping_method_" + site:
+                    candidate["mapping_method"],
+                "reference_identity_scope_" + site:
+                    candidate["identity_scope"],
+                "source_modifications_" + site:
+                    record["source_fields"].get(label + " modification(s)", ""),
+            })
+            residue = row["seq_" + site][row["pos_" + site] - 1]
+            if residue not in selections["residues"]:
+                reasons.append("residue_not_selected_" + site)
+
+        if bundle["crosslinker"] not in selections["crosslinkers"]:
+            reasons.append("crosslinker_not_selected")
+
+        entry.update(
+            reference_endpoints=reference_endpoints,
+            projection_candidate_id=pair["projection_candidate_id"],
+            identity_scope=pair["identity_scope"],
+            input_reasons=list(dict.fromkeys(reasons)),
+        )
+        if not reasons:
+            entry["input_status"] = "ready"
+            rows.append(row)
+
+    prepared = {
+        "rows": rows,
+        "audit": audit,
+        "provenance": deepcopy(working["provenance"]),
+        "fdr_policy": {
+            **row_policy,
+            "kind": "author_reported_csm_table",
+        },
+        "reference_projection": checked,
+        "reference_projection_policy": {
+            "scope": "evidence_supported_reference_candidates",
+            "intact_peptide_required": True,
+            "unique_coordinates_required": True,
+            "identity_acceptance_performed": False,
+        },
+        "author_filter_policy": deepcopy(policy),
+        "author_filter_evidence_snapshot":
+            "author_filter_sources/" + declaration_path.name,
+        "extra_source_bodies": {
+            "author_filter_sources/" + name: raw
+            for name, raw in bodies.items()
+        },
+    }
+    return write_xifdr_outputs(
+        working,
+        mappings,
+        prepared,
+        output_dir,
+        pipeline_policy={
+            "allowed_crosslinkers": sorted(selections["crosslinkers"]),
+            "allowed_residues": sorted(selections["residues"]),
+            "source_protein_ids": None,
+        },
+    )
