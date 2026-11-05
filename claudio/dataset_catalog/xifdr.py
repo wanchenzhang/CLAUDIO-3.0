@@ -1903,6 +1903,86 @@ def _merox_endpoint(fields, site, proteins):
         "reason": "",
     }
 
+def _merox_localization(fields, proteins):
+    """Validate paired native candidates without selecting a localization.
+
+    Candidate order, duplicate entries and uninterpreted native fields are
+    preserved. A valid candidate only means its source coordinates agree
+    with the search FASTA; it does not establish localization confidence.
+    """
+    raw = fields.get("All linkage positions", "")
+    tokens = raw.split("#") if raw.strip() else []
+    best_pair = (
+        fields.get("best linkage position peptide 1"),
+        fields.get("best linkage position peptide 2"),
+    )
+    candidates = []
+    best_numbers = []
+
+    for number, token in enumerate(tokens, 1):
+        parts = token.split("~")
+        is_source_best = (
+            len(parts) == 5
+            and tuple(parts[1:3]) == best_pair
+        )
+        candidate = {
+            "source_candidate_number": number,
+            "raw": token,
+            "source_fields": parts,
+            "is_source_best": is_source_best,
+            "endpoints": {},
+            "status": "invalid",
+            "reason": "",
+        }
+        candidates.append(candidate)
+
+        if is_source_best:
+            best_numbers.append(number)
+
+        if len(parts) != 5:
+            candidate["reason"] = "unsupported_candidate_field_count"
+            continue
+
+        # Normalize only a private view; retain the original source fields.
+        view = dict(fields)
+        view["best linkage position peptide 1"] = parts[1]
+        view["best linkage position peptide 2"] = parts[2]
+
+        try:
+            for site in ("a", "b"):
+                candidate["endpoints"][site] = _merox_endpoint(
+                    view, site, proteins
+                )
+        except (ValueError, KeyError, TypeError, IndexError) as error:
+            candidate["reason"] = str(error)
+            continue
+
+        candidate["status"] = "valid"
+
+    if not candidates:
+        status = "unresolved"
+        reason = "no_localization_candidates"
+    elif any(item["status"] != "valid" for item in candidates):
+        status = "unresolved"
+        reason = "invalid_localization_candidate"
+    elif not best_numbers:
+        status = "unresolved"
+        reason = "source_best_pair_not_found"
+    else:
+        status = (
+            "single_candidate"
+            if len(candidates) == 1
+            else "multiple_candidates"
+        )
+        reason = ""
+
+    return {
+        "raw": raw,
+        "status": status,
+        "reason": reason,
+        "source_best_candidate_numbers": best_numbers,
+        "candidates": candidates,
+    }
 
 def read_merox_csms(psm_path, fasta_path, *, dataset_accession):
     """Audit legacy 27-column MeroX native results without selecting crosslinks.
@@ -2007,7 +2087,9 @@ def read_merox_csms(psm_path, fasta_path, *, dataset_accession):
                 "record_reason": "merox_assessment_policies_pending",
             }
             records.append(record)
-
+            record["localization"] = _merox_localization(
+                fields, proteins
+            )
             if len(values) != 27:
                 record["record_reason"] = "unsupported_merox_row_width"
                 continue
