@@ -2765,3 +2765,321 @@ def write_merox_claudio_input(
     return write_xifdr_outputs(
         bundle, mappings, prepared, output_dir, pipeline_policy=policy
     )
+def _scout_endpoint(fields, site, proteins):
+    """Find FASTA candidates using the complete peptide and reported position."""
+    label = {"a": "Alpha", "b": "Beta"}[site]
+    raw_peptide = fields[f"{label} peptide"]
+    peptide = raw_peptide.strip()
+    raw_mapping = fields[f"{label} protein mapping(s)"]
+
+    result = {
+        "source_protein_id": raw_mapping,
+        "source_fasta_id": None,
+        "source_fasta_candidates": [],
+        "source_mapping_scope": "sequence_and_reported_position_candidate",
+        "source_peptide": raw_peptide,
+        "source_modifications": fields.get(f"{label} modification(s)", ""),
+        "peptide": peptide,
+        "link_position": None,
+        "protein_position": None,
+        "peptide_start": None,
+        "peptide_end": None,
+        "kind": "residue",
+        "status": "not_evaluable",
+        "reason": "",
+    }
+
+    try:
+        if re.fullmatch(r"[ACDEFGHIKLMNPQRSTVWY]+", peptide) is None:
+            raise ValueError("Unsupported Scout peptide sequence")
+
+        link = _positive_integer(fields[f"{label} peptide position"])
+        result["link_position"] = link
+        if link > len(peptide):
+            raise ValueError("Scout linkage position exceeds peptide length")
+
+        mappings = [value.strip() for value in raw_mapping.split(";")]
+        positions = fields[f"{label} protein(s) position(s)"].split(";")
+        if len(mappings) != 1 or len(positions) != 1:
+            result["reason"] = "multiple_reported_mappings_require_review"
+            return result
+        if not mappings[0]:
+            raise ValueError("Missing Scout protein mapping")
+
+        position = _positive_integer(positions[0])
+        start = position - link + 1
+        end = start + len(peptide) - 1
+        result.update(
+            source_protein_id=mappings[0],
+            protein_position=position,
+            peptide_start=start,
+            peptide_end=end,
+        )
+        if start < 1:
+            raise ValueError("Scout peptide starts before the protein sequence")
+    except (ValueError, TypeError, KeyError) as error:
+        result["reason"] = str(error)
+        return result
+
+    matches = sorted(
+        identifier
+        for identifier, protein in proteins.items()
+        if protein["sequence"][start - 1:end] == peptide
+    )
+    result["source_fasta_candidates"] = matches
+    if len(matches) == 1:
+        result.update(source_fasta_id=matches[0], status="valid")
+    elif matches:
+        result.update(
+            status="ambiguous",
+            reason="multiple_fasta_entries_match_sequence_and_position",
+        )
+    else:
+        result.update(
+            status="unmapped",
+            reason="no_fasta_sequence_and_position_match",
+        )
+    return result
+
+
+def read_scout_csms(psm_path, fasta_path, *, dataset_accession, crosslinker):
+    """Import Scout CSM exports while preserving all original source rows.
+
+    FASTA matches validate source coordinates, not UniProt identity.
+    Loop-links remain separate single-peptide records. Source scores and
+    localization percentages are never converted into FDR values.
+    """
+    from importlib.metadata import version
+
+    try:
+        from pyXLMS import parser
+    except ImportError as error:
+        raise RuntimeError("Reading Scout requires pyXLMS==2.0.7") from error
+
+    if (
+        not isinstance(dataset_accession, str)
+        or re.fullmatch(r"PXD\d{6,}", dataset_accession) is None
+    ):
+        raise ValueError("A ProteomeXchange PXD accession is required")
+    if not isinstance(crosslinker, str) or not crosslinker.strip():
+        raise ValueError("An explicit crosslinker label is required")
+
+    psm_path, fasta_path = Path(psm_path), Path(fasta_path)
+    raw = psm_path.read_bytes()
+    digest = hashlib.sha256(raw).hexdigest()
+    proteins = read_search_fasta(fasta_path)
+    if not proteins:
+        raise ValueError("Search FASTA has no proteins")
+
+    reader = csv.reader(io.StringIO(raw.decode("utf-8-sig")))
+    columns = next(reader, None)
+    required = {
+        "Scan", "Link-Type", "Alpha peptide", "Beta peptide",
+        "Alpha peptide position", "Beta peptide position",
+        "Alpha protein(s) position(s)", "Beta protein(s) position(s)",
+        "Alpha protein mapping(s)", "Beta protein mapping(s)",
+        "Precursor charge", "IsDecoy", "Score", "File",
+    }
+    if not columns or len(columns) != len(set(columns)):
+        raise ValueError("Scout CSV requires a nonempty, unique header")
+    if not required <= set(columns):
+        raise ValueError("Unsupported Scout CSM export columns")
+
+    marker = "__claudio_scout_source_id"
+    if marker in columns:
+        raise ValueError("Reserved Scout source marker already exists")
+    stream = io.StringIO()
+    writer = csv.DictWriter(stream, fieldnames=columns + [marker])
+    writer.writeheader()
+
+    records, prepared = [], {}
+    previous_line = reader.line_num
+    for number, values in enumerate(reader, 1):
+        line_start, line_end = previous_line + 1, reader.line_num
+        previous_line = line_end
+        if not any(value.strip() for value in values):
+            continue
+
+        fields = (
+            dict(zip(columns, values))
+            if len(values) == len(columns)
+            else {}
+        )
+        link_type = fields.get("Link-Type", "").strip()
+        kind = (
+            "loop_link" if link_type == "Looplink"
+            else "paired_crosslink_candidate"
+            if link_type in ("Intralink", "Interlink", "Homomeric-inter")
+            else "unresolved"
+        )
+        source_decoy = _boolean(fields.get("IsDecoy"))
+        record = {
+            "source_record_id": f"{dataset_accession}:{digest}:{number:06d}",
+            "source_record_number": number,
+            "source_line_start": line_start,
+            "source_line_end": line_end,
+            "source_values": values,
+            "source_fields": fields,
+            "record_kind": kind,
+            "endpoints": {},
+            "spectrum": None,
+            "source_decoy_flag": source_decoy,
+            "decoy_status": (
+                "target_target" if source_decoy is False else "unknown"
+            ),
+            "decoy_reason": (
+                "" if source_decoy is False
+                else "source_decoy_endpoint_assignment_unavailable"
+                if source_decoy is True
+                else "invalid_source_decoy_flag"
+            ),
+            "fdr": {level: _fdr_value(None) for level in FDR_COLUMNS},
+            "record_status": "not_evaluable",
+            "record_reason": "scout_source_unresolved",
+        }
+        records.append(record)
+
+        if len(values) != len(columns):
+            record["record_reason"] = "unsupported_scout_row_width"
+            continue
+
+        try:
+            scan = _positive_integer(fields["Scan"])
+            charge = _positive_integer(fields["Precursor charge"])
+            if not fields["File"].strip():
+                raise ValueError("Missing Scout spectrum filename")
+            record["spectrum"] = {
+                "scan_number": scan,
+                "original_file": fields["File"],
+                "charge": charge,
+            }
+
+            if kind == "unresolved":
+                record["record_reason"] = "unsupported_scout_record_type"
+                continue
+
+            sites = ("a",) if kind == "loop_link" else ("a", "b")
+            for site in sites:
+                record["endpoints"][site] = _scout_endpoint(
+                    fields, site, proteins
+                )
+        except (ValueError, TypeError, KeyError) as error:
+            record["source_error"] = str(error)
+            continue
+
+        if kind == "loop_link":
+            record["record_reason"] = "loop_link_requires_single_peptide_support"
+            continue
+        if any(
+            endpoint["status"] != "valid"
+            for endpoint in record["endpoints"].values()
+        ):
+            record["record_reason"] = "source_endpoint_unresolved"
+            continue
+        if source_decoy is None:
+            record["record_reason"] = "invalid_source_decoy_flag"
+            continue
+
+        writer.writerow({**fields, marker: record["source_record_id"]})
+        prepared[record["source_record_id"]] = record
+
+    parser_info = {
+        "name": "pyXLMS",
+        "version": version("pyXLMS"),
+        "entrypoint": "read_scout",
+        "format_variant": "scout_filtered_csm_columns",
+        "parsed_records": 0,
+        "modification_masses_assessed": False,
+    }
+    if prepared:
+        try:
+            parsed = parser.read_scout(
+                io.BytesIO(stream.getvalue().encode("utf-8")),
+                crosslinker=crosslinker,
+                parse_modifications=False,
+                sep=",",
+                dtype=str,
+                keep_default_na=False,
+            )
+            by_source = {}
+            for csm in parsed["crosslink-spectrum-matches"] or []:
+                source = (csm["additional_information"] or {}).get("source", {})
+                source_id = source.get(marker)
+                if source_id not in prepared or source_id in by_source:
+                    raise ValueError("Unknown or repeated Scout parser source ID")
+                by_source[source_id] = csm
+            if set(by_source) != set(prepared):
+                raise ValueError("Scout parser omitted source records")
+
+            orientations = {}
+            for source_id, record in prepared.items():
+                csm = by_source[source_id]
+                expected = [
+                    (
+                        endpoint["peptide"],
+                        endpoint["link_position"],
+                        (endpoint["source_protein_id"],),
+                        (endpoint["protein_position"],),
+                        (endpoint["peptide_start"],),
+                    )
+                    for endpoint in (
+                        record["endpoints"]["a"], record["endpoints"]["b"]
+                    )
+                ]
+                actual = [
+                    (
+                        csm[f"{side}_peptide"],
+                        csm[f"{side}_peptide_crosslink_position"],
+                        tuple(csm[f"{side}_proteins"] or []),
+                        tuple(csm[f"{side}_proteins_crosslink_positions"] or []),
+                        tuple(csm[f"{side}_proteins_peptide_positions"] or []),
+                    )
+                    for side in ("alpha", "beta")
+                ]
+                if actual != expected and actual != expected[::-1]:
+                    raise ValueError("Scout parser changed source endpoints")
+                if (
+                    csm["scan_nr"] != record["spectrum"]["scan_number"]
+                    or csm["spectrum_file"]
+                    != record["spectrum"]["original_file"].strip()
+                ):
+                    raise ValueError("Scout parser changed spectrum identity")
+                orientations[source_id] = (
+                    "same" if actual == expected else "swapped"
+                )
+
+            for source_id, record in prepared.items():
+                record.update(
+                    record_status="valid",
+                    record_reason="",
+                    parser_orientation=orientations[source_id],
+                )
+            parser_info["parsed_records"] = len(by_source)
+        except (
+            ValueError, TypeError, KeyError, RuntimeError,
+            IndexError, AttributeError, OverflowError,
+        ) as error:
+            for record in prepared.values():
+                record.update(
+                    record_status="not_evaluable",
+                    record_reason="pyxlms_parse_failed",
+                    parser_error=f"{type(error).__name__}: {error}",
+                )
+
+    return {
+        "format": "scout_csm",
+        "format_version": 1,
+        "source_columns": columns,
+        "records": records,
+        "proteins": proteins,
+        "parser": parser_info,
+        "crosslinker": crosslinker,
+        "crosslinker_label_source": "caller_declared",
+        "provenance": {
+            "dataset_accession": dataset_accession,
+            "psm_path": str(psm_path.resolve()),
+            "psm_sha256": digest,
+            "fasta_path": str(fasta_path.resolve()),
+            "fasta_sha256": next(iter(proteins.values()))["fasta_sha256"],
+        },
+    }

@@ -12,7 +12,7 @@ import requests
 import zipfile
 from .inventory import inspect_catalog, summarize_inventories, inspect_content_plan
 from .proteomecentral import fetch_dataset_pages, write_discovery_outputs
-from .xifdr import FDR_COLUMNS, read_xifdr_psms, read_plink_psms, write_claudio_input, write_import_report, read_merox_csms, write_merox_claudio_input
+from .xifdr import FDR_COLUMNS, read_xifdr_psms, read_plink_psms, write_claudio_input, write_import_report, read_merox_csms, write_merox_claudio_input, read_scout_csms
 
 DEFAULT_SEARCH_TERMS = (
     "XL-MS",
@@ -330,6 +330,12 @@ def _detect_psm_format(results_path):
         "plink_psm": {
             "Title", "Peptide", "Proteins", "Peptide_Type", "Linker",
         },
+        "scout_csm": {
+            "Scan", "Link-Type", "Alpha peptide", "Beta peptide",
+            "Alpha protein(s) position(s)",
+            "Beta protein(s) position(s)",
+            "IsDecoy", "File",
+        },
     }
     matches = [
         name for name, required in signatures.items()
@@ -337,8 +343,8 @@ def _detect_psm_format(results_path):
     ]
     if len(matches) != 1:
         raise ValueError(
-            "Cannot identify a unique results format; supported formats "
-            "are xiFDR PSM and pLink PSM CSV tables."
+            "Cannot identify a unique results format; supported CSV layouts "
+            "are xiFDR PSM, pLink PSM and Scout CSM tables."
         )
     return matches[0]
 
@@ -347,7 +353,7 @@ def _detect_psm_format(results_path):
 @click.option(
     "--results", "results_path", required=True,
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    help="xiFDR/pLink PSM CSV or a legacy native MeroX container.",
+    help="xiFDR/pLink/Scout CSM CSV or a supported native MeroX container.",
 )
 @click.option(
     "--fasta", "fasta_path", required=True,
@@ -439,6 +445,77 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
         source_format = _detect_psm_format(results_path)
     except (ValueError, OSError) as error:
         raise click.ClickException(str(error)) from error
+    if source_format == "scout_csm":
+        if not audit_only:
+            raise click.UsageError(
+                "Scout input currently requires --audit-only."
+            )
+        if len(crosslinkers) != 1:
+            raise click.UsageError(
+                "Scout import requires exactly one --crosslinker label."
+            )
+
+        unsupported = (
+            mapping_path, reference_projection_path,
+            fdr_level, fdr_cutoff, fdr_column, decoy_prefix,
+            plink_unfiltered_path, plink_parameters_path,
+            author_filter_path,
+        )
+        if (
+            any(value is not None for value in unsupported)
+            or residues
+            or source_proteins
+        ):
+            raise click.UsageError(
+                "Scout --audit-only cannot be combined with "
+                "identity, FDR, residue, source-protein "
+                "or pLink evidence selection options."
+            )
+
+        click.echo("Detected format: Scout CSM")
+        try:
+            bundle = read_scout_csms(
+                results_path,
+                fasta_path,
+                dataset_accession=dataset_accession,
+                crosslinker=crosslinkers[0],
+            )
+            destination = write_import_report(bundle, output_dir)
+            manifest = json.loads(
+                (destination / "manifest.json").read_bytes()
+            )
+        except (
+            ValueError, OSError, RuntimeError,
+            KeyError, TypeError, csv.Error,
+        ) as error:
+            raise click.ClickException(str(error)) from error
+
+        counts = manifest["counts"]
+        loop_links = sum(
+            record["record_kind"] == "loop_link"
+            for record in bundle["records"]
+        )
+        click.echo(f"Source CSM records: {counts['source_records']}")
+        click.echo(
+            f"Parsed CSM records: {bundle['parser']['parsed_records']}"
+        )
+        click.echo(
+            f"Validated source records: {counts['validated_source_records']}"
+        )
+        click.echo(f"Loop-link records retained: {loop_links}")
+        click.echo(f"Records with parser errors: {counts['parser_errors']}")
+        click.echo(
+            f"Crosslinker label: {crosslinkers[0]} (caller-declared)"
+        )
+        click.echo(
+            "UniProt mapping, FDR filtering and input export: not performed"
+        )
+        click.echo(
+            f"Audit report: "
+            f"{(destination / 'import_report.json').resolve()}"
+        )
+        click.echo(f"Output: {destination.resolve()}")
+        return
     if source_format == "merox_csm":
         if audit_only:
             policies = (

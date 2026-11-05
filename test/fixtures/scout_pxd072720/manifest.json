@@ -1,0 +1,22 @@
+{
+  "dataset_accession": "PXD072720",
+  "files": {
+    "csms.csv": {
+      "original_name": "VanDoren_3BC_100kDa_200kDa_1mM_DSBU_Scout_csm_analysis.csv",
+      "sha256": "17a398a98c7ad335b54aa979db45b1fc89cb7fc58fb3d2c937b844ceb4fb98f1",
+      "bytes": 25845,
+      "reported_url": "ftp://massive-ftp.ucsd.edu/v11/MSV000100391/search/VanDoren_3BC_100kDa_200kDa_1mM_DSBU_Scout_csm_analysis.csv"
+    },
+    "search.fasta": {
+      "original_name": "TA_BADC1_BCCP1_BC1.fasta",
+      "sha256": "4d274952bde637659fc4d926af00cf43970ee740369cceddaadd67b45f5fab47",
+      "bytes": 1097,
+      "reported_url": "ftp://massive-ftp.ucsd.edu/v11/MSV000100391/sequence/TA_BADC1_BCCP1_BC1.fasta"
+    }
+  },
+  "expected": {
+    "source_records": 72,
+    "paired_records": 63,
+    "loop_links": 9
+  }
+}
