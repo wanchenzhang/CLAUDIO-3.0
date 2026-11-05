@@ -3557,3 +3557,437 @@ def write_scout_claudio_input(
             "source_protein_ids": None,
         },
     )
+def _xlinkx_endpoint(fields, site, proteins):
+    """Validate one source-reported leading mapping against the search FASTA."""
+    suffix = "A" if site == "a" else "B"
+    result = {
+        "source_protein_id": fields.get("ProteinAccession" + suffix),
+        "source_peptide": fields.get("Sequence" + suffix),
+        "source_modifications": fields.get("Modifications" + suffix),
+        "source_all_protein_annotations": fields.get(
+            "ProteinAccessions" + suffix
+        ),
+        "source_mapping_scope": "source_reported_leading_mapping",
+        "source_fasta_id": None,
+        "source_fasta_candidates": [],
+        "peptide": None,
+        "link_position": None,
+        "protein_position": None,
+        "peptide_start": None,
+        "peptide_end": None,
+        "kind": "residue",
+        "status": "not_evaluable",
+        "reason": "",
+    }
+    try:
+        raw_peptide = fields.get("Sequence" + suffix)
+        if not isinstance(raw_peptide, str):
+            raise ValueError("Native peptide format requires review")
+        peptide = raw_peptide.strip()
+        if re.fullmatch(r"[ACDEFGHIKLMNPQRSTVWY]+", peptide) is None:
+            raise ValueError("Native peptide notation requires review")
+
+        result["peptide"] = peptide
+        link = _positive_integer(
+            str(fields.get("CrosslinkerPosition" + suffix))
+        )
+        if link > len(peptide):
+            raise ValueError("Native peptide link position is outside the peptide")
+        result["link_position"] = link
+
+        identifiers = [
+            value.strip()
+            for value in str(
+                fields.get("ProteinAccession" + suffix, "")
+            ).split(";")
+        ]
+        positions = [
+            _positive_integer(value)
+            for value in str(
+                fields.get("LeadingProteinPosition" + suffix, "")
+            ).split(";")
+        ]
+        result["source_protein_candidates"] = identifiers
+        result["source_position_candidates"] = positions
+        if not all(identifiers) or len(identifiers) != len(positions):
+            raise ValueError("Native protein and position alternatives differ")
+        if len(identifiers) != 1:
+            result.update(
+                status="ambiguous",
+                reason="multiple_reported_mappings_require_review",
+            )
+            return result
+
+        identifier, position = identifiers[0], positions[0]
+        start = position - link + 1
+        end = start + len(peptide) - 1
+        result.update(
+            source_protein_id=identifier,
+            protein_position=position,
+            peptide_start=start,
+            peptide_end=end,
+        )
+        if start < 1:
+            raise ValueError("Native peptide span starts before the protein")
+
+        aliases = [
+            (key, protein)
+            for key, protein in proteins.items()
+            if identifier in (key, protein.get("uniprot_accession"))
+        ]
+        if not aliases:
+            raise ValueError("Source protein is not identified in the search FASTA")
+
+        matches = [
+            key for key, protein in aliases
+            if protein["sequence"][start - 1:end] == peptide
+        ]
+        result["source_fasta_candidates"] = matches
+        if len(matches) == 1:
+            result.update(
+                source_fasta_id=matches[0], status="valid", reason=""
+            )
+        elif matches:
+            result.update(
+                status="ambiguous",
+                reason="multiple_fasta_sequence_and_position_matches",
+            )
+        else:
+            result["reason"] = "source_peptide_position_mismatch"
+    except (ValueError, TypeError, KeyError) as error:
+        result["reason"] = str(error)
+    return result
+
+
+def read_xlinkx_csms(psm_path, fasta_path, *, dataset_accession):
+    """Read native XlinkX CSM tables without mixing result levels or inferring FDR."""
+    import sqlite3
+    from importlib.metadata import version
+
+    try:
+        from pyXLMS import parser
+    except ImportError as error:
+        raise RuntimeError(
+            "Reading XlinkX CSMs requires pyXLMS==2.0.7"
+        ) from error
+
+    if (
+        not isinstance(dataset_accession, str)
+        or re.fullmatch(r"PXD\d{6,}", dataset_accession) is None
+    ):
+        raise ValueError("A ProteomeXchange PXD accession is required")
+
+    psm_path = Path(psm_path).resolve()
+    fasta_path = Path(fasta_path).resolve()
+    digest = hashlib.sha256()
+    with psm_path.open("rb") as handle:
+        signature = handle.read(16)
+        if signature != b"SQLite format 3\x00":
+            raise ValueError("Expected a native SQLite XlinkX pdResult file")
+        digest.update(signature)
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    source_hash = digest.hexdigest()
+    proteins = read_search_fasta(fasta_path)
+
+    column_mapping = {
+        "SequenceA": "Sequence A",
+        "SequenceB": "Sequence B",
+        "ModificationsA": "Modifications A",
+        "ModificationsB": "Modifications B",
+        "CrosslinkerPositionA": "Crosslinker Position A",
+        "CrosslinkerPositionB": "Crosslinker Position B",
+        "ProteinAccessionA": "Protein Accession A",
+        "ProteinAccessionB": "Protein Accession B",
+        "LeadingProteinPositionA": "Leading Protein Position A",
+        "LeadingProteinPositionB": "Leading Protein Position B",
+        "IsDecoy": "Is Decoy",
+        "XlinkXScore": "XlinkX Score",
+        "SpectrumFileName": "Spectrum File",
+        "FirstScan": "First Scan",
+        "ChargeState": "Charge",
+        "RetentionTime": "RT [min]",
+    }
+    required = set(column_mapping) | {"WorkflowId", "ID", "Crosslinker"}
+    tables = ("CSMs", "DecoyCSMs", "Crosslinks")
+    native_rows, table_columns = {}, {}
+
+    connection = sqlite3.connect(
+        psm_path.as_uri() + "?mode=ro&immutable=1", uri=True
+    )
+    connection.row_factory = sqlite3.Row
+    try:
+        available = {
+            row[0] for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            )
+        }
+        if not set(tables) <= available:
+            raise ValueError("Unsupported XlinkX native table layout")
+        for table in tables:
+            cursor = connection.execute(
+                f'SELECT * FROM "{table}" ORDER BY WorkflowId, ID'
+            )
+            columns = [item[0] for item in cursor.description]
+            if table != "Crosslinks" and not required <= set(columns):
+                missing = sorted(required - set(columns))
+                raise ValueError(
+                    f"Unsupported XlinkX {table} columns: {missing}"
+                )
+            table_columns[table] = columns
+            native_rows[table] = [
+                dict(row) for row in cursor.fetchall()
+            ]
+    finally:
+        connection.close()
+
+    def source_value(value):
+        if isinstance(value, bytes):
+            return {"sqlite_blob_hex": value.hex()}
+        if isinstance(value, float) and not math.isfinite(value):
+            return {"sqlite_non_finite_float": repr(value)}
+        return value
+
+    def source_fields(row):
+        return {
+            key: source_value(value) for key, value in row.items()
+        }
+
+    records, prepared, seen = [], {}, set()
+    marker = "__claudio_xlinkx_source_id"
+    for table in ("CSMs", "DecoyCSMs"):
+        for native in native_rows[table]:
+            fields = source_fields(native)
+            source_id = (
+                f"{dataset_accession}:{source_hash}:{table}:"
+                f"{native['WorkflowId']}:{native['ID']}"
+            )
+            if source_id in seen:
+                raise ValueError("Native XlinkX CSM row keys are not unique")
+            seen.add(source_id)
+
+            flag = _boolean(native.get("IsDecoy"))
+            conflict = table == "DecoyCSMs" and flag is False
+            if conflict:
+                decoy_reason = "native_decoy_table_flag_conflict"
+            elif flag is True:
+                decoy_reason = "source_decoy_endpoint_assignment_unavailable"
+            elif flag is None:
+                decoy_reason = "invalid_source_decoy_flag"
+            else:
+                decoy_reason = ""
+
+            record = {
+                "source_record_id": source_id,
+                "source_record_number": len(records) + 1,
+                "source_table": table,
+                "source_native_key": {
+                    "WorkflowId": fields["WorkflowId"],
+                    "ID": fields["ID"],
+                },
+                "source_fields": fields,
+                "record_kind": "paired_crosslink_candidate",
+                "crosslinker": fields.get("Crosslinker"),
+                "source_decoy_flag": flag,
+                "decoy_status": (
+                    "target_target"
+                    if flag is False and not conflict
+                    else "unknown"
+                ),
+                "decoy_reason": decoy_reason,
+                "fdr": {
+                    level: _fdr_value(None) for level in FDR_COLUMNS
+                },
+                "modification_status": "source_strings_retained",
+                "endpoints": {},
+                "spectrum": None,
+                "record_status": "not_evaluable",
+                "record_reason": "xlinkx_source_unresolved",
+            }
+            records.append(record)
+
+            try:
+                filename = native.get("SpectrumFileName")
+                if not isinstance(filename, str) or not filename.strip():
+                    raise ValueError("Missing native spectrum filename")
+                record["spectrum"] = {
+                    "scan_number": _positive_integer(
+                        str(native.get("FirstScan"))
+                    ),
+                    "original_file": filename,
+                    "charge": _positive_integer(
+                        str(native.get("ChargeState"))
+                    ),
+                }
+            except (ValueError, TypeError) as error:
+                record.update(
+                    record_reason="invalid_spectrum_identity",
+                    source_error=str(error),
+                )
+                continue
+
+            record["endpoints"] = {
+                site: _xlinkx_endpoint(fields, site, proteins)
+                for site in ("a", "b")
+            }
+            if any(
+                endpoint["status"] != "valid"
+                for endpoint in record["endpoints"].values()
+            ):
+                record["record_reason"] = "source_endpoint_unresolved"
+                continue
+            if flag is None or conflict:
+                record["record_reason"] = decoy_reason
+                continue
+            prepared[source_id] = (record, native)
+
+    parser_info = {
+        "name": "pyXLMS",
+        "version": version("pyXLMS"),
+        "entrypoint": "read_xlinkx",
+        "format_variant": "xlinkx_pdresult_csm_tables",
+        "parsed_records": 0,
+        "modification_masses_assessed": False,
+        "structured_modifications_parsed": False,
+    }
+
+    if prepared:
+        stream = io.StringIO()
+        writer = csv.writer(stream, delimiter="\t")
+        writer.writerow(list(column_mapping.values()) + [marker])
+        for source_id, (_, native) in prepared.items():
+            writer.writerow(
+                [native[column] for column in column_mapping]
+                + [source_id]
+            )
+
+        try:
+            result = parser.read_xlinkx(
+                io.BytesIO(stream.getvalue().encode("utf-8")),
+                format="csv",
+                sep="\t",
+                dtype=str,
+                keep_default_na=False,
+                parse_modifications=False,
+                ignore_errors=False,
+            )
+            parsed = result["crosslink-spectrum-matches"] or []
+            by_source = {}
+            for csm in parsed:
+                source = (csm["additional_information"] or {}).get(
+                    "source", {}
+                )
+                source_id = source.get(marker)
+                if source_id not in prepared or source_id in by_source:
+                    raise ValueError(
+                        "XlinkX parser source associations differ"
+                    )
+                by_source[source_id] = csm
+            if by_source.keys() != prepared.keys():
+                raise ValueError("XlinkX parser omitted source records")
+
+            def expected_endpoint(endpoint):
+                return (
+                    endpoint["peptide"],
+                    endpoint["link_position"],
+                    (endpoint["source_protein_id"],),
+                    (endpoint["protein_position"],),
+                    (endpoint["peptide_start"],),
+                )
+
+            def parsed_endpoint(csm, side):
+                return (
+                    csm[side + "_peptide"],
+                    csm[side + "_peptide_crosslink_position"],
+                    tuple(csm[side + "_proteins"] or []),
+                    tuple(csm[side + "_proteins_crosslink_positions"] or []),
+                    tuple(csm[side + "_proteins_peptide_positions"] or []),
+                )
+
+            updates = []
+            for source_id, (record, _) in prepared.items():
+                csm = by_source[source_id]
+                expected = (
+                    expected_endpoint(record["endpoints"]["a"]),
+                    expected_endpoint(record["endpoints"]["b"]),
+                )
+                actual = (
+                    parsed_endpoint(csm, "alpha"),
+                    parsed_endpoint(csm, "beta"),
+                )
+                if actual == expected:
+                    orientation = "same"
+                elif actual == expected[::-1]:
+                    orientation = "swapped"
+                else:
+                    raise ValueError(
+                        f"XlinkX parser endpoints differ: {source_id}"
+                    )
+
+                spectrum = record["spectrum"]
+                if (
+                    csm["scan_nr"] != spectrum["scan_number"]
+                    or csm["charge"] != spectrum["charge"]
+                    or csm["spectrum_file"]
+                    != spectrum["original_file"].strip()
+                ):
+                    raise ValueError(
+                        f"XlinkX parser spectrum identity differs: {source_id}"
+                    )
+                if record["source_decoy_flag"] is False and (
+                    csm["alpha_decoy"] is not False
+                    or csm["beta_decoy"] is not False
+                ):
+                    raise ValueError(
+                        f"XlinkX parser target flags differ: {source_id}"
+                    )
+                updates.append((record, orientation))
+
+            for record, orientation in updates:
+                record.update(
+                    record_status="valid",
+                    record_reason="",
+                    parser_orientation=orientation,
+                )
+            parser_info["parsed_records"] = len(updates)
+        except (
+            ValueError, TypeError, KeyError, RuntimeError,
+            IndexError, AttributeError, OverflowError,
+        ) as error:
+            parser_info["error"] = f"{type(error).__name__}: {error}"
+            for record, _ in prepared.values():
+                record.update(
+                    record_status="not_evaluable",
+                    record_reason="pyxlms_parse_failed",
+                    parser_error=parser_info["error"],
+                )
+                record.pop("parser_orientation", None)
+
+    return {
+        "format": "xlinkx_csm",
+        "format_version": 1,
+        "source_columns": table_columns["CSMs"],
+        "source_table_columns": table_columns,
+        "native_table_counts": {
+            table: len(native_rows[table]) for table in tables
+        },
+        "native_crosslinks": [
+            source_fields(row) for row in native_rows["Crosslinks"]
+        ],
+        "records": records,
+        "proteins": proteins,
+        "parser": parser_info,
+        "provenance": {
+            "dataset_accession": dataset_accession,
+            "psm_path": str(psm_path),
+            "psm_sha256": source_hash,
+            "fasta_path": str(fasta_path),
+            "fasta_sha256": hashlib.sha256(
+                fasta_path.read_bytes()
+            ).hexdigest(),
+        },
+        "fdr_filter_applied": False,
+        "identity_mapping_applied": False,
+        "input_exported": False,
+        "assessment_performed": False,
+    }

@@ -6,13 +6,13 @@ import json
 import math
 from collections import Counter
 from pathlib import Path
-
+import sqlite3
 import click
 import requests
 import zipfile
 from .inventory import inspect_catalog, summarize_inventories, inspect_content_plan
 from .proteomecentral import fetch_dataset_pages, write_discovery_outputs
-from .xifdr import FDR_COLUMNS, read_xifdr_psms, read_plink_psms, write_claudio_input, write_import_report, read_merox_csms, write_merox_claudio_input, read_scout_csms, write_scout_claudio_input
+from .xifdr import FDR_COLUMNS, read_xifdr_psms, read_plink_psms, write_claudio_input, write_import_report, read_merox_csms, write_merox_claudio_input, read_scout_csms, write_scout_claudio_input, read_xlinkx_csms
 
 DEFAULT_SEARCH_TERMS = (
     "XL-MS",
@@ -307,6 +307,50 @@ def _read_reference_projection(path):
 
 def _detect_psm_format(results_path):
     """Recognize supported tables and native MeroX containers."""
+    results_path = Path(results_path).resolve()
+    with results_path.open("rb") as handle:
+        signature = handle.read(16)
+
+    if signature == b"SQLite format 3\x00":
+        connection = None
+        try:
+            connection = sqlite3.connect(
+                results_path.as_uri() + "?mode=ro&immutable=1",
+                uri=True,
+            )
+            tables = {
+                row[0] for row in connection.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table'"
+                )
+            }
+            columns = {
+                row[1] for row in connection.execute(
+                    'PRAGMA table_info("CSMs")'
+                )
+            }
+            required = {
+                "WorkflowId", "ID",
+                "SequenceA", "SequenceB",
+                "CrosslinkerPositionA", "CrosslinkerPositionB",
+                "ProteinAccessionA", "ProteinAccessionB",
+                "LeadingProteinPositionA", "LeadingProteinPositionB",
+                "XlinkXScore",
+            }
+            if (
+                {"CSMs", "DecoyCSMs", "Crosslinks"} <= tables
+                and required <= columns
+            ):
+                return "xlinkx_csm"
+            raise ValueError(
+                "SQLite results do not match the supported XlinkX layout."
+            )
+        except sqlite3.Error as error:
+            raise ValueError(
+                f"Cannot inspect native SQLite results: {error}"
+            ) from error
+        finally:
+            if connection is not None:
+                connection.close()
     if zipfile.is_zipfile(results_path):
         with zipfile.ZipFile(results_path) as archive:
             names = archive.namelist()
@@ -353,7 +397,7 @@ def _detect_psm_format(results_path):
 @click.option(
     "--results", "results_path", required=True,
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    help="xiFDR/pLink/Scout CSM CSV or a supported native MeroX container.",
+    help="xiFDR/pLink/Scout CSV, a native MeroX container, or XlinkX pdResult.",
 )
 @click.option(
     "--fasta", "fasta_path", required=True,
@@ -445,6 +489,86 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
         source_format = _detect_psm_format(results_path)
     except (ValueError, OSError) as error:
         raise click.ClickException(str(error)) from error
+    if source_format == "xlinkx_csm":
+        if not audit_only:
+            raise click.UsageError(
+                "XlinkX pdResult currently requires --audit-only."
+            )
+
+        unsupported = {
+            "--mapping": mapping_path is not None,
+            "--reference-projection": reference_projection_path is not None,
+            "--author-filter-evidence": author_filter_path is not None,
+            "--fdr-level": fdr_level is not None,
+            "--fdr-cutoff": fdr_cutoff is not None,
+            "--fdr-column": fdr_column is not None,
+            "--decoy-prefix": decoy_prefix is not None,
+            "--plink-unfiltered": plink_unfiltered_path is not None,
+            "--plink-parameters": plink_parameters_path is not None,
+            "--crosslinker": bool(crosslinkers),
+            "--residue": bool(residues),
+            "--source-protein": bool(source_proteins),
+        }
+        conflicts = [
+            option for option, present in unsupported.items() if present
+        ]
+        if conflicts:
+            raise click.UsageError(
+                "XlinkX --audit-only cannot be combined with "
+                + ", ".join(conflicts)
+            )
+
+        click.echo("Detected format: XlinkX CSM (native pdResult)")
+        try:
+            bundle = read_xlinkx_csms(
+                results_path,
+                fasta_path,
+                dataset_accession=dataset_accession,
+            )
+            destination = write_import_report(bundle, output_dir)
+            manifest = json.loads(
+                (destination / "manifest.json").read_bytes()
+            )
+        except (
+            ValueError, OSError, RuntimeError,
+            KeyError, TypeError, csv.Error, sqlite3.Error,
+        ) as error:
+            raise click.ClickException(str(error)) from error
+
+        counts = manifest["counts"]
+        native_counts = bundle["native_table_counts"]
+        click.echo(f"Source CSM records: {counts['source_records']}")
+        click.echo(
+            f"Parsed CSM records: {bundle['parser']['parsed_records']}"
+        )
+        click.echo(
+            f"Validated source records: "
+            f"{counts['validated_source_records']}"
+        )
+        click.echo(
+            f"Unresolved source records: "
+            f"{counts['unresolved_source_records']}"
+        )
+        click.echo(
+            f"Records with parser errors: {counts['parser_errors']}"
+        )
+        click.echo(
+            f"Native decoy CSM rows: {native_counts['DecoyCSMs']}"
+        )
+        click.echo(
+            f"Native crosslink records retained separately: "
+            f"{native_counts['Crosslinks']}"
+        )
+        click.echo(
+            "Scientific filtering, identity mapping and input export: "
+            "not performed"
+        )
+        click.echo(
+            f"Audit report: "
+            f"{(destination / 'import_report.json').resolve()}"
+        )
+        click.echo(f"Output: {destination.resolve()}")
+        return
     if source_format == "scout_csm":
         if len(crosslinkers) != 1:
             raise click.UsageError(

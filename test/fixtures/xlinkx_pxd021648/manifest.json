@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "dataset_accession": "PXD021648",
+  "files": {
+    "native.pdResult": {
+      "sha256": "03ae84a4dc4681b744b59bcfdbc9549822567729350f15211004da07fe8b2063",
+      "bytes": 5423104,
+      "reported_file_name": "review_revision_BSA1prot_minscore0_5perFDR_stiegerpaper_allstepped_XlinkX.pdResult",
+      "reported_url": "ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2020/11/PXD021648/review_revision_BSA1prot_minscore0_5perFDR_stiegerpaper_allstepped_XlinkX.pdResult"
+    },
+    "search.fasta": {
+      "sha256": "5640a024616f7f4bd4b1881188ed04cb01f546494e75733544492da5c278a719",
+      "bytes": 699,
+      "reported_file_name": "BSA-only.fasta",
+      "reported_url": "ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2020/11/PXD021648/BSA-only.fasta"
+    }
+  },
+  "parser": {
+    "name": "pyXLMS",
+    "version": "2.0.7"
+  },
+  "expected_source_csms": 156,
+  "expected_decoy_csms": 0,
+  "expected_native_crosslinks": 89,
+  "expected_orientations": {
+    "same": 69,
+    "swapped": 87
+  }
+}
