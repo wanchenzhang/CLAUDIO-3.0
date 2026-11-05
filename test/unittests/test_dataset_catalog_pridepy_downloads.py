@@ -102,3 +102,69 @@ class TestPridepyDownloads(unittest.TestCase):
             self.assertEqual(result["download_status"], "downloaded", result)
             self.assertEqual(result["requested_url"], item["download_urls"][0])
             self.assertEqual(download.call_args.args[0], "https://download.iprox.cn/IPX0005101000/sites.csv")
+    @patch.object(repositories, "_pridepy_version", return_value="0.0.16")
+    def test_massive_ftp_download_uses_tls(self, version):
+        url = (
+            "ftp://massive-ftp.ucsd.edu/"
+            "v11/MSV000100391/search/sites.csv"
+        )
+        item = self.item(repository="MassIVE")
+        item["download_urls"] = [url]
+
+        def save(ftp_urls, output_folder, use_tls=False, **kwargs):
+            if ftp_urls != [url] or not use_tls:
+                raise RuntimeError("421 TLS is required")
+            (Path(output_folder) / "sites.csv").write_bytes(b"a,b\n1,2\n")
+
+        with (
+            patch(
+                "pridepy.download.client.Client.download_files_by_url",
+                side_effect=RuntimeError("421 TLS is required"),
+            ),
+            patch(
+                "pridepy.download.client.Client.download_ftp_urls",
+                side_effect=save,
+            ),
+            TemporaryDirectory() as directory,
+        ):
+            target = Path(directory) / "sites.csv"
+            result = repositories.download_pilot_file(
+                item, target, 64, 8
+            )
+
+            self.assertEqual(result["download_status"], "downloaded", result)
+            self.assertEqual(target.read_bytes(), b"a,b\n1,2\n")
+            self.assertEqual(result["requested_url"], url)
+            self.assertEqual(result["transfer_url"], url)
+            self.assertEqual(result["confirmed_payload_bytes"], 8)
+            self.assertFalse(target.with_name("sites.csv.part").exists())
+
+    @patch.object(repositories, "_pridepy_version", return_value="0.0.16")
+    def test_pride_ftp_keeps_the_existing_download_entrypoint(self, version):
+        url = "ftp://ftp.pride.ebi.ac.uk/pride/data/sites.csv"
+        item = self.item()
+        item["download_urls"] = [url]
+
+        def save(urls, output_folder, **kwargs):
+            if urls != [url]:
+                raise RuntimeError("Unexpected download URL")
+            (Path(output_folder) / "sites.csv").write_bytes(b"a,b\n1,2\n")
+
+        with (
+            patch(
+                "pridepy.download.client.Client.download_files_by_url",
+                side_effect=save,
+            ),
+            patch(
+                "pridepy.download.client.Client.download_ftp_urls",
+                side_effect=AssertionError("Unexpected transport switch"),
+            ),
+            TemporaryDirectory() as directory,
+        ):
+            target = Path(directory) / "sites.csv"
+            result = repositories.download_pilot_file(
+                item, target, 64, 8
+            )
+
+            self.assertEqual(result["download_status"], "downloaded", result)
+            self.assertEqual(target.read_bytes(), b"a,b\n1,2\n")

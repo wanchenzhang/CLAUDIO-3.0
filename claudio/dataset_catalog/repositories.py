@@ -1097,13 +1097,29 @@ def _pridepy_provider(repository):
 
 
 def _pridepy_download(url, output_dir):
+    """Delegate downloads to pridepy with explicit TLS for MassIVE FTP."""
     from pridepy.download.client import Client
 
-    Client.download_files_by_url(
-        urls=[url], output_folder=str(output_dir),
-        skip_if_downloaded_already=False, parallel_files=1, checksum_check=False,
-    )
-
+    uri = urlsplit(url)
+    if (
+        uri.scheme == "ftp"
+        and uri.hostname == "massive-ftp.ucsd.edu"
+    ):
+        Client.download_ftp_urls(
+            ftp_urls=[url],
+            output_folder=str(output_dir),
+            skip_if_downloaded_already=False,
+            use_tls=True,
+            parallel_files=1,
+        )
+    else:
+        Client.download_files_by_url(
+            urls=[url],
+            output_folder=str(output_dir),
+            skip_if_downloaded_already=False,
+            parallel_files=1,
+            checksum_check=False,
+        )
 
 def _library_response(data, repository, accession, operation):
     version = _pridepy_version()
