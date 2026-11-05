@@ -493,7 +493,7 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
                     "or --source-protein options."
                 )
 
-        click.echo("Detected format: MeroX CSM (legacy native container)")
+        click.echo("Detected format: MeroX CSM (native container)")
         try:
             bundle = read_merox_csms(
                 results_path,

@@ -1,0 +1,22 @@
+{
+  "dataset_accession": "PXD047307",
+  "native_version": "2.0.1.7",
+  "files": {
+    "native.zhrm": {
+      "original_name": "timsTOF_20230625_BSA-DSBU_S-Trap_pool_High_CE_01_RE1_1_4682.zhrm",
+      "sha256": "a0ad10ded93c9bcc4af282f213214f4a622203754b7b2adaaac141b1a39be529",
+      "bytes": 2265217,
+      "reported_url": "https://panoramaweb.org/_webdav/Panorama%20Public/2023/MLU%20Sinz%20Lab%20-%20XL-MS%20with%20MeroX%20and%20Skyline/@files/RawFiles/MeroX%20Results/timsTOF_20230625_BSA-DSBU_S-Trap_pool_High_CE_01_RE1_1_4682.zhrm"
+    },
+    "search.fasta": {
+      "original_name": "BSA_uniprot.fasta",
+      "sha256": "5640a024616f7f4bd4b1881188ed04cb01f546494e75733544492da5c278a719",
+      "bytes": 699,
+      "reported_url": "https://panoramaweb.org/_webdav/Panorama%20Public/2023/MLU%20Sinz%20Lab%20-%20XL-MS%20with%20MeroX%20and%20Skyline/@files/RawFiles/MeroX%20Results/BSA_uniprot.fasta"
+    }
+  },
+  "expected": {
+    "source_records": 141,
+    "native_columns": 33
+  }
+}

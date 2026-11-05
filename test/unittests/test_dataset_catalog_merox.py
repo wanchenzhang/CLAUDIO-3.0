@@ -817,5 +817,233 @@ class TestMeroXInputExport(unittest.TestCase):
             self.assertNotEqual(result.exit_code, 0)
             self.assertIn("checksum", result.output.lower())
             self.assertFalse(output.exists())
+class TestMeroXNative33(unittest.TestCase):
+    fixture = FIXTURE.parent / "merox_pxd047307"
+
+    def test_native33_preserves_all_fields_and_original_spectrum_identity(self):
+        from claudio.dataset_catalog.xifdr import read_merox_csms
+
+        with zipfile.ZipFile(self.fixture / "native.zhrm") as archive:
+            rows = [
+                row for row in csv.reader(
+                    io.StringIO(
+                        archive.read("Result.csv").decode("utf-8-sig")
+                    ),
+                    delimiter=";",
+                )
+                if any(value.strip() for value in row)
+            ]
+
+        report = read_merox_csms(
+            self.fixture / "native.zhrm",
+            self.fixture / "search.fasta",
+            dataset_accession="PXD047307",
+        )
+        records = report["records"]
+
+        self.assertEqual(len(records), 141)
+        self.assertEqual(len(report["source_columns"]), 33)
+        self.assertEqual(
+            [record["source_values"] for record in records], rows
+        )
+        self.assertEqual(
+            [record["source_record_number"] for record in records],
+            list(range(1, 142)),
+        )
+
+        for record, values in zip(records, rows):
+            self.assertEqual(
+                record["source_fields"],
+                dict(zip(report["source_columns"], values)),
+            )
+
+        settings = report["native_settings"]
+        self.assertEqual(settings["NAME"], "DSBU(BuUrBu)")
+        self.assertEqual(settings["SITE1"], "KSTY{")
+        self.assertEqual(settings["SITE2"], "KSTY{")
+        self.assertEqual(settings["FDRCUTOFF"], "0.25")
+        self.assertEqual(settings["APPLYFDR"], "1")
+        self.assertEqual(settings["PERFORMDECOY"], "1")
+
+        expected_file = (
+            "timsTOF_20230625_BSA-DSBU_S-Trap_pool_"
+            "High_CE_01_RE1_1_4682.d"
+        )
+        for record, scan in zip(records[:2], (1093, 1143)):
+            self.assertIsNotNone(record["spectrum"])
+            spectrum = record["spectrum"]
+            original = record["source_fields"]["Scan number"]
+
+            self.assertEqual(spectrum["scan_number"], scan)
+            self.assertEqual(spectrum["original_file"], expected_file)
+            self.assertEqual(spectrum["source_identifier"], original)
+            self.assertEqual(
+                spectrum["native_id"],
+                original.split(',NativeID:"', 1)[1][:-1],
+            )
+            self.assertIn(
+                record["parser_orientation"], ("same", "swapped")
+            )
+            self.assertEqual(
+                record["native_confidence"]["cutoff"], 0.25
+            )
+            self.assertEqual(
+                record["native_confidence"]["fdr_level"],
+                "native_unspecified",
+            )
+
+    def test_settings_use_the_selected_crosslinker_block(self):
+        from claudio.dataset_catalog import xifdr
+
+        reader = getattr(xifdr, "_merox_native_settings", None)
+        self.assertTrue(
+            callable(reader),
+            "Missing section-aware native MeroX settings reader",
+        )
+
+        raw = b"""FDRCUTOFF=0.25 // Saved identification threshold
+APPLYFDR=1 // Enabled
+PERFORMDECOY=1
+USEDCROSSLINKER=second // Explicit active crosslinker
+
+CROSSLINKER=first
+  SITE1=K{
+  SITE2=DE}
+END
+
+CROSSLINKER=second
+  SITE1=KSTY{
+  SITE2=KSTY{
+END
+"""
+        settings = reader(raw)
+        self.assertEqual(settings["NAME"], "second")
+        self.assertEqual(settings["SITE1"], "KSTY{")
+        self.assertEqual(settings["SITE2"], "KSTY{")
+        self.assertEqual(settings["FDRCUTOFF"], "0.25")
+        self.assertEqual(settings["APPLYFDR"], "1")
+
+        with self.assertRaises(ValueError):
+            reader(raw.replace(
+                b"USEDCROSSLINKER=second",
+                b"USEDCROSSLINKER=missing",
+            ))
+
+        with self.assertRaises(ValueError):
+            reader(raw.replace(
+                b"USEDCROSSLINKER=second // Explicit active crosslinker",
+                b"",
+            ))
+    def test_dead_end_rows_are_retained_without_pairwise_parser_errors(self):
+        from claudio.dataset_catalog.xifdr import read_merox_csms
+
+        report = read_merox_csms(
+            self.fixture / "native.zhrm",
+            self.fixture / "search.fasta",
+            dataset_accession="PXD047307",
+        )
+        expected_dead_ends = {
+            17, 26, 43, 44, 61, 92, 95, 99, 105, 108,
+            110, 115, 119, 126, 127, 133, 134, 135, 138,
+        }
+        records = report["records"]
+
+        self.assertEqual(len(records), 141)
+        self.assertEqual(report["parser"]["parsed_records"], 122)
+
+        for record in records:
+            self.assertIn("record_kind", record)
+            self.assertIsNotNone(record["spectrum"])
+            self.assertEqual(
+                record["spectrum"]["source_identifier"],
+                record["source_fields"]["Scan number"],
+            )
+
+            if record["source_record_number"] in expected_dead_ends:
+                self.assertEqual(record["record_kind"], "dead_end")
+                self.assertEqual(
+                    record["record_reason"],
+                    "dead_end_not_pairwise_crosslink",
+                )
+                self.assertEqual(
+                    record["record_status"], "not_evaluable"
+                )
+                self.assertEqual(set(record["endpoints"]), {"a"})
+                self.assertEqual(
+                    record["endpoints"]["a"]["status"], "valid"
+                )
+                self.assertEqual(
+                    record["localization"]["status"], "not_applicable"
+                )
+                self.assertEqual(
+                    record["source_fields"]["Peptide2"], "0"
+                )
+                self.assertEqual(
+                    record["source_fields"]["Protein 2"], "H2O"
+                )
+                self.assertNotIn("source_error", record)
+                self.assertNotIn("parser_error", record)
+                self.assertNotIn("parser_orientation", record)
+            else:
+                self.assertEqual(
+                    record["record_kind"],
+                    "paired_crosslink_candidate",
+                )
+                self.assertIn(
+                    record["parser_orientation"], ("same", "swapped")
+                )
+
+    def test_dead_end_detection_requires_consistent_placeholder_fields(self):
+        from claudio.dataset_catalog import xifdr
+
+        reader = getattr(xifdr, "_merox_record_kind", None)
+        self.assertTrue(
+            callable(reader),
+            "Missing native MeroX record-kind classifier",
+        )
+
+        fields = {
+            "Peptide 1": "[DTHKSEIAHR]",
+            "Protein 1": ">sp|P02769|ALBU_BOVIN",
+            "From": "25",
+            "To": "34",
+            "best linkage position peptide 1": "T2",
+            "Peptide2": "0",
+            "Protein 2": "H2O",
+            "From.1": "0",
+            "To.1": "0",
+            "best linkage position peptide 2": "x0",
+        }
+        self.assertEqual(reader(fields), "dead_end")
+
+        # A partial placeholder must not silently become a dead-end match.
+        for key, value in (
+            ("Protein 2", ">unknown_protein"),
+            ("From.1", "1"),
+            ("To.1", "1"),
+            ("best linkage position peptide 2", "K1"),
+            ("Peptide2", "[SLGKVGTR]"),
+        ):
+            with self.subTest(key=key):
+                changed = dict(fields)
+                changed[key] = value
+                self.assertEqual(reader(changed), "unresolved")
+
+        # The non-peptide placeholder may occur on either source side.
+        reversed_fields = dict(fields)
+        for left, right in (
+            ("Peptide 1", "Peptide2"),
+            ("Protein 1", "Protein 2"),
+            ("From", "From.1"),
+            ("To", "To.1"),
+            (
+                "best linkage position peptide 1",
+                "best linkage position peptide 2",
+            ),
+        ):
+            reversed_fields[left], reversed_fields[right] = (
+                fields[right], fields[left]
+            )
+        self.assertEqual(reader(reversed_fields), "dead_end")
 if __name__ == "__main__":
     unittest.main()

@@ -1905,7 +1905,50 @@ def _merox_endpoint(fields, site, proteins):
         "status": "valid",
         "reason": "",
     }
+def _merox_record_kind(fields):
+    """Recognize paired peptides and the observed water dead-end encoding."""
+    keys = (
+        (
+            "Peptide 1", "Protein 1", "From", "To",
+            "best linkage position peptide 1",
+        ),
+        (
+            "Peptide2", "Protein 2", "From.1", "To.1",
+            "best linkage position peptide 2",
+        ),
+    )
+    sides = [
+        tuple(fields.get(key) for key in side_keys)
+        for side_keys in keys
+    ]
+    placeholder = ("0", "H2O", "0", "0", "x0")
+    placeholders = [side == placeholder for side in sides]
 
+    peptides = [
+        isinstance(side[0], str)
+        and len(side[0]) > 2
+        and side[0][0] in "[{"
+        and side[0][-1] in "]}"
+        and isinstance(side[1], str)
+        and bool(side[1].strip())
+        and side[1] != "H2O"
+        for side in sides
+    ]
+
+    if any(placeholders):
+        if placeholders[0] and peptides[1]:
+            return "dead_end"
+        if placeholders[1] and peptides[0]:
+            return "dead_end"
+        return "unresolved"
+
+    if any(
+        side[0] == "0" or side[1] == "H2O" or side[4] == "x0"
+        for side in sides
+    ):
+        return "unresolved"
+
+    return "paired_crosslink_candidate" if all(peptides) else "unresolved"
 def _merox_localization(fields, proteins):
     """Validate paired native candidates without selecting a localization.
 
@@ -1921,7 +1964,7 @@ def _merox_localization(fields, proteins):
     )
     candidates = []
     best_numbers = []
-
+    dead_end = _merox_record_kind(fields) == "dead_end"
     for number, token in enumerate(tokens, 1):
         parts = token.split("~")
         is_source_best = (
@@ -1941,7 +1984,12 @@ def _merox_localization(fields, proteins):
 
         if is_source_best:
             best_numbers.append(number)
-
+        if dead_end:
+            candidate.update(
+                status="not_applicable",
+                reason="dead_end_not_pairwise_crosslink",
+            )
+            continue
         if len(parts) != 5:
             candidate["reason"] = "unsupported_candidate_field_count"
             continue
@@ -1962,7 +2010,10 @@ def _merox_localization(fields, proteins):
 
         candidate["status"] = "valid"
 
-    if not candidates:
+    if dead_end:
+        status = "not_applicable"
+        reason = "dead_end_not_pairwise_crosslink"
+    elif not candidates:
         status = "unresolved"
         reason = "no_localization_candidates"
     elif any(item["status"] != "valid" for item in candidates):
@@ -2029,8 +2080,127 @@ def _merox_confidence_evidence(settings, native_local_fdr):
         )
 
     return evidence
+def _merox_native_settings(raw):
+    """Read saved settings and the explicitly selected crosslinker block."""
+    global_keys = {
+        "FDRCUTOFF", "APPLYFDR", "PERFORMDECOY", "DECOYTYPE",
+        "SAVEDECOYS", "DECOYIDENTIFIER", "USEDCROSSLINKER",
+        "NAME", "SITE1", "SITE2",
+    }
+    linker_keys = {"NAME", "SITE1", "SITE2"}
+    settings, blocks = {}, []
+    current = None
+
+    def store(destination, key, value):
+        if key in destination:
+            raise ValueError("Repeated native MeroX setting: " + key)
+        destination[key] = value
+
+    for original in raw.splitlines():
+        line = original.split(b"//", 1)[0].strip()
+        if not line:
+            continue
+
+        key_raw, separator, value_raw = line.partition(b"=")
+        key = key_raw.strip().decode("ascii", errors="backslashreplace")
+        value = value_raw.strip().decode(
+            "ascii", errors="backslashreplace"
+        )
+
+        if key == "CROSSLINKER":
+            current = {}
+            if separator:
+                if not value:
+                    raise ValueError("Empty native crosslinker name")
+                current["NAME"] = value
+            blocks.append(current)
+            continue
+
+        if line == b"END":
+            current = None
+            continue
+
+        if not separator:
+            continue
+
+        if current is not None:
+            if key in linker_keys:
+                store(current, key, value)
+        elif key in global_keys:
+            store(settings, key, value)
+
+    selected = settings.get("USEDCROSSLINKER")
+    if blocks:
+        names = [block.get("NAME") for block in blocks]
+        if any(not name for name in names):
+            raise ValueError("Native crosslinker block has no name")
+        if len(set(names)) != len(names):
+            raise ValueError("Repeated native crosslinker block name")
+
+        if selected is None:
+            if len(blocks) != 1:
+                raise ValueError(
+                    "Multiple native crosslinkers without an explicit selection"
+                )
+            active = blocks[0]
+        else:
+            matches = [
+                block for block in blocks
+                if block["NAME"] == selected
+            ]
+            if len(matches) != 1:
+                raise ValueError(
+                    "Selected native crosslinker block was not found"
+                )
+            active = matches[0]
+
+        settings.update(active)
+    elif selected is not None:
+        raise ValueError("Selected native crosslinker block was not found")
+
+    return settings
+
+
+def _merox_spectrum_identity(source_identifier, embedded_identifier):
+    """Validate spectrum identity before preparing a pyXLMS scan reference."""
+    if re.fullmatch(r"[0-9]+", source_identifier):
+        scan = _positive_integer(source_identifier)
+        if _positive_integer(embedded_identifier) != scan:
+            raise ValueError(
+                "Embedded spectrum scan differs from its source row"
+            )
+        return {
+            "scan_number": scan,
+            "original_file": None,
+            "native_id": None,
+            "source_identifier": source_identifier,
+        }
+
+    if source_identifier != embedded_identifier:
+        raise ValueError(
+            "Embedded spectrum identifier differs from its source row"
+        )
+
+    match = re.fullmatch(
+        r'File:"([^"]+)",NativeID:"(.+)"',
+        source_identifier,
+    )
+    if match is None:
+        raise ValueError("Unsupported native MeroX spectrum identifier")
+
+    original_file, native_id = match.groups()
+    scan_match = re.match(r"scan=([0-9]+)(?:,|$)", native_id)
+    if scan_match is None:
+        raise ValueError("Native spectrum identifier has no supported scan")
+
+    return {
+        "scan_number": _positive_integer(scan_match[1]),
+        "original_file": original_file,
+        "native_id": native_id,
+        "source_identifier": source_identifier,
+    }
 def read_merox_csms(psm_path, fasta_path, *, dataset_accession):
-    """Audit legacy 27-column MeroX native results without selecting crosslinks.
+    """Audit supported 27/33-column MeroX native results.
 
     Terminal positions are typed residue anchors. Native localization strings,
     confidence values and source fields remain unmodified in the audit.
@@ -2051,7 +2221,7 @@ def read_merox_csms(psm_path, fasta_path, *, dataset_accession):
 
     columns = list(MEROX_COLNAMES)
     if (
-        len(columns) < 27
+        len(columns) < 33
         or columns[14] != "Scan number"
         or columns[23] != "Spectrum UUID"
     ):
@@ -2070,11 +2240,6 @@ def read_merox_csms(psm_path, fasta_path, *, dataset_accession):
     )
     writer.writeheader()
 
-    wanted_settings = {
-        b"NAME", b"SITE1", b"SITE2", b"FDRCUTOFF", b"APPLYFDR",
-        b"PERFORMDECOY", b"DECOYTYPE",
-    }
-
     with zipfile.ZipFile(io.BytesIO(raw)) as archive:
         members = Counter(archive.namelist())
         if any(
@@ -2086,20 +2251,18 @@ def read_merox_csms(psm_path, fasta_path, *, dataset_accession):
             )
 
         properties = archive.read("properties.mxf")
-        for line in properties.splitlines():
-            key, separator, value = line.partition(b"=")
-            if separator and key in wanted_settings:
-                name = key.decode("ascii")
-                if name in settings:
-                    raise ValueError("Repeated native MeroX setting: " + name)
-                settings[name] = value.decode(
-                    "ascii", errors="backslashreplace"
-                )
+        settings = _merox_native_settings(properties)
+        result_text = archive.read("Result.csv").decode("utf-8-sig")
 
-        reader = csv.reader(
-            io.StringIO(archive.read("Result.csv").decode("utf-8-sig")),
-            delimiter=";",
-        )
+        widths = {
+            len(row)
+            for row in csv.reader(
+                io.StringIO(result_text), delimiter=";"
+            )
+            if any(value.strip() for value in row)
+        }
+        source_width = 33 if 33 in widths else 27
+        reader = csv.reader(io.StringIO(result_text), delimiter=";")
         previous_line = 0
 
         for number, values in enumerate(reader, 1):
@@ -2109,8 +2272,9 @@ def read_merox_csms(psm_path, fasta_path, *, dataset_accession):
                 continue
 
             fields = (
-                dict(zip(columns[:27], values))
-                if len(values) == 27 else {}
+                dict(zip(columns[:source_width], values))
+                if len(values) == source_width
+                else {}
             )
             record = {
                 "source_record_id": (
@@ -2130,12 +2294,13 @@ def read_merox_csms(psm_path, fasta_path, *, dataset_accession):
                 },
                 "record_status": "not_evaluable",
                 "record_reason": "merox_assessment_policies_pending",
+                "record_kind": _merox_record_kind(fields),
             }
             records.append(record)
             record["localization"] = _merox_localization(
                 fields, proteins
             )
-            if len(values) != 27:
+            if len(values) != source_width:
                 record["record_reason"] = "unsupported_merox_row_width"
                 continue
 
@@ -2145,35 +2310,49 @@ def read_merox_csms(psm_path, fasta_path, *, dataset_accession):
             record["native_confidence"] = _merox_confidence_evidence(
                 settings, record["native_local_fdr"]
             )
+            if record["record_kind"] == "unresolved":
+                record["record_reason"] = "merox_record_kind_unresolved"
+                continue
             view = fields.copy()
 
             try:
-                for site in ("a", "b"):
+                if record["record_kind"] == "dead_end":
+                    peptide_sites = (
+                        ("b",)
+                        if fields["Peptide 1"] == "0"
+                        else ("a",)
+                    )
+                else:
+                    peptide_sites = ("a", "b")
+
+                for site in peptide_sites:
                     record["endpoints"][site] = _merox_endpoint(
                         view, site, proteins
                     )
 
-                scan = _positive_integer(fields["Scan number"])
                 uuid = fields["Spectrum UUID"]
                 if re.fullmatch(r"[A-Za-z0-9_-]+", uuid) is None:
                     raise ValueError("Invalid spectrum UUID")
 
                 member = f"spectra/{uuid}.txt"
                 if members[member] != 1:
-                    raise ValueError("Missing or repeated embedded spectrum")
+                    raise ValueError(
+                        "Missing or repeated embedded spectrum"
+                    )
 
                 if member not in spectra:
                     body = archive.read(member)
+                    header = body.splitlines()[0].decode("utf-8-sig")
                     spectra[member] = (
-                        int(body.splitlines()[0]),
+                        header,
                         hashlib.sha256(body).hexdigest(),
                     )
 
-                embedded_scan, member_hash = spectra[member]
-                if embedded_scan != scan:
-                    raise ValueError(
-                        "Embedded spectrum scan differs from its source row"
-                    )
+                embedded_identifier, member_hash = spectra[member]
+                spectrum_identity = _merox_spectrum_identity(
+                    fields["Scan number"], embedded_identifier
+                )
+                scan = spectrum_identity["scan_number"]
             except (
                 ValueError, IndexError, KeyError, zipfile.BadZipFile
             ) as error:
@@ -2186,14 +2365,15 @@ def read_merox_csms(psm_path, fasta_path, *, dataset_accession):
             reference = f"merox-embedded:sha256:{digest}!/{member}"
             record["spectrum"] = {
                 "uuid": uuid,
-                "scan_number": scan,
-                "original_file": None,
+                **spectrum_identity,
                 "reference_kind": "merox_embedded_member",
                 "reference": reference,
                 "member": member,
                 "member_sha256": member_hash,
             }
-
+            if record["record_kind"] == "dead_end":
+                record["record_reason"] = "dead_end_not_pairwise_crosslink"
+                continue
             view.update({
                 "Scan number": f"{scan}~{reference}",
                 marker: record["source_record_id"],
@@ -2205,7 +2385,11 @@ def read_merox_csms(psm_path, fasta_path, *, dataset_accession):
         "name": "pyXLMS",
         "version": version("pyXLMS"),
         "entrypoint": "read_merox",
-        "format_variant": "legacy_27_column_native",
+        "format_variant": (
+            "legacy_27_column_native"
+            if source_width == 27
+            else "native_33_column"
+        ),
         "parsed_records": 0,
         "modification_masses_assessed": False,
     }
@@ -2294,7 +2478,7 @@ def read_merox_csms(psm_path, fasta_path, *, dataset_accession):
     return {
         "format": "merox_csm",
         "format_version": 1,
-        "source_columns": columns[:27],
+        "source_columns": columns[:source_width],
         "records": records,
         "proteins": proteins,
         "parser": parser_info,
@@ -2454,6 +2638,13 @@ def write_merox_claudio_input(
 
     for record in bundle["records"]:
         entry = deepcopy(record)
+        if record.get("record_kind") == "dead_end":
+            entry.update(
+                input_status="not_evaluable",
+                input_reasons=["dead_end_not_pairwise_crosslink"],
+            )
+            audit.append(entry)
+            continue
         reasons = []
         fields = record["source_fields"]
         localization = record.get("localization", {})
