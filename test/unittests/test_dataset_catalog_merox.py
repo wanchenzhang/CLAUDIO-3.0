@@ -546,5 +546,276 @@ class TestMeroXNativeConfidence(unittest.TestCase):
                 )
                 self.assertEqual(supplied, before_settings)
                 self.assertEqual(local_fdr, before_fdr)
+class TestMeroXInputExport(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        from claudio.dataset_catalog.xifdr import read_merox_csms
+
+        cls.bundle = read_merox_csms(
+            FIXTURE / "velos.zhrm",
+            FIXTURE / "search.fasta",
+            dataset_accession="PXD010895",
+        )
+
+    def exporter(self):
+        from claudio.dataset_catalog import xifdr
+
+        writer = getattr(xifdr, "write_merox_claudio_input", None)
+        self.assertTrue(
+            callable(writer),
+            "Missing MeroX CLAUDIO input exporter",
+        )
+        return writer
+
+    def reference_mapping(self):
+        reference_path = (FIXTURE / "reference.json").resolve()
+        raw = reference_path.read_bytes()
+        reference = json.loads(raw)
+        fixture_manifest = json.loads(
+            (FIXTURE / "manifest.json").read_text()
+        )
+        expected = fixture_manifest["files"]["reference.json"]
+        self.assertEqual(
+            hashlib.sha256(raw).hexdigest(), expected["sha256"]
+        )
+
+        return {
+            "kind": "merox_reference_pilot",
+            "source_fasta_id": "sp|P02768-A|ALBU_HUMAN",
+            "source_fasta_sha256": (
+                self.bundle["provenance"]["fasta_sha256"]
+            ),
+            "reference_accession": "P02768",
+            "reference_taxon_id": 9606,
+            "reference_sequence": reference["sequence"]["value"],
+            "sources": [{
+                "kind": "uniprot_api",
+                "request_url": expected["reported_url"],
+                "response_url": expected["reported_url"],
+                "status": 200,
+                "absolute_path": str(reference_path),
+                "sha256": expected["sha256"],
+            }],
+        }
+
+    def test_export_projects_source_best_and_retains_all_source_records(self):
+        writer = self.exporter()
+        before = json.dumps(self.bundle, sort_keys=True)
+
+        with TemporaryDirectory() as directory:
+            output = Path(directory) / "input"
+            writer(
+                self.bundle,
+                self.reference_mapping(),
+                output,
+                allowed_crosslinkers={"SDA"},
+                allowed_residues={"K", "D", "E"},
+            )
+
+            with (output / "claudio_input.csv").open(
+                newline="", encoding="utf-8"
+            ) as handle:
+                reader = csv.DictReader(handle)
+                self.assertEqual(
+                    reader.fieldnames[:8],
+                    [
+                        "peptide1", "peptide2",
+                        "position1", "position2",
+                        "k_pos1", "k_pos2",
+                        "entry1", "entry2",
+                    ],
+                )
+                rows = list(reader)
+
+            self.assertTrue(rows)
+            first = rows[0]
+            self.assertEqual(first["entry1"], "P02768")
+            self.assertEqual(first["entry2"], "P02768")
+            self.assertEqual(first["peptide1"], "LVNEVTEFAK")
+            self.assertEqual(first["peptide2"], "SLHTLFGDKLCTVATLR")
+            self.assertEqual(first["position1"], "69")
+            self.assertEqual(first["position2"], "97")
+            self.assertEqual(first["k_pos1"], "4")
+            self.assertEqual(first["k_pos2"], "9")
+            self.assertEqual(
+                first["source_protein_position_a"], "45"
+            )
+            self.assertEqual(
+                first["source_protein_position_b"], "73"
+            )
+            self.assertEqual(
+                first["localization_scope"], "source_reported_best"
+            )
+
+            expected_ids = [
+                record["source_record_id"]
+                for record in self.bundle["records"]
+                if all(
+                    record["endpoints"][site]["kind"] == "residue"
+                    and record["endpoints"][site]["peptide"][
+                        record["endpoints"][site]["link_position"] - 1
+                    ] in {"K", "D", "E"}
+                    for site in ("a", "b")
+                )
+            ]
+            self.assertEqual(
+                [row["xlms_source_record_id"] for row in rows],
+                expected_ids,
+            )
+
+            audit = json.loads(
+                (output / "psm_audit.json").read_text()
+            )
+            self.assertEqual(
+                [record["source_record_id"] for record in audit],
+                [
+                    record["source_record_id"]
+                    for record in self.bundle["records"]
+                ],
+            )
+            self.assertEqual(
+                sum(
+                    len(record["localization"]["candidates"])
+                    for record in audit
+                ),
+                554,
+            )
+
+            for record in audit:
+                self.assertEqual(record["decoy_status"], "unknown")
+                self.assertEqual(
+                    record["fdr"]["psm"]["status"], "missing"
+                )
+                if any(
+                    endpoint["kind"] != "residue"
+                    for endpoint in record["endpoints"].values()
+                ):
+                    self.assertEqual(
+                        record["input_status"], "not_evaluable"
+                    )
+                    self.assertIn(
+                        "terminal_atom_policy_unresolved",
+                        record["input_reasons"],
+                    )
+
+            manifest = json.loads(
+                (output / "manifest.json").read_text()
+            )
+            self.assertEqual(
+                manifest["kind"], "merox_claudio_input"
+            )
+            self.assertFalse(manifest["assessment_performed"])
+            for name, expected_hash in manifest["output_sha256"].items():
+                self.assertEqual(
+                    hashlib.sha256(
+                        (output / name).read_bytes()
+                    ).hexdigest(),
+                    expected_hash,
+                )
+
+        self.assertEqual(
+            json.dumps(self.bundle, sort_keys=True), before
+        )
+
+    def test_changed_reference_evidence_is_rejected_before_export(self):
+        writer = self.exporter()
+        mapping = self.reference_mapping()
+        mapping["sources"][0]["sha256"] = "0" * 64
+
+        with TemporaryDirectory() as directory:
+            output = Path(directory) / "input"
+
+            with self.assertRaisesRegex(ValueError, "checksum"):
+                writer(
+                    self.bundle,
+                    mapping,
+                    output,
+                    allowed_crosslinkers={"SDA"},
+                    allowed_residues={"K", "D", "E"},
+                )
+
+            self.assertFalse(output.exists())
+    def test_cli_exports_merox_using_the_saved_reference_mapping(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            mapping_path = root / "reference_mapping.json"
+            mapping_path.write_text(
+                json.dumps(self.reference_mapping()),
+                encoding="utf-8",
+            )
+            output = root / "input"
+
+            result = CliRunner().invoke(main, [
+                "standardize",
+                "--results", str(FIXTURE / "velos.zhrm"),
+                "--fasta", str(FIXTURE / "search.fasta"),
+                "--dataset-accession", "PXD010895",
+                "--reference-projection", str(mapping_path),
+                "--crosslinker", "SDA",
+                "--residue", "K",
+                "--residue", "D",
+                "--residue", "E",
+                "--output", str(output),
+            ])
+
+            self.assertEqual(
+                result.exit_code,
+                0,
+                result.output + repr(result.exception),
+            )
+            with (output / "claudio_input.csv").open(
+                newline="", encoding="utf-8"
+            ) as handle:
+                rows = list(csv.DictReader(handle))
+
+            self.assertEqual(len(rows), 100)
+            self.assertEqual(rows[0]["position1"], "69")
+            self.assertEqual(rows[0]["position2"], "97")
+
+            audit = json.loads(
+                (output / "psm_audit.json").read_text()
+            )
+            self.assertEqual(len(audit), 112)
+            self.assertEqual(
+                Counter(record["input_status"] for record in audit),
+                {"ready": 100, "not_evaluable": 12},
+            )
+            manifest = json.loads(
+                (output / "manifest.json").read_text()
+            )
+            self.assertEqual(
+                manifest["kind"], "merox_claudio_input"
+            )
+            self.assertFalse(manifest["assessment_performed"])
+
+    def test_cli_rejects_changed_reference_evidence_without_output(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            mapping = self.reference_mapping()
+            mapping["sources"][0]["sha256"] = "0" * 64
+
+            mapping_path = root / "reference_mapping.json"
+            mapping_path.write_text(
+                json.dumps(mapping),
+                encoding="utf-8",
+            )
+            output = root / "input"
+
+            result = CliRunner().invoke(main, [
+                "standardize",
+                "--results", str(FIXTURE / "velos.zhrm"),
+                "--fasta", str(FIXTURE / "search.fasta"),
+                "--dataset-accession", "PXD010895",
+                "--reference-projection", str(mapping_path),
+                "--crosslinker", "SDA",
+                "--residue", "K",
+                "--residue", "D",
+                "--residue", "E",
+                "--output", str(output),
+            ])
+
+            self.assertNotEqual(result.exit_code, 0)
+            self.assertIn("checksum", result.output.lower())
+            self.assertFalse(output.exists())
 if __name__ == "__main__":
     unittest.main()

@@ -13,6 +13,13 @@
       "sha256": "c4ec5185c2a185659dd6e248f092f6ef37db29e5c4bf3c1e3fc2b5176ede3f5c",
       "bytes": 688,
       "reported_url": "ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2019/01/PXD010895/HSA.fasta"
+    },
+    "reference.json": {
+      "original_name": "P02768.json",
+      "sha256": "f65d825aa89c3fdcefadd8de3501b4e390bb618327049e40dd92c17ee04d6901",
+      "bytes": 238215,
+      "reported_url": "https://rest.uniprot.org/uniprotkb/P02768.json",
+      "retrieved_at_utc": "2026-11-05T14:02:15.401290+00:00"
     }
   },
   "expected": {

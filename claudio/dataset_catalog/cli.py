@@ -12,7 +12,7 @@ import requests
 import zipfile
 from .inventory import inspect_catalog, summarize_inventories, inspect_content_plan
 from .proteomecentral import fetch_dataset_pages, write_discovery_outputs
-from .xifdr import FDR_COLUMNS, read_xifdr_psms, read_plink_psms, write_claudio_input, write_import_report, read_merox_csms
+from .xifdr import FDR_COLUMNS, read_xifdr_psms, read_plink_psms, write_claudio_input, write_import_report, read_merox_csms, write_merox_claudio_input
 
 DEFAULT_SEARCH_TERMS = (
     "XL-MS",
@@ -362,7 +362,10 @@ def _detect_psm_format(results_path):
 @click.option(
     "--reference-projection", "reference_projection_path",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    help="Optional saved projection report; exports verified declared-accession coordinates as explicit hypotheses.",
+        help=(
+        "Saved reference projection report, or a MeroX reference "
+        "mapping with its saved UniProt evidence."
+    ),
 )
 @click.option("--dataset-accession", required=True, help="ProteomeXchange PXD accession.")
 @click.option(
@@ -423,7 +426,7 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
                         residues, source_proteins, audit_only, output_dir,
                         plink_unfiltered_path, plink_parameters_path, author_filter_path,
                         reference_projection_path=None):
-    """Import XL-MS results and write validated inputs or an import audit."""
+    """Standardize supported XL-MS results or preserve a full import audit."""
     if output_dir.exists():
         raise click.BadParameter("Output directory already exists; choose a new directory.", param_hint="--output")
     if fdr_cutoff is not None and not math.isfinite(fdr_cutoff):
@@ -437,32 +440,58 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
     except (ValueError, OSError) as error:
         raise click.ClickException(str(error)) from error
     if source_format == "merox_csm":
-        if not audit_only:
-            raise click.UsageError(
-                "MeroX input currently requires --audit-only."
+        if audit_only:
+            policies = (
+                mapping_path, reference_projection_path,
+                fdr_level, fdr_cutoff, fdr_column, decoy_prefix,
+                plink_unfiltered_path, plink_parameters_path,
+                author_filter_path,
             )
+            if (
+                any(value is not None for value in policies)
+                or crosslinkers
+                or residues
+                or source_proteins
+            ):
+                raise click.UsageError(
+                    "MeroX --audit-only cannot be combined with "
+                    "selection or pLink evidence options."
+                )
+        else:
+            missing = [
+                name
+                for name, absent in (
+                    (
+                        "--reference-projection",
+                        reference_projection_path is None,
+                    ),
+                    ("--crosslinker", not crosslinkers),
+                    ("--residue", not residues),
+                )
+                if absent
+            ]
+            if missing:
+                raise click.UsageError(
+                    "MeroX export requires "
+                    + ", ".join(missing)
+                    + ". Use --audit-only to save an import audit."
+                )
 
-        policies = (
-            mapping_path,
-            reference_projection_path,
-            fdr_level,
-            fdr_cutoff,
-            fdr_column,
-            decoy_prefix,
-            plink_unfiltered_path,
-            plink_parameters_path,
-            author_filter_path,
-        )
-        if (
-            any(value is not None for value in policies)
-            or crosslinkers
-            or residues
-            or source_proteins
-        ):
-            raise click.UsageError(
-                "MeroX --audit-only cannot be combined with selection "
-                "or pLink evidence options."
+            unsupported = (
+                mapping_path, fdr_level, fdr_cutoff,
+                fdr_column, decoy_prefix, plink_unfiltered_path,
+                plink_parameters_path, author_filter_path,
             )
+            if (
+                any(value is not None for value in unsupported)
+                or source_proteins
+            ):
+                raise click.UsageError(
+                    "MeroX export uses saved native confidence and "
+                    "one explicit reference mapping. Do not combine it "
+                    "with --mapping, per-record FDR, pLink evidence "
+                    "or --source-protein options."
+                )
 
         click.echo("Detected format: MeroX CSM (legacy native container)")
         try:
@@ -471,33 +500,74 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
                 fasta_path,
                 dataset_accession=dataset_accession,
             )
-            destination = write_import_report(bundle, output_dir)
+            if audit_only:
+                destination = write_import_report(bundle, output_dir)
+            else:
+                reference_mapping = json.loads(
+                    reference_projection_path.read_text(
+                        encoding="utf-8-sig"
+                    )
+                )
+                if not isinstance(reference_mapping, dict):
+                    raise ValueError(
+                        "MeroX reference mapping must be a JSON object"
+                    )
+                destination = write_merox_claudio_input(
+                    bundle,
+                    reference_mapping,
+                    output_dir,
+                    allowed_crosslinkers=crosslinkers,
+                    allowed_residues=residues,
+                )
+
             manifest = json.loads(
                 (destination / "manifest.json").read_bytes()
             )
         except (
-            ValueError, OSError, RuntimeError,
+            ValueError, OSError, RuntimeError, KeyError, TypeError,
             zipfile.BadZipFile, csv.Error,
         ) as error:
             raise click.ClickException(str(error)) from error
 
+        failures = sum(
+            record.get("record_reason", "").startswith("pyxlms_")
+            for record in bundle["records"]
+        )
         click.echo(
             f"Source CSM records: {manifest['counts']['source_records']}"
         )
         click.echo(
             f"Parsed CSM records: {bundle['parser']['parsed_records']}"
         )
-        click.echo(
-            "Records with parser errors: "
-            f"{manifest['counts']['parser_errors']}"
-        )
-        click.echo(
-            "Scientific filtering, identity mapping and input export: "
-            "not performed"
-        )
-        click.echo(
-            f"Audit report: {(destination / 'import_report.json').resolve()}"
-        )
+        click.echo(f"Records with parser errors: {failures}")
+
+        if audit_only:
+            click.echo(
+                "Scientific filtering, identity mapping and "
+                "input export: not performed"
+            )
+            click.echo(
+                f"Audit report: "
+                f"{(destination / 'import_report.json').resolve()}"
+            )
+        else:
+            click.echo(
+                f"Standardized input rows: "
+                f"{manifest['counts']['pipeline_input_rows']}"
+            )
+            click.echo(
+                "Localization: source-reported best; "
+                "all source candidates retained in the audit"
+            )
+            click.echo("Native FDR scope: unspecified")
+            click.echo("Model assessment: not performed")
+            click.echo(
+                f"Input: {(destination / 'claudio_input.csv').resolve()}"
+            )
+            click.echo(
+                f"Audit: {(destination / 'psm_audit.json').resolve()}"
+            )
+
         click.echo(f"Output: {destination.resolve()}")
         return
     plink = source_format == "plink_psm"

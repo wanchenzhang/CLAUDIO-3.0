@@ -1708,7 +1708,10 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
     if projection is not None:
         _write_json(output_dir / "reference_projection.json", projection)
         names.append("reference_projection.json")
-    format_name = "plink" if bundle.get("format") == "plink_psm" else "xifdr"
+    format_name = {
+        "plink_psm": "plink",
+        "merox_csm": "merox",
+    }.get(bundle.get("format"), "xifdr")
     manifest = {"schema_version": 1, "kind": format_name + ("_claudio_input" if pipeline else "_prepared_input"), "status": "complete",
                 "provenance": bundle["provenance"], "fdr_policy": prepared["fdr_policy"],
                 "counts": {"source_records": len(bundle["records"]),
@@ -2310,3 +2313,264 @@ def read_merox_csms(psm_path, fasta_path, *, dataset_accession):
             ).hexdigest(),
         },
     }
+def write_merox_claudio_input(
+    bundle,
+    reference_mapping,
+    output_dir,
+    *,
+    allowed_crosslinkers,
+    allowed_residues,
+):
+    """Export source-reported best residue sites using a verified reference.
+
+    Input readiness means compatibility with CLAUDIO's input format.
+    Source decoy status, localization uncertainty and FDR scope remain
+    unchanged. Terminal sites require a separate atom-selection policy.
+    """
+    if bundle.get("format") != "merox_csm":
+        raise ValueError("Expected a MeroX import bundle")
+
+    selections = {}
+    for name, values in (
+        ("allowed_crosslinkers", allowed_crosslinkers),
+        ("allowed_residues", allowed_residues),
+    ):
+        if (
+            not isinstance(values, (set, frozenset, list, tuple))
+            or not values
+            or any(
+                not isinstance(value, str) or not value.strip()
+                for value in values
+            )
+        ):
+            raise ValueError(f"{name} requires explicit nonempty labels")
+        selections[name] = set(values)
+
+    if any(
+        re.fullmatch(r"[A-Z]", residue) is None
+        for residue in selections["allowed_residues"]
+    ):
+        raise ValueError("Residue labels must be single uppercase letters")
+
+    for kind in ("psm", "fasta"):
+        path = Path(bundle["provenance"][kind + "_path"])
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        if digest != bundle["provenance"][kind + "_sha256"]:
+            raise ValueError(f"Source {kind} checksum changed")
+
+    identifier = reference_mapping.get("source_fasta_id")
+    source = bundle["proteins"].get(identifier)
+    if (
+        source is None
+        or reference_mapping.get("source_fasta_sha256")
+        != bundle["provenance"]["fasta_sha256"]
+    ):
+        raise ValueError("Reference mapping differs from the search FASTA")
+
+    accession = reference_mapping.get("reference_accession")
+    taxon = reference_mapping.get("reference_taxon_id")
+    reference_sequence = reference_mapping.get("reference_sequence")
+    if (
+        not isinstance(accession, str)
+        or ACCESSION.fullmatch(accession) is None
+        or type(taxon) is not int
+        or taxon <= 0
+    ):
+        raise ValueError("Invalid reference accession or organism")
+    if (
+        source.get("taxon_id") is not None
+        and source["taxon_id"] != taxon
+    ):
+        raise ValueError("Reference organism differs from the search FASTA")
+
+    receipts = reference_mapping.get("sources", [])
+    confirmed = False
+    for receipt in receipts:
+        raw = Path(receipt["absolute_path"]).read_bytes()
+        if hashlib.sha256(raw).hexdigest() != receipt.get("sha256"):
+            raise ValueError("Reference evidence checksum changed")
+
+        uri = urlsplit(
+            receipt.get("response_url", receipt.get("request_url", ""))
+        )
+        if (
+            receipt.get("kind") != "uniprot_api"
+            or receipt.get("status") != 200
+            or uri.scheme != "https"
+            or uri.netloc != "rest.uniprot.org"
+            or not uri.path.startswith("/uniprotkb/")
+        ):
+            continue
+
+        payload = json.loads(raw)
+        if not isinstance(payload, dict):
+            continue
+        if (
+            payload.get("primaryAccession") == accession
+            and payload.get("organism", {}).get("taxonId") == taxon
+            and payload.get("sequence", {}).get("value")
+            == reference_sequence
+        ):
+            confirmed = True
+
+    if not confirmed:
+        raise ValueError("Reference sequence lacks matching saved evidence")
+
+    options, coordinate_evidence = _projection_coordinate_options(
+        source["sequence"], reference_sequence, 64
+    )
+    if (
+        coordinate_evidence["method"] != "full_source_exact_subsequence"
+        or len(options) != 1
+    ):
+        raise ValueError(
+            "MeroX export currently requires unique exact source containment"
+        )
+
+    profile = {
+        "profile_id": identifier + ":" + accession,
+        "accession": accession,
+        "identity_scope": "candidate_hypothesis",
+        "source_sequence": source["sequence"],
+        "reference_sequence": reference_sequence,
+        "coordinate_evidence": coordinate_evidence,
+    }
+    mappings = {
+        identifier: {
+            "status": "reference_projected",
+            "accession": accession,
+            "sequence": reference_sequence,
+            "taxon_id": taxon,
+            "identity_scope": "candidate_hypothesis",
+            "coordinate_evidence": deepcopy(coordinate_evidence),
+            "sources": deepcopy(receipts),
+        }
+    }
+
+    settings = bundle["native_settings"]
+    crosslinker = settings.get("NAME", "")
+    cutoff = _fdr_value(settings.get("FDRCUTOFF"))
+    rows, audit = [], []
+
+    for record in bundle["records"]:
+        entry = deepcopy(record)
+        reasons = []
+        fields = record["source_fields"]
+        localization = record.get("localization", {})
+        best = [
+            candidate
+            for candidate in localization.get("candidates", [])
+            if candidate.get("is_source_best")
+        ]
+        confidence = _merox_confidence_evidence(
+            settings,
+            _fdr_value(fields.get("local False discovery rate")),
+        )
+
+        if record.get("parser_orientation") not in ("same", "swapped"):
+            reasons.append("merox_parser_unresolved")
+        if record.get("decoy_status") not in ("unknown", "target_target"):
+            reasons.append("decoy_record")
+        if confidence["status"] != "within_saved_cutoff":
+            reasons.append("native_confidence_not_within_saved_cutoff")
+        if crosslinker not in selections["allowed_crosslinkers"]:
+            reasons.append("crosslinker_not_selected")
+        if (
+            localization.get("status")
+            not in ("single_candidate", "multiple_candidates")
+            or len(best) != 1
+            or best[0].get("status") != "valid"
+        ):
+            reasons.append("source_best_localization_unresolved")
+
+        endpoints = best[0].get("endpoints", {}) if len(best) == 1 else {}
+        if set(endpoints) != {"a", "b"}:
+            reasons.append("source_endpoint_unresolved")
+
+        for site, endpoint in endpoints.items():
+            if endpoint.get("source_fasta_id") != identifier:
+                reasons.append("reference_mapping_unavailable_" + site)
+            if endpoint.get("kind") != "residue":
+                reasons.append("terminal_atom_policy_unresolved")
+
+        projected = {}
+        if not reasons:
+            for site in ("a", "b"):
+                endpoint = endpoints[site]
+                result = _project_peptide(endpoint, profile, options)
+                projected[site] = result
+                if result["status"] != "projected":
+                    reasons.append("reference_projection_unresolved_" + site)
+                    continue
+                residue = reference_sequence[
+                    result["reference_protein_position"] - 1
+                ]
+                if residue not in selections["allowed_residues"]:
+                    reasons.append("residue_not_selected_" + site)
+
+        entry.update(
+            input_status="not_evaluable" if reasons else "ready",
+            input_reasons=list(dict.fromkeys(reasons)),
+            reference_endpoints=deepcopy(projected),
+        )
+        audit.append(entry)
+        if reasons:
+            continue
+
+        row = {
+            "source_record_id": record["source_record_id"],
+            "dataset_accession": bundle["provenance"]["dataset_accession"],
+            "source_record_number": record["source_record_number"],
+            "source_psm_sha256": bundle["provenance"]["psm_sha256"],
+            "source_fasta_sha256": bundle["provenance"]["fasta_sha256"],
+            "source_crosslinker": crosslinker,
+            "source_decoy_status": record["decoy_status"],
+            "localization_scope": "source_reported_best",
+            "localization_status": localization["status"],
+            "localization_candidate_count": len(localization["candidates"]),
+            "source_best_candidate_number": best[0]["source_candidate_number"],
+            "identity_scope": "candidate_hypothesis",
+            "native_local_fdr_value": confidence["value"],
+            "native_fdr_cutoff": confidence["cutoff"],
+            "native_fdr_scope": "native_unspecified",
+        }
+        for site in ("a", "b"):
+            endpoint = endpoints[site]
+            projection = projected[site]
+            row.update({
+                f"unip_id_{site}": accession,
+                f"seq_{site}": reference_sequence,
+                f"pep_{site}": endpoint["peptide"],
+                f"pos_{site}": projection["reference_protein_position"],
+                f"res_pos_{site}": endpoint["link_position"],
+                f"source_protein_id_{site}": endpoint["source_protein_id"],
+                f"source_protein_position_{site}": endpoint["protein_position"],
+                f"source_peptide_start_{site}": endpoint["peptide_start"],
+                f"reference_peptide_start_{site}": (
+                    projection["reference_peptide_start"]
+                ),
+                f"source_modified_peptide_{site}": endpoint["source_peptide"],
+            })
+        rows.append(row)
+
+    prepared = {
+        "rows": rows,
+        "audit": audit,
+        "fdr_policy": {
+            "kind": "native_merox_saved_filter",
+            "level": "native_unspecified",
+            "cutoff": cutoff["value"],
+            "application_verified": False,
+            "target_decoy_validation_performed": False,
+        },
+    }
+    policy = {
+        "allowed_crosslinkers": sorted(selections["allowed_crosslinkers"]),
+        "allowed_residues": sorted(selections["allowed_residues"]),
+        "localization": "source_reported_best",
+        "terminal_policy": "exclude_pending_atom_configuration",
+        "decoy_policy": "preserve_source_status_without_inference",
+    }
+    return write_xifdr_outputs(
+        bundle, mappings, prepared, output_dir, pipeline_policy=policy
+    )
