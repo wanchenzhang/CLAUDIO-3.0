@@ -1,0 +1,2 @@
+*.zhrm -text
+search.fasta -text whitespace=blank-at-eol,space-before-tab,cr-at-eol,-blank-at-eof

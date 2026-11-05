@@ -1,0 +1,29 @@
+{
+  "kind": "merox_legacy_native_fixture",
+  "dataset_accession": "PXD010895",
+  "files": {
+    "velos.zhrm": {
+      "original_name": "MeroX_merged_velos.zhrm",
+      "sha256": "472d765fb6b1fae44768c83b2de6aa7b8d7c493f24d0a172e84e8924f8d21bcd",
+      "bytes": 865810,
+      "reported_url": "ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2019/01/PXD010895/MeroX_merged_velos.zhrm"
+    },
+    "search.fasta": {
+      "original_name": "HSA.fasta",
+      "sha256": "c4ec5185c2a185659dd6e248f092f6ef37db29e5c4bf3c1e3fc2b5176ede3f5c",
+      "bytes": 688,
+      "reported_url": "ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2019/01/PXD010895/HSA.fasta"
+    }
+  },
+  "expected": {
+    "native_columns": 27,
+    "source_records": 112,
+    "unique_spectrum_uuids": 103,
+    "multiple_localization_records": 104,
+    "endpoint_kinds": {
+      "residue": 212,
+      "protein_n_terminus": 10,
+      "protein_c_terminus": 2
+    }
+  }
+}

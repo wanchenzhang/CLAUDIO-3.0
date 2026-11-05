@@ -9,10 +9,10 @@ from pathlib import Path
 
 import click
 import requests
-
+import zipfile
 from .inventory import inspect_catalog, summarize_inventories, inspect_content_plan
 from .proteomecentral import fetch_dataset_pages, write_discovery_outputs
-from .xifdr import FDR_COLUMNS, read_xifdr_psms, read_plink_psms, write_claudio_input, write_import_report
+from .xifdr import FDR_COLUMNS, read_xifdr_psms, read_plink_psms, write_claudio_input, write_import_report, read_merox_csms
 
 DEFAULT_SEARCH_TERMS = (
     "XL-MS",
@@ -306,16 +306,40 @@ def _read_reference_projection(path):
 
 
 def _detect_psm_format(results_path):
-    """Recognize supported PSM tables from their columns rather than filenames."""
+    """Recognize supported tables and native MeroX containers."""
+    if zipfile.is_zipfile(results_path):
+        with zipfile.ZipFile(results_path) as archive:
+            names = archive.namelist()
+        if (
+            names.count("Result.csv") == 1
+            and names.count("properties.mxf") == 1
+        ):
+            return "merox_csm"
+        raise ValueError(
+            "ZIP container is not a supported native MeroX result"
+        )
+
     with results_path.open(encoding="utf-8-sig", newline="") as handle:
         columns = set(next(csv.reader(handle), []))
+
     signatures = {
-        "xifdr_psm": {"PSMID", "PepSeq1", "PepSeq2", "ProteinLinkPos1", "ProteinLinkPos2"},
-        "plink_psm": {"Title", "Peptide", "Proteins", "Peptide_Type", "Linker"},
+        "xifdr_psm": {
+            "PSMID", "PepSeq1", "PepSeq2",
+            "ProteinLinkPos1", "ProteinLinkPos2",
+        },
+        "plink_psm": {
+            "Title", "Peptide", "Proteins", "Peptide_Type", "Linker",
+        },
     }
-    matches = [name for name, required in signatures.items() if required <= columns]
+    matches = [
+        name for name, required in signatures.items()
+        if required <= columns
+    ]
     if len(matches) != 1:
-        raise ValueError("Cannot identify a unique results format; supported formats are xiFDR PSM and pLink PSM CSV tables.")
+        raise ValueError(
+            "Cannot identify a unique results format; supported formats "
+            "are xiFDR PSM and pLink PSM CSV tables."
+        )
     return matches[0]
 
 
@@ -323,7 +347,7 @@ def _detect_psm_format(results_path):
 @click.option(
     "--results", "results_path", required=True,
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    help="xiFDR or pLink PSM results CSV; format is detected from its columns.",
+    help="xiFDR/pLink PSM CSV or a legacy native MeroX container.",
 )
 @click.option(
     "--fasta", "fasta_path", required=True,
@@ -399,7 +423,7 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
                         residues, source_proteins, audit_only, output_dir,
                         plink_unfiltered_path, plink_parameters_path, author_filter_path,
                         reference_projection_path=None):
-    """Import xiFDR or pLink PSMs and export validated CLAUDIO inputs or a full audit."""
+    """Import XL-MS results and write validated inputs or an import audit."""
     if output_dir.exists():
         raise click.BadParameter("Output directory already exists; choose a new directory.", param_hint="--output")
     if fdr_cutoff is not None and not math.isfinite(fdr_cutoff):
@@ -412,6 +436,70 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
         source_format = _detect_psm_format(results_path)
     except (ValueError, OSError) as error:
         raise click.ClickException(str(error)) from error
+    if source_format == "merox_csm":
+        if not audit_only:
+            raise click.UsageError(
+                "MeroX input currently requires --audit-only."
+            )
+
+        policies = (
+            mapping_path,
+            reference_projection_path,
+            fdr_level,
+            fdr_cutoff,
+            fdr_column,
+            decoy_prefix,
+            plink_unfiltered_path,
+            plink_parameters_path,
+            author_filter_path,
+        )
+        if (
+            any(value is not None for value in policies)
+            or crosslinkers
+            or residues
+            or source_proteins
+        ):
+            raise click.UsageError(
+                "MeroX --audit-only cannot be combined with selection "
+                "or pLink evidence options."
+            )
+
+        click.echo("Detected format: MeroX CSM (legacy native container)")
+        try:
+            bundle = read_merox_csms(
+                results_path,
+                fasta_path,
+                dataset_accession=dataset_accession,
+            )
+            destination = write_import_report(bundle, output_dir)
+            manifest = json.loads(
+                (destination / "manifest.json").read_bytes()
+            )
+        except (
+            ValueError, OSError, RuntimeError,
+            zipfile.BadZipFile, csv.Error,
+        ) as error:
+            raise click.ClickException(str(error)) from error
+
+        click.echo(
+            f"Source CSM records: {manifest['counts']['source_records']}"
+        )
+        click.echo(
+            f"Parsed CSM records: {bundle['parser']['parsed_records']}"
+        )
+        click.echo(
+            "Records with parser errors: "
+            f"{manifest['counts']['parser_errors']}"
+        )
+        click.echo(
+            "Scientific filtering, identity mapping and input export: "
+            "not performed"
+        )
+        click.echo(
+            f"Audit report: {(destination / 'import_report.json').resolve()}"
+        )
+        click.echo(f"Output: {destination.resolve()}")
+        return
     plink = source_format == "plink_psm"
     native = plink_unfiltered_path is not None or plink_parameters_path is not None
     author = author_filter_path is not None

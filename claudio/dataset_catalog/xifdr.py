@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from numbers import Real
 from pathlib import Path
 from urllib.parse import urlsplit
-
+import zipfile
 import requests
 
 
@@ -1808,3 +1808,378 @@ def assess_af_complexes(prepared, output_dir, *, xl_residues, allowed_crosslinke
                 "output_sha256": {name: hashlib.sha256((output_dir / name).read_bytes()).hexdigest()
                                   for name in ("model_candidates.csv", "psm_input_audit.json")}})
     return result
+def _merox_endpoint(fields, site, proteins):
+    keys = {
+        "a": (
+            "Peptide 1", "Protein 1", "From", "To",
+            "best linkage position peptide 1",
+        ),
+        "b": (
+            "Peptide2", "Protein 2", "From.1", "To.1",
+            "best linkage position peptide 2",
+        ),
+    }
+    pep_key, protein_key, start_key, end_key, link_key = keys[site]
+
+    identifiers = set(re.findall(
+        r"(?:^|>)\s*([^\s@()>]+)", fields[protein_key]
+    ))
+    if len(identifiers) != 1 or not identifiers <= proteins.keys():
+        raise ValueError(
+            "Protein annotation does not identify one search FASTA entry"
+        )
+
+    identifier = next(iter(identifiers))
+    sequence = proteins[identifier]["sequence"]
+    raw = fields[pep_key]
+    if not raw or raw[0] not in "[{" or raw[-1] not in "]}":
+        raise ValueError("Unsupported MeroX peptide boundaries")
+
+    encoded = raw[1:-1]
+    peptide = encoded.replace("B", "C").replace("m", "M")
+    if (
+        not peptide
+        or re.fullmatch(r"[ACDEFGHIKLMNPQRSTVWY]+", peptide) is None
+    ):
+        raise ValueError("Unsupported MeroX residue or modification symbol")
+
+    start = int(fields[start_key])
+    end = int(fields[end_key])
+    if raw.startswith("{"):
+        if start != 0:
+            raise ValueError("Unexpected MeroX N-terminal coordinate")
+        start = 1
+    if raw.endswith("}"):
+        if end != len(sequence) + 1:
+            raise ValueError("Unexpected MeroX C-terminal coordinate")
+        end = len(sequence)
+
+    if (
+        not 1 <= start <= end <= len(sequence)
+        or sequence[start - 1:end] != peptide
+    ):
+        raise ValueError("MeroX peptide span does not match the search FASTA")
+
+    match = re.fullmatch(r"([A-Za-z{}])(-?\d+)", fields[link_key])
+    if match is None:
+        raise ValueError("Unsupported MeroX linkage annotation")
+    label, position = match[1], int(match[2])
+
+    if label == "{":
+        if not raw.startswith("{") or position != 0 or start != 1:
+            raise ValueError("Inconsistent MeroX N-terminal site")
+        position, kind = 1, "protein_n_terminus"
+    elif label == "}":
+        if not raw.endswith("}") or position != len(peptide) + 1:
+            raise ValueError("Inconsistent MeroX C-terminal site")
+        position, kind = len(peptide), "protein_c_terminus"
+    else:
+        residue = label.replace("B", "C").replace("m", "M")
+        if (
+            not 1 <= position <= len(peptide)
+            or peptide[position - 1] != residue
+        ):
+            raise ValueError("MeroX linkage residue does not match the peptide")
+        kind = "residue"
+
+    fields.update({
+        pep_key: "[" + encoded + "]",
+        protein_key: ">" + identifier,
+        start_key: start,
+        end_key: end,
+        link_key: label + str(position),
+    })
+    return {
+        "source_protein_id": identifier,
+        "source_fasta_id": identifier,
+        "source_peptide": raw,
+        "peptide": peptide,
+        "peptide_start": start,
+        "peptide_end": end,
+        "link_position": position,
+        "protein_position": start + position - 1,
+        "kind": kind,
+        "status": "valid",
+        "reason": "",
+    }
+
+
+def read_merox_csms(psm_path, fasta_path, *, dataset_accession):
+    """Audit legacy 27-column MeroX native results without selecting crosslinks.
+
+    Terminal positions are typed residue anchors. Native localization strings,
+    confidence values and source fields remain unmodified in the audit.
+    """
+    from importlib.metadata import version
+
+    try:
+        from pyXLMS import parser
+        from pyXLMS.parser._parser_xldbse_merox import MEROX_COLNAMES
+    except ImportError as error:
+        raise RuntimeError("Reading MeroX requires pyXLMS==2.0.7") from error
+
+    if (
+        not isinstance(dataset_accession, str)
+        or re.fullmatch(r"PXD\d{6,}", dataset_accession) is None
+    ):
+        raise ValueError("A ProteomeXchange PXD accession is required")
+
+    columns = list(MEROX_COLNAMES)
+    if (
+        len(columns) < 27
+        or columns[14] != "Scan number"
+        or columns[23] != "Spectrum UUID"
+    ):
+        raise RuntimeError("Unsupported pyXLMS MeroX column layout")
+
+    psm_path, fasta_path = Path(psm_path), Path(fasta_path)
+    raw = psm_path.read_bytes()
+    digest = hashlib.sha256(raw).hexdigest()
+    proteins = read_search_fasta(fasta_path)
+    records, prepared, spectra, settings = [], {}, {}, {}
+
+    marker = "__claudio_merox_source_id"
+    stream = io.StringIO()
+    writer = csv.DictWriter(
+        stream, fieldnames=columns + [marker], delimiter=";"
+    )
+    writer.writeheader()
+
+    wanted_settings = {
+        b"NAME", b"SITE1", b"SITE2", b"FDRCUTOFF", b"APPLYFDR",
+        b"PERFORMDECOY", b"DECOYTYPE",
+    }
+
+    with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+        members = Counter(archive.namelist())
+        if any(
+            members[name] != 1
+            for name in ("Result.csv", "properties.mxf")
+        ):
+            raise ValueError(
+                "MeroX must contain one Result.csv and one properties.mxf"
+            )
+
+        properties = archive.read("properties.mxf")
+        for line in properties.splitlines():
+            key, separator, value = line.partition(b"=")
+            if separator and key in wanted_settings:
+                name = key.decode("ascii")
+                if name in settings:
+                    raise ValueError("Repeated native MeroX setting: " + name)
+                settings[name] = value.decode(
+                    "ascii", errors="backslashreplace"
+                )
+
+        reader = csv.reader(
+            io.StringIO(archive.read("Result.csv").decode("utf-8-sig")),
+            delimiter=";",
+        )
+        previous_line = 0
+
+        for number, values in enumerate(reader, 1):
+            line_start, line_end = previous_line + 1, reader.line_num
+            previous_line = line_end
+            if not any(value.strip() for value in values):
+                continue
+
+            fields = (
+                dict(zip(columns[:27], values))
+                if len(values) == 27 else {}
+            )
+            record = {
+                "source_record_id": (
+                    f"{dataset_accession}:{digest}:{number:06d}"
+                ),
+                "source_record_number": number,
+                "source_line_start": line_start,
+                "source_line_end": line_end,
+                "source_values": values,
+                "source_fields": fields,
+                "endpoints": {},
+                "spectrum": None,
+                "decoy_status": "unknown",
+                "decoy_reason": "native_decoy_policy_not_reviewed",
+                "fdr": {
+                    level: _fdr_value(None) for level in FDR_COLUMNS
+                },
+                "record_status": "not_evaluable",
+                "record_reason": "merox_assessment_policies_pending",
+            }
+            records.append(record)
+
+            if len(values) != 27:
+                record["record_reason"] = "unsupported_merox_row_width"
+                continue
+
+            record["native_local_fdr"] = _fdr_value(
+                fields["local False discovery rate"]
+            )
+            view = fields.copy()
+
+            try:
+                for site in ("a", "b"):
+                    record["endpoints"][site] = _merox_endpoint(
+                        view, site, proteins
+                    )
+
+                scan = _positive_integer(fields["Scan number"])
+                uuid = fields["Spectrum UUID"]
+                if re.fullmatch(r"[A-Za-z0-9_-]+", uuid) is None:
+                    raise ValueError("Invalid spectrum UUID")
+
+                member = f"spectra/{uuid}.txt"
+                if members[member] != 1:
+                    raise ValueError("Missing or repeated embedded spectrum")
+
+                if member not in spectra:
+                    body = archive.read(member)
+                    spectra[member] = (
+                        int(body.splitlines()[0]),
+                        hashlib.sha256(body).hexdigest(),
+                    )
+
+                embedded_scan, member_hash = spectra[member]
+                if embedded_scan != scan:
+                    raise ValueError(
+                        "Embedded spectrum scan differs from its source row"
+                    )
+            except (
+                ValueError, IndexError, KeyError, zipfile.BadZipFile
+            ) as error:
+                record.update(
+                    record_reason="merox_source_unresolved",
+                    source_error=str(error),
+                )
+                continue
+
+            reference = f"merox-embedded:sha256:{digest}!/{member}"
+            record["spectrum"] = {
+                "uuid": uuid,
+                "scan_number": scan,
+                "original_file": None,
+                "reference_kind": "merox_embedded_member",
+                "reference": reference,
+                "member": member,
+                "member_sha256": member_hash,
+            }
+
+            view.update({
+                "Scan number": f"{scan}~{reference}",
+                marker: record["source_record_id"],
+            })
+            writer.writerow(view)
+            prepared[record["source_record_id"]] = record
+
+    parser_info = {
+        "name": "pyXLMS",
+        "version": version("pyXLMS"),
+        "entrypoint": "read_merox",
+        "format_variant": "legacy_27_column_native",
+        "parsed_records": 0,
+        "modification_masses_assessed": False,
+    }
+
+    if prepared and not settings.get("NAME"):
+        for record in prepared.values():
+            record["record_reason"] = "merox_crosslinker_not_declared"
+    elif prepared:
+        try:
+            result = parser.read_merox(
+                io.BytesIO(stream.getvalue().encode("utf-8")),
+                crosslinker=settings["NAME"],
+                parse_modifications=False,
+                sep=";",
+            )
+            by_source = {}
+            for csm in result["crosslink-spectrum-matches"] or []:
+                source = (csm["additional_information"] or {}).get(
+                    "source", {}
+                )
+                source_id = source.get(marker)
+                if source_id not in prepared or source_id in by_source:
+                    raise ValueError(
+                        "Unknown or repeated MeroX parser source ID"
+                    )
+                by_source[source_id] = csm
+
+            if set(by_source) != set(prepared):
+                raise ValueError("MeroX parser omitted source records")
+
+            for source_id, record in prepared.items():
+                csm = by_source[source_id]
+                expected = [
+                    (
+                        end["peptide"],
+                        end["link_position"],
+                        (end["source_fasta_id"],),
+                        (end["protein_position"],),
+                        (end["peptide_start"],),
+                    )
+                    for end in (
+                        record["endpoints"]["a"],
+                        record["endpoints"]["b"],
+                    )
+                ]
+                actual = [
+                    (
+                        csm[f"{side}_peptide"],
+                        csm[f"{side}_peptide_crosslink_position"],
+                        tuple(csm[f"{side}_proteins"] or []),
+                        tuple(
+                            csm[f"{side}_proteins_crosslink_positions"] or []
+                        ),
+                        tuple(
+                            csm[f"{side}_proteins_peptide_positions"] or []
+                        ),
+                    )
+                    for side in ("alpha", "beta")
+                ]
+                spectrum = record["spectrum"]
+                if (
+                    (actual != expected and actual != expected[::-1])
+                    or csm["scan_nr"] != spectrum["scan_number"]
+                    or csm["spectrum_file"] != spectrum["reference"]
+                ):
+                    raise ValueError(
+                        "MeroX parser changed endpoints or spectrum identity"
+                    )
+
+                record["parser_orientation"] = (
+                    "same" if actual == expected else "swapped"
+                )
+
+            parser_info["parsed_records"] = len(by_source)
+        except (
+            ValueError, TypeError, KeyError, RuntimeError,
+            IndexError, AttributeError, OverflowError,
+        ) as error:
+            for record in prepared.values():
+                record.pop("parser_orientation", None)
+                record.update(
+                    record_reason="pyxlms_parse_failed",
+                    parser_error=f"{type(error).__name__}: {error}",
+                )
+
+    return {
+        "format": "merox_csm",
+        "format_version": 1,
+        "source_columns": columns[:27],
+        "records": records,
+        "proteins": proteins,
+        "parser": parser_info,
+        "native_settings": settings,
+        "scientific_review": "pending",
+        "provenance": {
+            "dataset_accession": dataset_accession,
+            "psm_path": str(psm_path.resolve()),
+            "psm_sha256": digest,
+            "fasta_path": str(fasta_path.resolve()),
+            "fasta_sha256": next(
+                iter(proteins.values())
+            )["fasta_sha256"],
+            "native_properties_sha256": hashlib.sha256(
+                properties
+            ).hexdigest(),
+        },
+    }
