@@ -1047,3 +1047,168 @@ END
         self.assertEqual(reader(reversed_fields), "dead_end")
 if __name__ == "__main__":
     unittest.main()
+import csv
+import hashlib
+import io
+import json
+import unittest
+import zipfile
+from collections import Counter
+from pathlib import Path
+
+from claudio.dataset_catalog import xifdr as merox_module
+
+
+class TestMeroXActinNative33(unittest.TestCase):
+    def setUp(self):
+        self.fixture = (
+            Path(__file__).resolve().parents[1]
+            / "fixtures" / "merox_actin_d1d2"
+        )
+        manifest = json.loads(
+            (self.fixture / "manifest.json").read_text(encoding="utf-8")
+        )
+        for name, metadata in manifest["files"].items():
+            raw = (self.fixture / name).read_bytes()
+            self.assertEqual(
+                hashlib.sha256(raw).hexdigest(), metadata["sha256"]
+            )
+
+    def read_case(self, filename, accession):
+        bundle = merox_module.read_merox_csms(
+            self.fixture / filename,
+            self.fixture / "search.fasta",
+            dataset_accession=accession,
+        )
+        with zipfile.ZipFile(self.fixture / filename) as archive:
+            rows = [
+                row for row in csv.reader(
+                    io.StringIO(
+                        archive.read("Result.csv").decode("utf-8-sig")
+                    ),
+                    delimiter=";",
+                )
+                if any(value.strip() for value in row)
+            ]
+            self.assertEqual(len(bundle["records"]), len(rows))
+            for record, raw in zip(bundle["records"], rows):
+                self.assertEqual(record["source_values"], raw)
+                self.assertEqual(
+                    record["source_fields"],
+                    dict(zip(bundle["source_columns"], raw)),
+                )
+                spectrum = record["spectrum"]
+                self.assertIsNotNone(spectrum)
+                self.assertEqual(spectrum["source_identifier"], raw[14])
+                self.assertEqual(spectrum["uuid"], raw[23])
+                self.assertEqual(
+                    spectrum["scan_number"], int(raw[14].split("~", 1)[0])
+                )
+                self.assertEqual(
+                    spectrum["source_file_label"], raw[14].split("~", 1)[1]
+                )
+                self.assertIsNone(spectrum["original_file"])
+                self.assertEqual(spectrum["member"], f"spectra/{raw[23]}.txt")
+                self.assertEqual(
+                    spectrum["member_sha256"],
+                    hashlib.sha256(
+                        archive.read(spectrum["member"])
+                    ).hexdigest(),
+                )
+                self.assertNotIn("source_error", record)
+                self.assertNotIn("parser_error", record)
+
+        self.assertEqual(bundle["scientific_review"], "pending")
+        self.assertFalse(bundle["parser"]["modification_masses_assessed"])
+        return bundle
+
+    def test_scan_label_preserves_raw_identity_without_inventing_a_filename(self):
+        label = "20210903_E1_LC6col284_spE39_AS_XLMS_SantiagoS_sample15"
+        identifier = "10366~" + label
+        try:
+            identity = merox_module._merox_spectrum_identity(
+                identifier, identifier
+            )
+        except ValueError as error:
+            self.fail(f"Native scan~label identity is unsupported: {error}")
+
+        self.assertEqual(identity["scan_number"], 10366)
+        self.assertEqual(identity["source_file_label"], label)
+        self.assertEqual(identity["source_identifier"], identifier)
+        self.assertIsNone(identity["original_file"])
+        self.assertIsNone(identity["native_id"])
+
+    def test_scan_label_rejects_mismatched_or_malformed_identifiers(self):
+        cases = [
+            ("10366~run", "10367~run"),
+            ("0~run", "0~run"),
+            ("10366~", "10366~"),
+            ("10366~ ", "10366~ "),
+            ("-1~run", "-1~run"),
+        ]
+        for source, embedded in cases:
+            with self.subTest(source=source, embedded=embedded):
+                with self.assertRaises(ValueError):
+                    merox_module._merox_spectrum_identity(source, embedded)
+
+    def test_existing_spectrum_identity_formats_remain_supported(self):
+        numeric = merox_module._merox_spectrum_identity("10166", "10166")
+        self.assertEqual(numeric["scan_number"], 10166)
+        self.assertIsNone(numeric["original_file"])
+
+        identifier = 'File:"run.d",NativeID:"scan=1093,Cmpd 1111"'
+        native = merox_module._merox_spectrum_identity(
+            identifier, identifier
+        )
+        self.assertEqual(native["scan_number"], 1093)
+        self.assertEqual(native["original_file"], "run.d")
+        self.assertEqual(native["native_id"], "scan=1093,Cmpd 1111")
+
+    def test_sample15_parses_pairs_and_retains_dead_ends(self):
+        bundle = merox_module.read_merox_csms(
+            self.fixture / "sample15.zhrm",
+            self.fixture / "search.fasta",
+            dataset_accession="PXD044630",
+        )
+        self.assertEqual(bundle["parser"]["parsed_records"], 15)
+        bundle = self.read_case("sample15.zhrm", "PXD044630")
+        self.assertEqual(
+            Counter(r["record_kind"] for r in bundle["records"]),
+            {"paired_crosslink_candidate": 15, "dead_end": 8},
+        )
+        for record in bundle["records"]:
+            self.assertEqual(record["decoy_status"], "unknown")
+            if record["record_kind"] == "dead_end":
+                self.assertEqual(len(record["endpoints"]), 1)
+                self.assertEqual(
+                    record["record_reason"], "dead_end_not_pairwise_crosslink"
+                )
+
+    def test_sample16_retains_decoys_without_target_fasta_promotion(self):
+        bundle = merox_module.read_merox_csms(
+            self.fixture / "sample16.zhrm",
+            self.fixture / "search.fasta",
+            dataset_accession="PXD053481",
+        )
+        self.assertEqual(bundle["parser"]["parsed_records"], 1)
+        bundle = self.read_case("sample16.zhrm", "PXD053481")
+        self.assertEqual(
+            Counter(r["record_kind"] for r in bundle["records"]),
+            {"paired_crosslink_candidate": 4, "dead_end": 2},
+        )
+        decoys = [
+            record for record in bundle["records"]
+            if record["source_fields"]["Protein 2"].startswith("DEC_>")
+        ]
+        self.assertEqual(len(decoys), 3)
+        for record in decoys:
+            self.assertEqual(record["decoy_status"], "target_decoy")
+            self.assertEqual(record["record_reason"], "decoy_record")
+            self.assertNotIn("parser_orientation", record)
+            self.assertIsNone(
+                record["endpoints"].get("b", {}).get("source_fasta_id")
+            )
+
+        for record in bundle["records"]:
+            if record not in decoys:
+                self.assertEqual(record["decoy_status"], "unknown")

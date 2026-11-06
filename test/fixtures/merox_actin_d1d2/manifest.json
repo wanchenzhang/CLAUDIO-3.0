@@ -1,0 +1,29 @@
+{
+  "kind": "merox_native33_scan_label_fixture",
+  "source_run": "/viper/u1/wazha/xlms_assessment/merox_validation/review_pair_otxah_ta",
+  "source_manifest_sha256": "85106801457c3b60a3784464da31a43646e3d323c86ffc23eba3c90b5e5f417f",
+  "files": {
+    "sample15.zhrm": {
+      "dataset_accession": "PXD044630",
+      "bytes": 83419,
+      "sha256": "ddd967b62d749e6368cf4ef108e213347cfd6803281ad54b3e13ba351c48c544",
+      "source_records": 23
+    },
+    "sample16.zhrm": {
+      "dataset_accession": "PXD053481",
+      "bytes": 25027,
+      "sha256": "5abf35b0512d0bb6cc7efd6f4749399655f685591c9433aab547c65c1eb840c0",
+      "source_records": 6
+    },
+    "search.fasta": {
+      "dataset_accessions": [
+        "PXD044630",
+        "PXD053481"
+      ],
+      "bytes": 966,
+      "sha256": "1d1d7f49aaebda9cf85259e30aebcc799345c77bf2aee6903ba1ec4a2b72994f"
+    }
+  },
+  "modification_masses_assessed": false,
+  "scientific_acceptance_performed": false
+}

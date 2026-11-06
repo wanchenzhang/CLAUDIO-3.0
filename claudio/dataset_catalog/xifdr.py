@@ -2785,6 +2785,21 @@ def _merox_spectrum_identity(source_identifier, embedded_identifier):
             "Embedded spectrum identifier differs from its source row"
         )
 
+    label_match = re.fullmatch(
+        r"([0-9]+)~([^\r\n]+)", source_identifier
+    )
+    if label_match is not None:
+        label = label_match[2]
+        if not label.strip():
+            raise ValueError("Native MeroX source label is empty")
+        return {
+            "scan_number": _positive_integer(label_match[1]),
+            "original_file": None,
+            "native_id": None,
+            "source_identifier": source_identifier,
+            "source_file_label": label,
+        }
+
     match = re.fullmatch(
         r'File:"([^"]+)",NativeID:"(.+)"',
         source_identifier,
@@ -2918,6 +2933,28 @@ def read_merox_csms(psm_path, fasta_path, *, dataset_accession):
                 record["record_reason"] = "merox_record_kind_unresolved"
                 continue
             view = fields.copy()
+            native_decoy_sides = []
+            if record["record_kind"] == "paired_crosslink_candidate":
+                native_decoy_sides = [
+                    site
+                    for site, key in (
+                        ("a", "Protein 1"),
+                        ("b", "Protein 2"),
+                    )
+                    if fields[key].startswith("DEC_>")
+                ]
+
+            if native_decoy_sides:
+                record.update(
+                    decoy_status=(
+                        "decoy_decoy"
+                        if len(native_decoy_sides) == 2
+                        else "target_decoy"
+                    ),
+                    decoy_reason="native_decoy_annotation",
+                    decoy_evidence="native_merox_DEC_prefix",
+                    native_decoy_sites=native_decoy_sides,
+                )
 
             try:
                 if record["record_kind"] == "dead_end":
@@ -2929,10 +2966,11 @@ def read_merox_csms(psm_path, fasta_path, *, dataset_accession):
                 else:
                     peptide_sites = ("a", "b")
 
-                for site in peptide_sites:
-                    record["endpoints"][site] = _merox_endpoint(
-                        view, site, proteins
-                    )
+                if not native_decoy_sides:
+                    for site in peptide_sites:
+                        record["endpoints"][site] = _merox_endpoint(
+                            view, site, proteins
+                        )
 
                 uuid = fields["Spectrum UUID"]
                 if re.fullmatch(r"[A-Za-z0-9_-]+", uuid) is None:
@@ -2975,6 +3013,9 @@ def read_merox_csms(psm_path, fasta_path, *, dataset_accession):
                 "member": member,
                 "member_sha256": member_hash,
             }
+            if native_decoy_sides:
+                record["record_reason"] = "decoy_record"
+                continue
             if record["record_kind"] == "dead_end":
                 record["record_reason"] = "dead_end_not_pairwise_crosslink"
                 continue
