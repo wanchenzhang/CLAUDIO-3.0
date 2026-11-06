@@ -1473,19 +1473,106 @@ def prepare_af_input(bundle, mappings, *, fdr_level=None, fdr_cutoff=None):
         rows.append(_input_row(bundle, record, selected, policy))
     return {"rows": rows, "audit": audit, "fdr_policy": policy, "provenance": deepcopy(bundle["provenance"])}
 
-
-def _reference_evidence(
-    profile, report, source, *, require_declared_accession=True
-):
-    """Verify the reference sequence, organism and optional declared accession."""
-    declared = source.get("uniprot_accession")
-    if (
-        require_declared_accession and not declared
-        or declared and profile["accession"] != declared
-    ):
+def _verify_reference_accession_review(profile, report, source):
+    """Verify a source-bound review of a different reference accession."""
+    review = report.get("reference_accession_review")
+    if not isinstance(review, dict):
         raise ValueError(
             "Reference projection requires the declared source UniProt accession"
         )
+
+    source_sequence = source.get("sequence")
+    reference_sequence = profile.get("reference_sequence")
+    if any(
+        not isinstance(sequence, str)
+        or re.fullmatch(r"[A-Z]+", sequence) is None
+        for sequence in (source_sequence, reference_sequence)
+    ):
+        raise ValueError("Reference accession review requires valid sequences")
+
+    source_digest = hashlib.sha256(
+        source_sequence.encode("ascii")
+    ).hexdigest()
+    reference_digest = hashlib.sha256(
+        reference_sequence.encode("ascii")
+    ).hexdigest()
+
+    if (
+        profile.get("source_fasta_id") != source.get("id")
+        or profile.get("source_sequence") != source_sequence
+        or profile.get("reference_sequence_sha256") != reference_digest
+    ):
+        raise ValueError("Reference accession review profile differs from its source")
+
+    expected = {
+        "schema_version": 1,
+        "review_status": "reviewed",
+        "source_fasta_id": source["id"],
+        "source_fasta_sha256": source.get("fasta_sha256"),
+        "source_sequence_sha256": source_digest,
+        "declared_accession": source.get("uniprot_accession"),
+        "reference_accession": profile["accession"],
+        "reference_sequence_sha256": reference_digest,
+        "taxon_id": profile["taxon_id"],
+    }
+    if (
+        type(review.get("schema_version")) is not int
+        or any(review.get(key) != value for key, value in expected.items())
+        or not isinstance(expected["source_fasta_sha256"], str)
+        or re.fullmatch(
+            r"[0-9a-f]{64}", expected["source_fasta_sha256"]
+        ) is None
+        or not isinstance(review.get("reason"), str)
+        or not review["reason"].strip()
+    ):
+        raise ValueError(
+            "Reference accession review does not match the source and reference"
+        )
+
+    occurrences = sum(
+        1 for _ in re.finditer(
+            "(?=" + re.escape(reference_sequence) + ")", source_sequence
+        )
+    )
+    if occurrences != 1:
+        raise ValueError(
+            "Reviewed accession changes require one complete reference "
+            "occurrence in the source sequence"
+        )
+
+    receipts = review.get("sources")
+    if not isinstance(receipts, list) or not receipts:
+        raise ValueError("Reference accession review requires evidence sources")
+
+    for receipt in receipts:
+        if (
+            not isinstance(receipt, dict)
+            or receipt.get("kind") != "reference_accession_review"
+            or not isinstance(receipt.get("absolute_path"), str)
+            or not receipt["absolute_path"]
+            or not Path(receipt["absolute_path"]).is_absolute()
+            or not isinstance(receipt.get("sha256"), str)
+            or re.fullmatch(r"[0-9a-f]{64}", receipt["sha256"]) is None
+        ):
+            raise ValueError("Invalid reference accession review evidence")
+
+        raw = Path(receipt["absolute_path"]).read_bytes()
+        if hashlib.sha256(raw).hexdigest() != receipt["sha256"]:
+            raise ValueError("Reference accession review evidence checksum changed")
+
+    return review
+def _reference_evidence(
+    profile, report, source, *, require_declared_accession=True
+):
+    """Verify reference evidence and any explicitly reviewed accession change."""
+    declared = source.get("uniprot_accession")
+    if require_declared_accession and not declared:
+        raise ValueError(
+            "Reference projection requires the declared source UniProt accession"
+        )
+    if declared and profile["accession"] != declared:
+        _verify_reference_accession_review(profile, report, source)
+
     taxon = profile["taxon_id"]
     if (type(taxon) is not int or taxon <= 0 or report.get("taxon_id") != taxon
             or source.get("taxon_id") is not None and source["taxon_id"] != taxon):
@@ -1584,10 +1671,45 @@ def _prepare_reference_input(bundle, mappings, prepared, projection):
         entry.update(input_status="ready", input_reasons=[], reference_endpoints=reference_endpoints,
                      projection_candidate_id=pair["projection_candidate_id"], identity_scope=pair["identity_scope"])
         rows.append(row)
-    prepared.update(rows=rows, reference_projection=deepcopy(projection), reference_projection_policy={
-        "scope": "declared_source_accession", "intact_peptide_required": True,
-        "unique_coordinates_required": True, "identity_acceptance_performed": False,
-    })
+    projection_policy = {
+        "scope": "declared_source_accession",
+        "intact_peptide_required": True,
+        "unique_coordinates_required": True,
+        "identity_acceptance_performed": False,
+    }
+    accession_changes = []
+    for profile in profiles.values():
+        identifier = profile["source_fasta_id"]
+        source = bundle["proteins"][identifier]
+        declared = source.get("uniprot_accession")
+        if declared and declared != profile["accession"]:
+            review = reports[identifier]["reference_accession_review"]
+            accession_changes.append({
+                "source_fasta_id": identifier,
+                "profile_id": profile["profile_id"],
+                "declared_accession": declared,
+                "reference_accession": profile["accession"],
+                "source_fasta_sha256": review["source_fasta_sha256"],
+                "source_sequence_sha256": review["source_sequence_sha256"],
+                "reference_sequence_sha256": review[
+                    "reference_sequence_sha256"
+                ],
+                "reason": review["reason"],
+                "review_evidence_sha256": [
+                    receipt["sha256"] for receipt in review["sources"]
+                ],
+            })
+    if accession_changes:
+        projection_policy.update({
+            "scope": "declared_or_reviewed_source_accession",
+            "reviewed_accession_changes": accession_changes,
+        })
+
+    prepared.update(
+        rows=rows,
+        reference_projection=deepcopy(projection),
+        reference_projection_policy=projection_policy,
+    )
     return prepared
 
 

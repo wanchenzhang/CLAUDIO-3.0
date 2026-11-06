@@ -2651,3 +2651,161 @@ class TestReferenceProjectionExport(unittest.TestCase):
         self.assertNotEqual(result.exit_code, 0)
         self.assertIn("checksum", result.output)
         self.assertFalse(self.output.exists())
+class TestReviewedReferenceAccession(unittest.TestCase):
+    def setUp(self):
+        import hashlib
+        import json
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+
+        self.json = json
+        self.sha256 = lambda body: hashlib.sha256(body).hexdigest()
+        self.temporary = TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.fasta_path = self.root / "search.fasta"
+        self.reference_path = self.root / "reference.json"
+        self.review_path = self.root / "review.json"
+
+        self.source = {
+            "id": "sp|Q6P5F9|construct",
+            "uniprot_accession": "Q6P5F9",
+            "taxon_id": 9606,
+        }
+        self.profile = {
+            "source_fasta_id": "sp|Q6P5F9|construct",
+            "accession": "O14980",
+            "taxon_id": 9606,
+            "reference_sequence": "MAKTA",
+            "reference_sequence_sha256": self.sha256(b"MAKTA"),
+        }
+        self.replace_source_sequence("GGMAKTA")
+
+        reference_body = json.dumps({
+            "primaryAccession": "O14980",
+            "organism": {"taxonId": 9606},
+            "sequence": {"value": "MAKTA"},
+        }).encode("utf-8")
+        self.reference_path.write_bytes(reference_body)
+        self.report = {
+            "taxon_id": 9606,
+            "identity_accepted": False,
+            "sources": [{
+                "kind": "uniprot_api",
+                "absolute_path": str(self.reference_path),
+                "path": "reference.json",
+                "sha256": self.sha256(reference_body),
+                "status": 200,
+                "response_url": (
+                    "https://rest.uniprot.org/uniprotkb/O14980.json"
+                ),
+            }],
+        }
+        review_body = json.dumps({
+            "kind": "reference_accession_review",
+            "source_fasta_id": "sp|Q6P5F9|construct",
+            "declared_accession": "Q6P5F9",
+            "reference_accession": "O14980",
+            "reason": "Curated reference hypothesis for a tagged construct.",
+        }).encode("utf-8")
+        self.review_path.write_bytes(review_body)
+        self.review_digest = self.sha256(review_body)
+
+    def replace_source_sequence(self, sequence):
+        self.source["sequence"] = sequence
+        self.profile["source_sequence"] = sequence
+        body = (
+            f">{self.source['id']}\n{sequence}\n"
+        ).encode("utf-8")
+        self.fasta_path.write_bytes(body)
+        self.source["fasta_path"] = str(self.fasta_path)
+        self.source["fasta_sha256"] = self.sha256(body)
+
+    def reviewed_report(self):
+        report = self.json.loads(self.json.dumps(self.report))
+        report["reference_accession_review"] = {
+            "schema_version": 1,
+            "review_status": "reviewed",
+            "source_fasta_id": self.source["id"],
+            "source_fasta_sha256": self.source["fasta_sha256"],
+            "source_sequence_sha256": self.sha256(
+                self.source["sequence"].encode("ascii")
+            ),
+            "declared_accession": "Q6P5F9",
+            "reference_accession": "O14980",
+            "reference_sequence_sha256": self.profile[
+                "reference_sequence_sha256"
+            ],
+            "taxon_id": 9606,
+            "reason": "Reviewed reference hypothesis for a tagged construct.",
+            "sources": [{
+                "kind": "reference_accession_review",
+                "path": "review.json",
+                "absolute_path": str(self.review_path),
+                "sha256": self.review_digest,
+            }],
+        }
+        return report
+
+    def validate(self, report, **options):
+        from claudio.dataset_catalog.xifdr import _reference_evidence
+
+        return _reference_evidence(
+            self.profile, report, self.source, **options
+        )
+
+    def test_accession_difference_requires_explicit_review(self):
+        for required in (True, False):
+            with self.subTest(require_declared_accession=required):
+                with self.assertRaises(ValueError):
+                    self.validate(
+                        self.report,
+                        require_declared_accession=required,
+                    )
+
+    def test_review_allows_contained_reference_without_changing_identity(self):
+        report = self.reviewed_report()
+        self.validate(report)
+        self.assertEqual(self.source["uniprot_accession"], "Q6P5F9")
+        self.assertEqual(self.source["sequence"], "GGMAKTA")
+        self.assertEqual(self.profile["accession"], "O14980")
+        self.assertIs(report["identity_accepted"], False)
+
+    def test_review_is_bound_to_the_source_and_reference(self):
+        changes = {
+            "review_status": "pending",
+            "source_fasta_id": "another_construct",
+            "source_fasta_sha256": "0" * 64,
+            "source_sequence_sha256": "0" * 64,
+            "declared_accession": "P02769",
+            "reference_accession": "P02768",
+            "reference_sequence_sha256": "0" * 64,
+            "taxon_id": 10090,
+        }
+        for field, value in changes.items():
+            with self.subTest(field=field):
+                report = self.reviewed_report()
+                report["reference_accession_review"][field] = value
+                with self.assertRaises(ValueError):
+                    self.validate(report)
+
+    def test_changed_review_document_is_rejected(self):
+        report = self.reviewed_report()
+        with self.review_path.open("ab") as handle:
+            handle.write(b"\n")
+        with self.assertRaisesRegex(ValueError, "(?i)checksum"):
+            self.validate(report)
+
+    def test_review_does_not_bypass_uniprot_evidence_checks(self):
+        report = self.reviewed_report()
+        with self.reference_path.open("ab") as handle:
+            handle.write(b"\n")
+        with self.assertRaisesRegex(ValueError, "(?i)checksum"):
+            self.validate(report)
+
+    def test_review_requires_one_complete_reference_occurrence(self):
+        for sequence in ("GGMAKSA", "GGMAKTAMAKTA"):
+            with self.subTest(sequence=sequence):
+                self.replace_source_sequence(sequence)
+                with self.assertRaises(ValueError):
+                    self.validate(self.reviewed_report())
