@@ -3048,3 +3048,529 @@ class TestPLinkExcelImport(unittest.TestCase):
         )
         self.assertIs(manifest["input_exported"], False)
         self.assertIs(manifest["assessment_performed"], False)
+import copy
+import csv
+import inspect
+import json
+import tempfile
+import unittest
+from pathlib import Path
+
+from claudio.dataset_catalog import xifdr as xifdr_module
+
+
+class TestPLinkUnverifiedCandidates(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.fasta = self.root / "search.fasta"
+        self.fasta.write_text(
+            ">protein_a\nAKAAK\n"
+            ">protein_b\nAAKAA\n"
+            ">REV_protein_a\nAKAAK\n",
+            encoding="utf-8",
+        )
+        self.results = self.root / "spectra.csv"
+        self.columns = [
+            "Title", "Charge", "Precursor_Mass", "Peptide",
+            "Peptide_Type", "Linker", "Modifications",
+            "Evalue", "Score", "Proteins",
+        ]
+        valid = {
+            "Title": "run.100.100.3",
+            "Charge": "3",
+            "Precursor_Mass": "2081161238",
+            "Peptide": "AKAAK(2)-AAKAA(3)",
+            "Peptide_Type": "Cross-Linked",
+            "Linker": "DSS",
+            "Modifications": "null",
+            "Evalue": "0.4794829",
+            "Score": "44336.82",
+            "Proteins": "protein_a(2)-protein_b(3)/",
+        }
+        invalid = dict(
+            valid,
+            Title="run.101.101.3",
+            Proteins="protein_a(2)-protein_b(2)/",
+        )
+        self.source_rows = [valid, dict(valid), invalid]
+        self.write_source()
+        self.mappings = {
+            identifier: {
+                "status": "mapped",
+                "accession": accession,
+                "sequence": sequence,
+                "taxon_id": 9913,
+                "sources": [],
+            }
+            for identifier, accession, sequence in [
+                ("protein_a", "P02769", "AKAAK"),
+                ("protein_b", "P02768", "AAKAA"),
+                ("REV_protein_a", "P02769", "AKAAK"),
+            ]
+        }
+
+    def write_source(self):
+        with self.results.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(handle, fieldnames=self.columns)
+            writer.writeheader()
+            writer.writerows(self.source_rows)
+
+    def read_bundle(self, **options):
+        return xifdr_module.read_plink_psms(
+            self.results, self.fasta,
+            dataset_accession="PXD000001",
+            **options,
+        )
+
+    def export_candidates(self, bundle, name="candidate_input", **options):
+        writer = xifdr_module.write_claudio_input
+        self.assertIn(
+            "export_unverified_candidates",
+            inspect.signature(writer).parameters,
+            "Missing explicit unverified candidate export mode",
+        )
+        return Path(writer(
+            bundle, self.mappings, self.root / name,
+            allowed_crosslinkers={"DSS"},
+            allowed_residues={"K"},
+            export_unverified_candidates=True,
+            **options,
+        ))
+
+    def load_output(self, destination):
+        with (destination / "claudio_input.csv").open(
+            newline="", encoding="utf-8"
+        ) as handle:
+            reader = csv.DictReader(handle)
+            columns = reader.fieldnames
+            rows = list(reader)
+        audit = json.loads(
+            (destination / "psm_audit.json").read_text(encoding="utf-8")
+        )
+        manifest = json.loads(
+            (destination / "manifest.json").read_text(encoding="utf-8")
+        )
+        return columns, rows, audit, manifest
+
+    def test_default_export_still_requires_a_confidence_policy(self):
+        destination = self.root / "strict_input"
+        with self.assertRaises(ValueError):
+            xifdr_module.write_claudio_input(
+                self.read_bundle(), self.mappings, destination,
+                allowed_crosslinkers={"DSS"},
+                allowed_residues={"K"},
+            )
+        self.assertFalse(destination.exists())
+
+    def test_candidate_export_preserves_uncertainty_duplicates_and_source_rows(self):
+        bundle = self.read_bundle()
+        original = copy.deepcopy(bundle)
+        destination = self.export_candidates(bundle)
+        columns, rows, audit, manifest = self.load_output(destination)
+
+        self.assertEqual(columns[:8], [
+            "peptide1", "peptide2", "position1", "position2",
+            "k_pos1", "k_pos2", "entry1", "entry2",
+        ])
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(len(audit), 3)
+        self.assertEqual(
+            [row["xlms_source_record_id"] for row in rows],
+            [record["source_record_id"] for record in bundle["records"][:2]],
+        )
+        self.assertNotEqual(
+            rows[0]["xlms_source_record_id"],
+            rows[1]["xlms_source_record_id"],
+        )
+        for row in rows:
+            self.assertEqual(row["input_scope"], "unverified_candidate")
+            self.assertEqual(row["fdr_verification_status"], "unverified")
+            self.assertEqual(row["source_decoy_status"], "unknown")
+            for field in (
+                "selected_fdr_level", "selected_fdr_value",
+                "selected_fdr_cutoff",
+            ):
+                self.assertEqual(row[field], "")
+            raw = json.loads(row["source_fields_json"])
+            self.assertEqual(raw["Score"], "44336.82")
+            self.assertEqual(raw["Precursor_Mass"], "2081161238")
+
+        for original_record, exported_record in zip(bundle["records"], audit):
+            for field in (
+                "source_fields", "source_values", "record_status",
+                "record_reason", "decoy_status", "fdr",
+            ):
+                self.assertEqual(
+                    exported_record[field], original_record[field]
+                )
+            self.assertNotEqual(
+                exported_record.get("source_filter_status"),
+                "reported_accepted",
+            )
+
+        self.assertEqual(
+            [record["input_status"] for record in audit],
+            ["candidate_ready", "candidate_ready", "not_evaluable"],
+        )
+        policy = manifest["fdr_policy"]
+        self.assertEqual(policy["kind"], "unverified_candidates")
+        self.assertIsNone(policy["level"])
+        self.assertIsNone(policy["cutoff"])
+        self.assertIs(policy["per_record_fdr_applied"], False)
+        self.assertIs(manifest["assessment_performed"], False)
+        self.assertNotIn("author_filter_policy", manifest)
+        self.assertEqual(bundle, original)
+
+    def test_known_decoys_are_excluded_even_with_exact_sequence_mappings(self):
+        self.source_rows.append(dict(
+            self.source_rows[0],
+            Title="run.102.102.3",
+            Proteins="REV_protein_a(2)-protein_b(3)/",
+        ))
+        self.write_source()
+        bundle = self.read_bundle(decoy_prefix="REV_")
+        self.assertEqual(bundle["records"][-1]["decoy_status"], "target_decoy")
+
+        destination = self.export_candidates(bundle)
+        _, rows, audit, _ = self.load_output(destination)
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(len(audit), 4)
+        self.assertEqual(audit[-1]["decoy_status"], "target_decoy")
+        self.assertEqual(audit[-1]["input_status"], "not_evaluable")
+        self.assertIn("decoy_record", audit[-1]["input_reasons"])
+
+    def test_candidate_mode_cannot_ignore_an_explicit_fdr_selection(self):
+        bundle = self.read_bundle()
+        with self.assertRaisesRegex(ValueError, "(?i)fdr"):
+            self.export_candidates(
+                bundle, fdr_level="psm", fdr_cutoff=0.05
+            )
+        self.assertFalse((self.root / "candidate_input").exists())
+
+    def test_changed_input_sources_are_rejected_before_output(self):
+        bundle = self.read_bundle()
+        for name, path in (("psm", self.results), ("fasta", self.fasta)):
+            with self.subTest(source=name):
+                original = path.read_bytes()
+                try:
+                    path.write_bytes(original + b"\n")
+                    with self.assertRaisesRegex(
+                        ValueError, "(?i)checksum|source.*changed"
+                    ):
+                        self.export_candidates(bundle, name=f"changed_{name}")
+                    self.assertFalse((self.root / f"changed_{name}").exists())
+                finally:
+                    path.write_bytes(original)
+    def project_unverified_candidates(self, bundle):
+        projector = xifdr_module.project_xifdr_candidates
+        self.assertIn(
+            "export_unverified_candidates",
+            inspect.signature(projector).parameters,
+            "Missing explicit unverified candidate projection mode",
+        )
+        return projector(
+            bundle, self.mappings, {},
+            export_unverified_candidates=True,
+        )
+
+    def test_candidate_projection_preserves_source_uncertainty(self):
+        bundle = self.read_bundle()
+        original = copy.deepcopy(bundle)
+
+        strict = xifdr_module.project_xifdr_candidates(
+            bundle, self.mappings, {}
+        )
+        self.assertEqual(
+            sum(len(record["pairs"]) for record in strict["records"]), 0
+        )
+
+        projection = self.project_unverified_candidates(bundle)
+        self.assertIs(projection["export_unverified_candidates"], True)
+        self.assertEqual(len(projection["records"]), 3)
+        self.assertEqual(
+            [len(record["pairs"]) for record in projection["records"]],
+            [1, 1, 0],
+        )
+        for record in projection["records"][:2]:
+            pair = record["pairs"][0]
+            self.assertEqual(pair["reference_position_a"], 2)
+            self.assertEqual(pair["reference_position_b"], 3)
+
+        self.assertEqual(projection["counts"]["target_records"], 0)
+        self.assertIs(projection["protein_identity_acceptance_performed"], False)
+        self.assertIs(projection["fdr_filter_applied"], False)
+        self.assertEqual(bundle, original)
+
+    def test_candidate_projection_round_trips_into_export(self):
+        bundle = self.read_bundle()
+        original = copy.deepcopy(bundle)
+        projection = self.project_unverified_candidates(bundle)
+
+        destination = self.export_candidates(
+            bundle, reference_projection=projection
+        )
+        _, rows, audit, manifest = self.load_output(destination)
+
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(len(audit), 3)
+        self.assertEqual(
+            [record["input_status"] for record in audit],
+            ["candidate_ready", "candidate_ready", "not_evaluable"],
+        )
+        for row in rows:
+            self.assertEqual(row["input_scope"], "unverified_candidate")
+            self.assertEqual(row["source_decoy_status"], "unknown")
+            self.assertEqual(row["fdr_verification_status"], "unverified")
+            self.assertEqual(row["selected_fdr_value"], "")
+            self.assertEqual(row["position1"], "2")
+            self.assertEqual(row["position2"], "3")
+
+        for record, source in zip(audit, original["records"]):
+            for field in ("record_status", "record_reason", "decoy_status", "fdr"):
+                self.assertEqual(record[field], source[field])
+
+        self.assertEqual(
+            manifest["fdr_policy"]["kind"], "unverified_candidates"
+        )
+        self.assertEqual(bundle, original)
+
+    def test_candidate_projection_rejects_known_decoys(self):
+        self.source_rows.append(dict(
+            self.source_rows[0],
+            Title="run.102.102.3",
+            Proteins="REV_protein_a(2)-protein_b(3)/",
+        ))
+        self.write_source()
+        bundle = self.read_bundle(decoy_prefix="REV_")
+        original = copy.deepcopy(bundle)
+
+        projection = self.project_unverified_candidates(bundle)
+        self.assertEqual(
+            [len(record["pairs"]) for record in projection["records"]],
+            [1, 1, 0, 0],
+        )
+        self.assertEqual(
+            projection["records"][-1]["reason"], "decoy_record"
+        )
+
+        destination = self.export_candidates(
+            bundle, reference_projection=projection
+        )
+        _, rows, audit, _ = self.load_output(destination)
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(len(audit), 4)
+        self.assertEqual(audit[-1]["decoy_status"], "target_decoy")
+        self.assertEqual(audit[-1]["input_status"], "not_evaluable")
+        self.assertEqual(bundle, original)
+
+    def test_candidate_projection_rejects_changed_coordinates(self):
+        bundle = self.read_bundle()
+        projection = self.project_unverified_candidates(bundle)
+        projection["records"][0]["pairs"][0]["reference_position_a"] += 1
+
+        with self.assertRaisesRegex(ValueError, "(?i)coordinate|recomput"):
+            self.export_candidates(
+                bundle, reference_projection=projection
+            )
+        self.assertFalse((self.root / "candidate_input").exists())
+
+    def test_candidate_projection_cannot_enter_strict_export(self):
+        self.columns.append("PSMFDR")
+        for row in self.source_rows:
+            row["PSMFDR"] = "0.01"
+        self.write_source()
+        bundle = self.read_bundle(
+            decoy_prefix="REV_",
+            fdr_columns={"psm": "PSMFDR"},
+        )
+        projection = self.project_unverified_candidates(bundle)
+
+        baseline = Path(xifdr_module.write_claudio_input(
+            bundle, self.mappings, self.root / "strict_baseline",
+            fdr_level="psm", fdr_cutoff=0.05,
+            allowed_crosslinkers={"DSS"},
+            allowed_residues={"K"},
+        ))
+        self.assertEqual(len(self.load_output(baseline)[1]), 2)
+
+        destination = self.root / "strict_with_candidate_projection"
+        with self.assertRaisesRegex(ValueError, "(?i)candidate|mode|scope"):
+            xifdr_module.write_claudio_input(
+                bundle, self.mappings, destination,
+                fdr_level="psm", fdr_cutoff=0.05,
+                allowed_crosslinkers={"DSS"},
+                allowed_residues={"K"},
+                reference_projection=projection,
+            )
+        self.assertFalse(destination.exists())
+    def candidate_cli_arguments(self, name):
+        mapping_path = self.root / "protein_mapping.json"
+        mapping_path.write_text(
+            json.dumps(self.mappings), encoding="utf-8"
+        )
+        return [
+            "standardize",
+            "--results", str(self.results),
+            "--fasta", str(self.fasta),
+            "--mapping", str(mapping_path),
+            "--dataset-accession", "PXD000001",
+            "--crosslinker", "DSS",
+            "--residue", "K",
+            "--output", str(self.root / name),
+            "--export-unverified-candidates",
+        ]
+
+    def invoke_candidate_cli(self, arguments):
+        from click.testing import CliRunner
+        from claudio.dataset_catalog.cli import main
+
+        return CliRunner().invoke(main, arguments)
+
+    def test_cli_candidate_export_matches_api_with_packaged_projection(self):
+        self.source_rows.append(dict(
+            self.source_rows[0],
+            Title="run.103.103.3",
+            Linker="DSS-D12",
+        ))
+        self.write_source()
+        bundle = self.read_bundle()
+        projection = self.project_unverified_candidates(bundle)
+
+        api = Path(xifdr_module.write_claudio_input(
+            bundle, self.mappings, self.root / "api_reference",
+            allowed_crosslinkers={"DSS", "DSS-D12"},
+            allowed_residues={"K"},
+            reference_projection=projection,
+            export_unverified_candidates=True,
+        ))
+        arguments = self.candidate_cli_arguments("cli_reference")
+        mapping_index = arguments.index("--mapping") + 1
+        arguments[mapping_index] = str(api / "protein_mapping.json")
+        arguments.extend([
+            "--reference-projection", str(api / "reference_projection.json"),
+            "--crosslinker", "DSS-D12",
+        ])
+
+        result = self.invoke_candidate_cli(arguments)
+        self.assertEqual(
+            result.exit_code, 0,
+            f"{result.output}\n{result.exception!r}",
+        )
+        destination = self.root / "cli_reference"
+        self.assertEqual(
+            (destination / "claudio_input.csv").read_bytes(),
+            (api / "claudio_input.csv").read_bytes(),
+        )
+        _, rows, audit, manifest = self.load_output(destination)
+        self.assertEqual(len(rows), 3)
+        self.assertEqual(len(audit), 4)
+        self.assertEqual(
+            [row["source_crosslinker"] for row in rows],
+            ["DSS", "DSS", "DSS-D12"],
+        )
+        for row in rows:
+            self.assertEqual(
+                json.loads(row["source_fields_json"])["Linker"],
+                row["source_crosslinker"],
+            )
+            self.assertEqual(row["fdr_verification_status"], "unverified")
+        self.assertEqual(
+            manifest["fdr_policy"]["kind"], "unverified_candidates"
+        )
+        self.assertIn("FDR verification: unverified", result.output)
+        self.assertIn(
+            "Per-record FDR filtering: not performed", result.output
+        )
+
+    def test_cli_candidate_export_excludes_known_decoys(self):
+        self.source_rows.append(dict(
+            self.source_rows[0],
+            Title="run.102.102.3",
+            Proteins="REV_protein_a(2)-protein_b(3)/",
+        ))
+        self.write_source()
+        arguments = self.candidate_cli_arguments("cli_decoys")
+        arguments.extend(["--decoy-prefix", "REV_"])
+
+        result = self.invoke_candidate_cli(arguments)
+        self.assertEqual(
+            result.exit_code, 0,
+            f"{result.output}\n{result.exception!r}",
+        )
+        _, rows, audit, _ = self.load_output(self.root / "cli_decoys")
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(len(audit), 4)
+        self.assertEqual(audit[-1]["decoy_status"], "target_decoy")
+        self.assertEqual(audit[-1]["input_status"], "not_evaluable")
+
+    def test_cli_candidate_export_rejects_conflicting_options(self):
+        evidence = self.root / "unused_evidence.txt"
+        evidence.write_text("{}", encoding="utf-8")
+        conflicts = [
+            ["--audit-only"],
+            ["--fdr-level", "psm"],
+            ["--fdr-cutoff", "0.05"],
+            ["--fdr-column", "Score"],
+            ["--author-filter-evidence", str(evidence)],
+            ["--plink-unfiltered", str(evidence)],
+            ["--plink-parameters", str(evidence)],
+        ]
+        for number, options in enumerate(conflicts):
+            with self.subTest(options=options):
+                name = f"cli_conflict_{number}"
+                arguments = self.candidate_cli_arguments(name)
+                result = self.invoke_candidate_cli(arguments + options)
+                self.assertNotEqual(result.exit_code, 0)
+                self.assertIn(
+                    "--export-unverified-candidates", result.output
+                )
+                self.assertIn(options[0], result.output)
+                self.assertFalse((self.root / name).exists())
+
+    def test_cli_candidate_export_keeps_required_selectors_and_strict_default(self):
+        for option in ("--mapping", "--crosslinker", "--residue"):
+            with self.subTest(missing=option):
+                name = "missing_" + option.lstrip("-")
+                arguments = self.candidate_cli_arguments(name)
+                index = arguments.index(option)
+                del arguments[index:index + 2]
+
+                result = self.invoke_candidate_cli(arguments)
+                self.assertNotEqual(result.exit_code, 0)
+                self.assertIn(option, result.output)
+                self.assertFalse((self.root / name).exists())
+
+        arguments = self.candidate_cli_arguments("strict_default")
+        arguments.remove("--export-unverified-candidates")
+        result = self.invoke_candidate_cli(arguments)
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertIn("--fdr-level", result.output)
+        self.assertFalse((self.root / "strict_default").exists())
+
+    def test_cli_candidate_export_rejects_other_formats(self):
+        fixture_root = Path(__file__).resolve().parents[1] / "fixtures"
+        fixtures = [
+            ("merox_pxd010895", "velos.zhrm"),
+            ("scout_pxd072720", "csms.csv"),
+            ("xlinkx_pxd021648", "native.pdResult"),
+        ]
+        for folder, filename in fixtures:
+            with self.subTest(format=folder):
+                name = "unsupported_" + folder
+                arguments = self.candidate_cli_arguments(name)
+                arguments[arguments.index("--results") + 1] = str(
+                    fixture_root / folder / filename
+                )
+                arguments[arguments.index("--fasta") + 1] = str(
+                    fixture_root / folder / "search.fasta"
+                )
+
+                result = self.invoke_candidate_cli(arguments)
+                self.assertNotEqual(result.exit_code, 0)
+                self.assertIn(
+                    "--export-unverified-candidates", result.output
+                )
+                self.assertIn("pLink", result.output)
+                self.assertFalse((self.root / name).exists())

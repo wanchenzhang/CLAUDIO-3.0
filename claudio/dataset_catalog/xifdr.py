@@ -1505,7 +1505,11 @@ def _selected_candidate_reports(candidate_reports):
     return selected, selected_indices, history
 
 
-def project_xifdr_candidates(bundle, exact_mappings, candidate_reports, *, max_optimal_alignments=64):
+def project_xifdr_candidates(
+    bundle, exact_mappings, candidate_reports, *,
+    max_optimal_alignments=64,
+    export_unverified_candidates=False,
+):
     """Project intact peptides onto each reference hypothesis; retain every PSM.
 
     A peptide projection must have one distinct, contiguous, sequence-identical
@@ -1516,10 +1520,44 @@ def project_xifdr_candidates(bundle, exact_mappings, candidate_reports, *, max_o
     Candidate reports may be a dictionary or snapshots in retrieval order;
     the last completed result is reused while failed attempts stay in evidence.
     """
+    if type(export_unverified_candidates) is not bool:
+        raise ValueError("export_unverified_candidates must be a boolean")
     if type(max_optimal_alignments) is not int or max_optimal_alignments < 1:
         raise ValueError("max_optimal_alignments must be a positive integer")
     candidate_reports, report_indices, report_history = _selected_candidate_reports(candidate_reports)
-    proteins = target_proteins(bundle)
+    if export_unverified_candidates:
+        candidate_prepared = _prepare_plink_candidate_input(
+            bundle, exact_mappings
+        )
+        candidate_entries = {
+            entry["source_record_id"]: entry
+            for entry in candidate_prepared["audit"]
+        }
+        identity_reasons = {
+            "protein_identity_unresolved_a",
+            "protein_identity_unresolved_b",
+        }
+        candidate_eligible = {
+            identifier
+            for identifier, entry in candidate_entries.items()
+            if not any(
+                reason not in identity_reasons
+                for reason in entry["input_reasons"]
+            )
+        }
+        used = {
+            record["endpoints"][site]["source_fasta_id"]
+            for record in bundle["records"]
+            if record["source_record_id"] in candidate_eligible
+            for site in ("a", "b")
+        }
+        proteins = {
+            identifier: source
+            for identifier, source in bundle["proteins"].items()
+            if identifier in used
+        }
+    else:
+        proteins = target_proteins(bundle)
     profiles, options, lookup_states = {}, {}, {}
     reference_sequences = {}
     for identifier, source in proteins.items():
@@ -1568,8 +1606,25 @@ def project_xifdr_candidates(bundle, exact_mappings, candidate_reports, *, max_o
         if source_record["decoy_status"] not in ("target_target", "unknown"):
             row.update(status="excluded_decoy", reason="decoy_record")
             continue
-        if source_record["record_status"] != "valid" or source_record["decoy_status"] != "target_target":
-            row["reason"] = source_record["record_reason"] or "invalid_decoy_flags"
+        if export_unverified_candidates:
+            identifier = source_record["source_record_id"]
+            if identifier not in candidate_eligible:
+                blocking = [
+                    reason
+                    for reason in candidate_entries[identifier]["input_reasons"]
+                    if reason not in identity_reasons
+                ]
+                row["reason"] = (
+                    blocking[0] if blocking else "source_record_unresolved"
+                )
+                continue
+        elif (
+            source_record["record_status"] != "valid"
+            or source_record["decoy_status"] != "target_target"
+        ):
+            row["reason"] = (
+                source_record["record_reason"] or "invalid_decoy_flags"
+            )
             continue
         for site in ("a", "b"):
             endpoint = endpoints[site]
@@ -1598,7 +1653,9 @@ def project_xifdr_candidates(bundle, exact_mappings, candidate_reports, *, max_o
         else:
             row["reason"] = "no_compatible_reference_pair"
     return {"schema_version": 1, "kind": "xifdr_reference_projection", "provenance": deepcopy(bundle["provenance"]),
-            "projection_rule_version": "intact-peptide-projection-v1", "max_optimal_alignments": max_optimal_alignments,
+            "projection_rule_version": "intact-peptide-projection-v1",
+            "max_optimal_alignments": max_optimal_alignments,
+            "export_unverified_candidates": export_unverified_candidates,
             "protein_identity_acceptance_performed": False, "model_assessment_performed": False, "fdr_filter_applied": False,
             "protein_candidates": profiles, "protein_lookup_states": lookup_states, "records": records,
             "identity_evidence": {"exact_mappings": deepcopy(exact_mappings), "candidate_reports": deepcopy(candidate_reports),
@@ -1648,7 +1705,8 @@ def write_projection_outputs(bundle, projection, output_dir):
 def _input_row(bundle, record, identities, policy):
     """Build shared source metadata without deciding identity or coordinate eligibility."""
     author = policy.get("kind") == "author_filtered_psm_table"
-    level = None if author else policy["level"]
+    unverified = policy.get("kind") == "unverified_candidates"
+    level = None if author or unverified else policy["level"]
     fields = record["source_fields"]
     plink = bundle.get("format") == "plink_psm"
     row = {"source_record_id": record["source_record_id"], "dataset_accession": bundle["provenance"]["dataset_accession"],
@@ -1658,8 +1716,21 @@ def _input_row(bundle, record, identities, policy):
            "source_crosslinker": fields.get("Linker" if plink else "Crosslinker", ""), "source_fdr_group": fields.get("fdrGroup", ""),
            "source_fields_json": json.dumps(fields, ensure_ascii=False),
            "selected_fdr_level": level,
-           "selected_fdr_value": None if author else record["fdr"][level]["value"],
-           "selected_fdr_cutoff": None if author else float(policy["cutoff"])}
+           "selected_fdr_value": (
+               None if author or unverified
+               else record["fdr"][level]["value"]
+           ),
+           "selected_fdr_cutoff": (
+               None if author or unverified
+               else float(policy["cutoff"])
+           )}
+    if unverified:
+        row.update(
+            input_scope="unverified_candidate",
+            fdr_verification_status="unverified",
+            source_decoy_status=record["decoy_status"],
+            selection_basis="sequence_and_site_checks_only",
+        )
     if author:
         row.update(selection_basis="author_filtered_psm_table", source_filter_level=policy["level"],
                    source_filter_cutoff=policy["reported_cutoff"],
@@ -1862,6 +1933,14 @@ def _prepare_reference_input(bundle, mappings, prepared, projection):
     if (not isinstance(projection, dict) or projection.get("kind") != "xifdr_reference_projection"
             or projection.get("projection_rule_version") != "intact-peptide-projection-v1"):
         raise ValueError("Unsupported reference projection report")
+    candidate_mode = (
+        prepared["fdr_policy"].get("kind") == "unverified_candidates"
+    )
+    projection_mode = projection.get("export_unverified_candidates", False)
+    if type(projection_mode) is not bool or projection_mode != candidate_mode:
+        raise ValueError(
+            "Reference projection candidate mode differs from the export mode"
+        )
     source_context = {k: v for k, v in bundle["provenance"].items() if not k.endswith("_path")}
     projection_context = {k: v for k, v in projection.get("provenance", {}).items() if not k.endswith("_path")}
     if projection_context != source_context:
@@ -1874,8 +1953,11 @@ def _prepare_reference_input(bundle, mappings, prepared, projection):
     reports = evidence.get("candidate_reports")
     if not isinstance(reports, dict):
         raise ValueError("Reference projection has no candidate evidence")
-    checked = project_xifdr_candidates(bundle, mappings, reports,
-                                       max_optimal_alignments=projection.get("max_optimal_alignments"))
+    checked = project_xifdr_candidates(
+        bundle, mappings, reports,
+        max_optimal_alignments=projection.get("max_optimal_alignments"),
+        export_unverified_candidates=candidate_mode,
+    )
     if checked["records"] != projection.get("records"):
         raise ValueError("Reference projection record order or coordinates differ from recomputed results")
     profiles = {profile["profile_id"]: profile
@@ -1963,10 +2045,113 @@ def _prepare_reference_input(bundle, mappings, prepared, projection):
     )
     return prepared
 
+def _prepare_plink_candidate_input(bundle, mappings):
+    """Prepare sequence-validated candidates without accepting FDR or decoy status."""
+    if bundle.get("format") != "plink_psm":
+        raise ValueError("Unverified candidate export currently supports pLink PSMs only")
+    if (
+        "author_filter_policy" in bundle
+        or "native_filter_policy" in bundle
+    ):
+        raise ValueError(
+            "Unverified candidate export cannot be combined with an existing "
+            "author or native filter policy"
+        )
 
+    for kind in ("psm", "fasta"):
+        path = Path(bundle["provenance"][kind + "_path"])
+        expected = bundle["provenance"][kind + "_sha256"]
+        if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+            raise ValueError(
+                f"Input source checksum changed before candidate export: {kind}"
+            )
+
+    policy = {
+        "kind": "unverified_candidates",
+        "level": None,
+        "cutoff": None,
+        "per_record_fdr_applied": False,
+        "fdr_verification_status": "unverified",
+        "decoy_acceptance_performed": False,
+        "identity_acceptance_performed": False,
+    }
+    rows, audit = [], []
+
+    for record in bundle["records"]:
+        entry = deepcopy(record)
+        reasons = []
+        decoy = record.get("decoy_status")
+
+        if decoy in {"target_decoy", "decoy_decoy"}:
+            reasons.append("decoy_record")
+        elif decoy == "unknown":
+            if (
+                record.get("decoy_reason")
+                != "decoy_policy_not_provided"
+            ):
+                reasons.append("decoy_status_unresolved")
+        elif decoy != "target_target":
+            reasons.append("invalid_decoy_flags")
+
+        missing_policy_only = (
+            record.get("record_reason") == "decoy_policy_not_provided"
+            and decoy == "unknown"
+            and record.get("decoy_reason") == "decoy_policy_not_provided"
+        )
+        if record.get("record_status") != "valid" and not missing_policy_only:
+            reasons.append(
+                record.get("record_reason") or "source_record_unresolved"
+            )
+
+        endpoints = record.get("endpoints", {})
+        selected = {}
+        for site in ("a", "b"):
+            endpoint = endpoints.get(site)
+            if not isinstance(endpoint, dict) or endpoint.get("status") != "valid":
+                reasons.append("source_endpoint_unresolved_" + site)
+                continue
+
+            identifier = endpoint.get("source_fasta_id")
+            source = bundle["proteins"].get(identifier)
+            identity = mappings.get(identifier)
+            if (
+                not source
+                or not isinstance(identity, dict)
+                or identity.get("status") != "mapped"
+                or not isinstance(identity.get("accession"), str)
+                or ACCESSION.fullmatch(identity["accession"]) is None
+                or identity.get("sequence") != source["sequence"]
+                or (
+                    source.get("uniprot_accession")
+                    and identity["accession"] != source["uniprot_accession"]
+                )
+                or (
+                    source.get("taxon_id") is not None
+                    and identity.get("taxon_id") != source["taxon_id"]
+                )
+            ):
+                reasons.append("protein_identity_unresolved_" + site)
+            else:
+                selected[site] = identity
+
+        entry.update(
+            input_status="not_evaluable" if reasons else "candidate_ready",
+            input_reasons=list(dict.fromkeys(reasons)),
+        )
+        audit.append(entry)
+
+        if not reasons:
+            rows.append(_input_row(bundle, record, selected, policy))
+
+    return {
+        "rows": rows,
+        "audit": audit,
+        "fdr_policy": policy,
+        "provenance": deepcopy(bundle["provenance"]),
+    }
 def write_claudio_input(bundle, mappings, output_dir, *, fdr_level=None, fdr_cutoff=None,
                         allowed_crosslinkers, allowed_residues, source_protein_ids=None,
-                        reference_projection=None):
+                        reference_projection=None, export_unverified_candidates=False):
     """Export exact identities or explicitly selected reference projections for the full CLI.
 
     The CSV uses M1's default input column names.
@@ -1993,7 +2178,22 @@ def write_claudio_input(bundle, mappings, output_dir, *, fdr_level=None, fdr_cut
             raise ValueError("Unknown source_protein_ids in the search FASTA")
         selections[name] = values
 
-    prepared = prepare_af_input(bundle, mappings, fdr_level=fdr_level, fdr_cutoff=fdr_cutoff)
+    if type(export_unverified_candidates) is not bool:
+        raise ValueError("export_unverified_candidates must be a boolean")
+
+    if export_unverified_candidates:
+        if fdr_level is not None or fdr_cutoff is not None:
+            raise ValueError(
+                "Unverified candidate export cannot be combined with "
+                "per-record FDR selection"
+            )
+        prepared = _prepare_plink_candidate_input(bundle, mappings)
+    else:
+        prepared = prepare_af_input(
+            bundle, mappings,
+            fdr_level=fdr_level,
+            fdr_cutoff=fdr_cutoff,
+        )
     if reference_projection is not None:
         prepared = _prepare_reference_input(bundle, mappings, prepared, reference_projection)
     eligible = {row["source_record_id"]: row for row in prepared["rows"]}
@@ -2017,6 +2217,15 @@ def write_claudio_input(bundle, mappings, output_dir, *, fdr_level=None, fdr_cut
         else:
             selected.append(row)
     prepared["rows"] = selected
+    if export_unverified_candidates:
+        selected_ids = {row["source_record_id"] for row in selected}
+        for record in prepared["audit"]:
+            if record["source_record_id"] in selected_ids:
+                record.update(
+                    input_status="candidate_ready",
+                    input_scope="unverified_candidate",
+                    fdr_verification_status="unverified",
+                )
     policy = {key: sorted(values) if values is not None else None for key, values in selections.items()}
     return write_xifdr_outputs(bundle, mappings, prepared, output_dir, pipeline_policy=policy)
 

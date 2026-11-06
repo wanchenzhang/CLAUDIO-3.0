@@ -448,11 +448,17 @@ def _detect_psm_format(results_path):
 @click.option("--dataset-accession", required=True, help="ProteomeXchange PXD accession.")
 @click.option(
     "--fdr-level", type=click.Choice(tuple(FDR_COLUMNS)),
-    help="Per-record FDR level; required for export unless using --author-filter-evidence.",
+    help=(
+        "Per-record FDR level; omit with --author-filter-evidence "
+        "or --export-unverified-candidates."
+    ),
 )
 @click.option(
     "--fdr-cutoff", type=click.FloatRange(min=0.0, max=1.0),
-    help="Inclusive per-record FDR cutoff as a fraction. 0.01 means 1%; omit with --author-filter-evidence.",
+    help=(
+        "Inclusive per-record FDR cutoff as a fraction. 0.01 means 1%; "
+        "omit with --author-filter-evidence or --export-unverified-candidates."
+    ),
 )
 @click.option(
     "--fdr-column",
@@ -460,7 +466,10 @@ def _detect_psm_format(results_path):
 )
 @click.option(
     "--decoy-prefix",
-    help="Manual pLink decoy prefix; use with a reported --fdr-column.",
+    help=(
+        "Manual pLink decoy prefix; use with --fdr-column, or alone "
+        "with --export-unverified-candidates."
+    ),
 )
 @click.option(
     "--plink-unfiltered", "plink_unfiltered_path",
@@ -487,6 +496,15 @@ def _detect_psm_format(results_path):
     help="Residue letter to include at both sites; required for export. Repeat for multiple letters.",
 )
 @click.option(
+    "--export-unverified-candidates",
+    is_flag=True,
+    default=False,
+    help=(
+        "Export pLink sequence/site candidates while preserving "
+        "unverified FDR and source decoy states."
+    ),
+)
+@click.option(
     "--audit-only", is_flag=True,
     help="Save every imported record without identity mapping, filtering, or input export.",
 )
@@ -503,7 +521,8 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
                         fdr_level, fdr_cutoff, fdr_column, decoy_prefix, crosslinkers,
                         residues, source_proteins, audit_only, output_dir,
                         plink_unfiltered_path, plink_parameters_path, author_filter_path,
-                        reference_projection_path=None):
+                        reference_projection_path=None,
+                        export_unverified_candidates=False):
     """Standardize supported XL-MS results or preserve a full import audit."""
     if output_dir.exists():
         raise click.BadParameter("Output directory already exists; choose a new directory.", param_hint="--output")
@@ -517,6 +536,30 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
         source_format = _detect_psm_format(results_path)
     except (ValueError, OSError) as error:
         raise click.ClickException(str(error)) from error
+    if export_unverified_candidates:
+        if source_format != "plink_psm":
+            raise click.UsageError(
+                "--export-unverified-candidates only supports pLink PSM inputs."
+            )
+
+        incompatible = {
+            "--audit-only": audit_only,
+            "--fdr-level": fdr_level is not None,
+            "--fdr-cutoff": fdr_cutoff is not None,
+            "--fdr-column": fdr_column is not None,
+            "--author-filter-evidence": author_filter_path is not None,
+            "--plink-unfiltered": plink_unfiltered_path is not None,
+            "--plink-parameters": plink_parameters_path is not None,
+        }
+        conflicts = [
+            option for option, present in incompatible.items() if present
+        ]
+        if conflicts:
+            raise click.UsageError(
+                "--export-unverified-candidates cannot be combined with "
+                + ", ".join(conflicts)
+                + "."
+            )
     if source_format == "xlinkx_csm":
         unsupported = {
             "--reference-projection": reference_projection_path is not None,
@@ -954,10 +997,19 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
     else:
         required = {"--mapping": mapping_path is None, "--crosslinker": not crosslinkers,
                     "--residue": not residues}
-        if not author:
-            required.update({"--fdr-level": fdr_level is None, "--fdr-cutoff": fdr_cutoff is None})
-        if plink and not native and not author:
-            required.update({"--fdr-column": fdr_column is None, "--decoy-prefix": decoy_prefix is None})
+        if not author and not export_unverified_candidates:
+            required.update({
+                "--fdr-level": fdr_level is None,
+                "--fdr-cutoff": fdr_cutoff is None,
+            })
+        if (
+            plink and not native and not author
+            and not export_unverified_candidates
+        ):
+            required.update({
+                "--fdr-column": fdr_column is None,
+                "--decoy-prefix": decoy_prefix is None,
+            })
         missing = [option for option, absent in required.items() if absent]
         if missing:
             raise click.UsageError("Input export requires " + ", ".join(missing) + ".")
@@ -1000,6 +1052,7 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
             allowed_crosslinkers=crosslinkers, allowed_residues=residues,
             source_protein_ids=source_proteins or None,
             reference_projection=projection,
+            export_unverified_candidates=export_unverified_candidates,
         )
         manifest = json.loads((destination / "manifest.json").read_text(encoding="utf-8"))
     except (ValueError, OSError, RuntimeError) as error:
@@ -1009,6 +1062,12 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
     click.echo(f"Standardized input rows: {manifest['counts']['pipeline_input_rows']}")
     failures = sum(record["record_reason"].startswith("pyxlms_") for record in bundle["records"])
     click.echo(f"Records with parser errors: {failures}")
+    if export_unverified_candidates:
+        click.echo("Input scope: unverified candidates")
+        click.echo("FDR verification: unverified")
+        click.echo("Per-record FDR filtering: not performed")
+        click.echo("Source decoy flags: preserved")
+        click.echo("Model assessment: not performed")
     click.echo(f"Input: {(destination / 'claudio_input.csv').resolve()}")
     click.echo(f"Audit: {(destination / 'psm_audit.json').resolve()}")
     click.echo(f"Output: {destination.resolve()}")
