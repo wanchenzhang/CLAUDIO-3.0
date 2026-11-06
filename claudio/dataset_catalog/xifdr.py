@@ -103,7 +103,7 @@ def normalize_xifdr_peptide(raw, *, allowed_modifications=None):
             raise ValueError(f"Unsupported peptide annotation: {raw}")
         sequence.append(residue)
         position += 1
-        match = re.match(r"[a-z][a-z0-9]*", raw[position:])
+        match = re.match(r"[a-z][a-z0-9]*(?:-[a-z][a-z0-9]*)*", raw[position:])
         if match:
             token = match[0]
             if token not in allowed:

@@ -3574,3 +3574,55 @@ class TestPLinkUnverifiedCandidates(unittest.TestCase):
                 )
                 self.assertIn("pLink", result.output)
                 self.assertFalse((self.root / name).exists())
+
+class TestXiFDRCompoundModificationTokens(unittest.TestCase):
+    def normalize(self, peptide, **options):
+        from claudio.dataset_catalog.xifdr import normalize_xifdr_peptide
+        return normalize_xifdr_peptide(peptide, **options)
+
+    def test_explicit_compound_tokens_preserve_residue_positions(self):
+        for token in ("c1-monolink", "c1-base-monolink", "gsh-unc"):
+            with self.subTest(token=token):
+                sequence, modifications = self.normalize(
+                    "AK" + token + "CcmGK",
+                    allowed_modifications={"cm", token},
+                )
+                self.assertEqual(sequence, "AKCGK")
+                self.assertEqual(modifications, [
+                    {"position": 2, "residue": "K", "token": token},
+                    {"position": 3, "residue": "C", "token": "cm"},
+                ])
+
+    def test_complete_token_must_be_explicitly_allowed(self):
+        with self.assertRaises(ValueError):
+            self.normalize(
+                "AKc1-monolinkGK",
+                allowed_modifications={"c1", "monolink"},
+            )
+        with self.assertRaises(ValueError):
+            self.normalize("AKc1-monolinkGK")
+
+    def test_malformed_compound_annotations_are_rejected(self):
+        for raw in (
+            "AKc1--monolinkGK",
+            "AKc1-monolink-GK",
+            "AKc1-1GK",
+        ):
+            with self.subTest(raw=raw):
+                with self.assertRaises(ValueError):
+                    self.normalize(
+                        raw,
+                        allowed_modifications={"c1", "c1-monolink"},
+                    )
+
+    def test_mixed_annotations_preserve_each_modification(self):
+        sequence, modifications = self.normalize(
+            "CcmKgsh-uncQda",
+            allowed_modifications={"cm", "gsh-unc", "da"},
+        )
+        self.assertEqual(sequence, "CKQ")
+        self.assertEqual(modifications, [
+            {"position": 1, "residue": "C", "token": "cm"},
+            {"position": 2, "residue": "K", "token": "gsh-unc"},
+            {"position": 3, "residue": "Q", "token": "da"},
+        ])
