@@ -1,0 +1,121 @@
+{
+  "sp|P02769|ALBU_BOVIN": {
+    "status": "mapped",
+    "reason": "",
+    "accession": "P02769",
+    "sequence": "MKWVTFISLLLLFSSAYSRGVFRRDTHKSEIAHRFKDLGEEHFKGLVLIAFSQYLQQCPFDEHVKLVNELTEFAKTCVADESHAGCEKSLHTLFGDELCKVASLRETYGDMADCCEKQEPERNECFLSHKDDSPDLPKLKPDPNTLCDEFKADEKKFWGKYLYEIARRHPYFYAPELLYYANKYNGVFQECCQAEDKGACLLPKIETMREKVLASSARQRLRCASIQKFGERALKAWSVARLSQKFPKAEFVEVTKLVTDLTKVHKECCHGDLLECADDRADLAKYICDNQDTISSKLKECCDKPLLEKSHCIAEVEKDAIPENLPPLTADFAEDKDVCKNYQEAKDAFLGSFLYEYSRRHPEYAVSVLLRLAKEYEATLEECCAKDDPHACYSTVFDKLKHLVDEPQNLIKQNCDQFEKLGEYGFQNALIVRYTRKVPQVSTPTLVEVSRSLGKVGTRCCTKPESERMPCTEDYLSLILNRLCVLHEKTPVSEKVTKCCTESLVNRRPCFSALTPDETYVPKAFDEKLFTFHADICTLPDTEKQIKKQTALVELLKHKPKATEEQLKTVMENFVAFVDKCCAADDKEACFAVEGPKLVVSTQTALA",
+    "taxon_id": 9913,
+    "match_method": "full_sequence_exact",
+    "candidates": [
+      {
+        "accession": "P02769",
+        "sequence": "MKWVTFISLLLLFSSAYSRGVFRRDTHKSEIAHRFKDLGEEHFKGLVLIAFSQYLQQCPFDEHVKLVNELTEFAKTCVADESHAGCEKSLHTLFGDELCKVASLRETYGDMADCCEKQEPERNECFLSHKDDSPDLPKLKPDPNTLCDEFKADEKKFWGKYLYEIARRHPYFYAPELLYYANKYNGVFQECCQAEDKGACLLPKIETMREKVLASSARQRLRCASIQKFGERALKAWSVARLSQKFPKAEFVEVTKLVTDLTKVHKECCHGDLLECADDRADLAKYICDNQDTISSKLKECCDKPLLEKSHCIAEVEKDAIPENLPPLTADFAEDKDVCKNYQEAKDAFLGSFLYEYSRRHPEYAVSVLLRLAKEYEATLEECCAKDDPHACYSTVFDKLKHLVDEPQNLIKQNCDQFEKLGEYGFQNALIVRYTRKVPQVSTPTLVEVSRSLGKVGTRCCTKPESERMPCTEDYLSLILNRLCVLHEKTPVSEKVTKCCTESLVNRRPCFSALTPDETYVPKAFDEKLFTFHADICTLPDTEKQIKKQTALVELLKHKPKATEEQLKTVMENFVAFVDKCCAADDKEACFAVEGPKLVVSTQTALA",
+        "taxon_id": 9913
+      }
+    ],
+    "sources": [
+      {
+        "kind": "uniprot_api",
+        "request_url": "https://rest.uniprot.org/uniparc/search",
+        "params": {
+          "query": "checksum:432779D395A52BFC9F6574BC3E98AFCD",
+          "format": "json",
+          "size": 100
+        },
+        "response_url": "https://rest.uniprot.org/uniparc/search?query=checksum%3A432779D395A52BFC9F6574BC3E98AFCD&format=json&size=100",
+        "response_headers": {
+          "Vary": "accept,accept-encoding,x-uniprot-release,x-api-deployment-date, User-Agent, Accept-Encoding",
+          "Cache-Control": "public, max-age=43200",
+          "x-cache": "miss cached",
+          "Content-Type": "application/json",
+          "Content-Encoding": "gzip",
+          "Access-Control-Allow-Credentials": "true",
+          "Access-Control-Expose-Headers": "Link, X-Total-Results, X-UniProt-Release, X-UniProt-Release-Date, X-API-Deployment-Date",
+          "X-API-Deployment-Date": "05-November-2026",
+          "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+          "Date": "Fri, 06 Nov 2026 10:54:06 GMT",
+          "Access-Control-Max-Age": "1728000",
+          "X-UniProt-Release": "2026_04",
+          "X-Total-Results": "1",
+          "Transfer-Encoding": "chunked",
+          "Access-Control-Allow-Origin": "*",
+          "Connection": "keep-alive",
+          "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, PATCH, OPTIONS",
+          "Access-Control-Allow-Headers": "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization",
+          "X-UniProt-Release-Date": "04-November-2026"
+        },
+        "status": 200,
+        "retrieved_at_utc": "2026-11-06T10:54:06.905290+00:00",
+        "path": "sources/6d35b9ca261e9ad36e940c47b3220998cdfe1ecc53b1cd2cda0d7a93fb3b113a.json",
+        "sha256": "6d35b9ca261e9ad36e940c47b3220998cdfe1ecc53b1cd2cda0d7a93fb3b113a"
+      },
+      {
+        "kind": "uniprot_api",
+        "request_url": "https://rest.uniprot.org/uniparc/UPI000004ECF8",
+        "params": {},
+        "response_url": "https://rest.uniprot.org/uniparc/UPI000004ECF8",
+        "response_headers": {
+          "Vary": "accept,accept-encoding,x-uniprot-release,x-api-deployment-date, User-Agent, Accept-Encoding",
+          "Cache-Control": "public, max-age=43200",
+          "x-cache": "miss cached",
+          "Content-Type": "application/json",
+          "Content-Encoding": "gzip",
+          "Access-Control-Allow-Credentials": "true",
+          "Access-Control-Expose-Headers": "Link, X-Total-Results, X-UniProt-Release, X-UniProt-Release-Date, X-API-Deployment-Date",
+          "X-API-Deployment-Date": "05-November-2026",
+          "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+          "Date": "Fri, 06 Nov 2026 10:54:06 GMT",
+          "Access-Control-Max-Age": "1728000",
+          "X-UniProt-Release": "2026_04",
+          "Transfer-Encoding": "chunked",
+          "Access-Control-Allow-Origin": "*",
+          "Connection": "keep-alive",
+          "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, PATCH, OPTIONS",
+          "Access-Control-Allow-Headers": "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization",
+          "X-UniProt-Release-Date": "04-November-2026"
+        },
+        "status": 200,
+        "retrieved_at_utc": "2026-11-06T10:54:07.009972+00:00",
+        "path": "sources/9a565cd6a294d0d6e2ecaa583ff1ecad2a9063ee93b98ddabc999cad65ab7251.json",
+        "sha256": "9a565cd6a294d0d6e2ecaa583ff1ecad2a9063ee93b98ddabc999cad65ab7251"
+      },
+      {
+        "kind": "uniprot_api",
+        "request_url": "https://rest.uniprot.org/uniprotkb/P02769.fasta",
+        "params": {},
+        "response_url": "https://rest.uniprot.org/uniprotkb/P02769.fasta",
+        "response_headers": {
+          "Vary": "accept,accept-encoding,x-uniprot-release,x-api-deployment-date, User-Agent, Accept-Encoding",
+          "Cache-Control": "public, max-age=43200",
+          "x-cache": "miss cached",
+          "Content-Type": "text/plain;format=fasta",
+          "Content-Encoding": "gzip",
+          "Access-Control-Allow-Credentials": "true",
+          "Access-Control-Expose-Headers": "Link, X-Total-Results, X-UniProt-Release, X-UniProt-Release-Date, X-API-Deployment-Date",
+          "X-API-Deployment-Date": "05-November-2026",
+          "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+          "Date": "Fri, 06 Nov 2026 10:54:07 GMT",
+          "Access-Control-Max-Age": "1728000",
+          "X-UniProt-Release": "2026_04",
+          "Transfer-Encoding": "chunked",
+          "Access-Control-Allow-Origin": "*",
+          "Connection": "keep-alive",
+          "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, PATCH, OPTIONS",
+          "Access-Control-Allow-Headers": "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization",
+          "X-UniProt-Release-Date": "04-November-2026"
+        },
+        "status": 200,
+        "retrieved_at_utc": "2026-11-06T10:54:07.278755+00:00",
+        "path": "sources/a42fcd8e4290c9e2be37db7cd97ff45180c1643412834830a6216e65eb5a0db3.fasta",
+        "sha256": "a42fcd8e4290c9e2be37db7cd97ff45180c1643412834830a6216e65eb5a0db3"
+      }
+    ],
+    "lookup_details": {
+      "exact_uniparc_entries": 1,
+      "active_uniprot_references": 1,
+      "candidate_accessions_after_filters": 1,
+      "current_exact_candidates": 1,
+      "requested_taxon_id": 9913
+    }
+  }
+}

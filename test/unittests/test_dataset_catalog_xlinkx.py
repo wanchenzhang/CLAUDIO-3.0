@@ -6,10 +6,10 @@ import unittest
 from collections import Counter
 from pathlib import Path
 from tempfile import TemporaryDirectory
-
+import csv
 from claudio.dataset_catalog import xifdr
 from click.testing import CliRunner
-from claudio.dataset_catalog.cli import main
+from claudio.dataset_catalog.cli import main, _read_protein_mapping
 
 FIXTURE = (
     Path(__file__).resolve().parents[1]
@@ -318,3 +318,338 @@ class TestXlinkXStandardizeCLI(unittest.TestCase):
                 self.assertNotEqual(result.exit_code, 0)
                 self.assertIn(expected_option, result.output)
                 self.assertFalse(self.output.exists())
+    def export_arguments(self):
+        return self.arguments() + [
+            "--mapping",
+            str(FIXTURE / "evidence/protein_mapping.json"),
+            "--crosslinker", "DSBU",
+            "--residue", "K",
+        ]
+
+    def test_cli_exports_the_same_input_as_the_verified_api(self):
+        from claudio.dataset_catalog.cli import _read_protein_mapping
+        from claudio.dataset_catalog.xifdr import (
+            read_xlinkx_csms,
+            write_xlinkx_claudio_input,
+        )
+
+        result = CliRunner().invoke(main, self.export_arguments())
+        self.assertEqual(
+            result.exit_code,
+            0,
+            result.output + repr(result.exception),
+        )
+
+        bundle = read_xlinkx_csms(
+            FIXTURE / "native.pdResult",
+            FIXTURE / "search.fasta",
+            dataset_accession="PXD021648",
+        )
+        mappings = _read_protein_mapping(
+            FIXTURE / "evidence/protein_mapping.json"
+        )
+        expected = Path(write_xlinkx_claudio_input(
+            bundle,
+            mappings,
+            Path(self.temporary.name) / "api_input",
+            allowed_crosslinkers={"DSBU"},
+            allowed_residues={"K"},
+        ))
+
+        self.assertEqual(
+            (self.output / "claudio_input.csv").read_bytes(),
+            (expected / "claudio_input.csv").read_bytes(),
+        )
+
+        with (self.output / "claudio_input.csv").open(
+            newline="", encoding="utf-8"
+        ) as handle:
+            rows = list(csv.DictReader(handle))
+
+        self.assertEqual(len(rows), 156)
+        self.assertTrue(all(
+            row["fdr_verification_status"] == "unverified"
+            and row["source_validation_strategy"] == "simple_validation"
+            for row in rows
+        ))
+        self.assertTrue(all(
+            not row.get(field)
+            for row in rows
+            for field in (
+                "selected_fdr_level",
+                "selected_fdr_value",
+                "selected_fdr_cutoff",
+            )
+        ))
+
+        manifest = json.loads(
+            (self.output / "manifest.json").read_bytes()
+        )
+        self.assertEqual(manifest["kind"], "xlinkx_claudio_input")
+        self.assertIs(manifest["assessment_performed"], False)
+        for name, expected_hash in manifest["output_sha256"].items():
+            self.assertEqual(
+                hashlib.sha256(
+                    (self.output / name).read_bytes()
+                ).hexdigest(),
+                expected_hash,
+                name,
+            )
+
+        self.assertIn("Standardized input rows: 156", result.output)
+        self.assertIn("Native FDR verification: unverified", result.output)
+        self.assertIn(
+            "Per-record FDR filtering: not performed",
+            result.output,
+        )
+
+    def test_cli_export_requires_mapping_crosslinker_and_residue(self):
+        for missing in ("--mapping", "--crosslinker", "--residue"):
+            with self.subTest(missing=missing):
+                arguments = self.export_arguments()
+                index = arguments.index(missing)
+                del arguments[index:index + 2]
+
+                result = CliRunner().invoke(main, arguments)
+                self.assertNotEqual(result.exit_code, 0)
+                self.assertIn(missing, result.output)
+                self.assertFalse(self.output.exists())
+
+    def test_cli_rejects_changed_identity_evidence_before_output(self):
+        import shutil
+
+        from claudio.dataset_catalog.cli import _read_protein_mapping
+
+        copied = Path(self.temporary.name) / "fixture"
+        shutil.copytree(FIXTURE, copied)
+        mapping_path = copied / "evidence/protein_mapping.json"
+        mappings = _read_protein_mapping(mapping_path)
+
+        receipts = [
+            source
+            for mapping in mappings.values()
+            for source in mapping.get("sources", [])
+        ]
+        self.assertTrue(receipts)
+
+        receipt_path = Path(receipts[0]["absolute_path"])
+        self.assertTrue(receipt_path.is_relative_to(copied.resolve()))
+        with receipt_path.open("ab") as handle:
+            handle.write(b"\n")
+
+        arguments = self.export_arguments()
+        index = arguments.index("--mapping")
+        arguments[index + 1] = str(mapping_path)
+
+        result = CliRunner().invoke(main, arguments)
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertIn("checksum", result.output.lower())
+        self.assertFalse(self.output.exists())
+class TestXlinkXInputExport(unittest.TestCase):
+    def setUp(self):
+        self.temporary = TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.fixture = self.root / "fixture"
+        shutil.copytree(FIXTURE, self.fixture)
+        self.native = self.fixture / "native.pdResult"
+        self.output = self.root / "input"
+
+        self.bundle = xifdr.read_xlinkx_csms(
+            self.native,
+            self.fixture / "search.fasta",
+            dataset_accession="PXD021648",
+        )
+        self.mappings = _read_protein_mapping(
+            self.fixture / "evidence/protein_mapping.json"
+        )
+
+    def export(self):
+        writer = getattr(xifdr, "write_xlinkx_claudio_input", None)
+        self.assertTrue(
+            callable(writer), "Missing XlinkX CLAUDIO input exporter"
+        )
+        return Path(writer(
+            self.bundle,
+            self.mappings,
+            self.output,
+            allowed_crosslinkers={"DSBU"},
+            allowed_residues={"K"},
+        ))
+
+    def read_rows(self, destination):
+        with (destination / "claudio_input.csv").open(
+            encoding="utf-8", newline=""
+        ) as handle:
+            reader = csv.DictReader(handle)
+            self.assertEqual(
+                reader.fieldnames[:8],
+                [
+                    "peptide1", "peptide2",
+                    "position1", "position2",
+                    "k_pos1", "k_pos2",
+                    "entry1", "entry2",
+                ],
+            )
+            self.assertNotIn("source_record_id", reader.fieldnames)
+            return list(reader)
+
+    def test_exports_exact_coordinates_with_unverified_fdr_labels(self):
+        destination = self.export()
+        rows = self.read_rows(destination)
+        self.assertEqual(len(rows), 156)
+
+        for row, original in zip(rows, self.bundle["records"]):
+            self.assertEqual(
+                row["xlms_source_record_id"],
+                original["source_record_id"],
+            )
+            self.assertEqual(row["identity_scope"], "exact_sequence")
+            self.assertEqual(
+                row["selection_basis"], "native_reported_candidate"
+            )
+            self.assertEqual(
+                row["fdr_verification_status"], "unverified"
+            )
+            self.assertEqual(
+                row["source_validation_strategy"], "simple_validation"
+            )
+            self.assertEqual(
+                row["source_native_csm_confidence"], "Unknown"
+            )
+            self.assertEqual(
+                row["source_native_parent_confidence"], "High"
+            )
+            self.assertEqual(
+                float(row["source_configured_fdr_cutoff"]), 0.05
+            )
+            for field in (
+                "selected_fdr_level",
+                "selected_fdr_value",
+                "selected_fdr_cutoff",
+            ):
+                self.assertEqual(row.get(field, ""), "")
+
+            for site, suffix in (("a", "1"), ("b", "2")):
+                endpoint = original["endpoints"][site]
+                self.assertEqual(row["entry" + suffix], "P02769")
+                self.assertEqual(
+                    row["peptide" + suffix], endpoint["peptide"]
+                )
+                self.assertEqual(
+                    int(row["position" + suffix]),
+                    endpoint["protein_position"],
+                )
+                self.assertEqual(
+                    int(row["k_pos" + suffix]),
+                    endpoint["link_position"],
+                )
+
+        audit = json.loads(
+            (destination / "psm_audit.json").read_bytes()
+        )
+        self.assertEqual(len(audit), 156)
+        self.assertEqual(
+            [record["source_record_id"] for record in audit],
+            [
+                record["source_record_id"]
+                for record in self.bundle["records"]
+            ],
+        )
+        self.assertEqual(
+            [record["source_fields"] for record in audit],
+            [
+                record["source_fields"]
+                for record in self.bundle["records"]
+            ],
+        )
+        self.assertTrue(all(
+            record["input_status"] == "ready"
+            and record["fdr"]["psm"]["status"] == "missing"
+            and record["fdr"]["psm"]["value"] is None
+            for record in audit
+        ))
+
+        manifest = json.loads(
+            (destination / "manifest.json").read_bytes()
+        )
+        self.assertEqual(manifest["kind"], "xlinkx_claudio_input")
+        self.assertEqual(manifest["counts"]["source_records"], 156)
+        self.assertEqual(
+            manifest["counts"]["pipeline_input_rows"], 156
+        )
+        policy = manifest["native_filter_policy"]
+        self.assertEqual(policy["configured_fdr_cutoff"], 0.05)
+        self.assertEqual(policy["configured_strategy"], "Percolator")
+        self.assertEqual(policy["observed_strategy"], "simple_validation")
+        self.assertEqual(policy["fdr_verification_status"], "unverified")
+        self.assertTrue(any(
+            "reverting to simple validation" in warning["Message"].lower()
+            for warning in policy["runtime_warnings"]
+        ))
+        self.assertFalse(
+            manifest["fdr_policy"]["per_record_fdr_applied"]
+        )
+        self.assertFalse(manifest["assessment_performed"])
+
+        for name, expected in manifest["output_sha256"].items():
+            self.assertEqual(
+                hashlib.sha256(
+                    (destination / name).read_bytes()
+                ).hexdigest(),
+                expected,
+                name,
+            )
+
+    def test_changed_identity_evidence_is_rejected_before_output(self):
+        identity = next(iter(self.mappings.values()))
+        source = Path(identity["sources"][0]["absolute_path"])
+        source.write_bytes(source.read_bytes() + b"\n")
+
+        with self.assertRaisesRegex(ValueError, "(?i)checksum"):
+            self.export()
+
+        self.assertFalse(self.output.exists())
+
+    def test_csm_without_parent_crosslink_remains_in_the_audit(self):
+        connection = sqlite3.connect(self.native)
+        try:
+            missing_key = connection.execute(
+                "SELECT CSMsWorkflowId, CSMsID FROM CrosslinksCSMs "
+                "ORDER BY CSMsWorkflowId, CSMsID LIMIT 1"
+            ).fetchone()
+            connection.execute(
+                "DELETE FROM CrosslinksCSMs "
+                "WHERE CSMsWorkflowId = ? AND CSMsID = ?",
+                missing_key,
+            )
+            connection.commit()
+        finally:
+            connection.close()
+
+        self.bundle = xifdr.read_xlinkx_csms(
+            self.native,
+            self.fixture / "search.fasta",
+            dataset_accession="PXD021648",
+        )
+        destination = self.export()
+        rows = self.read_rows(destination)
+        audit = json.loads(
+            (destination / "psm_audit.json").read_bytes()
+        )
+
+        self.assertEqual(len(rows), 155)
+        self.assertEqual(len(audit), 156)
+        unresolved = [
+            record for record in audit
+            if record["input_status"] != "ready"
+        ]
+        self.assertEqual(len(unresolved), 1)
+        self.assertEqual(
+            unresolved[0]["source_native_key"],
+            {"WorkflowId": missing_key[0], "ID": missing_key[1]},
+        )
+        self.assertIn(
+            "native_parent_crosslink_missing",
+            unresolved[0]["input_reasons"],
+        )

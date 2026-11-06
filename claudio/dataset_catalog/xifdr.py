@@ -546,7 +546,10 @@ def _add_plink_native_evidence(bundle, unfiltered_path, parameters_path):
 
 
 def _verify_plink_native_sources(bundle):
-    if "native_filter_policy" not in bundle:
+    if (
+        bundle.get("format") != "plink_psm"
+        or "native_filter_policy" not in bundle
+    ):
         return
     for kind in ("plink_unfiltered", "plink_parameters"):
         source = Path(bundle["provenance"][kind + "_path"])
@@ -1722,6 +1725,8 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
     }.get(bundle.get("format"), "xifdr")
     if bundle.get("format") == "scout_csm":
         format_name = "scout"
+    if bundle.get("format") == "xlinkx_csm":
+        format_name = "xlinkx"
     manifest = {"schema_version": 1, "kind": format_name + ("_claudio_input" if pipeline else "_prepared_input"), "status": "complete",
                 "provenance": bundle["provenance"], "fdr_policy": prepared["fdr_policy"],
                 "counts": {"source_records": len(bundle["records"]),
@@ -3991,3 +3996,528 @@ def read_xlinkx_csms(psm_path, fasta_path, *, dataset_accession):
         "input_exported": False,
         "assessment_performed": False,
     }
+def _xlinkx_native_validation(bundle):
+    """Read native confidence, workflow settings and execution evidence."""
+    import sqlite3
+    from xml.etree import ElementTree as ET
+
+    def encoded(value):
+        if isinstance(value, dict):
+            return {key: encoded(item) for key, item in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [encoded(item) for item in value]
+        if isinstance(value, bytes):
+            return {"sqlite_blob_hex": value.hex()}
+        if isinstance(value, float) and not math.isfinite(value):
+            return {"sqlite_non_finite_float": repr(value)}
+        return value
+
+    native = Path(bundle["provenance"]["psm_path"]).resolve()
+    connection = sqlite3.connect(
+        native.as_uri() + "?mode=ro&immutable=1", uri=True
+    )
+    connection.row_factory = sqlite3.Row
+    try:
+        available = {
+            row[0] for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            )
+        }
+
+        def read_table(table, ordered=False):
+            if table not in available:
+                return []
+            sql = f'SELECT * FROM "{table}"'
+            if ordered:
+                sql += " ORDER BY WorkflowId, ID"
+            return [
+                dict(row) for row in connection.execute(sql)
+            ]
+
+        tables = {
+            table: read_table(
+                table,
+                ordered=table in {"CSMs", "DecoyCSMs", "Crosslinks"},
+            )
+            for table in (
+                "CSMs", "DecoyCSMs", "Crosslinks", "CrosslinksCSMs",
+                "DataTypes", "DataTypesColumns", "EnumDataTypeValues",
+                "Workflows", "WorkflowMessages",
+            )
+        }
+    finally:
+        connection.close()
+
+    expected = [
+        (
+            table,
+            {"WorkflowId": row["WorkflowId"], "ID": row["ID"]},
+            encoded(row),
+        )
+        for table in ("CSMs", "DecoyCSMs")
+        for row in tables[table]
+    ]
+    actual = [
+        (
+            record["source_table"],
+            record["source_native_key"],
+            record["source_fields"],
+        )
+        for record in bundle["records"]
+    ]
+    if actual != expected:
+        raise ValueError("XlinkX source records changed after import")
+    if bundle["native_crosslinks"] != encoded(tables["Crosslinks"]):
+        raise ValueError("XlinkX native crosslinks changed after import")
+
+    labels, definitions = {}, []
+    for table, field in (
+        ("CSMs", "MatchConfidence"),
+        ("DecoyCSMs", "MatchConfidence"),
+        ("Crosslinks", "Confidence"),
+    ):
+        type_ids = {
+            row["DataTypeID"] for row in tables["DataTypes"]
+            if row["TableName"] == table
+        }
+        columns = [
+            row for row in tables["DataTypesColumns"]
+            if row["DataTypeID"] in type_ids
+            and row["DBColumnName"] == field
+            and row["SpecialValueType"] == "Enum"
+        ]
+        labels[table] = {}
+        if len(columns) == 1:
+            column = columns[0]
+            values = [
+                row for row in tables["EnumDataTypeValues"]
+                if row["EnumID"] == column["SpecialValueTypeID"]
+            ]
+            labels[table] = {
+                str(row["Value"]): row["DisplayName"]
+                for row in values
+            }
+            definitions.append({
+                "table": table,
+                "field": field,
+                "column": column,
+                "enum_values": values,
+            })
+
+    def local_tag(element):
+        return str(element.tag).rsplit("}", 1)[-1]
+
+    profiles, warnings = {}, []
+    workflow_ids = {
+        record["source_native_key"]["WorkflowId"]
+        for record in bundle["records"]
+    }
+    for workflow_id in sorted(workflow_ids):
+        profile = {
+            "workflow_id": workflow_id,
+            "node_number": None,
+            "node_state": None,
+            "configured_fdr_cutoff": None,
+            "configured_strategy": None,
+            "observed_strategy": "not_established",
+            "fdr_verification_status": "unverified",
+        }
+        workflows = [
+            row for row in tables["Workflows"]
+            if row["WorkflowID"] == workflow_id
+        ]
+        nodes = []
+        if len(workflows) == 1:
+            try:
+                root = ET.fromstring(workflows[0]["WorkflowXML"])
+                nodes = [
+                    node for node in root.iter()
+                    if local_tag(node) == "WorkflowNode"
+                    and node.get("ProcessingNodeName") == "HlxlValidator"
+                ]
+            except (ET.ParseError, TypeError, KeyError) as error:
+                profile["metadata_error"] = str(error)
+
+        if len(nodes) == 1:
+            node = nodes[0]
+            number = node.get("ProcessingNodeNumber")
+            profile.update(
+                node_number=number,
+                node_state=node.get("NodeState"),
+            )
+            parameters = [
+                parameter
+                for container in node
+                if local_tag(container) == "ProcessingNodeParameters"
+                for parameter in container
+                if local_tag(parameter) == "ProcessingNodeParameter"
+                and parameter.get("IsValueSet", "").lower() == "true"
+            ]
+
+            def parameter_values(name):
+                return [
+                    (parameter.text or "").strip()
+                    for parameter in parameters
+                    if parameter.get("Name") == name
+                ]
+
+            cutoffs = parameter_values("FdrThreshold")
+            if len(cutoffs) == 1:
+                try:
+                    cutoff = float(cutoffs[0])
+                    if math.isfinite(cutoff) and 0 <= cutoff <= 1:
+                        profile["configured_fdr_cutoff"] = cutoff
+                except ValueError:
+                    pass
+
+            strategies = parameter_values("FdrStrategy")
+            if len(strategies) == 1:
+                profile["configured_strategy"] = strategies[0]
+
+            messages = []
+            for message in tables["WorkflowMessages"]:
+                match = re.match(
+                    r"^\(([^)]+)\):",
+                    str(message.get("ProcessingNodeName", "")),
+                )
+                if (
+                    message["WorkflowID"] == workflow_id
+                    and match is not None
+                    and match.group(1) == number
+                    and isinstance(message.get("Message"), str)
+                ):
+                    messages.append(message)
+
+            if any(
+                "reverting to simple validation"
+                in message["Message"].lower()
+                for message in messages
+            ):
+                profile["observed_strategy"] = "simple_validation"
+
+            warnings.extend(
+                message for message in messages
+                if re.search(
+                    r"warning|error|exception|no decoy|revert|unable",
+                    message["Message"],
+                    re.IGNORECASE,
+                )
+            )
+        else:
+            profile["metadata_error"] = (
+                "A unique XlinkX validator node was not identified"
+            )
+
+        profiles[str(workflow_id)] = profile
+
+    crosslinks = {}
+    for row in tables["Crosslinks"]:
+        key = (row["WorkflowId"], row["ID"])
+        if key in crosslinks:
+            raise ValueError("Repeated native crosslink keys")
+        crosslinks[key] = row
+
+    parents = {}
+    for relation in tables["CrosslinksCSMs"]:
+        child = (relation["CSMsWorkflowId"], relation["CSMsID"])
+        parent = (
+            relation["CrosslinksWorkflowId"],
+            relation["CrosslinksID"],
+        )
+        parents.setdefault(child, set()).add(parent)
+
+    record_evidence = {}
+    for record in bundle["records"]:
+        key = record["source_native_key"]
+        child = (key["WorkflowId"], key["ID"])
+        parent_keys = (
+            parents.get(child, set())
+            if record["source_table"] == "CSMs"
+            else set()
+        )
+        info = {
+            "csm_confidence": labels.get(
+                record["source_table"], {}
+            ).get(
+                str(record["source_fields"].get("MatchConfidence")),
+                "unavailable",
+            ),
+            "parent_keys": [
+                {"WorkflowId": parent[0], "ID": parent[1]}
+                for parent in sorted(parent_keys)
+            ],
+            "parent_status": "missing",
+            "parent_confidence": "unavailable",
+            "validator": profiles.get(str(key["WorkflowId"]), {}),
+        }
+        if len(parent_keys) > 1:
+            info["parent_status"] = "multiple"
+        elif len(parent_keys) == 1:
+            parent_key = next(iter(parent_keys))
+            parent = crosslinks.get(parent_key)
+            if parent is None:
+                info["parent_status"] = "invalid"
+            else:
+                info.update(
+                    parent_status="unique",
+                    parent_confidence=labels["Crosslinks"].get(
+                        str(parent["Confidence"]), "unavailable"
+                    ),
+                )
+        record_evidence[record["source_record_id"]] = info
+
+    def common_value(name, default=None):
+        values = [profile.get(name) for profile in profiles.values()]
+        if values and all(value == values[0] for value in values):
+            return values[0]
+        return default
+
+    policy = {
+        "kind": "native_reported_candidates",
+        "configured_fdr_cutoff": common_value("configured_fdr_cutoff"),
+        "configured_strategy": common_value("configured_strategy"),
+        "observed_strategy": common_value(
+            "observed_strategy", "not_established"
+        ),
+        "fdr_verification_status": "unverified",
+        "per_record_fdr_applied": False,
+        "validator_profiles": list(profiles.values()),
+        "runtime_warnings": warnings,
+    }
+    evidence = {
+        "kind": "xlinkx_native_validation_evidence",
+        "native_sha256": bundle["provenance"]["psm_sha256"],
+        "confidence_definitions": definitions,
+        "crosslinks": tables["Crosslinks"],
+        "crosslink_csm_relationships": tables["CrosslinksCSMs"],
+        "workflows": tables["Workflows"],
+        "workflow_messages": tables["WorkflowMessages"],
+        "policy": policy,
+    }
+    body = (
+        json.dumps(
+            encoded(evidence),
+            indent=2,
+            ensure_ascii=False,
+            allow_nan=False,
+        ) + "\n"
+    ).encode("utf-8")
+    return policy, record_evidence, body
+
+
+def write_xlinkx_claudio_input(
+    bundle,
+    mappings,
+    output_dir,
+    *,
+    allowed_crosslinkers,
+    allowed_residues,
+):
+    """Export source-reported candidates with exact identities and explicit FDR status."""
+    if bundle.get("format") != "xlinkx_csm":
+        raise ValueError("XlinkX input export requires an XlinkX CSM import")
+    if Path(output_dir).exists():
+        raise ValueError("Output directory already exists")
+
+    selections = {}
+    for name, values in (
+        ("crosslinkers", allowed_crosslinkers),
+        ("residues", allowed_residues),
+    ):
+        if (
+            not isinstance(values, (set, frozenset, list, tuple))
+            or not values
+            or any(
+                not isinstance(value, str)
+                or not value
+                or value != value.strip()
+                for value in values
+            )
+        ):
+            raise ValueError(f"Explicit nonempty {name} are required")
+        selections[name] = set(values)
+    if any(
+        re.fullmatch(r"[A-Z]", residue) is None
+        for residue in selections["residues"]
+    ):
+        raise ValueError("Residues must be uppercase one-letter codes")
+
+    for kind in ("psm", "fasta"):
+        source = Path(bundle["provenance"][kind + "_path"])
+        if hashlib.sha256(source.read_bytes()).hexdigest() != \
+                bundle["provenance"][kind + "_sha256"]:
+            raise ValueError(f"XlinkX {kind} source checksum mismatch")
+
+    proteins = read_search_fasta(bundle["provenance"]["fasta_path"])
+    identities = {}
+    for identifier in target_proteins(bundle):
+        source = proteins.get(identifier)
+        identity = mappings.get(identifier)
+        if (
+            source is None
+            or not isinstance(identity, dict)
+            or identity.get("status") != "mapped"
+            or identity.get("sequence") != source["sequence"]
+            or not isinstance(identity.get("accession"), str)
+            or ACCESSION.fullmatch(identity["accession"]) is None
+        ):
+            continue
+        _reference_evidence(
+            {
+                "accession": identity["accession"],
+                "taxon_id": identity.get("taxon_id"),
+                "reference_sequence": identity["sequence"],
+            },
+            {
+                "taxon_id": identity.get("taxon_id"),
+                "sources": identity.get("sources", []),
+            },
+            source,
+            require_declared_accession=False,
+        )
+        identities[identifier] = identity
+
+    policy, native_evidence, evidence_body = _xlinkx_native_validation(
+        bundle
+    )
+    working = deepcopy(bundle)
+    working["proteins"] = proteins
+    working["native_filter_policy"] = policy
+    rows, audit = [], []
+
+    for original in working["records"]:
+        entry = deepcopy(original)
+        info = native_evidence[original["source_record_id"]]
+        validator = info["validator"]
+        entry.update(
+            input_status="not_evaluable",
+            input_reasons=[],
+            native_validation_evidence=deepcopy(info),
+            fdr_verification_status="unverified",
+        )
+        audit.append(entry)
+        reasons = entry["input_reasons"]
+
+        if original.get("record_kind") != "paired_crosslink_candidate":
+            reasons.append("unsupported_xlinkx_record_type")
+        if original["record_status"] != "valid":
+            reasons.append(original["record_reason"] or "source_unresolved")
+        if (
+            original["decoy_status"] != "target_target"
+            or original["source_decoy_flag"] is not False
+        ):
+            reasons.append("source_target_status_unresolved")
+
+        parent_reason = {
+            "missing": "native_parent_crosslink_missing",
+            "multiple": "multiple_native_parent_crosslinks",
+            "invalid": "native_parent_crosslink_invalid",
+        }.get(info["parent_status"])
+        if parent_reason:
+            reasons.append(parent_reason)
+        if reasons:
+            continue
+
+        selected = {}
+        for site in ("a", "b"):
+            endpoint = _xlinkx_endpoint(
+                original["source_fields"], site, proteins
+            )
+            if (
+                endpoint["status"] != "valid"
+                or endpoint != original["endpoints"][site]
+            ):
+                reasons.append("source_endpoint_changed_" + site)
+                continue
+
+            identity = identities.get(endpoint["source_fasta_id"])
+            if identity is None:
+                reasons.append("protein_identity_unresolved_" + site)
+                continue
+            selected[site] = identity
+            residue = identity["sequence"][
+                endpoint["protein_position"] - 1
+            ]
+            if residue not in selections["residues"]:
+                reasons.append("residue_not_selected_" + site)
+
+        if original["crosslinker"] not in selections["crosslinkers"]:
+            reasons.append("crosslinker_not_selected")
+        if reasons:
+            continue
+
+        row = {
+            "source_record_id": original["source_record_id"],
+            "dataset_accession": working["provenance"]["dataset_accession"],
+            "source_psm_sha256": working["provenance"]["psm_sha256"],
+            "source_fasta_sha256": working["provenance"]["fasta_sha256"],
+            "source_record_number": original["source_record_number"],
+            "source_table": original["source_table"],
+            "source_native_key_json": json.dumps(
+                original["source_native_key"]
+            ),
+            "source_run": original["spectrum"]["original_file"],
+            "source_scan": original["spectrum"]["scan_number"],
+            "source_crosslinker": original["crosslinker"],
+            "source_fields_json": json.dumps(
+                original["source_fields"], ensure_ascii=False
+            ),
+            "identity_scope": "exact_sequence",
+            "selection_basis": "native_reported_candidate",
+            "fdr_verification_status": "unverified",
+            "source_validation_strategy": validator.get(
+                "observed_strategy", "not_established"
+            ),
+            "source_configured_fdr_cutoff": validator.get(
+                "configured_fdr_cutoff"
+            ),
+            "source_native_csm_confidence": info["csm_confidence"],
+            "source_native_parent_confidence": info["parent_confidence"],
+            "selected_fdr_level": None,
+            "selected_fdr_value": None,
+            "selected_fdr_cutoff": None,
+        }
+        for site in ("a", "b"):
+            endpoint = original["endpoints"][site]
+            identity = selected[site]
+            row.update({
+                "unip_id_" + site: identity["accession"],
+                "seq_" + site: identity["sequence"],
+                "pep_" + site: endpoint["peptide"],
+                "pos_" + site: endpoint["protein_position"],
+                "res_pos_" + site: endpoint["link_position"],
+                "source_protein_id_" + site: endpoint["source_protein_id"],
+                "source_protein_position_" + site:
+                    endpoint["protein_position"],
+                "source_peptide_start_" + site: endpoint["peptide_start"],
+                "source_modifications_" + site:
+                    endpoint["source_modifications"],
+            })
+        entry.update(input_status="ready", identity_scope="exact_sequence")
+        rows.append(row)
+
+    prepared = {
+        "rows": rows,
+        "audit": audit,
+        "provenance": deepcopy(working["provenance"]),
+        "fdr_policy": {
+            "kind": "native_reported_candidates",
+            "fdr_verification_status": "unverified",
+            "per_record_fdr_applied": False,
+        },
+        "extra_source_bodies": {
+            "native_validation_sources/native_validation.json":
+                evidence_body,
+        },
+    }
+    return write_xifdr_outputs(
+        working,
+        mappings,
+        prepared,
+        output_dir,
+        pipeline_policy={
+            "allowed_crosslinkers": sorted(selections["crosslinkers"]),
+            "allowed_residues": sorted(selections["residues"]),
+            "source_protein_ids": None,
+        },
+    )

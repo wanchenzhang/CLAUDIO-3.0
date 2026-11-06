@@ -12,7 +12,19 @@ import requests
 import zipfile
 from .inventory import inspect_catalog, summarize_inventories, inspect_content_plan
 from .proteomecentral import fetch_dataset_pages, write_discovery_outputs
-from .xifdr import FDR_COLUMNS, read_xifdr_psms, read_plink_psms, write_claudio_input, write_import_report, read_merox_csms, write_merox_claudio_input, read_scout_csms, write_scout_claudio_input, read_xlinkx_csms
+from .xifdr import (
+    FDR_COLUMNS,
+    read_xifdr_psms,
+    read_plink_psms,
+    write_claudio_input,
+    write_import_report,
+    read_merox_csms,
+    write_merox_claudio_input,
+    read_scout_csms,
+    write_scout_claudio_input,
+    read_xlinkx_csms,
+    write_xlinkx_claudio_input,
+)
 
 DEFAULT_SEARCH_TERMS = (
     "XL-MS",
@@ -490,13 +502,7 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
     except (ValueError, OSError) as error:
         raise click.ClickException(str(error)) from error
     if source_format == "xlinkx_csm":
-        if not audit_only:
-            raise click.UsageError(
-                "XlinkX pdResult currently requires --audit-only."
-            )
-
         unsupported = {
-            "--mapping": mapping_path is not None,
             "--reference-projection": reference_projection_path is not None,
             "--author-filter-evidence": author_filter_path is not None,
             "--fdr-level": fdr_level is not None,
@@ -505,18 +511,41 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
             "--decoy-prefix": decoy_prefix is not None,
             "--plink-unfiltered": plink_unfiltered_path is not None,
             "--plink-parameters": plink_parameters_path is not None,
-            "--crosslinker": bool(crosslinkers),
-            "--residue": bool(residues),
             "--source-protein": bool(source_proteins),
         }
+        if audit_only:
+            unsupported.update({
+                "--mapping": mapping_path is not None,
+                "--crosslinker": bool(crosslinkers),
+                "--residue": bool(residues),
+            })
+
         conflicts = [
             option for option, present in unsupported.items() if present
         ]
         if conflicts:
+            mode = "--audit-only" if audit_only else "export"
             raise click.UsageError(
-                "XlinkX --audit-only cannot be combined with "
+                f"XlinkX {mode} cannot be combined with "
                 + ", ".join(conflicts)
             )
+
+        if not audit_only:
+            required = {
+                "--mapping": mapping_path is not None,
+                "--crosslinker": bool(crosslinkers),
+                "--residue": bool(residues),
+            }
+            missing = [
+                option for option, present in required.items()
+                if not present
+            ]
+            if missing:
+                raise click.UsageError(
+                    "XlinkX export requires "
+                    + ", ".join(missing)
+                    + ". Use --audit-only to inspect source records."
+                )
 
         click.echo("Detected format: XlinkX CSM (native pdResult)")
         try:
@@ -525,7 +554,19 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
                 fasta_path,
                 dataset_accession=dataset_accession,
             )
-            destination = write_import_report(bundle, output_dir)
+            if audit_only:
+                destination = write_import_report(bundle, output_dir)
+            else:
+                mappings = _read_protein_mapping(mapping_path)
+                destination = write_xlinkx_claudio_input(
+                    bundle,
+                    mappings,
+                    output_dir,
+                    allowed_crosslinkers=set(crosslinkers),
+                    allowed_residues=set(residues),
+                )
+
+            destination = Path(destination)
             manifest = json.loads(
                 (destination / "manifest.json").read_bytes()
             )
@@ -542,31 +583,59 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
             f"Parsed CSM records: {bundle['parser']['parsed_records']}"
         )
         click.echo(
-            f"Validated source records: "
-            f"{counts['validated_source_records']}"
-        )
-        click.echo(
-            f"Unresolved source records: "
-            f"{counts['unresolved_source_records']}"
-        )
-        click.echo(
-            f"Records with parser errors: {counts['parser_errors']}"
-        )
-        click.echo(
             f"Native decoy CSM rows: {native_counts['DecoyCSMs']}"
         )
         click.echo(
             f"Native crosslink records retained separately: "
             f"{native_counts['Crosslinks']}"
         )
-        click.echo(
-            "Scientific filtering, identity mapping and input export: "
-            "not performed"
-        )
-        click.echo(
-            f"Audit report: "
-            f"{(destination / 'import_report.json').resolve()}"
-        )
+
+        if audit_only:
+            click.echo(
+                f"Validated source records: "
+                f"{counts['validated_source_records']}"
+            )
+            click.echo(
+                f"Unresolved source records: "
+                f"{counts['unresolved_source_records']}"
+            )
+            click.echo(
+                f"Records with parser errors: {counts['parser_errors']}"
+            )
+            click.echo(
+                "Scientific filtering, identity mapping and input export: "
+                "not performed"
+            )
+            click.echo(
+                f"Audit report: "
+                f"{(destination / 'import_report.json').resolve()}"
+            )
+        else:
+            policy = manifest["native_filter_policy"]
+            click.echo(
+                f"Standardized input rows: {counts['pipeline_input_rows']}"
+            )
+            click.echo(
+                "Native FDR verification: "
+                + policy["fdr_verification_status"]
+            )
+            click.echo(
+                "Observed validation strategy: "
+                + policy["observed_strategy"]
+            )
+            click.echo(
+                "Configured native FDR cutoff: "
+                + str(policy.get("configured_fdr_cutoff"))
+            )
+            click.echo("Per-record FDR filtering: not performed")
+            click.echo("Model assessment: not performed")
+            click.echo(
+                f"Input: {(destination / 'claudio_input.csv').resolve()}"
+            )
+            click.echo(
+                f"Audit: {(destination / 'psm_audit.json').resolve()}"
+            )
+
         click.echo(f"Output: {destination.resolve()}")
         return
     if source_format == "scout_csm":

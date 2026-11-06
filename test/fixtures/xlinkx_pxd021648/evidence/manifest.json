@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "dataset_accession": "PXD021648",
+  "source_fasta_sha256": "5640a024616f7f4bd4b1881188ed04cb01f546494e75733544492da5c278a719",
+  "fdr_verification_status": "unverified",
+  "output_sha256": {
+    "sources/6d35b9ca261e9ad36e940c47b3220998cdfe1ecc53b1cd2cda0d7a93fb3b113a.json": "6d35b9ca261e9ad36e940c47b3220998cdfe1ecc53b1cd2cda0d7a93fb3b113a",
+    "sources/9a565cd6a294d0d6e2ecaa583ff1ecad2a9063ee93b98ddabc999cad65ab7251.json": "9a565cd6a294d0d6e2ecaa583ff1ecad2a9063ee93b98ddabc999cad65ab7251",
+    "sources/a42fcd8e4290c9e2be37db7cd97ff45180c1643412834830a6216e65eb5a0db3.fasta": "a42fcd8e4290c9e2be37db7cd97ff45180c1643412834830a6216e65eb5a0db3",
+    "native_validation_status.json": "71ee063cfa4a03212c26478cecac801ccd02d2a9958451e9df5a7a3d9b8d81c8",
+    "protein_mapping.json": "bde603063ce8e3fd389ebe84c8f6740a2ed49c42ffd17cc6bc8c99000759d04e",
+    ".gitattributes": "9a2fccc682b8d8c96d43847a54a77da32a0faa670297a039e0a6e454bb41c567"
+  }
+}

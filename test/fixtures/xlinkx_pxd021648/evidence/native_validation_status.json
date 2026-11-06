@@ -1,0 +1,20 @@
+{
+  "native_sha256": "03ae84a4dc4681b744b59bcfdbc9549822567729350f15211004da07fe8b2063",
+  "fdr_verification_status": "unverified",
+  "reason": "percolator_unavailable_no_decoys",
+  "observed_fallback": "simple_validation",
+  "review_path": "/viper/u1/wazha/xlms_assessment/xlinkx_validation/PXD021648_filter_review_rcubq922/native_filter_review.json",
+  "review_sha256": "7b1c968e44405e7f9dece49839aa96cfdc4fc0e86206056a90fb226161ca0bc9",
+  "fallback_messages": [
+    {
+      "WorkflowID": -241,
+      "Level": 1,
+      "MessageID": 72,
+      "ProcessingNodeName": "(5): Xlinkx Validator",
+      "Time": 637356737096127539,
+      "MessageKind": 2,
+      "Message": "Unable to use percolator because no decoys are present - reverting to simple validation."
+    }
+  ],
+  "per_record_fdr_assigned": false
+}
