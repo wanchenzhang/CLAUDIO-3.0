@@ -3626,3 +3626,122 @@ class TestXiFDRCompoundModificationTokens(unittest.TestCase):
             {"position": 2, "residue": "K", "token": "gsh-unc"},
             {"position": 3, "residue": "Q", "token": "da"},
         ])
+
+
+class TestXiFDRModificationCLI(unittest.TestCase):
+    prepare_inputs = TestDatasetStandardizeCLI.prepare_inputs
+    arguments = TestDatasetStandardizeCLI.arguments
+
+    def setUp(self):
+        self.temp = TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.psms = self.root / "PSM.csv"
+        self.fasta = self.root / "search.fasta"
+        self.references = self.root / "uniprot.fasta"
+        self.mapping_path = self.root / "mapping.json"
+        self.output = self.root / "standardized"
+        self.fasta.write_text(FASTA, encoding="utf-8")
+        self.references.write_text(REFERENCES, encoding="utf-8")
+        self.prepare_inputs([psm(PepSeq1="ACcmKc1-monolink")])
+
+    def audit_arguments(self):
+        return [
+            "standardize",
+            "--results", str(self.psms),
+            "--fasta", str(self.fasta),
+            "--dataset-accession", "PXD000001",
+            "--audit-only",
+            "--output", str(self.output),
+        ]
+
+    def test_repeated_options_extend_defaults_and_export(self):
+        self.prepare_inputs([
+            psm(PSMID="first", PepSeq1="ACcmKc1-monolink"),
+            psm(PSMID="second", PepSeq1="ACcmKgsh-unc"),
+        ])
+        result = CliRunner().invoke(catalog_main, self.arguments() + [
+            "--allow-modification", "c1-monolink",
+            "--allow-modification", "gsh-unc",
+        ])
+        self.assertEqual(result.exit_code, 0, result.output + repr(result.exception))
+        with (self.output / "claudio_input.csv").open(
+            encoding="utf-8", newline=""
+        ) as handle:
+            rows = list(csv.DictReader(handle))
+        self.assertEqual(len(rows), 2)
+        self.assertEqual([row["peptide1"] for row in rows], ["ACK", "ACK"])
+        self.assertEqual(
+            json.loads(rows[0]["source_fields_json"])["PepSeq1"],
+            "ACcmKc1-monolink",
+        )
+        manifest = json.loads((self.output / "manifest.json").read_text())
+        policy = manifest["provenance"]["xifdr_annotation_policy"]
+        self.assertEqual(policy["requested_tokens"], ["c1-monolink", "gsh-unc"])
+        self.assertTrue(
+            {"cm", "ox", "c1-monolink", "gsh-unc"}
+            <= set(policy["allowed_tokens"])
+        )
+        self.assertFalse(policy["modification_masses_assessed"])
+
+    def test_audit_retains_unapproved_annotations_as_unresolved(self):
+        self.prepare_inputs([
+            psm(PSMID="allowed", PepSeq1="ACcmKc1-monolink"),
+            psm(PSMID="unapproved", PepSeq1="ACcmKgsh-unc"),
+        ])
+        result = CliRunner().invoke(catalog_main, self.audit_arguments() + [
+            "--allow-modification", "c1-monolink",
+        ])
+        self.assertEqual(result.exit_code, 0, result.output + repr(result.exception))
+        bundle = json.loads((self.output / "import_report.json").read_text())
+        self.assertEqual(
+            [record["record_status"] for record in bundle["records"]],
+            ["valid", "not_evaluable"],
+        )
+        self.assertEqual(
+            bundle["records"][0]["endpoints"]["a"]["modifications"],
+            [
+                {"position": 2, "residue": "C", "token": "cm"},
+                {"position": 3, "residue": "K", "token": "c1-monolink"},
+            ],
+        )
+        self.assertEqual(
+            bundle["records"][1]["source_fields"]["PepSeq1"],
+            "ACcmKgsh-unc",
+        )
+
+    def test_default_allowlist_does_not_accept_new_tokens(self):
+        result = CliRunner().invoke(catalog_main, self.audit_arguments())
+        self.assertEqual(result.exit_code, 0, result.output + repr(result.exception))
+        bundle = json.loads((self.output / "import_report.json").read_text())
+        self.assertEqual(bundle["records"][0]["record_status"], "not_evaluable")
+        self.assertNotIn("xifdr_annotation_policy", bundle["provenance"])
+
+    def test_malformed_option_tokens_are_rejected_before_output(self):
+        for token in ("", " c1-monolink", "c1--monolink", "c1-", "C1"):
+            with self.subTest(token=token):
+                result = CliRunner().invoke(
+                    catalog_main,
+                    self.audit_arguments() + ["--allow-modification", token],
+                )
+                self.assertEqual(result.exit_code, 2, result.output)
+                self.assertIn("--allow-modification", result.output)
+                self.assertFalse(self.output.exists())
+
+    def test_option_is_rejected_for_other_formats(self):
+        for source_format in (
+            "plink_psm", "merox_csm", "scout_csm", "xlinkx_csm"
+        ):
+            with self.subTest(source_format=source_format):
+                with patch(
+                    "claudio.dataset_catalog.cli._detect_psm_format",
+                    return_value=source_format,
+                ):
+                    result = CliRunner().invoke(
+                        catalog_main,
+                        self.audit_arguments()
+                        + ["--allow-modification", "c1-monolink"],
+                    )
+                self.assertEqual(result.exit_code, 2, result.output)
+                self.assertIn("only supports xiFDR", result.output)
+                self.assertFalse(self.output.exists())

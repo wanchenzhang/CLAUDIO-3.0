@@ -517,12 +517,32 @@ def _detect_psm_format(results_path):
     type=click.Path(file_okay=False, path_type=Path),
     help="New directory for the input export or import audit.",
 )
-def standardize_command(results_path, fasta_path, mapping_path, dataset_accession,
-                        fdr_level, fdr_cutoff, fdr_column, decoy_prefix, crosslinkers,
-                        residues, source_proteins, audit_only, output_dir,
-                        plink_unfiltered_path, plink_parameters_path, author_filter_path,
-                        reference_projection_path=None,
-                        export_unverified_candidates=False):
+@click.option(
+    "--allow-modification", "allowed_modifications", multiple=True,
+    help="Additional xiFDR annotation token. Repeat to extend the default "
+         "allowlist; modification masses are not assessed.",
+)
+def standardize_command(
+    results_path,
+    fasta_path,
+    mapping_path,
+    dataset_accession,
+    fdr_level,
+    fdr_cutoff,
+    fdr_column,
+    decoy_prefix,
+    crosslinkers,
+    residues,
+    source_proteins,
+    audit_only,
+    output_dir,
+    plink_unfiltered_path,
+    plink_parameters_path,
+    author_filter_path,
+    reference_projection_path=None,
+    export_unverified_candidates=False,
+    allowed_modifications=(),
+):
     """Standardize supported XL-MS results or preserve a full import audit."""
     if output_dir.exists():
         raise click.BadParameter("Output directory already exists; choose a new directory.", param_hint="--output")
@@ -536,6 +556,22 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
         source_format = _detect_psm_format(results_path)
     except (ValueError, OSError) as error:
         raise click.ClickException(str(error)) from error
+    if allowed_modifications:
+        import re
+
+        if source_format != "xifdr_psm":
+            raise click.UsageError(
+                "--allow-modification only supports xiFDR PSM inputs."
+            )
+        if any(
+            re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z][a-z0-9]*)*", token) is None
+            for token in allowed_modifications
+        ):
+            raise click.BadParameter(
+                "Expected a complete lowercase annotation token, "
+                "optionally containing digits and hyphens.",
+                param_hint="--allow-modification",
+            )
     if export_unverified_candidates:
         if source_format != "plink_psm":
             raise click.UsageError(
@@ -1031,8 +1067,25 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
                 author_filter_path=author_filter_path,
             )
         else:
-            bundle = read_xifdr_psms(results_path, fasta_path, dataset_accession=dataset_accession,
-                                     backend="pyxlms")
+            from .xifdr import MODIFICATIONS
+
+            annotation_tokens = (
+                set(MODIFICATIONS) | set(allowed_modifications)
+                if allowed_modifications else None
+            )
+            bundle = read_xifdr_psms(
+                results_path,
+                fasta_path,
+                dataset_accession=dataset_accession,
+                backend="pyxlms",
+                allowed_modifications=annotation_tokens,
+            )
+            if allowed_modifications:
+                bundle["provenance"]["xifdr_annotation_policy"] = {
+                    "requested_tokens": sorted(set(allowed_modifications)),
+                    "allowed_tokens": sorted(annotation_tokens),
+                    "modification_masses_assessed": False,
+                }
         if audit_only:
             destination = write_import_report(bundle, output_dir)
             manifest = json.loads((destination / "manifest.json").read_text(encoding="utf-8"))
