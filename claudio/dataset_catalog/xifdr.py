@@ -644,7 +644,190 @@ def _add_author_filter_evidence(bundle, path):
                 record.update(record_status="valid", record_reason="")
     return bundle
 
+def _read_plink_workbook(raw):
+    """Read one pLink worksheet without evaluating or repairing source cells."""
+    import posixpath
+    import xml.etree.ElementTree as ET
+    from zipfile import ZipFile
+    from openpyxl import load_workbook
+    from openpyxl.utils import get_column_letter
 
+    required = {"Title", "Peptide", "Proteins", "Peptide_Type", "Linker"}
+    with ZipFile(io.BytesIO(raw)) as archive:
+        names = archive.namelist()
+        required_parts = (
+            "[Content_Types].xml",
+            "xl/workbook.xml",
+            "xl/_rels/workbook.xml.rels",
+        )
+        if any(names.count(name) != 1 for name in required_parts):
+            raise ValueError("Not a supported Excel workbook")
+
+        workbook_xml = ET.fromstring(archive.read("xl/workbook.xml"))
+        relationships = {
+            node.get("Id"): node
+            for node in ET.fromstring(
+                archive.read("xl/_rels/workbook.xml.rels")
+            )
+        }
+        workbook = load_workbook(
+            io.BytesIO(raw),
+            read_only=True,
+            data_only=False,
+            keep_links=False,
+        )
+        try:
+            matches = []
+            for sheet in workbook.worksheets:
+                for row_number, cells in enumerate(sheet.iter_rows(), 1):
+                    values = [cell.value for cell in cells]
+                    if not any(
+                        value.strip() if isinstance(value, str)
+                        else value is not None
+                        for value in values
+                    ):
+                        continue
+                    while values and values[-1] in (None, ""):
+                        values.pop()
+                    if required <= {
+                        value for value in values if isinstance(value, str)
+                    }:
+                        if any(
+                            value is not None and not isinstance(value, str)
+                            for value in values
+                        ):
+                            raise ValueError("Non-text pLink worksheet headers")
+                        matches.append((
+                            sheet,
+                            row_number,
+                            ["" if value is None else value for value in values],
+                        ))
+                    break
+
+            if len(matches) != 1:
+                raise ValueError(
+                    "Expected exactly one pLink PSM worksheet; "
+                    f"found {len(matches)}"
+                )
+            sheet, header_row, columns = matches[0]
+            named = [column for column in columns if column]
+            if len(named) != len(set(named)):
+                raise ValueError("pLink worksheet has duplicate named columns")
+
+            sheet_nodes = workbook_xml.findall("./{*}sheets/{*}sheet")
+            selected = [
+                (index, node)
+                for index, node in enumerate(sheet_nodes, 1)
+                if node.get("name") == sheet.title
+            ]
+            if len(selected) != 1:
+                raise ValueError("Ambiguous worksheet package identity")
+            sheet_index, node = selected[0]
+            relation_id = node.get(
+                "{http://schemas.openxmlformats.org/officeDocument/"
+                "2006/relationships}id"
+            )
+            relation = relationships.get(relation_id)
+            if relation is None or relation.get("TargetMode") == "External":
+                raise ValueError("Unsupported worksheet relationship")
+            target = relation.get("Target", "")
+            member = posixpath.normpath(
+                target.lstrip("/") if target.startswith("/")
+                else posixpath.join("xl", target)
+            )
+            if (
+                not relation.get("Type", "").endswith("/worksheet")
+                or not member.startswith("xl/worksheets/")
+                or names.count(member) != 1
+            ):
+                raise ValueError("Invalid worksheet package location")
+
+            raw_cells = {}
+            with archive.open(member) as handle:
+                for event, element in ET.iterparse(handle, events=("end",)):
+                    if element.tag.rsplit("}", 1)[-1] != "c":
+                        continue
+                    coordinate = element.get("r")
+                    if not coordinate or coordinate in raw_cells:
+                        raise ValueError(
+                            "Missing or duplicate worksheet cell address"
+                        )
+                    value = element.find("{*}v")
+                    formula = element.find("{*}f")
+                    raw_cells[coordinate] = {
+                        "raw_xml_value": None if value is None else value.text,
+                        "raw_xml_type": element.get("t"),
+                        "raw_formula": None if formula is None else formula.text,
+                    }
+                    element.clear()
+
+            rows = []
+            for row_number, cells in enumerate(
+                sheet.iter_rows(min_row=header_row + 1), header_row + 1
+            ):
+                if not any(
+                    cell.value.strip() if isinstance(cell.value, str)
+                    else cell.value is not None
+                    for cell in cells
+                ):
+                    continue
+                occupied = [
+                    index for index, cell in enumerate(cells, 1)
+                    if cell.value is not None and cell.value != ""
+                ]
+                width = max(len(columns), max(occupied, default=0))
+                original, values, notes, issue = [], [], [], ""
+                for index, cell in enumerate(cells[:width], 1):
+                    coordinate = f"{get_column_letter(index)}{row_number}"
+                    value = cell.value
+                    data_type = cell.data_type
+                    if data_type == "f":
+                        issue = issue or "xlsx_formula_cell"
+                    elif data_type == "e":
+                        issue = issue or "xlsx_error_cell"
+                    elif data_type == "d":
+                        issue = issue or "xlsx_date_cell"
+                    elif data_type not in ("s", "n", "inlineStr"):
+                        issue = issue or "xlsx_unsupported_cell_type"
+
+                    if isinstance(value, float) and not math.isfinite(value):
+                        issue = issue or "xlsx_nonfinite_number"
+                        value = repr(value)
+                    elif value is not None and not isinstance(
+                        value, (str, int, float, bool)
+                    ):
+                        value = (
+                            value.isoformat()
+                            if hasattr(value, "isoformat") else str(value)
+                        )
+                    original.append(value)
+                    values.append("" if value is None else str(value))
+                    notes.append({
+                        "coordinate": coordinate,
+                        "value": value,
+                        "data_type": data_type,
+                        "number_format": cell.number_format,
+                        **raw_cells.get(coordinate, {
+                            "raw_xml_value": None,
+                            "raw_xml_type": None,
+                            "raw_formula": None,
+                        }),
+                    })
+                rows.append({
+                    "source_record_number": len(rows) + 1,
+                    "source_line_start": None,
+                    "source_line_end": None,
+                    "source_values": original,
+                    "values": values,
+                    "source_sheet": sheet.title,
+                    "source_sheet_index": sheet_index,
+                    "source_worksheet_row": row_number,
+                    "source_cells": notes,
+                    "source_cell_issue": issue,
+                })
+            return columns, rows
+        finally:
+            workbook.close()
 def read_plink_psms(psm_path, fasta_path, *, dataset_accession,
                     decoy_prefix=None, fdr_columns=None, unfiltered_path=None, parameters_path=None,
                     author_filter_path=None):
@@ -686,8 +869,29 @@ def read_plink_psms(psm_path, fasta_path, *, dataset_accession,
     raw = psm_path.read_bytes()
     digest = hashlib.sha256(raw).hexdigest()
     proteins = read_search_fasta(fasta_path)
-    reader = csv.reader(io.StringIO(raw.decode("utf-8-sig")))
-    columns = next(reader, [])
+    from zipfile import is_zipfile
+
+    is_workbook = is_zipfile(io.BytesIO(raw))
+    if is_workbook:
+        columns, source_rows = _read_plink_workbook(raw)
+    else:
+        reader = csv.reader(io.StringIO(raw.decode("utf-8-sig")))
+        columns = next(reader, [])
+
+        def csv_source_rows():
+            previous_line = reader.line_num
+            for number, values in enumerate(reader, 1):
+                line_start, line_end = previous_line + 1, reader.line_num
+                previous_line = line_end
+                yield {
+                    "source_record_number": number,
+                    "source_line_start": line_start,
+                    "source_line_end": line_end,
+                    "source_values": values,
+                    "values": values,
+                }
+
+        source_rows = csv_source_rows()
     named = [column for column in columns if column]
     if len(named) != len(set(named)):
         raise ValueError("pLink PSM table has duplicate named columns")
@@ -698,24 +902,64 @@ def read_plink_psms(psm_path, fasta_path, *, dataset_accession,
     if not set(fdr_columns.values()) <= set(columns):
         raise ValueError("Selected FDR columns are missing from the pLink PSM table")
 
-    records, previous_line = [], reader.line_num
-    for number, values in enumerate(reader, 1):
-        line_start, line_end = previous_line + 1, reader.line_num
-        previous_line = line_end
+    records = []
+    for source_row in source_rows:
+        number = source_row["source_record_number"]
+        values = source_row["values"]
         if not any(value.strip() for value in values):
             continue
-        fields, interpretation = _plink_source_fields(columns, values)
+        if is_workbook:
+            fields = {
+                key: value for key, value in zip(columns, values) if key
+            }
+            interpretation = None
+            source_key = (
+                f"worksheet_{source_row['source_sheet_index']}:"
+                f"{source_row['source_worksheet_row']:06d}"
+            )
+        else:
+            fields, interpretation = _plink_source_fields(columns, values)
+            source_key = f"{number:06d}"
+
         annotation = fields.get("Modifications", "").strip().lower()
-        modification_status = ("none_reported" if annotation in ("null", "none", "nan")
-                               else "not_parsed" if annotation else "not_provided")
-        record = {"source_record_id": f"{dataset_accession}:{digest}:{number:06d}",
-                  "source_record_number": number, "source_line_start": line_start, "source_line_end": line_end,
-                  "source_values": values, "source_fields": fields, "source_scan": None,
-                  "decoy_status": "unknown", "decoy_reason": "decoy_policy_not_provided" if decoy_prefix is None else "",
-                  "fdr": {level: _fdr_value(fields.get(fdr_columns.get(level))) for level in FDR_COLUMNS},
-                  "endpoints": {}, "protein_pairs": [], "modification_status": modification_status,
-                  "record_status": "not_evaluable", "record_reason": ""}
+        modification_status = (
+            "none_reported" if annotation in ("null", "none", "nan")
+            else "not_parsed" if annotation else "not_provided"
+        )
+        record = {
+            "source_record_id": f"{dataset_accession}:{digest}:{source_key}",
+            "source_record_number": number,
+            "source_line_start": source_row["source_line_start"],
+            "source_line_end": source_row["source_line_end"],
+            "source_values": source_row["source_values"],
+            "source_fields": fields,
+            "source_scan": None,
+            "decoy_status": "unknown",
+            "decoy_reason": (
+                "decoy_policy_not_provided" if decoy_prefix is None else ""
+            ),
+            "fdr": {
+                level: _fdr_value(fields.get(fdr_columns.get(level)))
+                for level in FDR_COLUMNS
+            },
+            "endpoints": {},
+            "protein_pairs": [],
+            "modification_status": modification_status,
+            "record_status": "not_evaluable",
+            "record_reason": "",
+        }
+        if is_workbook:
+            record.update({
+                key: source_row[key] for key in (
+                    "source_sheet", "source_sheet_index",
+                    "source_worksheet_row", "source_cells",
+                    "source_cell_issue",
+                )
+            })
         records.append(record)
+        if is_workbook and source_row["source_cell_issue"]:
+            record["record_reason"] = source_row["source_cell_issue"]
+            continue
         if interpretation is not None:
             record["source_csv_interpretation"] = interpretation
         if len(values) != len(columns) and interpretation is None:
@@ -784,6 +1028,13 @@ def read_plink_psms(psm_path, fasta_path, *, dataset_accession,
             "provenance": {"dataset_accession": dataset_accession, "psm_path": str(psm_path.resolve()),
                            "psm_sha256": digest, "fasta_path": str(fasta_path.resolve()),
                            "fasta_sha256": next(iter(proteins.values()))["fasta_sha256"]}}
+    if is_workbook:
+        bundle["parser"].update({
+            "format_variant": "plink_psm_xlsx",
+            "source_reader": "openpyxl",
+            "numeric_source_values_repaired": False,
+            "source_cells_retained": True,
+        })
     if unfiltered_path is not None:
         return _add_plink_native_evidence(bundle, unfiltered_path, parameters_path)
     if author_filter_path is not None:

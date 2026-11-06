@@ -366,13 +366,29 @@ def _detect_psm_format(results_path):
     if zipfile.is_zipfile(results_path):
         with zipfile.ZipFile(results_path) as archive:
             names = archive.namelist()
-        if (
+        is_excel = all(
+            names.count(name) == 1 for name in (
+                "[Content_Types].xml",
+                "xl/workbook.xml",
+                "xl/_rels/workbook.xml.rels",
+            )
+        )
+        is_merox = (
             names.count("Result.csv") == 1
             and names.count("properties.mxf") == 1
-        ):
+        )
+        if is_excel and is_merox:
+            raise ValueError("ZIP container matches multiple result formats")
+        if is_excel:
+            from .xifdr import _read_plink_workbook
+
+            _read_plink_workbook(results_path.read_bytes())
+            return "plink_psm"
+        if is_merox:
             return "merox_csm"
         raise ValueError(
-            "ZIP container is not a supported native MeroX result"
+            "ZIP container is not a supported native MeroX result "
+            "or pLink Excel workbook"
         )
 
     with results_path.open(encoding="utf-8-sig", newline="") as handle:

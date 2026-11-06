@@ -1,0 +1,36 @@
+{
+  "kind": "plink_xlsx_source_fixture",
+  "dataset_accession": "PXD037125",
+  "files": {
+    "spectra.xlsx": {
+      "reported_file_name": "Ovis_aries_TRAP_Sec61_60S_20220930_LH_2022.09.30.filtered_cross-linked_spectra_pLink2.xlsx",
+      "sha256": "bdea4516a1a286e3e30f503406bfb591084fb6adeae8d48a84ada6d45fca362e",
+      "bytes": 248971
+    },
+    "fasta_candidate_1.fasta": {
+      "reported_file_name": "Ovis_aries_TRAP_Sec61_60S_20220930_LH.fasta",
+      "sha256": "10ace97a0dcdeeeccb2e591e020646b9fe7fc3429bd3c27025129674cd0bbce1",
+      "bytes": 18571,
+      "transfer_url": "ftp://massive-ftp.ucsd.edu/v04/MSV000090438/sequence/Ovis_aries_TRAP_Sec61_60S_20220930_LH.fasta"
+    },
+    "fasta_candidate_2.fasta": {
+      "reported_file_name": "Paavilainen_Ovis_aries_UniprotID_UP000002356_reviewed.fasta",
+      "sha256": "2f703909e3a8bb0107220a6a7e8f46db33d33172297bc4e4ad972d198f6529a1",
+      "bytes": 190123,
+      "transfer_url": "ftp://massive-ftp.ucsd.edu/v04/MSV000090438/updates/2022-09-30_LJOksanenHapponen_334b13b7/sequence/Paavilainen_Ovis_aries_UniprotID_UP000002356_reviewed.fasta"
+    }
+  },
+  "expected": {
+    "sheet": "Ovis_aries_TRAP_Sec61_60S_20220",
+    "source_data_rows": 2186,
+    "source_columns": 14,
+    "stored_numeric_examples": {
+      "C2": 2081161238,
+      "G2": 2081159994,
+      "J2": 44336.82
+    }
+  },
+  "search_database_identity_confirmed": false,
+  "numeric_source_values_repaired": false,
+  "fdr_acceptance_performed": false
+}

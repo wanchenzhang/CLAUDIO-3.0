@@ -2809,3 +2809,242 @@ class TestReviewedReferenceAccession(unittest.TestCase):
                 self.replace_source_sequence(sequence)
                 with self.assertRaises(ValueError):
                     self.validate(self.reviewed_report())
+class TestPLinkExcelImport(unittest.TestCase):
+    def setUp(self):
+        import hashlib
+        import json
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+
+        self.json = json
+        self.sha256 = lambda body: hashlib.sha256(body).hexdigest()
+        self.temporary = TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.directory = Path(self.temporary.name)
+        self.fixture = (
+            Path(__file__).resolve().parents[1]
+            / "fixtures/plink_pxd037125"
+        )
+        self.columns = [
+            "Title", "Charge", "Precursor_Mass", "Peptide",
+            "Peptide_Type", "Linker", "Peptide_Mass", "Modifications",
+            "Evalue", "Score", "Precursor_Mass_Error(Da)",
+            "Precursor_Mass_Error(ppm)", "Proteins", "Protein_Type",
+        ]
+        self.row = [
+            "synthetic.1.1.3.0.dta", 3, 2081161238,
+            "AKAAK(2)-AAKAA(3)", "Cross-Linked", "DSS",
+            2081159994, "null", 0.01, 44336.82, 0.001, 0.5,
+            "protein_a(2)-protein_b(3)/", "Inter-Protein",
+        ]
+        self.fasta = self.directory / "synthetic.fasta"
+        self.fasta.write_text(
+            ">protein_a\nAKAAK\n>protein_b\nAAKAA\n",
+            encoding="utf-8",
+        )
+
+    def create_workbook(self, rows=None):
+        from openpyxl import Workbook
+
+        path = self.directory / "synthetic.xlsx"
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = "CSMs"
+        sheet.append(self.columns)
+        for row in ([self.row] if rows is None else rows):
+            sheet.append(row)
+        workbook.save(path)
+        workbook.close()
+        return path
+
+    def read_generated(self, path):
+        from claudio.dataset_catalog.xifdr import read_plink_psms
+
+        return read_plink_psms(
+            path,
+            self.fasta,
+            dataset_accession="PXD999999",
+            decoy_prefix="decoy_",
+        )
+
+    def test_real_workbook_retains_source_rows_cells_and_numeric_values(self):
+        from claudio.dataset_catalog.xifdr import read_plink_psms
+
+        manifest = self.json.loads(
+            (self.fixture / "manifest.json").read_bytes()
+        )
+        for name, expected in manifest["files"].items():
+            self.assertEqual(
+                self.sha256((self.fixture / name).read_bytes()),
+                expected["sha256"],
+                name,
+            )
+
+        path = self.fixture / "spectra.xlsx"
+        bundle = read_plink_psms(
+            path,
+            self.fixture / "fasta_candidate_1.fasta",
+            dataset_accession="PXD037125",
+        )
+        self.assertEqual(bundle["format"], "plink_psm")
+        self.assertEqual(bundle["source_columns"], self.columns)
+        self.assertEqual(len(bundle["records"]), 2186)
+        self.assertEqual(
+            bundle["parser"]["format_variant"], "plink_psm_xlsx"
+        )
+
+        digest = self.sha256(path.read_bytes())
+        self.assertEqual(bundle["provenance"]["psm_sha256"], digest)
+        self.assertEqual(
+            len({
+                record["source_record_id"]
+                for record in bundle["records"]
+            }),
+            2186,
+        )
+        self.assertTrue(all(
+            record["source_record_id"].startswith(
+                f"PXD037125:{digest}:"
+            )
+            for record in bundle["records"]
+        ))
+        self.assertEqual(
+            [
+                record["source_worksheet_row"]
+                for record in bundle["records"]
+            ],
+            list(range(2, 2188)),
+        )
+
+        first = bundle["records"][0]
+        self.assertEqual(
+            first["source_sheet"],
+            "Ovis_aries_TRAP_Sec61_60S_20220",
+        )
+        self.assertIsNone(first.get("source_line_start"))
+        self.assertIsNone(first.get("source_line_end"))
+        self.assertNotIn("Order", first["source_fields"])
+        self.assertNotIn("FileID", first["source_fields"])
+        self.assertEqual(first["source_values"][2], 2081161238)
+        self.assertEqual(
+            first["source_fields"]["Precursor_Mass"], "2081161238"
+        )
+        self.assertEqual(first["source_fields"]["Score"], "44336.82")
+
+        cells = {
+            cell["coordinate"]: cell
+            for cell in first["source_cells"]
+        }
+        self.assertEqual(cells["C2"]["value"], 2081161238)
+        self.assertEqual(cells["C2"]["data_type"], "n")
+        self.assertEqual(cells["C2"]["number_format"], "#,##0")
+        self.assertEqual(cells["C2"]["raw_xml_value"], "2081161238")
+        self.assertEqual(
+            cells["I2"]["raw_xml_value"], "0.47948289999999999"
+        )
+        self.assertTrue(all(
+            record["fdr"]["psm"]["status"] == "missing"
+            and record["fdr"]["psm"]["value"] is None
+            for record in bundle["records"]
+        ))
+
+    def test_duplicate_rows_keep_physical_rows_and_validate_endpoints(self):
+        path = self.create_workbook([
+            self.row,
+            [None] * len(self.columns),
+            self.row,
+        ])
+        bundle = self.read_generated(path)
+        records = bundle["records"]
+        self.assertEqual(len(records), 2)
+        self.assertEqual(
+            [record["source_worksheet_row"] for record in records],
+            [2, 4],
+        )
+        self.assertNotEqual(
+            records[0]["source_record_id"],
+            records[1]["source_record_id"],
+        )
+        for record in records:
+            self.assertEqual(record["record_status"], "valid")
+            self.assertEqual(
+                record["endpoints"]["a"]["protein_position"], 2
+            )
+            self.assertEqual(
+                record["endpoints"]["b"]["protein_position"], 3
+            )
+            self.assertEqual(
+                record["endpoints"]["a"]["peptide"], "AKAAK"
+            )
+            self.assertEqual(
+                record["endpoints"]["b"]["peptide"], "AAKAA"
+            )
+
+    def test_formula_and_error_cells_remain_unresolved_in_the_audit(self):
+        cases = [
+            ("=1+1", "f", "xlsx_formula_cell"),
+            ("#VALUE!", "e", "xlsx_error_cell"),
+        ]
+        for value, data_type, reason in cases:
+            with self.subTest(value=value):
+                row = list(self.row)
+                row[9] = value
+                path = self.create_workbook([row])
+                bundle = self.read_generated(path)
+                self.assertEqual(len(bundle["records"]), 1)
+                record = bundle["records"][0]
+                self.assertEqual(record["record_status"], "not_evaluable")
+                self.assertEqual(record["record_reason"], reason)
+                cells = {
+                    cell["coordinate"]: cell
+                    for cell in record["source_cells"]
+                }
+                self.assertEqual(cells["J2"]["value"], value)
+                self.assertEqual(cells["J2"]["data_type"], data_type)
+
+    def test_multiple_matching_worksheets_are_not_resolved_by_first_match(self):
+        from openpyxl import load_workbook
+
+        path = self.create_workbook()
+        workbook = load_workbook(path)
+        copied = workbook.copy_worksheet(workbook.active)
+        copied.title = "Other CSMs"
+        workbook.save(path)
+        workbook.close()
+
+        with self.assertRaisesRegex(ValueError, "(?i)worksheet"):
+            self.read_generated(path)
+
+    def test_cli_detects_excel_and_writes_an_audit_without_export(self):
+        from click.testing import CliRunner
+        from claudio.dataset_catalog.cli import main
+
+        output = self.directory / "audit"
+        result = CliRunner().invoke(main, [
+            "standardize",
+            "--results", str(self.fixture / "spectra.xlsx"),
+            "--fasta", str(self.fixture / "fasta_candidate_1.fasta"),
+            "--dataset-accession", "PXD037125",
+            "--audit-only",
+            "--output", str(output),
+        ])
+        self.assertEqual(
+            result.exit_code, 0,
+            result.output + repr(result.exception),
+        )
+        report = self.json.loads(
+            (output / "import_report.json").read_bytes()
+        )
+        self.assertEqual(len(report["records"]), 2186)
+        self.assertEqual(
+            report["parser"]["format_variant"], "plink_psm_xlsx"
+        )
+        self.assertEqual(
+            report["records"][0]["source_worksheet_row"], 2
+        )
+        self.assertFalse((output / "claudio_input.csv").exists())
+        manifest = self.json.loads(
+            (output / "manifest.json").read_bytes()
+        )
+        self.assertIs(manifest["input_exported"], False)
+        self.assertIs(manifest["assessment_performed"], False)
