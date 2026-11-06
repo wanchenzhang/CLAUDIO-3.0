@@ -1,0 +1,62 @@
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib16_DSSO_pl1_MS3_OTOTIT.mgf				dataset A DSSO Iontrap PEAK
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib16_DSSO_pl1_MS3_OTOTIT.msf				dataset A DSSO Iontrap MSF (Proteome Discoverer 2.5)
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib16_DSSO_pl1_MS3_OTOTIT.mzid			dataset A DSSO Iontrap RESULT
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib16_DSSO_pl1_MS3_OTOTIT.mzML			dataset A DSSO Iontrap PEAK
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib16_DSSO_pl1_MS3_OTOTIT.pdResult			dataset A DSSO Iontrap pdResult (Proteome Discoverer 2.5)
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib16_DSSO_pl1_MS3_OTOTIT.raw				dataset A DSSO Iontrap RAW
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib16_DSSO_pl1_MS3_OTOTIT_Crosslinks_1FDR.xlsx	dataset A DSSO Iontrap High-confidence (1% FDR) crosslinks
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib16_DSSO_pl1_MS3_OTOTIT_CSMS_1FDR.xlsx		dataset A DSSO Iontrap High-confidence (1% FDR) CSMs
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSBSO_pl2_MS3_OTOTIT.mgf			dataset A DSBSO Iontrap PEAK
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSBSO_pl2_MS3_OTOTIT.msf			dataset A DSBSO Iontrap MSF (Proteome Discoverer 2.5)
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSBSO_pl2_MS3_OTOTIT.mzid			dataset A DSBSO Iontrap RESULT
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSBSO_pl2_MS3_OTOTIT.mzML			dataset A DSBSO Iontrap PEAK
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSBSO_pl2_MS3_OTOTIT.pdResult			dataset A DSBSO Iontrap pdResult (Proteome Discoverer 2.5)
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSBSO_pl2_MS3_OTOTIT.raw			dataset A DSBSO Iontrap RAW
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSBSO_pl2_MS3_OTOTIT_Crosslinks_1FDR.xlsx	dataset A DSBSO Iontrap High-confidence (1% FDR) crosslinks
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSBSO_pl2_MS3_OTOTIT_CSMS_1FDR.xlsx		dataset A DSBSO Iontrap High-confidence (1% FDR) CSMs
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSBSO_pl2_MS3_OTOTOT.mgf			dataset A DSBSO Orbitrap PEAK
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSBSO_pl2_MS3_OTOTOT.msf			dataset A DSBSO Orbitrap MSF (Proteome Discoverer 2.5)
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSBSO_pl2_MS3_OTOTOT.mzid			dataset A DSBSO Orbitrap RESULT
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSBSO_pl2_MS3_OTOTOT.mzML			dataset A DSBSO Orbitrap PEAK
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSBSO_pl2_MS3_OTOTOT.pdResult			dataset A DSBSO Orbitrap pdResult (Proteome Discoverer 2.5)
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSBSO_pl2_MS3_OTOTOT.raw			dataset A DSBSO Orbitrap RAW
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSBSO_pl2_MS3_OTOTOT_Crosslinks_1FDR.xlsx	dataset A DSBSO Orbitrap High-confidence (1% FDR) crosslinks
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSBSO_pl2_MS3_OTOTOT_CSMS_1FDR.xlsx		dataset A DSBSO Orbitrap High-confidence (1% FDR) CSMs
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSSO_pl1_MS3_OTOTOT.mgf				dataset A DSSO Orbitrap PEAK
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSSO_pl1_MS3_OTOTOT.msf				dataset A DSSO Orbitrap MSF (Proteome Discoverer 2.5)
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSSO_pl1_MS3_OTOTOT.mzid			dataset A DSSO Orbitrap RESULT
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSSO_pl1_MS3_OTOTOT.mzML			dataset A DSSO Orbitrap PEAK
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSSO_pl1_MS3_OTOTOT.pdResult			dataset A DSSO Orbitrap pdResult (Proteome Discoverer 2.5)
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSSO_pl1_MS3_OTOTOT.raw				dataset A DSSO Orbitrap RAW
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSSO_pl1_MS3_OTOTOT_Crosslinks_1FDR.xlsx	dataset A DSSO Orbitrap High-confidence (1% FDR) crosslinks
+20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSSO_pl1_MS3_OTOTOT_CSMS_1FDR.xlsx		dataset A DSSO Orbitrap High-confidence (1% FDR) CSMs
+crap.fasta											used fasta database of common contaminants
+peplib.fasta											dataset A fasta database
+peplib_IMP-X-FDR_files.zip									dataset A validation files
+peplib_MaXLinker_files.zip									dataset A MaXLinker files
+peplib_MaXLinker_PD2.5Study.zip									dataset A MaXLinker pre-processing results (Proteome Discoverer 2.5 Study)
+peplib_MSAnnika_PD2.5Study.zip									dataset A MS Annika results (Proteome Discoverer 2.5 Study)
+peplib_XlinkX_PD3.0Study.zip									dataset A XlinkX results (Proteome Discoverer 3.0 Study)
+re-analysis_PXD014337.fasta									dataset C fasta database
+re-analysis_PXD014337_IMP-X-FDR_files.zip							dataset C validation files
+re-analysis_PXD014337_MaXLinker_files.zip							dataset C MaXLinker files
+re-analysis_PXD014337_MaXLinker_PD2.5Study.zip							dataset C MaXLinker pre-processing results (Proteome Discoverer 2.5 Study)
+re-analysis_PXD014337_MSAnnika_PD2.5Study.zip							dataset C MS Annika results (Proteome Discoverer 2.5 Study)
+re-analysis_PXD014337_XlinkX_PD3.0Study.zip							dataset C XlinkX results (Proteome Discoverer 3.0 Study)
+re-analysis_PXD026191.fasta									dataset E fasta database
+re-analysis_PXD026191_MaXLinker_files.zip							dataset E MaXLinker files
+re-analysis_PXD026191_MaXLinker_PD2.5Study.zip							dataset E MaXLinker pre-processing results (Proteome Discoverer 2.5 Study)
+re-analysis_PXD026191_MSAnnika_PD2.5Study.zip							dataset E MS Annika results (Proteome Discoverer 2.5 Study)
+re-analysis_PXD026191_XlinkX_PD3.0Study.zip							dataset E XlinkX results (Proteome Discoverer 3.0 Study)
+re-analysis_PXD029252.fasta									dataset B fasta database
+re-analysis_PXD029252_IMP-X-FDR_files.zip							dataset B validation files
+re-analysis_PXD029252_MaXLinker_files.zip							dataset B MaXLinker files
+re-analysis_PXD029252_MaXLinker_PD2.5Study.zip							dataset B MaXLinker pre-processing results (Proteome Discoverer 2.5 Study)
+re-analysis_PXD029252_MSAnnika_PD2.5Study.zip							dataset B MS Annika results (Proteome Discoverer 2.5 Study)
+re-analysis_PXD029252_XlinkX_PD3.0Study.zip							dataset B XlinkX results (Proteome Discoverer 3.0 Study)
+re-analysis_PXD031114.fasta									dataset D fasta database
+re-analysis_PXD031114_MaXLinker_files.zip							dataset D MaXLinker files
+re-analysis_PXD031114_MaXLinker_PD2.5Study.zip							dataset D MaXLinker pre-processing results (Proteome Discoverer 2.5 Study)
+re-analysis_PXD031114_MSAnnika_PD2.5Study.zip							dataset D MS Annika results (Proteome Discoverer 2.5 Study)
+re-analysis_PXD031114_XlinkX_PD3.0Study.zip							dataset D XlinkX results (Proteome Discoverer 3.0 Study)
+settings.txt											search settings for the different datasets

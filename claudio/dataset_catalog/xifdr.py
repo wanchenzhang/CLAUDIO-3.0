@@ -1047,6 +1047,7 @@ def write_import_report(bundle, output_dir):
     output_dir = Path(output_dir)
     if output_dir.exists():
         raise FileExistsError("Import report output directory already exists")
+    _verify_msannika_sources(bundle)
     _verify_plink_native_sources(bundle)
     author_sources = _author_filter_source_bodies(bundle)
     for kind in ("psm", "fasta"):
@@ -5369,3 +5370,372 @@ def write_xlinkx_claudio_input(
             "source_protein_ids": None,
         },
     )
+def _verify_msannika_sources(bundle):
+    """Verify every source used by the MS Annika importer."""
+    if bundle.get("format") != "msannika_csm":
+        return
+    for receipt in bundle["source_receipts"]:
+        raw = Path(receipt["path"]).read_bytes()
+        if hashlib.sha256(raw).hexdigest() != receipt["sha256"]:
+            raise ValueError("An MS Annika source checksum changed after parsing")
+
+
+def read_msannika_csms(
+    psm_path, fasta_path, *, dataset_accession,
+    crosslinks_path=None, contaminant_fasta_path=None, backend="pyxlms",
+):
+    """Import XLSX CSMs while retaining raw rows and separate crosslink records."""
+    import importlib
+    from importlib.metadata import version
+    from unittest.mock import patch
+
+    import openpyxl
+    import pandas as pd
+
+    if backend not in {"native", "pyxlms"}:
+        raise ValueError("backend must be native or pyxlms")
+    if re.fullmatch(r"PXD\d{6,}", dataset_accession) is None:
+        raise ValueError("A ProteomeXchange PXD accession is required")
+
+    receipts = []
+
+    def source_receipt(path, kind):
+        path = Path(path).resolve()
+        receipt = {
+            "kind": kind, "path": str(path),
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        }
+        receipts.append(receipt)
+        return receipt
+
+    def table(path, required, kind):
+        receipt = source_receipt(path, kind)
+        workbook = openpyxl.load_workbook(
+            path, read_only=True, data_only=False
+        )
+        candidates = []
+        try:
+            for sheet in workbook:
+                nonempty = [
+                    (number, cells)
+                    for number, cells in enumerate(sheet.iter_rows(), 1)
+                    if any(cell.value is not None for cell in cells)
+                ]
+                if not nonempty:
+                    continue
+                header_row, cells = nonempty[0]
+                header = [cell.value for cell in cells]
+                while header and header[-1] is None:
+                    header.pop()
+                if not required <= set(header):
+                    continue
+                if any(not isinstance(value, str) for value in header):
+                    raise ValueError("Unsupported MS Annika column label")
+                if len(header) != len(set(header)):
+                    raise ValueError("Duplicate MS Annika column labels")
+                records = []
+                for number, cells in nonempty[1:]:
+                    values = [cell.value for cell in cells]
+                    if len(values) > len(header) and not any(
+                        value is not None for value in values[len(header):]
+                    ):
+                        values = values[:len(header)]
+                    fields = (
+                        dict(zip(header, values))
+                        if len(values) == len(header) else {}
+                    )
+                    records.append({
+                        "source_record_id": (
+                            f"{dataset_accession}:{receipt['sha256']}:"
+                            f"{sheet.title}:{number:06d}"
+                        ),
+                        "source_record_number": len(records) + 1,
+                        "source_worksheet": sheet.title,
+                        "source_worksheet_row": number,
+                        "source_values": values,
+                        "source_fields": fields,
+                        "source_cell_types": [
+                            cell.data_type for cell in cells[:len(values)]
+                        ],
+                    })
+                candidates.append((header, records))
+        finally:
+            workbook.close()
+        if len(candidates) != 1:
+            raise ValueError("Expected one uniquely identifiable MS Annika worksheet")
+        return receipt, candidates[0]
+
+    def integer(value, minimum):
+        if isinstance(value, bool):
+            raise ValueError("Boolean position")
+        if isinstance(value, float):
+            if not math.isfinite(value) or not value.is_integer():
+                raise ValueError("Noninteger position")
+            value = int(value)
+        text = str(value).strip()
+        if re.fullmatch(r"\d+", text) is None or int(text) < minimum:
+            raise ValueError("Invalid position")
+        return int(text)
+
+    required = {
+        "Sequence A", "Sequence B", "Crosslinker Position A",
+        "Crosslinker Position B", "Accession A", "Accession B",
+        "A in protein", "B in protein", "Alpha T/D", "Beta T/D",
+        "Spectrum File", "First Scan", "Charge", "RT [min]", "Crosslink Strategy",
+    }
+    psm_receipt, (columns, records) = table(psm_path, required, "csms")
+    fasta_receipt = source_receipt(fasta_path, "search_fasta")
+    proteins = read_search_fasta(fasta_path)
+    if contaminant_fasta_path is not None:
+        source_receipt(contaminant_fasta_path, "contaminant_fasta")
+        for identifier, protein in read_search_fasta(
+            contaminant_fasta_path
+        ).items():
+            if identifier in proteins:
+                if proteins[identifier]["sequence"] != protein["sequence"]:
+                    raise ValueError("Conflicting search FASTA identifiers")
+            else:
+                proteins[identifier] = protein
+
+    aliases = {}
+    for identifier, protein in proteins.items():
+        labels = [identifier]
+        if protein["uniprot_accession"]:
+            labels.append(protein["uniprot_accession"])
+        parts = identifier.split("|")
+        if (
+            len(parts) == 3 and parts[0] == "sg"
+            and ACCESSION.fullmatch(parts[1])
+        ):
+            labels.append(parts[1])
+        for label in labels:
+            aliases.setdefault(label, set()).add(identifier)
+
+    crosslink_records = []
+    crosslink_columns = []
+    if crosslinks_path is not None:
+        _, (crosslink_columns, crosslink_records) = table(
+            crosslinks_path,
+            {"Sequence A", "Sequence B", "Position A", "Position B",
+             "Accession A", "Accession B", "In protein A", "In protein B"},
+            "crosslinks",
+        )
+
+    def endpoint(fields, side):
+        accession = str(fields.get("Accession " + side, "")).strip()
+        peptide = fields.get("Sequence " + side)
+        result = {
+            "source_protein_id": accession,
+            "source_fasta_id": None,
+            "source_peptide": peptide,
+            "source_modifications": fields.get("Modifications " + side),
+            "peptide": peptide,
+            "peptide_start": None,
+            "link_position": None,
+            "protein_position": None,
+            "modifications": None,
+            "status": "not_evaluable",
+            "reason": "",
+        }
+        try:
+            start_zero = integer(fields.get(side + " in protein"), 0)
+            link = integer(fields.get("Crosslinker Position " + side), 1)
+            if not isinstance(peptide, str) or re.fullmatch(r"[A-Z]+", peptide) is None:
+                raise ValueError("Unsupported peptide sequence")
+            if link > len(peptide):
+                raise ValueError("Link position outside peptide")
+        except (TypeError, ValueError):
+            result["reason"] = "invalid_sequence_or_position"
+            return result
+        result.update(
+            peptide_start=start_zero + 1,
+            link_position=link,
+            protein_position=start_zero + link,
+        )
+        matches = aliases.get(accession, set())
+        if len(matches) != 1:
+            result["reason"] = (
+                "protein_identity_ambiguous" if matches
+                else "protein_identifier_unresolved"
+            )
+            return result
+        identifier = next(iter(matches))
+        result["source_fasta_id"] = identifier
+        if proteins[identifier]["sequence"][
+            start_zero:start_zero + len(peptide)
+        ] != peptide:
+            result["reason"] = "peptide_sequence_mismatch"
+            return result
+        result.update(status="valid", reason="")
+        return result
+
+    for record in records:
+        fields = record["source_fields"]
+        flags = [
+            str(fields.get(column, "")).strip().upper()
+            for column in ("Alpha T/D", "Beta T/D")
+        ]
+        decoy = (
+            "unknown" if any(flag not in {"T", "D"} for flag in flags)
+            else "target_target" if flags == ["T", "T"]
+            else "decoy_decoy" if flags == ["D", "D"]
+            else "target_decoy"
+        )
+        endpoints = {
+            site: endpoint(fields, side)
+            for site, side in (("a", "A"), ("b", "B"))
+        }
+        reason = (
+            "row_width_mismatch" if not fields
+            else "unsupported_workbook_cell"
+            if any(kind in {"f", "e"} for kind in record["source_cell_types"])
+            else "source_engine_unresolved"
+            if re.fullmatch(
+                r"MS Annika(?:\s*\([^)]*\))?",
+                str(fields.get("Crosslink Strategy", "")).strip(),
+            ) is None
+            else "invalid_decoy_flags" if decoy == "unknown"
+            else "source_endpoint_unresolved"
+            if any(item["status"] != "valid" for item in endpoints.values())
+            else ""
+        )
+        record.update(
+            record_kind="paired_crosslink_candidate",
+            decoy_status=decoy,
+            fdr={level: _fdr_value(None) for level in FDR_COLUMNS},
+            endpoints=endpoints,
+            record_status="not_evaluable" if reason else "valid",
+            record_reason=reason,
+            compensation_voltage_status=(
+                "not_present_in_source" if "Compensation Voltage" not in columns
+                else "reported_column"
+            ),
+        )
+
+    bundle = {
+        "format": "msannika_csm", "format_version": 1,
+        "source_columns": columns, "records": records,
+        "proteins": proteins,
+        "crosslink_source_columns": crosslink_columns,
+        "crosslink_records": crosslink_records,
+        "source_receipts": receipts,
+        "provenance": {
+            "dataset_accession": dataset_accession,
+            "psm_path": psm_receipt["path"],
+            "psm_sha256": psm_receipt["sha256"],
+            "fasta_path": fasta_receipt["path"],
+            "fasta_sha256": fasta_receipt["sha256"],
+        },
+        "parser": {
+            "name": "pyXLMS" if backend == "pyxlms" else "native",
+            "version": version("pyXLMS") if backend == "pyxlms" else None,
+            "parsed_records": 0,
+            "modification_masses_assessed": False,
+            "missing_compensation_voltage": (
+                "unknown" if "Compensation Voltage" not in columns
+                else "source_column"
+            ),
+        },
+    }
+
+    eligible = [
+        record for record in records if record["record_status"] == "valid"
+    ]
+    if backend == "pyxlms" and eligible:
+        from pyXLMS import parser
+
+        marker = "__claudio_source_record_id"
+        while marker in columns:
+            marker += "_"
+        frame = pd.DataFrame(
+            [record["source_values"] for record in eligible], columns=columns
+        )
+        frame[marker] = [record["source_record_id"] for record in eligible]
+        if "Compensation Voltage" not in frame:
+            frame["Compensation Voltage"] = float("nan")
+        else:
+            frame["Compensation Voltage"] = frame["Compensation Voltage"].map(
+                lambda value: float("nan") if value is None else value
+            )
+        module = importlib.import_module(parser.read_msannika.__module__)
+        expected = {record["source_record_id"]: record for record in eligible}
+
+        def parsed_endpoint(csm, prefix):
+            return (
+                csm[prefix + "_peptide"],
+                csm[prefix + "_peptide_crosslink_position"],
+                tuple(csm[prefix + "_proteins"]),
+                tuple(csm[prefix + "_proteins_crosslink_positions"]),
+                tuple(csm[prefix + "_proteins_peptide_positions"]),
+                csm[prefix + "_decoy"],
+            )
+
+        def source_endpoint(record, site, side):
+            value = record["endpoints"][site]
+            return (
+                value["peptide"], value["link_position"],
+                (value["source_protein_id"],),
+                (value["protein_position"],), (value["peptide_start"],),
+                str(record["source_fields"][
+                    "Alpha T/D" if side == "A" else "Beta T/D"
+                ]).strip().upper() == "D",
+            )
+
+        try:
+            with patch.object(module.pd, "read_excel", return_value=frame):
+                parsed = parser.read_msannika(
+                    str(psm_path), format="xlsx",
+                    parse_modifications=False, unsafe=False, verbose=2,
+                ).model_dump(mode="python")["crosslink_spectrum_matches"]
+            if len(parsed) != len(eligible):
+                raise ValueError("MS Annika parser record count differs from source")
+            seen = set()
+            for csm in parsed:
+                source_id = csm["additional_information"]["source"][marker]
+                if source_id not in expected or source_id in seen:
+                    raise ValueError("Unknown or repeated MS Annika source association")
+                seen.add(source_id)
+                record = expected[source_id]
+                actual = tuple(
+                    parsed_endpoint(csm, prefix) for prefix in ("alpha", "beta")
+                )
+                native = (
+                    source_endpoint(record, "a", "A"),
+                    source_endpoint(record, "b", "B"),
+                )
+                direct, swapped = actual == native, actual[::-1] == native
+                if not (direct or swapped):
+                    raise ValueError("MS Annika parsed endpoints differ from source")
+                fields = record["source_fields"]
+                if (
+                    csm["spectrum_file"] != str(fields["Spectrum File"]).strip()
+                    or csm["scan_nr"] != integer(fields["First Scan"], 1)
+                    or csm["charge"] != integer(fields["Charge"], 1)
+                    or not math.isclose(
+                        csm["retention_time"], float(fields["RT [min]"]) * 60,
+                        rel_tol=1e-9, abs_tol=1e-6,
+                    )
+                ):
+                    raise ValueError("MS Annika spectrum identity differs from source")
+                if "Compensation Voltage" not in columns:
+                    for key, value in csm.items():
+                        if "compensation" in key.lower() or key.lower().endswith("_cv"):
+                            if value is not None and not (
+                                isinstance(value, float) and not math.isfinite(value)
+                            ):
+                                raise ValueError("Missing compensation voltage became a measurement")
+                record["parser_orientation"] = (
+                    "indistinguishable" if direct and swapped
+                    else "same" if direct else "swapped"
+                )
+            bundle["parser"]["parsed_records"] = len(parsed)
+        except Exception as error:
+            for record in eligible:
+                record.update(
+                    record_status="not_evaluable",
+                    record_reason="pyxlms_parse_failed",
+                    parser_error=f"{type(error).__name__}: {error}",
+                )
+
+    _verify_msannika_sources(bundle)
+    return bundle

@@ -235,6 +235,7 @@ def inspect_command(catalog_path, plan_path, output_dir, resume, delay):
     type=click.Path(file_okay=False, path_type=Path),
     help="New directory for the summary and complete attempt history.",
 )
+
 def summarize_command(catalog_path, run_dirs, output_dir):
     """Summarize saved runs without downloading data or changing source files."""
     click.echo("Validating saved runs and raw response checksums...")
@@ -380,9 +381,49 @@ def _detect_psm_format(results_path):
         if is_excel and is_merox:
             raise ValueError("ZIP container matches multiple result formats")
         if is_excel:
+            import io
+            import openpyxl
             from .xifdr import _read_plink_workbook
 
-            _read_plink_workbook(results_path.read_bytes())
+            raw = results_path.read_bytes()
+            workbook = openpyxl.load_workbook(
+                io.BytesIO(raw), read_only=True, data_only=False
+            )
+            annika_sheets = []
+            plink_sheets = []
+            required_annika = {
+                "Sequence A", "Sequence B", "Accession A", "Accession B",
+                "A in protein", "B in protein",
+                "Crosslinker Position A", "Crosslinker Position B",
+                "Alpha T/D", "Beta T/D", "Spectrum File", "First Scan",
+                "Crosslink Strategy",
+            }
+            required_plink = {
+                "Title", "Peptide", "Proteins", "Peptide_Type", "Linker",
+            }
+            try:
+                for sheet in workbook:
+                    header = next(
+                        (
+                            set(values)
+                            for values in sheet.iter_rows(values_only=True)
+                            if any(value is not None for value in values)
+                        ),
+                        set(),
+                    )
+                    if required_annika <= header:
+                        annika_sheets.append(sheet.title)
+                    if required_plink <= header:
+                        plink_sheets.append(sheet.title)
+            finally:
+                workbook.close()
+            if annika_sheets:
+                if len(annika_sheets) != 1 or plink_sheets:
+                    raise ValueError(
+                        "Excel workbook matches multiple or ambiguous result tables"
+                    )
+                return "msannika_csm"
+            _read_plink_workbook(raw)
             return "plink_psm"
         if is_merox:
             return "merox_csm"
@@ -522,6 +563,16 @@ def _detect_psm_format(results_path):
     help="Additional xiFDR annotation token. Repeat to extend the default "
          "allowlist; modification masses are not assessed.",
 )
+@click.option(
+    "--msannika-crosslinks", "msannika_crosslinks_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Corresponding MS Annika Crosslinks XLSX table retained separately.",
+)
+@click.option(
+    "--msannika-contaminants", "msannika_contaminants_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Additional contaminant FASTA used for the MS Annika search.",
+)
 def standardize_command(
     results_path,
     fasta_path,
@@ -542,6 +593,8 @@ def standardize_command(
     reference_projection_path=None,
     export_unverified_candidates=False,
     allowed_modifications=(),
+    msannika_crosslinks_path=None,
+    msannika_contaminants_path=None,
 ):
     """Standardize supported XL-MS results or preserve a full import audit."""
     if output_dir.exists():
@@ -556,6 +609,78 @@ def standardize_command(
         source_format = _detect_psm_format(results_path)
     except (ValueError, OSError) as error:
         raise click.ClickException(str(error)) from error
+    if source_format != "msannika_csm" and (
+        msannika_crosslinks_path is not None
+        or msannika_contaminants_path is not None
+    ):
+        raise click.UsageError(
+            "--msannika-crosslinks and --msannika-contaminants "
+            "only support MS Annika CSM inputs."
+        )
+
+    if source_format == "msannika_csm":
+        if not audit_only:
+            raise click.UsageError(
+                "MS Annika input currently requires --audit-only."
+            )
+        selections = {
+            "--mapping": mapping_path is not None,
+            "--reference-projection": reference_projection_path is not None,
+            "--fdr-level": fdr_level is not None,
+            "--fdr-cutoff": fdr_cutoff is not None,
+            "--fdr-column": fdr_column is not None,
+            "--decoy-prefix": decoy_prefix is not None,
+            "--plink-unfiltered": plink_unfiltered_path is not None,
+            "--plink-parameters": plink_parameters_path is not None,
+            "--author-filter-evidence": author_filter_path is not None,
+            "--crosslinker": bool(crosslinkers),
+            "--residue": bool(residues),
+            "--source-protein": bool(source_proteins),
+            "--allow-modification": bool(allowed_modifications),
+            "--export-unverified-candidates": export_unverified_candidates,
+        }
+        conflicts = [
+            option for option, present in selections.items() if present
+        ]
+        if conflicts:
+            raise click.UsageError(
+                "MS Annika audit does not apply selection options: "
+                + ", ".join(conflicts)
+            )
+        from .xifdr import read_msannika_csms
+
+        click.echo("Detected format: MS Annika CSM (XLSX)")
+        try:
+            bundle = read_msannika_csms(
+                results_path,
+                fasta_path,
+                dataset_accession=dataset_accession,
+                crosslinks_path=msannika_crosslinks_path,
+                contaminant_fasta_path=msannika_contaminants_path,
+            )
+            destination = write_import_report(bundle, output_dir)
+            manifest = json.loads(
+                (destination / "manifest.json").read_text(encoding="utf-8")
+            )
+        except (ValueError, OSError, RuntimeError) as error:
+            raise click.ClickException(str(error)) from error
+        click.echo(f"Source CSM records: {len(bundle['records'])}")
+        click.echo(f"Parsed CSM records: {bundle['parser']['parsed_records']}")
+        click.echo(
+            "Crosslink records retained separately: "
+            f"{len(bundle['crosslink_records'])}"
+        )
+        click.echo(
+            "Records with parser errors: "
+            f"{manifest['counts']['parser_errors']}"
+        )
+        click.echo(
+            "Scientific filtering, identity mapping and input export: "
+            "not performed"
+        )
+        click.echo(f"Audit report: {destination / 'import_report.json'}")
+        click.echo(f"Output: {destination.resolve()}")
+        return
     if allowed_modifications:
         import re
 

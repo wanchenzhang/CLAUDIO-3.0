@@ -1,0 +1,26 @@
+Settings:
+
+All:
+	Max. Missed Cleavages: 4
+	Fixed Mod.: Carbamidomethyl (C)
+	Variable Mod.: Oxidation (M)
+
+Matzinger:
+	Annika MS2 5 ppm - 10 ppm
+	Annika MS3 5 ppm - 10 ppm - 10 ppm / 0.5 Da
+	XlinkX 5 ppm - 10 ppm - 10 ppm / 0.5 Da
+	MaXLinker 5 ppm - 0.02 Da - 0.02 Da / 0.5 Da
+Beveridge:
+	Annika MS2 5 ppm - 10 ppm
+	Annika MS3 5 ppm - 10 ppm - 0.5 Da
+	XlinkX 5 ppm - 20 ppm - 0.5 Da
+	MaXLinker MS2 10 ppm - 0.05 Da MS3 20 ppm - 0.6 Da
+Ruwolt:
+	Annika MS2 5 ppm - 10 ppm
+	Annika MS3 5 ppm - 10 ppm - 0.5 Da
+	XlinkX 5 ppm - 10 ppm - 0.5 Da
+	MaXLinker 5 ppm - 0.02 Da - 0.5 Da
+Courouble:
+	Annika MS3 10 pm - 20 ppm - 0.5 Da
+	XlinkX 10 ppm - 20 ppm - 0.5 Da
+	MaXLinker 10 ppm - 0.02 Da - 0.5 Da

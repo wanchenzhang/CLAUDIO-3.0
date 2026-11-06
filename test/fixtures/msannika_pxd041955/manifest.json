@@ -1,0 +1,54 @@
+{
+  "kind": "ms_annika_xlsx_source_fixture",
+  "project_accession": "PXD041955",
+  "files": {
+    "csms.xlsx": {
+      "bytes": 94687,
+      "sha256": "6a500289182841bc0468b7d9c5fcf7d1bf9ed8c1651118424ecd1b03ee37496c",
+      "source_path": "/viper/u1/wazha/xlms_assessment/annika_validation/PXD041955_prs2a1pr/files/csms.xlsx"
+    },
+    "crosslinks.xlsx": {
+      "bytes": 22477,
+      "sha256": "db74c0970b965fcaf8c36dab295e635aea74022937b14239443e18c25f72e4d6",
+      "source_path": "/viper/u1/wazha/xlms_assessment/annika_validation/PXD041955_prs2a1pr/files/crosslinks.xlsx"
+    },
+    "search.fasta": {
+      "bytes": 72575,
+      "sha256": "a9ac881b6a8a06c8b6f1394fdad323921fd3ea69c27b8558a4efa206930d50b7",
+      "source_path": "/viper/u1/wazha/xlms_assessment/annika_validation/PXD041955_prs2a1pr/database_review_88hqjbgd/files/peplib.fasta"
+    },
+    "contaminants.fasta": {
+      "bytes": 42092,
+      "sha256": "4b0e6e97ab1d618baa38be612a787d884a781e07f627b919c4b29ac064db5382",
+      "source_path": "/viper/u1/wazha/xlms_assessment/annika_validation/PXD041955_prs2a1pr/database_review_88hqjbgd/files/crap.fasta"
+    },
+    "file_description.txt": {
+      "bytes": 6643,
+      "sha256": "dd4a318b12fd11e2fd545403389aa6ca48441813e3a46b68c2bd8e11211c6bf3",
+      "source_path": "/viper/u1/wazha/xlms_assessment/annika_validation/PXD041955_prs2a1pr/files/description.txt"
+    },
+    "settings.txt": {
+      "bytes": 714,
+      "sha256": "15820b58d4352548aa87e171865bb2f12188271fe855908e2974e5d299ac34e2",
+      "source_path": "/viper/u1/wazha/xlms_assessment/annika_validation/PXD041955_prs2a1pr/files/settings.txt"
+    }
+  },
+  "validation": {
+    "source_csm_records": 765,
+    "source_crosslink_records": 369,
+    "validated_csm_records": 761,
+    "unresolved_csm_worksheet_rows": [
+      445,
+      617,
+      672,
+      689
+    ],
+    "source_csm_peptide_start_basis": 0,
+    "source_crosslink_protein_position_basis": 1,
+    "compensation_voltage": "not_present_in_source",
+    "uniprot_identity_acceptance_performed": false,
+    "fdr_acceptance_performed": false,
+    "modification_masses_assessed": false
+  },
+  "source_validation_manifest_sha256": "a6dd0661f75dd9d84d0e1945d6a3c52d34a19f5e838955b58c7b7bcc68761d71"
+}
