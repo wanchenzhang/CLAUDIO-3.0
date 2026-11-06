@@ -3142,6 +3142,180 @@ def read_merox_csms(psm_path, fasta_path, *, dataset_accession):
             ).hexdigest(),
         },
     }
+def _verify_merox_construct_review(source, specification):
+    """Verify a source-bound declaration for a construct reference."""
+    review = specification.get("construct_review")
+    if not isinstance(review, dict):
+        raise ValueError("Construct alignment requires an explicit review")
+
+    reference = specification["reference_sequence"]
+    expected = {
+        "kind": "merox_construct_reference_review",
+        "schema_version": 1,
+        "review_status": "reviewed",
+        "source_fasta_id": source["id"],
+        "source_fasta_sha256": source["fasta_sha256"],
+        "source_sequence_sha256": hashlib.sha256(
+            source["sequence"].encode("ascii")
+        ).hexdigest(),
+        "reference_accession": specification["reference_accession"],
+        "reference_taxon_id": specification["reference_taxon_id"],
+        "reference_sequence_sha256": hashlib.sha256(
+            reference.encode("ascii")
+        ).hexdigest(),
+    }
+    if (
+        type(review.get("schema_version")) is not int
+        or any(review.get(key) != value for key, value in expected.items())
+        or not isinstance(review.get("reason"), str)
+        or not review["reason"].strip()
+    ):
+        raise ValueError("Construct review differs from its source or reference")
+
+    interval = review.get("reference_interval")
+    maximum = review.get("max_optimal_alignments")
+    if (
+        not isinstance(interval, (list, tuple))
+        or len(interval) != 2
+        or any(type(value) is not int for value in interval)
+        or not 1 <= interval[0] <= interval[1] <= len(reference)
+        or type(maximum) is not int
+        or not 1 <= maximum <= 64
+        or review.get("require_all_optimal_alignments") is not True
+    ):
+        raise ValueError("Invalid construct review projection policy")
+
+    receipts = review.get("sources")
+    if not isinstance(receipts, list) or not receipts:
+        raise ValueError("Construct review requires saved evidence")
+    declared = {
+        key: value for key, value in review.items() if key != "sources"
+    }
+    for receipt in receipts:
+        if (
+            not isinstance(receipt, dict)
+            or receipt.get("kind") != "merox_construct_reference_review"
+            or not isinstance(receipt.get("absolute_path"), str)
+            or not Path(receipt["absolute_path"]).is_absolute()
+            or not isinstance(receipt.get("sha256"), str)
+            or re.fullmatch(r"[0-9a-f]{64}", receipt["sha256"]) is None
+        ):
+            raise ValueError("Invalid construct review evidence")
+        raw = Path(receipt["absolute_path"]).read_bytes()
+        if hashlib.sha256(raw).hexdigest() != receipt["sha256"]:
+            raise ValueError("Construct review evidence checksum changed")
+        if json.loads(raw.decode("utf-8-sig")) != declared:
+            raise ValueError("Construct review document differs from its declaration")
+    return review
+
+
+def _merox_multi_reference_profiles(bundle, reference_mapping):
+    """Prepare independently verified references for each source protein."""
+    if (
+        type(reference_mapping.get("schema_version")) is not int
+        or reference_mapping["schema_version"] != 1
+        or reference_mapping.get("source_fasta_sha256")
+        != bundle["provenance"]["fasta_sha256"]
+    ):
+        raise ValueError("Multi-reference mapping differs from the search FASTA")
+
+    references = reference_mapping.get("references")
+    if not isinstance(references, dict) or not references:
+        raise ValueError("Multi-reference mapping requires protein references")
+
+    profiles, options_by_source, mappings = {}, {}, {}
+    reference_sequences = {}
+    for identifier, specification in references.items():
+        source = bundle["proteins"].get(identifier)
+        if source is None or not isinstance(specification, dict):
+            raise ValueError("Unknown source protein in multi-reference mapping")
+
+        accession = specification.get("reference_accession")
+        taxon = specification.get("reference_taxon_id")
+        sequence = specification.get("reference_sequence")
+        receipts = specification.get("sources")
+        if (
+            not isinstance(accession, str)
+            or ACCESSION.fullmatch(accession) is None
+            or type(taxon) is not int or taxon <= 0
+            or not isinstance(sequence, str)
+            or re.fullmatch(r"[A-Z]+", sequence) is None
+            or not isinstance(receipts, list) or not receipts
+        ):
+            raise ValueError("Invalid per-protein reference declaration")
+        if accession in reference_sequences and reference_sequences[accession] != sequence:
+            raise ValueError("Conflicting sequences for the same reference accession")
+        reference_sequences[accession] = sequence
+
+        profile = {
+            "profile_id": identifier + ":" + accession,
+            "source_fasta_id": identifier,
+            "accession": accession,
+            "taxon_id": taxon,
+            "source_sequence": source["sequence"],
+            "reference_sequence": sequence,
+            "reference_sequence_sha256": hashlib.sha256(
+                sequence.encode("ascii")
+            ).hexdigest(),
+        }
+        _reference_evidence(
+            profile,
+            {"taxon_id": taxon, "sources": receipts},
+            source,
+            require_declared_accession=False,
+        )
+
+        review = None
+        maximum = 64
+        if specification.get("construct_review") is not None:
+            review = _verify_merox_construct_review(source, specification)
+            maximum = review["max_optimal_alignments"]
+
+        options, coordinate_evidence = _projection_coordinate_options(
+            source["sequence"], sequence, maximum
+        )
+        if review is None:
+            if (
+                coordinate_evidence["method"] != "full_source_exact_subsequence"
+                or len(options) != 1
+            ):
+                raise ValueError(
+                    "Construct alignment requires a reviewed reference mapping"
+                )
+        elif not options:
+            raise ValueError("Construct review has no bounded coordinate mapping")
+
+        exact = (
+            review is None
+            and source["sequence"] == sequence
+            and source.get("uniprot_accession") == accession
+        )
+        scope = "exact_sequence" if exact else "candidate_hypothesis"
+        profile.update(
+            identity_scope=scope,
+            coordinate_evidence=coordinate_evidence,
+            require_all_optimal_alignments=True,
+            reference_interval=(
+                list(review["reference_interval"]) if review else None
+            ),
+        )
+        profiles[identifier] = profile
+        options_by_source[identifier] = options
+        sources = deepcopy(receipts)
+        if review:
+            sources.extend(deepcopy(review["sources"]))
+        mappings[identifier] = {
+            "status": "mapped" if exact else "reference_projected",
+            "accession": accession,
+            "sequence": sequence,
+            "taxon_id": taxon,
+            "identity_scope": scope,
+            "coordinate_evidence": deepcopy(coordinate_evidence),
+            "sources": sources,
+        }
+    return profiles, options_by_source, mappings
+
+
 def write_merox_claudio_input(
     bundle,
     reference_mapping,
@@ -3187,94 +3361,105 @@ def write_merox_claudio_input(
         if digest != bundle["provenance"][kind + "_sha256"]:
             raise ValueError(f"Source {kind} checksum changed")
 
-    identifier = reference_mapping.get("source_fasta_id")
-    source = bundle["proteins"].get(identifier)
-    if (
-        source is None
-        or reference_mapping.get("source_fasta_sha256")
-        != bundle["provenance"]["fasta_sha256"]
-    ):
-        raise ValueError("Reference mapping differs from the search FASTA")
-
-    accession = reference_mapping.get("reference_accession")
-    taxon = reference_mapping.get("reference_taxon_id")
-    reference_sequence = reference_mapping.get("reference_sequence")
-    if (
-        not isinstance(accession, str)
-        or ACCESSION.fullmatch(accession) is None
-        or type(taxon) is not int
-        or taxon <= 0
-    ):
-        raise ValueError("Invalid reference accession or organism")
-    if (
-        source.get("taxon_id") is not None
-        and source["taxon_id"] != taxon
-    ):
-        raise ValueError("Reference organism differs from the search FASTA")
-
-    receipts = reference_mapping.get("sources", [])
-    confirmed = False
-    for receipt in receipts:
-        raw = Path(receipt["absolute_path"]).read_bytes()
-        if hashlib.sha256(raw).hexdigest() != receipt.get("sha256"):
-            raise ValueError("Reference evidence checksum changed")
-
-        uri = urlsplit(
-            receipt.get("response_url", receipt.get("request_url", ""))
-        )
-        if (
-            receipt.get("kind") != "uniprot_api"
-            or receipt.get("status") != 200
-            or uri.scheme != "https"
-            or uri.netloc != "rest.uniprot.org"
-            or not uri.path.startswith("/uniprotkb/")
-        ):
-            continue
-
-        payload = json.loads(raw)
-        if not isinstance(payload, dict):
-            continue
-        if (
-            payload.get("primaryAccession") == accession
-            and payload.get("organism", {}).get("taxonId") == taxon
-            and payload.get("sequence", {}).get("value")
-            == reference_sequence
-        ):
-            confirmed = True
-
-    if not confirmed:
-        raise ValueError("Reference sequence lacks matching saved evidence")
-
-    options, coordinate_evidence = _projection_coordinate_options(
-        source["sequence"], reference_sequence, 64
+    multi_reference = (
+        reference_mapping.get("kind") == "merox_multi_reference_mapping"
     )
-    if (
-        coordinate_evidence["method"] != "full_source_exact_subsequence"
-        or len(options) != 1
-    ):
-        raise ValueError(
-            "MeroX export currently requires unique exact source containment"
+    if multi_reference:
+        profiles, options_by_source, mappings = _merox_multi_reference_profiles(
+            bundle, reference_mapping
         )
+    else:
+        identifier = reference_mapping.get("source_fasta_id")
+        source = bundle["proteins"].get(identifier)
+        if (
+            source is None
+            or reference_mapping.get("source_fasta_sha256")
+            != bundle["provenance"]["fasta_sha256"]
+        ):
+            raise ValueError("Reference mapping differs from the search FASTA")
 
-    profile = {
-        "profile_id": identifier + ":" + accession,
-        "accession": accession,
-        "identity_scope": "candidate_hypothesis",
-        "source_sequence": source["sequence"],
-        "reference_sequence": reference_sequence,
-        "coordinate_evidence": coordinate_evidence,
-    }
-    mappings = {
-        identifier: {
-            "status": "reference_projected",
+        accession = reference_mapping.get("reference_accession")
+        taxon = reference_mapping.get("reference_taxon_id")
+        reference_sequence = reference_mapping.get("reference_sequence")
+        if (
+            not isinstance(accession, str)
+            or ACCESSION.fullmatch(accession) is None
+            or type(taxon) is not int
+            or taxon <= 0
+        ):
+            raise ValueError("Invalid reference accession or organism")
+        if (
+            source.get("taxon_id") is not None
+            and source["taxon_id"] != taxon
+        ):
+            raise ValueError("Reference organism differs from the search FASTA")
+
+        receipts = reference_mapping.get("sources", [])
+        confirmed = False
+        for receipt in receipts:
+            raw = Path(receipt["absolute_path"]).read_bytes()
+            if hashlib.sha256(raw).hexdigest() != receipt.get("sha256"):
+                raise ValueError("Reference evidence checksum changed")
+
+            uri = urlsplit(
+                receipt.get("response_url", receipt.get("request_url", ""))
+            )
+            if (
+                receipt.get("kind") != "uniprot_api"
+                or receipt.get("status") != 200
+                or uri.scheme != "https"
+                or uri.netloc != "rest.uniprot.org"
+                or not uri.path.startswith("/uniprotkb/")
+            ):
+                continue
+
+            payload = json.loads(raw)
+            if not isinstance(payload, dict):
+                continue
+            if (
+                payload.get("primaryAccession") == accession
+                and payload.get("organism", {}).get("taxonId") == taxon
+                and payload.get("sequence", {}).get("value")
+                == reference_sequence
+            ):
+                confirmed = True
+
+        if not confirmed:
+            raise ValueError("Reference sequence lacks matching saved evidence")
+
+        options, coordinate_evidence = _projection_coordinate_options(
+            source["sequence"], reference_sequence, 64
+        )
+        if (
+            coordinate_evidence["method"] != "full_source_exact_subsequence"
+            or len(options) != 1
+        ):
+            raise ValueError(
+                "MeroX export currently requires unique exact source containment"
+            )
+
+        profile = {
+            "profile_id": identifier + ":" + accession,
             "accession": accession,
-            "sequence": reference_sequence,
-            "taxon_id": taxon,
             "identity_scope": "candidate_hypothesis",
-            "coordinate_evidence": deepcopy(coordinate_evidence),
-            "sources": deepcopy(receipts),
+            "source_sequence": source["sequence"],
+            "reference_sequence": reference_sequence,
+            "coordinate_evidence": coordinate_evidence,
         }
-    }
+        mappings = {
+            identifier: {
+                "status": "reference_projected",
+                "accession": accession,
+                "sequence": reference_sequence,
+                "taxon_id": taxon,
+                "identity_scope": "candidate_hypothesis",
+                "coordinate_evidence": deepcopy(coordinate_evidence),
+                "sources": deepcopy(receipts),
+            }
+        }
+
+        profiles = {identifier: profile}
+        options_by_source = {identifier: options}
 
     settings = bundle["native_settings"]
     crosslinker = settings.get("NAME", "")
@@ -3324,7 +3509,7 @@ def write_merox_claudio_input(
             reasons.append("source_endpoint_unresolved")
 
         for site, endpoint in endpoints.items():
-            if endpoint.get("source_fasta_id") != identifier:
+            if endpoint.get("source_fasta_id") not in profiles:
                 reasons.append("reference_mapping_unavailable_" + site)
             if endpoint.get("kind") != "residue":
                 reasons.append("terminal_atom_policy_unresolved")
@@ -3333,12 +3518,34 @@ def write_merox_claudio_input(
         if not reasons:
             for site in ("a", "b"):
                 endpoint = endpoints[site]
-                result = _project_peptide(endpoint, profile, options)
+                identifier = endpoint["source_fasta_id"]
+                site_profile = profiles[identifier]
+                source_options = options_by_source[identifier]
+                result = _project_peptide(
+                    endpoint, site_profile, source_options
+                )
                 projected[site] = result
                 if result["status"] != "projected":
                     reasons.append("reference_projection_unresolved_" + site)
                     continue
-                residue = reference_sequence[
+                if (
+                    site_profile.get("require_all_optimal_alignments", False)
+                    and result["compatible_alignment_count"] != len(source_options)
+                ):
+                    reasons.append(
+                        "reference_projection_not_supported_by_all_alignments_" + site
+                    )
+                    continue
+                interval = site_profile.get("reference_interval")
+                if interval is not None and not (
+                    interval[0] <= result["reference_peptide_start"]
+                    and result["reference_peptide_end"] <= interval[1]
+                ):
+                    reasons.append(
+                        "reference_peptide_outside_reviewed_core_" + site
+                    )
+                    continue
+                residue = site_profile["reference_sequence"][
                     result["reference_protein_position"] - 1
                 ]
                 if residue not in selections["allowed_residues"]:
@@ -3365,17 +3572,26 @@ def write_merox_claudio_input(
             "localization_status": localization["status"],
             "localization_candidate_count": len(localization["candidates"]),
             "source_best_candidate_number": best[0]["source_candidate_number"],
-            "identity_scope": "candidate_hypothesis",
+            "identity_scope": (
+                "exact_sequence"
+                if all(
+                    profiles[endpoint["source_fasta_id"]]["identity_scope"]
+                    == "exact_sequence"
+                    for endpoint in endpoints.values()
+                )
+                else "candidate_hypothesis"
+            ),
             "native_local_fdr_value": confidence["value"],
             "native_fdr_cutoff": confidence["cutoff"],
             "native_fdr_scope": "native_unspecified",
         }
         for site in ("a", "b"):
             endpoint = endpoints[site]
+            site_profile = profiles[endpoint["source_fasta_id"]]
             projection = projected[site]
             row.update({
-                f"unip_id_{site}": accession,
-                f"seq_{site}": reference_sequence,
+                f"unip_id_{site}": site_profile["accession"],
+                f"seq_{site}": site_profile["reference_sequence"],
                 f"pep_{site}": endpoint["peptide"],
                 f"pos_{site}": projection["reference_protein_position"],
                 f"res_pos_{site}": endpoint["link_position"],
@@ -3407,6 +3623,15 @@ def write_merox_claudio_input(
         "terminal_policy": "exclude_pending_atom_configuration",
         "decoy_policy": "preserve_source_status_without_inference",
     }
+    if multi_reference:
+        prepared["reference_projection"] = deepcopy(reference_mapping)
+        prepared["reference_projection_policy"] = {
+            "scope": "per_source_protein_reference",
+            "intact_peptide_required": True,
+            "all_optimal_alignments_required": True,
+            "identity_acceptance_performed": False,
+        }
+
     return write_xifdr_outputs(
         bundle, mappings, prepared, output_dir, pipeline_policy=policy
     )

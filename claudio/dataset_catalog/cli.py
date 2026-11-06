@@ -910,6 +910,10 @@ def standardize_command(results_path, fasta_path, mapping_path, dataset_accessio
                     raise ValueError(
                         "MeroX reference mapping must be a JSON object"
                     )
+                if reference_mapping.get("kind") == "merox_multi_reference_mapping":
+                    reference_mapping = _read_reference_projection(
+                        reference_projection_path
+                    )
                 destination = write_merox_claudio_input(
                     bundle,
                     reference_mapping,

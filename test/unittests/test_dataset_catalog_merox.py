@@ -1212,3 +1212,215 @@ class TestMeroXActinNative33(unittest.TestCase):
         for record in bundle["records"]:
             if record not in decoys:
                 self.assertEqual(record["decoy_status"], "unknown")
+import copy
+import csv
+import json
+import tempfile
+import unittest
+from pathlib import Path
+
+from claudio.dataset_catalog import xifdr as merox_module
+from claudio.dataset_catalog.cli import _read_reference_projection
+
+
+class TestMeroXMultiReferenceExport(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.fixture = (
+            Path(__file__).resolve().parents[1]
+            / "fixtures" / "merox_actin_d1d2"
+        )
+        self.actin = "sp|P68135|ACTS_RABIT"
+        self.construct = "tr|D1D2|D1D2_RABIT"
+
+    def mapping(self):
+        return _read_reference_projection(
+            self.fixture / "evidence" / "reference_mapping.json"
+        )
+
+    def bundle(self, accession="PXD044630"):
+        filename = {
+            "PXD044630": "sample15.zhrm",
+            "PXD053481": "sample16.zhrm",
+        }[accession]
+        return merox_module.read_merox_csms(
+            self.fixture / filename,
+            self.fixture / "search.fasta",
+            dataset_accession=accession,
+        )
+
+    def export(self, bundle, mapping, name):
+        return Path(merox_module.write_merox_claudio_input(
+            bundle, mapping, self.root / name,
+            allowed_crosslinkers={"DSSO"},
+            allowed_residues={"K"},
+        ))
+
+    def rows(self, directory):
+        with (directory / "claudio_input.csv").open(
+            newline="", encoding="utf-8"
+        ) as handle:
+            reader = csv.DictReader(handle)
+            columns = reader.fieldnames
+            rows = list(reader)
+        return columns, rows
+
+    def test_real_pairs_use_per_protein_references_and_preserve_audit(self):
+        for accession, expected_rows, expected_sources in (
+            ("PXD044630", 9, 23),
+            ("PXD053481", 1, 6),
+        ):
+            with self.subTest(project=accession):
+                bundle = self.bundle(accession)
+                original = copy.deepcopy(bundle)
+                try:
+                    output = self.export(
+                        bundle, self.mapping(), accession
+                    )
+                except ValueError as error:
+                    self.fail(f"Multi-reference export is unsupported: {error}")
+
+                columns, rows = self.rows(output)
+                self.assertEqual(columns[:8], [
+                    "peptide1", "peptide2", "position1", "position2",
+                    "k_pos1", "k_pos2", "entry1", "entry2",
+                ])
+                self.assertEqual(len(rows), expected_rows)
+                audit = json.loads(
+                    (output / "psm_audit.json").read_text(encoding="utf-8")
+                )
+                self.assertEqual(len(audit), expected_sources)
+                originals = {
+                    record["source_record_id"]: record
+                    for record in original["records"]
+                }
+
+                for source, exported in zip(original["records"], audit):
+                    for key, value in source.items():
+                        self.assertEqual(exported[key], value)
+
+                for row in rows:
+                    source = originals[row["xlms_source_record_id"]]
+                    for index, site in ((1, "a"), (2, "b")):
+                        endpoint = source["endpoints"][site]
+                        identifier = endpoint["source_fasta_id"]
+                        expected_accession = (
+                            "P68135" if identifier == self.actin else "Q8VGC3"
+                        )
+                        offset = 0 if identifier == self.actin else 41
+                        self.assertEqual(
+                            row[f"entry{index}"], expected_accession
+                        )
+                        self.assertEqual(
+                            int(row[f"position{index}"]),
+                            endpoint["protein_position"] + offset,
+                        )
+                        self.assertEqual(
+                            row[f"peptide{index}"], endpoint["peptide"]
+                        )
+                    expected_scope = (
+                        "exact_sequence"
+                        if all(
+                            endpoint["source_fasta_id"] == self.actin
+                            for endpoint in source["endpoints"].values()
+                        )
+                        else "candidate_hypothesis"
+                    )
+                    self.assertEqual(row["identity_scope"], expected_scope)
+                    self.assertEqual(row["native_fdr_scope"], "native_unspecified")
+
+                for record in audit:
+                    if record["decoy_status"] in ("target_decoy", "decoy_decoy"):
+                        self.assertEqual(record["input_status"], "not_evaluable")
+                        self.assertIn("decoy_record", record["input_reasons"])
+
+                manifest = json.loads(
+                    (output / "manifest.json").read_text(encoding="utf-8")
+                )
+                self.assertFalse(manifest["fdr_policy"]["application_verified"])
+                self.assertEqual(bundle, original)
+                self.assertEqual(
+                    bundle["proteins"][self.construct]["sequence"][32], "P"
+                )
+
+    def test_construct_alignment_requires_explicit_review(self):
+        mapping = self.mapping()
+        del mapping["references"][self.construct]["construct_review"]
+        with self.assertRaisesRegex(
+            ValueError, "(?i)construct|containment|review"
+        ):
+            self.export(self.bundle(), mapping, "missing_review")
+        self.assertFalse((self.root / "missing_review").exists())
+
+    def test_changed_construct_review_is_rejected_before_output(self):
+        mapping = self.mapping()
+        receipt = mapping["references"][self.construct][
+            "construct_review"
+        ]["sources"][0]
+        altered = self.root / "altered_review.json"
+        altered.write_bytes(Path(receipt["absolute_path"]).read_bytes() + b"\n")
+        receipt["absolute_path"] = str(altered)
+
+        with self.assertRaisesRegex(ValueError, "(?i)checksum"):
+            self.export(self.bundle(), mapping, "changed_review")
+        self.assertFalse((self.root / "changed_review").exists())
+
+    def test_changed_reference_evidence_is_rejected_before_output(self):
+        mapping = self.mapping()
+        receipt = next(
+            item for item in mapping["references"][self.construct]["sources"]
+            if item.get("request_url", "").endswith("/Q8VGC3.json")
+        )
+        altered = self.root / "altered_reference.json"
+        altered.write_bytes(Path(receipt["absolute_path"]).read_bytes() + b"\n")
+        receipt["absolute_path"] = str(altered)
+
+        with self.assertRaisesRegex(ValueError, "(?i)checksum"):
+            self.export(self.bundle(), mapping, "changed_reference")
+        self.assertFalse((self.root / "changed_reference").exists())
+
+    def test_changed_construct_review_bindings_are_rejected(self):
+        for key, value in (
+            ("source_sequence_sha256", "0" * 64),
+            ("reference_interval", [1, 655]),
+        ):
+            with self.subTest(field=key):
+                mapping = self.mapping()
+                mapping["references"][self.construct]["construct_review"][key] = value
+                name = "changed_" + key
+                with self.assertRaisesRegex(ValueError, "(?i)review"):
+                    self.export(self.bundle(), mapping, name)
+                self.assertFalse((self.root / name).exists())
+
+    def test_cli_replays_packaged_multi_reference_mapping(self):
+        from click.testing import CliRunner
+        from claudio.dataset_catalog.cli import main
+
+        try:
+            api = self.export(self.bundle(), self.mapping(), "api")
+        except ValueError as error:
+            self.fail(f"Multi-reference export is unsupported: {error}")
+
+        packaged = api / "reference_projection.json"
+        self.assertTrue(packaged.is_file())
+        destination = self.root / "cli"
+        result = CliRunner().invoke(main, [
+            "standardize",
+            "--results", str(self.fixture / "sample15.zhrm"),
+            "--fasta", str(self.fixture / "search.fasta"),
+            "--dataset-accession", "PXD044630",
+            "--reference-projection", str(packaged),
+            "--crosslinker", "DSSO",
+            "--residue", "K",
+            "--output", str(destination),
+        ])
+        self.assertEqual(
+            result.exit_code, 0,
+            f"{result.output}\n{result.exception!r}",
+        )
+        self.assertEqual(
+            (destination / "claudio_input.csv").read_bytes(),
+            (api / "claudio_input.csv").read_bytes(),
+        )

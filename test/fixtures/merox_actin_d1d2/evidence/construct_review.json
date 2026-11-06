@@ -1,0 +1,31 @@
+{
+  "kind": "merox_construct_reference_review",
+  "schema_version": 1,
+  "review_status": "reviewed",
+  "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+  "source_fasta_sha256": "1d1d7f49aaebda9cf85259e30aebcc799345c77bf2aee6903ba1ec4a2b72994f",
+  "source_sequence_sha256": "3a46651e1b21eba6d255b4cfdcd8d7310a12846a4e20192557fead806fc4ccce",
+  "reference_accession": "Q8VGC3",
+  "reference_taxon_id": 10116,
+  "reference_sequence_sha256": "ee54b8104b9d95ba8989a60627aa3bc3069cb7e3c414b8cb2797548165a274f9",
+  "reported_reference_accession": "Q8VGC3-2",
+  "reported_reference_interval": [
+    23,
+    422
+  ],
+  "reference_interval": [
+    74,
+    473
+  ],
+  "max_optimal_alignments": 64,
+  "require_all_optimal_alignments": true,
+  "observed_core_differences": [
+    {
+      "source_position": 33,
+      "reference_position": 74,
+      "source_residue": "P",
+      "reference_residue": "T"
+    }
+  ],
+  "reason": "Project metadata identifies the CaVbeta2 core. Observed intact paired peptides have invariant coordinates across all optimal alignments. The source P33/reference T74 difference remains unchanged. Reference identity remains a candidate hypothesis."
+}
