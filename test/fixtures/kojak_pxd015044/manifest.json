@@ -1,0 +1,28 @@
+{
+  "kind": "kojak_native_regression_fixture",
+  "project_accession": "PXD015044",
+  "kojak_version": "1.5.3",
+  "source_validation_manifest_sha256": "04a10122ff721f4d097758111f071ac1488594db852ad68af4513606354eb7c1",
+  "source_result_filename": "20160620_TauHis_TDIG_monomer_CBDPS-H8-D81mM_OT_MT_2.kojak.txt",
+  "decoy_prefix_policy": "decoy_",
+  "identity_acceptance_performed": false,
+  "fdr_acceptance_performed": false,
+  "files": {
+    "20160620_TauHis_TDIG_monomer_CBDPS-H8-D81mM_OT_MT_2.kojak.txt": {
+      "bytes": 35178,
+      "sha256": "586a32bf12df37355cbde92de5bb00163848d27522c4d26901db7369c34c03ad"
+    },
+    "search.fasta": {
+      "bytes": 956,
+      "sha256": "fa116adec37e298e9242de67df7d8b70498baa5a3471d913978371757da3468d"
+    },
+    "expected.json": {
+      "bytes": 715727,
+      "sha256": "f616df46445f4ac7c4fbf6b7f2526ee45a5202f5005825e9028a44bd57346cbe"
+    },
+    ".gitattributes": {
+      "bytes": 50,
+      "sha256": "46010c19799ca67c1f127c0a475dd77ef9435333c307aafe8e9c21d4edfa6a14"
+    }
+  }
+}

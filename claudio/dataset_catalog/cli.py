@@ -323,6 +323,8 @@ def _detect_psm_format(results_path):
     results_path = Path(results_path).resolve()
     with results_path.open("rb") as handle:
         signature = handle.read(16)
+        if signature.startswith(b"Kojak version "):
+            return "kojak_csm"
     from .mzidentml import looks_like_mzidentml
     if looks_like_mzidentml(results_path):
         return "mzidentml_csm"
@@ -623,6 +625,97 @@ def standardize_command(
         source_format = _detect_psm_format(results_path)
     except (ValueError, OSError) as error:
         raise click.ClickException(str(error)) from error
+
+    if source_format == "kojak_csm":
+        if not audit_only:
+            raise click.UsageError(
+                "Kojak input currently requires --audit-only."
+            )
+        if not decoy_prefix or not decoy_prefix.strip():
+            raise click.UsageError(
+                "Kojak audit requires an explicit --decoy-prefix."
+            )
+        forbidden = {
+            "--mapping": mapping_path is not None,
+            "--reference-projection": reference_projection_path is not None,
+            "--fdr-level": fdr_level is not None,
+            "--fdr-cutoff": fdr_cutoff is not None,
+            "--fdr-column": fdr_column is not None,
+            "--crosslinker": bool(crosslinkers),
+            "--residue": bool(residues),
+            "--source-protein": bool(source_proteins),
+            "--plink-unfiltered": plink_unfiltered_path is not None,
+            "--plink-parameters": plink_parameters_path is not None,
+            "--author-filter-evidence": author_filter_path is not None,
+            "--allow-modification": bool(allowed_modifications),
+            "--msannika-crosslinks": msannika_crosslinks_path is not None,
+            "--msannika-contaminants": msannika_contaminants_path is not None,
+            "--maxlynx-parameters": maxlynx_parameters_path is not None,
+            "--export-unverified-candidates": export_unverified_candidates,
+        }
+        conflicts = [
+            option for option, present in forbidden.items() if present
+        ]
+        if conflicts:
+            raise click.UsageError(
+                "Unsupported options for Kojak audit: "
+                + ", ".join(conflicts)
+            )
+
+        from .kojak import read_kojak_csms
+        from .xifdr import write_import_report as write_kojak_audit
+        from collections import Counter as KojakCounter
+
+        click.echo("Detected format: Kojak CSM (native text)")
+        try:
+            bundle = read_kojak_csms(
+                results_path,
+                fasta_path,
+                dataset_accession=dataset_accession,
+                decoy_prefix=decoy_prefix,
+            )
+            destination = write_kojak_audit(bundle, output_dir)
+        except (ValueError, OSError, RuntimeError) as error:
+            raise click.ClickException(str(error)) from error
+
+        kinds = KojakCounter(
+            record["record_kind"] for record in bundle["records"]
+        )
+        click.echo(f"Source records: {len(bundle['records'])}")
+        click.echo(
+            "Native validated paired records: "
+            + str(bundle["parser"]["validated_paired_records"])
+        )
+        click.echo(
+            "Single-peptide records retained: "
+            + str(kinds["single_peptide_record"])
+        )
+        click.echo(
+            "Loop-link records retained: "
+            + str(kinds["loop_link_candidate"])
+        )
+        click.echo(
+            "Rows without reported peptides retained: "
+            + str(kinds["no_peptide_reported"])
+        )
+        click.echo(
+            "Records with source errors: "
+            + str(sum(bool(record["source_errors"])
+                      for record in bundle["records"]))
+        )
+        click.echo("Reader backend: native")
+        click.echo("pyXLMS validation: not performed")
+        click.echo("FDR verification: unverified")
+        click.echo(
+            "Scientific filtering, identity mapping and input export: "
+            "not performed"
+        )
+        click.echo(
+            f"Audit report: {(destination / 'import_report.json').resolve()}"
+        )
+        click.echo(f"Output: {destination.resolve()}")
+        return
+
     if source_format == "mzidentml_csm":
         forbidden = {
             "--mapping": mapping_path is not None,
