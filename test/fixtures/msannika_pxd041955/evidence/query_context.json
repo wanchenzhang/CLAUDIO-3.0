@@ -1,0 +1,206 @@
+{
+  "source_api_manifest_sha256": "3c40cd7db25d23820e0337a288c4986fcd9209b1c55eb63c6d70d0bc6a735183",
+  "query_constraints": {
+    "sg|P0A7X3|RS9_ECOLI": {
+      "accession_constraint": "P0A7X3",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0A7X3|RS9_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0AG48|RL21_ECOLI": {
+      "accession_constraint": "P0AG48",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0AG48|RL21_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0A7W1|RS5_ECOLI": {
+      "accession_constraint": "P0A7W1",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0A7W1|RS5_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0A6F5|CH60_ECOLI": {
+      "accession_constraint": "P0A6F5",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0A6F5|CH60_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0A7S3|RS12_ECOLI": {
+      "accession_constraint": "P0A7S3",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0A7S3|RS12_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0A7N4|RL32_ECOLI": {
+      "accession_constraint": "P0A7N4",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0A7N4|RL32_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0A7M2|RL28_ECOLI": {
+      "accession_constraint": "P0A7M2",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0A7M2|RL28_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0A6P1|EFTS_ECOLI": {
+      "accession_constraint": "P0A6P1",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0A6P1|EFTS_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0A7K6|RL19_ECOLI": {
+      "accession_constraint": "P0A7K6",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0A7K6|RL19_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0A7M9|RL31_ECOLI": {
+      "accession_constraint": "P0A7M9",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0A7M9|RL31_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0A6D7|AROK_ECOLI": {
+      "accession_constraint": "P0A6D7",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0A6D7|AROK_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0A9Q1|ARCA_ECOLI": {
+      "accession_constraint": "P0A9Q1",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0A9Q1|ARCA_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0ABB0|ATPA_ECOLI": {
+      "accession_constraint": "P0ABB0",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0ABB0|ATPA_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0A836|SUCC_ECOLI": {
+      "accession_constraint": "P0A836",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0A836|SUCC_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0A715|KDSA_ECOLI": {
+      "accession_constraint": "P0A715",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0A715|KDSA_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P60422|RL2_ECOLI": {
+      "accession_constraint": "P60422",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P60422|RL2_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0A7N1|RL31B_ECOLI": {
+      "accession_constraint": "P0A7N1",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0A7N1|RL31B_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P62399|RL5_ECOLI": {
+      "accession_constraint": "P62399",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P62399|RL5_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0AG51|RL30_ECOLI": {
+      "accession_constraint": "P0AG51",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0AG51|RL30_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0AG67|RS1_ECOLI": {
+      "accession_constraint": "P0AG67",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0AG67|RS1_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0A7D7|PUR7_ECOLI": {
+      "accession_constraint": "P0A7D7",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0A7D7|PUR7_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P27302|TKT1_ECOLI": {
+      "accession_constraint": "P27302",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P27302|TKT1_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P00956|SYI_ECOLI": {
+      "accession_constraint": "P00956",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P00956|SYI_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0AG44|RL17_ECOLI": {
+      "accession_constraint": "P0AG44",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0AG44|RL17_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0A7K2|RL7_ECOLI": {
+      "accession_constraint": "P0A7K2",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0A7K2|RL7_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0C018|RL18_ECOLI": {
+      "accession_constraint": "P0C018",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0C018|RL18_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0A7J7|RL11_ECOLI": {
+      "accession_constraint": "P0A7J7",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0A7J7|RL11_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P21499|RNR_ECOLI": {
+      "accession_constraint": "P21499",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P21499|RNR_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0A870|TALB_ECOLI": {
+      "accession_constraint": "P0A870",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0A870|TALB_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0A7V0|RS2_ECOLI": {
+      "accession_constraint": "P0A7V0",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0A7V0|RS2_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P25888|RHLE_ECOLI": {
+      "accession_constraint": "P25888",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P25888|RHLE_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0AG55|RL6_ECOLI": {
+      "accession_constraint": "P0AG55",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0AG55|RL6_ECOLI",
+      "full_sequence_equality_required": true
+    },
+    "sg|P0A7L0|RL1_ECOLI": {
+      "accession_constraint": "P0A7L0",
+      "source_taxon_id": null,
+      "source_fasta_id": "sg|P0A7L0|RL1_ECOLI",
+      "full_sequence_equality_required": true
+    }
+  },
+  "source_proteins_modified": false,
+  "missing_taxon_policy": "unrestricted_query_preserving_ambiguity",
+  "fdr_acceptance_performed": false
+}

@@ -466,7 +466,7 @@ def _detect_psm_format(results_path):
 @click.option(
     "--results", "results_path", required=True,
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    help="xiFDR/pLink/Scout CSV, a native MeroX container, or XlinkX pdResult.",
+    help="xiFDR/pLink/Scout CSV, MS Annika or pLink XLSX, native MeroX, or XlinkX pdResult.",
 )
 @click.option(
     "--fasta", "fasta_path", required=True,
@@ -525,7 +525,7 @@ def _detect_psm_format(results_path):
 @click.option(
     "--author-filter-evidence", "author_filter_path",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    help="Reviewed author-result evidence for pLink or Scout; preserves missing per-record FDR.",
+    help="Reviewed author-result evidence for pLink, Scout or MS Annika; preserves missing per-record FDR.",
 )
 @click.option(
     "--crosslinker", "crosslinkers", multiple=True,
@@ -619,12 +619,7 @@ def standardize_command(
         )
 
     if source_format == "msannika_csm":
-        if not audit_only:
-            raise click.UsageError(
-                "MS Annika input currently requires --audit-only."
-            )
-        selections = {
-            "--mapping": mapping_path is not None,
+        forbidden = {
             "--reference-projection": reference_projection_path is not None,
             "--fdr-level": fdr_level is not None,
             "--fdr-cutoff": fdr_cutoff is not None,
@@ -632,22 +627,45 @@ def standardize_command(
             "--decoy-prefix": decoy_prefix is not None,
             "--plink-unfiltered": plink_unfiltered_path is not None,
             "--plink-parameters": plink_parameters_path is not None,
-            "--author-filter-evidence": author_filter_path is not None,
-            "--crosslinker": bool(crosslinkers),
-            "--residue": bool(residues),
             "--source-protein": bool(source_proteins),
             "--allow-modification": bool(allowed_modifications),
             "--export-unverified-candidates": export_unverified_candidates,
         }
+        if audit_only:
+            forbidden.update({
+                "--mapping": mapping_path is not None,
+                "--author-filter-evidence": author_filter_path is not None,
+                "--crosslinker": bool(crosslinkers),
+                "--residue": bool(residues),
+            })
         conflicts = [
-            option for option, present in selections.items() if present
+            option for option, present in forbidden.items() if present
         ]
         if conflicts:
             raise click.UsageError(
-                "MS Annika audit does not apply selection options: "
+                "Unsupported options for this MS Annika mode: "
                 + ", ".join(conflicts)
             )
-        from .xifdr import read_msannika_csms
+        if not audit_only:
+            required = {
+                "--mapping": mapping_path is None,
+                "--author-filter-evidence": author_filter_path is None,
+                "--crosslinker": not crosslinkers,
+                "--residue": not residues,
+            }
+            missing = [
+                option for option, absent in required.items() if absent
+            ]
+            if missing:
+                raise click.UsageError(
+                    "MS Annika input export requires "
+                    + ", ".join(missing) + "."
+                )
+
+        from .xifdr import (
+            read_msannika_csms,
+            write_msannika_claudio_input,
+        )
 
         click.echo("Detected format: MS Annika CSM (XLSX)")
         try:
@@ -658,27 +676,58 @@ def standardize_command(
                 crosslinks_path=msannika_crosslinks_path,
                 contaminant_fasta_path=msannika_contaminants_path,
             )
-            destination = write_import_report(bundle, output_dir)
+            if audit_only:
+                destination = write_import_report(bundle, output_dir)
+            else:
+                mappings = _read_protein_mapping(mapping_path)
+                destination = write_msannika_claudio_input(
+                    bundle,
+                    mappings,
+                    output_dir,
+                    author_filter_path=author_filter_path,
+                    allowed_crosslinkers=crosslinkers,
+                    allowed_residues=residues,
+                )
             manifest = json.loads(
                 (destination / "manifest.json").read_text(encoding="utf-8")
             )
         except (ValueError, OSError, RuntimeError) as error:
             raise click.ClickException(str(error)) from error
+
         click.echo(f"Source CSM records: {len(bundle['records'])}")
         click.echo(f"Parsed CSM records: {bundle['parser']['parsed_records']}")
         click.echo(
             "Crosslink records retained separately: "
             f"{len(bundle['crosslink_records'])}"
         )
-        click.echo(
-            "Records with parser errors: "
-            f"{manifest['counts']['parser_errors']}"
+        failures = sum(
+            record["record_reason"].startswith("pyxlms_")
+            for record in bundle["records"]
         )
-        click.echo(
-            "Scientific filtering, identity mapping and input export: "
-            "not performed"
-        )
-        click.echo(f"Audit report: {destination / 'import_report.json'}")
+        click.echo(f"Records with parser errors: {failures}")
+        if audit_only:
+            click.echo(
+                "Scientific filtering, identity mapping and input export: "
+                "not performed"
+            )
+            click.echo(f"Audit report: {destination / 'import_report.json'}")
+        else:
+            policy = manifest["fdr_policy"]
+            click.echo(
+                "Standardized input rows: "
+                f"{manifest['counts']['pipeline_input_rows']}"
+            )
+            click.echo(
+                "Author-reported FDR cutoff: "
+                f"{policy['reported_cutoff']}"
+            )
+            click.echo("Author-reported FDR level: unspecified")
+            click.echo("FDR verification: author_reported_only")
+            click.echo("Per-record FDR filtering: not performed")
+            click.echo("Parent crosslink confidence propagation: not performed")
+            click.echo("Model assessment: not performed")
+            click.echo(f"Input: {destination / 'claudio_input.csv'}")
+            click.echo(f"Audit: {destination / 'psm_audit.json'}")
         click.echo(f"Output: {destination.resolve()}")
         return
     if allowed_modifications:

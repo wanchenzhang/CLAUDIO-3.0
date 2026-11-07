@@ -2234,6 +2234,7 @@ def write_claudio_input(bundle, mappings, output_dir, *, fdr_level=None, fdr_cut
 def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_policy=None):
     """Write source/audit snapshots and the eligible input table to a new directory."""
     output_dir = Path(output_dir)
+    _verify_msannika_sources(bundle)
     _verify_plink_native_sources(bundle)
     author_sources = _author_filter_source_bodies(bundle)
     copied = deepcopy(mappings)
@@ -2305,6 +2306,7 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
     format_name = {
         "plink_psm": "plink",
         "merox_csm": "merox",
+        "msannika_csm": "msannika",
     }.get(bundle.get("format"), "xifdr")
     if bundle.get("format") == "scout_csm":
         format_name = "scout"
@@ -5739,3 +5741,337 @@ def read_msannika_csms(
 
     _verify_msannika_sources(bundle)
     return bundle
+def _msannika_author_filter_evidence(bundle, evidence_path):
+    """Validate and package the author's description of the exported CSM table."""
+    if evidence_path is None:
+        raise ValueError("MS Annika export requires author filter evidence")
+    path = Path(evidence_path).resolve()
+    raw_policy = path.read_bytes()
+    manifest_path = path.parent / "manifest.json"
+    if not manifest_path.is_file():
+        raise ValueError("Author evidence requires a checksum manifest")
+    manifest = json.loads(manifest_path.read_bytes())
+    expected = manifest.get("output_sha256", {}).get(path.name)
+    if expected != hashlib.sha256(raw_policy).hexdigest():
+        raise ValueError("Author filter evidence checksum changed")
+
+    policy = json.loads(raw_policy)
+    if (
+        policy.get("kind") != "msannika_author_reported_filter_evidence"
+        or policy.get("schema_version") != 1
+        or policy.get("review_status") != "reviewed"
+        or policy.get("dataset_accession")
+        != bundle["provenance"]["dataset_accession"]
+        or policy.get("reported_fdr_level") != "unspecified"
+        or policy.get("per_record_fdr_values_assigned") is not False
+        or policy.get("parent_confidence_propagated") is not False
+        or policy.get("target_decoy_validation_performed") is not False
+    ):
+        raise ValueError("Unsupported MS Annika author evidence declaration")
+    cutoff = policy.get("reported_fdr_cutoff")
+    if (
+        isinstance(cutoff, bool)
+        or not isinstance(cutoff, (int, float))
+        or not math.isfinite(cutoff)
+        or not 0 <= cutoff <= 1
+    ):
+        raise ValueError("Invalid author-reported FDR cutoff")
+
+    receipts = {item["kind"]: item for item in bundle["source_receipts"]}
+    bindings = {
+        "psm_sha256": "csms",
+        "fasta_sha256": "search_fasta",
+        "crosslinks_sha256": "crosslinks",
+        "contaminant_fasta_sha256": "contaminant_fasta",
+    }
+    for field, kind in bindings.items():
+        receipt = receipts.get(kind)
+        declared = policy.get(field)
+        if receipt is None:
+            if declared is not None:
+                raise ValueError("Author evidence requires the declared source: " + kind)
+        elif declared != receipt["sha256"]:
+            raise ValueError("Author evidence source checksum differs: " + kind)
+
+    sources = policy.get("sources")
+    if not isinstance(sources, list) or not sources:
+        raise ValueError("Author evidence has no supporting description")
+    packaged = deepcopy(policy)
+    packaged["sources"] = []
+    bodies = {}
+    supporting_hashes = []
+    matched = False
+
+    for receipt in sources:
+        if receipt.get("kind") != "author_result_description":
+            raise ValueError("Unsupported author evidence source kind")
+        relative = Path(receipt["path"])
+        source = (path.parent / relative).resolve()
+        if (
+            relative.is_absolute()
+            or ".." in relative.parts
+            or path.parent not in source.parents
+        ):
+            raise ValueError("Author evidence source must remain inside its package")
+        raw = source.read_bytes()
+        digest = hashlib.sha256(raw).hexdigest()
+        if digest != receipt["sha256"]:
+            raise ValueError("Author description checksum changed")
+        line = policy.get("supporting_description_line")
+        filename = policy.get("source_file_name")
+        if (
+            isinstance(line, str)
+            and isinstance(filename, str)
+            and line in raw.decode("utf-8-sig").splitlines()
+            and line.split()
+            and line.split()[0] == filename
+            and "CSMs" in line
+        ):
+            reported = re.search(
+                r"\((\d+(?:\.\d+)?)%\s*FDR\)", line, re.I
+            )
+            if reported and math.isclose(
+                float(reported.group(1)) / 100, cutoff,
+                rel_tol=0, abs_tol=1e-12,
+            ):
+                matched = True
+        name = "author_filter_sources/" + digest + source.suffix
+        bodies[name] = raw
+        copied = deepcopy(receipt)
+        copied.pop("absolute_path", None)
+        copied["path"] = name
+        packaged["sources"].append(copied)
+        supporting_hashes.append(digest)
+
+    if not matched:
+        raise ValueError("Author description does not confirm the declared CSM table and cutoff")
+    return packaged, bodies, sorted(set(supporting_hashes))
+
+
+def write_msannika_claudio_input(
+    bundle, mappings, output_dir, *, author_filter_path=None,
+    allowed_crosslinkers, allowed_residues,
+):
+    """Export source-coordinate candidates with explicit author-reported confidence."""
+    if bundle.get("format") != "msannika_csm":
+        raise ValueError("Expected an MS Annika CSM bundle")
+    if Path(output_dir).exists():
+        raise FileExistsError("Output directory already exists")
+    _verify_msannika_sources(bundle)
+    policy, bodies, description_hashes = _msannika_author_filter_evidence(
+        bundle, author_filter_path
+    )
+
+    selections = {}
+    for name, values in (
+        ("allowed_crosslinkers", allowed_crosslinkers),
+        ("allowed_residues", allowed_residues),
+    ):
+        if (
+            not isinstance(values, (set, frozenset, list, tuple))
+            or not values
+            or any(not isinstance(value, str) or not value.strip() for value in values)
+        ):
+            raise ValueError(name + " requires explicit nonempty labels")
+        selections[name] = set(values)
+    if any(
+        re.fullmatch(r"[A-Z]", value) is None
+        for value in selections["allowed_residues"]
+    ):
+        raise ValueError("Residues must be one-letter uppercase codes")
+
+    receipts = {item["kind"]: item for item in bundle["source_receipts"]}
+    native = read_msannika_csms(
+        bundle["provenance"]["psm_path"],
+        bundle["provenance"]["fasta_path"],
+        dataset_accession=bundle["provenance"]["dataset_accession"],
+        crosslinks_path=(
+            receipts["crosslinks"]["path"] if "crosslinks" in receipts else None
+        ),
+        contaminant_fasta_path=(
+            receipts["contaminant_fasta"]["path"]
+            if "contaminant_fasta" in receipts else None
+        ),
+        backend="native",
+    )
+    if (
+        native["source_columns"] != bundle["source_columns"]
+        or native["proteins"] != bundle["proteins"]
+        or native["crosslink_records"] != bundle["crosslink_records"]
+        or len(native["records"]) != len(bundle["records"])
+    ):
+        raise ValueError("MS Annika bundle differs from its bound source files")
+    for kind in ("psm", "fasta"):
+        if native["provenance"][kind + "_sha256"] != bundle["provenance"][kind + "_sha256"]:
+            raise ValueError("MS Annika provenance checksum differs from source")
+    for original, checked in zip(bundle["records"], native["records"]):
+        for field in (
+            "source_record_id", "source_record_number", "source_worksheet",
+            "source_worksheet_row", "source_values", "source_fields",
+            "source_cell_types", "decoy_status", "fdr", "endpoints",
+        ):
+            if original[field] != checked[field]:
+                raise ValueError("MS Annika source record changed after import")
+        if original["record_status"] == "valid" and checked["record_status"] != "valid":
+            raise ValueError("MS Annika source validation differs from its workbook")
+
+    usable = {}
+    for identifier, identity in mappings.items():
+        source = bundle["proteins"].get(identifier)
+        if not source or identity.get("status") != "mapped":
+            continue
+        accession = identity.get("accession")
+        if (
+            not isinstance(accession, str)
+            or ACCESSION.fullmatch(accession) is None
+            or identity.get("sequence") != source["sequence"]
+        ):
+            raise ValueError("MS Annika mapped identity differs from the source sequence")
+        declared = source.get("uniprot_accession")
+        parts = identifier.split("|")
+        if (
+            declared is None and len(parts) == 3 and parts[0] == "sg"
+            and ACCESSION.fullmatch(parts[1])
+        ):
+            declared = parts[1]
+        if declared is None or accession != declared:
+            raise ValueError("Exact identity requires the declared search accession alias")
+        _reference_evidence(
+            {
+                "accession": accession,
+                "taxon_id": identity.get("taxon_id"),
+                "reference_sequence": identity["sequence"],
+            },
+            identity,
+            source,
+            require_declared_accession=False,
+        )
+        usable[identifier] = identity
+
+    rows, audit = [], []
+    for record in bundle["records"]:
+        entry = deepcopy(record)
+        reasons = []
+        if record["record_status"] != "valid":
+            reasons.append(record["record_reason"] or "source_record_unresolved")
+        if record["decoy_status"] == "unknown":
+            reasons.append("invalid_decoy_flags")
+        elif record["decoy_status"] != "target_target":
+            reasons.append("decoy_record")
+        identities = {}
+        for site in ("a", "b"):
+            endpoint = record["endpoints"][site]
+            identity = usable.get(endpoint["source_fasta_id"])
+            if identity is None:
+                reasons.append("protein_identity_unresolved_" + site)
+            else:
+                identities[site] = identity
+
+        fields = record["source_fields"]
+        if not reasons:
+            if fields.get("Crosslinker") not in selections["allowed_crosslinkers"]:
+                reasons.append("crosslinker_not_selected")
+            for site in ("a", "b"):
+                endpoint = record["endpoints"][site]
+                residue = endpoint["peptide"][endpoint["link_position"] - 1]
+                if residue not in selections["allowed_residues"]:
+                    reasons.append("residue_not_selected_" + site)
+
+        entry.update(
+            input_status="not_evaluable" if reasons else "ready",
+            input_reasons=list(dict.fromkeys(reasons)),
+            fdr_verification_status="author_reported_only",
+            source_reported_fdr_level="unspecified",
+            source_reported_fdr_cutoff=policy["reported_fdr_cutoff"],
+        )
+        audit.append(entry)
+        if reasons:
+            continue
+
+        row = {
+            "source_record_id": record["source_record_id"],
+            "identity_scope": "exact_sequence",
+            "input_scope": "author_reported_candidate",
+            "fdr_verification_status": "author_reported_only",
+            "source_reported_fdr_level": "unspecified",
+            "source_reported_fdr_cutoff": policy["reported_fdr_cutoff"],
+            "selected_fdr_level": None,
+            "selected_fdr_value": None,
+            "selected_fdr_cutoff": None,
+            "source_decoy_status": record["decoy_status"],
+            "source_crosslinker": fields["Crosslinker"],
+            "source_spectrum_file": fields["Spectrum File"],
+            "source_scan": fields["First Scan"],
+            "source_worksheet": record["source_worksheet"],
+            "source_worksheet_row": record["source_worksheet_row"],
+            "source_filter_description_sha256_json": json.dumps(description_hashes),
+            "source_fields_json": json.dumps(fields, ensure_ascii=False),
+        }
+        for site, side in (("a", "A"), ("b", "B")):
+            endpoint, identity = record["endpoints"][site], identities[site]
+            row.update({
+                "unip_id_" + site: identity["accession"],
+                "seq_" + site: identity["sequence"],
+                "pep_" + site: endpoint["peptide"],
+                "pos_" + site: endpoint["protein_position"],
+                "res_pos_" + site: endpoint["link_position"],
+                "source_protein_id_" + site: endpoint["source_protein_id"],
+                "source_fasta_id_" + site: endpoint["source_fasta_id"],
+                "source_peptide_start_zero_based_" + site: fields[side + " in protein"],
+                "source_modifications_" + site: fields.get("Modifications " + side),
+            })
+        rows.append(row)
+
+    def encoded(value):
+        return (
+            json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
+        ).encode("utf-8")
+
+    archived_receipts = []
+    for receipt in bundle["source_receipts"]:
+        path = Path(receipt["path"])
+        raw = path.read_bytes()
+        if hashlib.sha256(raw).hexdigest() != receipt["sha256"]:
+            raise ValueError("MS Annika source checksum changed before output")
+        name = "input_sources/" + receipt["sha256"] + path.suffix
+        bodies[name] = raw
+        archived_receipts.append({
+            **receipt, "original_path": receipt["path"], "path": name,
+        })
+    bodies["input_source_receipts.json"] = encoded(archived_receipts)
+    bodies["crosslink_audit.json"] = encoded(bundle["crosslink_records"])
+    bodies["crosslink_source_columns.json"] = encoded(
+        bundle["crosslink_source_columns"]
+    )
+    bodies["author_filter_evidence.json"] = encoded(policy)
+
+    prepared = {
+        "rows": rows,
+        "audit": audit,
+        "provenance": deepcopy(bundle["provenance"]),
+        "fdr_policy": {
+            "kind": "author_reported_source_table",
+            "level": "unspecified",
+            "reported_cutoff": policy["reported_fdr_cutoff"],
+            "verification_status": "author_reported_only",
+            "per_record_fdr_applied": False,
+            "application_verified": False,
+            "target_decoy_validation_performed": False,
+            "parent_confidence_propagated": False,
+        },
+        "author_filter_policy": policy,
+        "author_filter_evidence_snapshot": "author_filter_evidence.json",
+        "extra_source_bodies": bodies,
+    }
+    return write_xifdr_outputs(
+        bundle, mappings, prepared, output_dir,
+        pipeline_policy={
+            "allowed_crosslinkers": sorted(selections["allowed_crosslinkers"]),
+            "allowed_residues": sorted(selections["allowed_residues"]),
+            "identity_scope": "exact_sequence",
+            "source_csm_peptide_start_basis": 0,
+            "output_coordinate_basis": 1,
+            "requires_parent_crosslink_match": False,
+            "modification_masses_assessed": False,
+        },
+    )

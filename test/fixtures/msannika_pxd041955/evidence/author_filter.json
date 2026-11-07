@@ -1,0 +1,25 @@
+{
+  "kind": "msannika_author_reported_filter_evidence",
+  "schema_version": 1,
+  "dataset_accession": "PXD041955",
+  "review_status": "reviewed",
+  "source_file_name": "20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSSO_pl1_MS3_OTOTOT_CSMS_1FDR.xlsx",
+  "psm_sha256": "6a500289182841bc0468b7d9c5fcf7d1bf9ed8c1651118424ecd1b03ee37496c",
+  "fasta_sha256": "a9ac881b6a8a06c8b6f1394fdad323921fd3ea69c27b8558a4efa206930d50b7",
+  "crosslinks_sha256": "db74c0970b965fcaf8c36dab295e635aea74022937b14239443e18c25f72e4d6",
+  "contaminant_fasta_sha256": "4b0e6e97ab1d618baa38be612a787d884a781e07f627b919c4b29ac064db5382",
+  "reported_fdr_cutoff": 0.01,
+  "reported_fdr_level": "unspecified",
+  "supporting_description_line": "20211219_Eclipse_LC4_G2_Trap_backflash_Peplib20_DSSO_pl1_MS3_OTOTOT_CSMS_1FDR.xlsx\t\tdataset A DSSO Orbitrap High-confidence (1% FDR) CSMs",
+  "scope_explanation": "The author describes this exported CSM table as high-confidence with 1% FDR; the statistical control level is not established.",
+  "per_record_fdr_values_assigned": false,
+  "parent_confidence_propagated": false,
+  "target_decoy_validation_performed": false,
+  "sources": [
+    {
+      "kind": "author_result_description",
+      "path": "sources/dd4a318b12fd11e2fd545403389aa6ca48441813e3a46b68c2bd8e11211c6bf3.txt",
+      "sha256": "dd4a318b12fd11e2fd545403389aa6ca48441813e3a46b68c2bd8e11211c6bf3"
+    }
+  ]
+}
