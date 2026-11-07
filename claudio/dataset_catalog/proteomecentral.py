@@ -13,9 +13,11 @@ import requests
 from . import _write_json
 
 
-DATASETS_URL = (
-    "https://proteomecentral.proteomexchange.org/api/proxi/v0.1/datasets"
-)
+DATASETS_URL = "https://proteomecentral.proteomexchange.org/api/proxi/v0.1/datasets"
+CSV_COLUMNS = [
+    "accession", "title", "repository", "species", "search_terms",
+    "review_status", "metadata_conflict", "metadata_variant_count",
+]
 
 
 @dataclass(frozen=True)
@@ -26,100 +28,72 @@ class CatalogPage:
     data: dict
 
 
-def fetch_dataset_pages(
-    search_term: str, *, page_size: int = 100
-) -> List[CatalogPage]:
+def fetch_dataset_pages(search_term: str, *, page_size: int = 100) -> List[CatalogPage]:
     """Fetch all matching pages, retaining their original response bodies."""
     pages = []
-    page_number = 1
-    expected_total = None
-    expected_pages = None
+    expected_counts = None
 
     while True:
+        page_number = len(pages) + 1
         params = {
             "search": search_term,
             "resultType": "resultset",
             "pageNumber": page_number,
             "pageSize": page_size,
         }
-        response = requests.get(
-            DATASETS_URL, params=params, timeout=(15, 120)
-        )
+        response = requests.get(DATASETS_URL, params=params, timeout=(15, 120))
         response.raise_for_status()
         retrieved_at = datetime.now(timezone.utc).isoformat()
         data = json.loads(response.content)
 
         if data["status"]["status"] != "OK":
-            raise ValueError(
-                f"ProteomeCentral search failed: {data['status']}"
-            )
+            raise ValueError(f"ProteomeCentral search failed: {data['status']}")
 
         result_set = data["result_set"]
         if result_set["page_number"] != page_number:
-            raise ValueError(
-                "ProteomeCentral returned an unexpected page"
-            )
+            raise ValueError("ProteomeCentral returned an unexpected page")
 
-        total = result_set["n_available_rows"]
-        page_count = result_set["n_available_pages"]
-        if expected_total is None:
-            expected_total = total
-            expected_pages = page_count
-        elif total != expected_total or page_count != expected_pages:
-            raise ValueError(
-                "ProteomeCentral result counts changed during search"
-            )
+        counts = (result_set["n_available_rows"], result_set["n_available_pages"])
+        if expected_counts is None:
+            expected_counts = counts
+        elif counts != expected_counts:
+            raise ValueError("ProteomeCentral result counts changed during search")
 
         records = data["datasets"]
         if len(records) != result_set["n_rows_returned"]:
-            raise ValueError(
-                "ProteomeCentral returned an inconsistent row count"
-            )
-        if not records and expected_total > 0:
-            raise ValueError(
-                "ProteomeCentral returned an unexpected empty page"
-            )
+            raise ValueError("ProteomeCentral returned an inconsistent row count")
+        if not records and counts[0] > 0:
+            raise ValueError("ProteomeCentral returned an unexpected empty page")
 
-        pages.append(
-            CatalogPage(
-                request_url=response.url,
-                retrieved_at_utc=retrieved_at,
-                raw_body=response.content,
-                data=data,
-            )
-        )
-
-        if page_number >= expected_pages:
+        pages.append(CatalogPage(
+            request_url=response.url,
+            retrieved_at_utc=retrieved_at,
+            raw_body=response.content,
+            data=data,
+        ))
+        if page_number >= counts[1]:
             break
-        page_number += 1
 
     received = sum(len(page.data["datasets"]) for page in pages)
-    if received != expected_total:
+    if received != expected_counts[0]:
         raise ValueError(
-            f"Incomplete download: received {received} "
-            f"of {expected_total} records"
+            f"Incomplete download: received {received} of {expected_counts[0]} records"
         )
-
     return pages
 
 
 def merge_search_results(searches):
     """Merge candidates and retain metadata variants with their search sources."""
     candidates = {}
-
     for search_term, pages in searches.items():
         for page in pages:
             columns = page.data["result_set"]["datasets_title_list"]
-
             for values in page.data["datasets"]:
                 if len(values) != len(columns):
-                    raise ValueError(
-                        "Dataset row does not match its column headers"
-                    )
+                    raise ValueError("Dataset row does not match its column headers")
 
                 metadata = dict(zip(columns, values))
                 accession = metadata.pop("dataset identifier")
-
                 if accession not in candidates:
                     candidates[accession] = {
                         **metadata,
@@ -131,38 +105,20 @@ def merge_search_results(searches):
                     }
 
                 candidate = candidates[accession]
-                if search_term not in candidate["search_terms"]:
-                    candidate["search_terms"].append(search_term)
-
                 variants = candidate["metadata_variants"]
-                for variant in variants:
-                    if variant["metadata"] == metadata:
-                        if search_term not in variant["search_terms"]:
-                            variant["search_terms"].append(search_term)
-                        break
-                else:
-                    variants.append({
-                        "metadata": metadata,
-                        "search_terms": [search_term],
-                    })
+                variant = next(
+                    (item for item in variants if item["metadata"] == metadata), None
+                )
+                if variant is None:
+                    variant = {"metadata": metadata, "search_terms": []}
+                    variants.append(variant)
 
+                for record in (candidate, variant):
+                    if search_term not in record["search_terms"]:
+                        record["search_terms"].append(search_term)
                 candidate["metadata_conflict"] = len(variants) > 1
 
     return [candidates[accession] for accession in sorted(candidates)]
-
-
-CSV_COLUMNS = [
-    "accession",
-    "title",
-    "repository",
-    "species",
-    "search_terms",
-    "review_status",
-    "metadata_conflict",
-    "metadata_variant_count",
-]
-
-
 
 
 def write_discovery_outputs(searches, output_dir):
@@ -186,7 +142,6 @@ def write_discovery_outputs(searches, output_dir):
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=False)
     (output_dir / "raw").mkdir()
-
     manifest = {
         "schema_version": 1,
         "source": "ProteomeCentral",
@@ -196,22 +151,15 @@ def write_discovery_outputs(searches, output_dir):
         "searches": [],
     }
 
-    for search_number, (search_term, pages) in enumerate(
-        searches.items(), start=1
-    ):
+    for search_number, (search_term, pages) in enumerate(searches.items(), start=1):
         search = {
             "search_term": search_term,
             "reported_total": pages[0].data["result_set"]["n_available_rows"],
-            "downloaded_records": sum(
-                len(page.data["datasets"]) for page in pages
-            ),
+            "downloaded_records": sum(len(page.data["datasets"]) for page in pages),
             "pages": [],
         }
-
         for page_number, page in enumerate(pages, start=1):
-            relative_path = Path("raw") / (
-                f"search_{search_number:03d}_page_{page_number:04d}.json"
-            )
+            relative_path = Path("raw") / f"search_{search_number:03d}_page_{page_number:04d}.json"
             (output_dir / relative_path).write_bytes(page.raw_body)
             search["pages"].append({
                 "path": relative_path.as_posix(),
@@ -220,27 +168,16 @@ def write_discovery_outputs(searches, output_dir):
                 "query": page.data["query"],
                 "sha256": hashlib.sha256(page.raw_body).hexdigest(),
             })
-
         manifest["searches"].append(search)
 
     _write_json(output_dir / "candidates.json", candidates)
-
-    with (output_dir / "candidates.csv").open(
-        "w", encoding="utf-8", newline=""
-    ) as handle:
+    with (output_dir / "candidates.csv").open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=CSV_COLUMNS)
         writer.writeheader()
         for candidate in candidates:
-            row = {
-                column: candidate.get(column, "")
-                for column in CSV_COLUMNS
-            }
-            row["search_terms"] = json.dumps(
-                candidate["search_terms"], ensure_ascii=False
-            )
-            row["metadata_variant_count"] = len(
-                candidate["metadata_variants"]
-            )
+            row = {column: candidate.get(column, "") for column in CSV_COLUMNS}
+            row["search_terms"] = json.dumps(candidate["search_terms"], ensure_ascii=False)
+            row["metadata_variant_count"] = len(candidate["metadata_variants"])
             writer.writerow(row)
 
     _write_json(output_dir / "manifest.json", manifest)
