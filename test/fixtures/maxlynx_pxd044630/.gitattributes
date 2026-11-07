@@ -1,0 +1,4 @@
+*.txt -text -whitespace
+*.fasta -text -whitespace
+*.xml -text -whitespace
+evidence/reference_sources/* -text -whitespace

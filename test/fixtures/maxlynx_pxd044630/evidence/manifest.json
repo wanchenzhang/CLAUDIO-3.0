@@ -1,0 +1,13 @@
+{
+  "kind": "maxlynx_frozen_reference_evidence",
+  "source_projection_manifest_sha256": "f68cb970293010f8478537a5ad525abfdbf2f28bd10a4bd47f33b0ace4d8c770",
+  "output_sha256": {
+    "reference_mapping.json": "c4ee6f070b678fd56d5371f75e959d1e59ae267a09ad0fc179b8938260b6e4ff",
+    "reference_sources/e0910e447fadce21c919055303bc7eda6cd8f2e1bdc36bdabf1b95a8628fd690.fasta": "e0910e447fadce21c919055303bc7eda6cd8f2e1bdc36bdabf1b95a8628fd690",
+    "reference_sources/6eb1d2dd8de0746715503325697eb3c10f5137f084b7fa03d92817dd91164ace.json": "6eb1d2dd8de0746715503325697eb3c10f5137f084b7fa03d92817dd91164ace",
+    "reference_sources/42524cd982e455769d154e540fc543e90907c99f47eb0f346aa1c22fc1bc0de2.fasta": "42524cd982e455769d154e540fc543e90907c99f47eb0f346aa1c22fc1bc0de2",
+    "reference_sources/ab7d9fde7e9cf8ed4cc46d7a17245c41895d3c42043a4995ae83b1db600be1fd.json": "ab7d9fde7e9cf8ed4cc46d7a17245c41895d3c42043a4995ae83b1db600be1fd",
+    "reference_sources/dc4cc082977866ffcd5be076f8f716f0bf7aabf4220ee329e7798654e4b01e98.json": "dc4cc082977866ffcd5be076f8f716f0bf7aabf4220ee329e7798654e4b01e98",
+    "reference_sources/327025f89458cc5c8245403854abae7ae9d1d1cc30935d104e4f6316ec34efc9.json": "327025f89458cc5c8245403854abae7ae9d1d1cc30935d104e4f6316ec34efc9"
+  }
+}

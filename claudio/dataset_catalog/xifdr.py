@@ -1048,6 +1048,7 @@ def write_import_report(bundle, output_dir):
     if output_dir.exists():
         raise FileExistsError("Import report output directory already exists")
     _verify_msannika_sources(bundle)
+    _verify_maxlynx_sources(bundle)
     _verify_plink_native_sources(bundle)
     author_sources = _author_filter_source_bodies(bundle)
     for kind in ("psm", "fasta"):
@@ -2235,6 +2236,7 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
     """Write source/audit snapshots and the eligible input table to a new directory."""
     output_dir = Path(output_dir)
     _verify_msannika_sources(bundle)
+    _verify_maxlynx_sources(bundle)
     _verify_plink_native_sources(bundle)
     author_sources = _author_filter_source_bodies(bundle)
     copied = deepcopy(mappings)
@@ -2307,6 +2309,7 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
         "plink_psm": "plink",
         "merox_csm": "merox",
         "msannika_csm": "msannika",
+        "maxlynx_csm": "maxlynx",
     }.get(bundle.get("format"), "xifdr")
     if bundle.get("format") == "scout_csm":
         format_name = "scout"
@@ -6075,3 +6078,10 @@ def write_msannika_claudio_input(
             "modification_masses_assessed": False,
         },
     )
+
+
+def _verify_maxlynx_sources(bundle):
+    """Verify MaxLynx parameters as well as the table and FASTA."""
+    if bundle.get("format") == "maxlynx_csm":
+        from .maxlynx import verify_maxlynx_sources
+        verify_maxlynx_sources(bundle)

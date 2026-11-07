@@ -434,6 +434,8 @@ def _detect_psm_format(results_path):
 
     with results_path.open(encoding="utf-8-sig", newline="") as handle:
         columns = set(next(csv.reader(handle), []))
+        handle.seek(0)
+        maxlynx_columns = set(next(csv.reader(handle, delimiter="\t"), []))
 
     signatures = {
         "xifdr_psm": {
@@ -454,6 +456,9 @@ def _detect_psm_format(results_path):
         name for name, required in signatures.items()
         if required <= columns
     ]
+    from .maxlynx import REQUIRED_COLUMNS as maxlynx_required
+    if maxlynx_required <= maxlynx_columns:
+        matches.append("maxlynx_csm")
     if len(matches) != 1:
         raise ValueError(
             "Cannot identify a unique results format; supported CSV layouts "
@@ -541,7 +546,7 @@ def _detect_psm_format(results_path):
     is_flag=True,
     default=False,
     help=(
-        "Export pLink sequence/site candidates while preserving "
+        "Export pLink or MaxLynx sequence/site candidates while preserving "
         "unverified FDR and source decoy states."
     ),
 )
@@ -573,6 +578,11 @@ def _detect_psm_format(results_path):
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
     help="Additional contaminant FASTA used for the MS Annika search.",
 )
+@click.option(
+    "--maxlynx-parameters", "maxlynx_parameters_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Original mqpar.xml for the MaxLynx result table.",
+)
 def standardize_command(
     results_path,
     fasta_path,
@@ -595,6 +605,7 @@ def standardize_command(
     allowed_modifications=(),
     msannika_crosslinks_path=None,
     msannika_contaminants_path=None,
+    maxlynx_parameters_path=None,
 ):
     """Standardize supported XL-MS results or preserve a full import audit."""
     if output_dir.exists():
@@ -609,6 +620,105 @@ def standardize_command(
         source_format = _detect_psm_format(results_path)
     except (ValueError, OSError) as error:
         raise click.ClickException(str(error)) from error
+    if maxlynx_parameters_path is not None and source_format != "maxlynx_csm":
+        raise click.UsageError(
+            "--maxlynx-parameters only supports MaxLynx CSM tables."
+        )
+    if source_format == "maxlynx_csm":
+        forbidden = {
+            "--mapping": mapping_path is not None,
+            "--fdr-level": fdr_level is not None,
+            "--fdr-cutoff": fdr_cutoff is not None,
+            "--fdr-column": fdr_column is not None,
+            "--decoy-prefix": decoy_prefix is not None,
+            "--plink-unfiltered": plink_unfiltered_path is not None,
+            "--plink-parameters": plink_parameters_path is not None,
+            "--author-filter-evidence": author_filter_path is not None,
+            "--source-protein": bool(source_proteins),
+            "--allow-modification": bool(allowed_modifications),
+            "--msannika-crosslinks": msannika_crosslinks_path is not None,
+            "--msannika-contaminants": msannika_contaminants_path is not None,
+        }
+        if audit_only:
+            forbidden.update({
+                "--reference-projection": reference_projection_path is not None,
+                "--crosslinker": bool(crosslinkers),
+                "--residue": bool(residues),
+                "--export-unverified-candidates": export_unverified_candidates,
+            })
+        conflicts = [name for name, present in forbidden.items() if present]
+        if conflicts:
+            raise click.UsageError(
+                "Unsupported options for this MaxLynx mode: "
+                + ", ".join(conflicts)
+            )
+        required = {
+            "--maxlynx-parameters": maxlynx_parameters_path is None,
+        }
+        if not audit_only:
+            required.update({
+                "--reference-projection": reference_projection_path is None,
+                "--crosslinker": not crosslinkers,
+                "--residue": not residues,
+                "--export-unverified-candidates": not export_unverified_candidates,
+            })
+        missing = [name for name, absent in required.items() if absent]
+        if missing:
+            raise click.UsageError("MaxLynx requires " + ", ".join(missing) + ".")
+
+        from .maxlynx import read_maxlynx_csms, write_maxlynx_claudio_input
+
+        click.echo("Detected format: MaxLynx CSM (semicolon-localized TSV)")
+        try:
+            bundle = read_maxlynx_csms(
+                results_path, fasta_path,
+                dataset_accession=dataset_accession,
+                parameters_path=maxlynx_parameters_path,
+            )
+            if audit_only:
+                destination = write_import_report(bundle, output_dir)
+            else:
+                reference = _read_reference_projection(reference_projection_path)
+                destination = write_maxlynx_claudio_input(
+                    bundle, reference, output_dir,
+                    allowed_crosslinkers=crosslinkers,
+                    allowed_residues=residues,
+                    export_unverified_candidates=True,
+                )
+            manifest = json.loads(
+                (destination / "manifest.json").read_text(encoding="utf-8")
+            )
+        except (ValueError, OSError, RuntimeError) as error:
+            raise click.ClickException(str(error)) from error
+
+        click.echo(f"Source records: {len(bundle['records'])}")
+        click.echo(f"Parsed CSM records: {bundle['parser']['parsed_records']}")
+        click.echo(
+            "Records with parser errors: "
+            + str(sum(
+                record["record_reason"].startswith("pyxlms_")
+                for record in bundle["records"]
+            ))
+        )
+        if audit_only:
+            click.echo(f"Audit report: {destination / 'import_report.json'}")
+        else:
+            click.echo(
+                "Standardized input rows: "
+                + str(manifest["counts"]["pipeline_input_rows"])
+            )
+            click.echo("Input scope: unverified candidates")
+            click.echo(
+                "Native FDR verification: "
+                + manifest["fdr_policy"]["verification_status"]
+            )
+            click.echo("Per-record FDR filtering: not performed")
+            click.echo("Model assessment: not performed")
+            click.echo(f"Input: {destination / 'claudio_input.csv'}")
+            click.echo(f"Audit: {destination / 'psm_audit.json'}")
+        click.echo(f"Output: {destination.resolve()}")
+        return
+
     if source_format != "msannika_csm" and (
         msannika_crosslinks_path is not None
         or msannika_contaminants_path is not None

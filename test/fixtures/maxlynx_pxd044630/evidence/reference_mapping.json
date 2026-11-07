@@ -1,0 +1,168 @@
+{
+  "kind": "merox_multi_reference_mapping",
+  "schema_version": 1,
+  "source_fasta_sha256": "1d1d7f49aaebda9cf85259e30aebcc799345c77bf2aee6903ba1ec4a2b72994f",
+  "references": {
+    "sp|P68135|ACTS_RABIT": {
+      "reference_accession": "P68135",
+      "reference_taxon_id": 9986,
+      "reference_sequence": "MCDEDETTALVCDNGSGLVKAGFAGDDAPRAVFPSIVGRPRHQGVMVGMGQKDSYVGDEAQSKRGILTLKYPIEHGIITNWDDMEKIWHHTFYNELRVAPEEHPTLLTEAPLNPKANREKMTQIMFETFNVPAMYVAIQAVLSLYASGRTTGIVLDSGDGVTHNVPIYEGYALPHAIMRLDLAGRDLTDYLMKILTERGYSFVTTAEREIVRDIKEKLCYVALDFENEMATAASSSSLEKSYELPDGQVITIGNERFRCPETLFQPSFIGMESAGIHETTYNSIMKCDIDIRKDLYANNVMSGGTTMYPGIADRMQKEITALAPSTMKIKIIAPPERKYSVWIGGSILASLSTFQQMWITKQEYDEAGPSIVHRKCF",
+      "sources": [
+        {
+          "kind": "uniprot_api",
+          "request_url": "https://rest.uniprot.org/uniprotkb/P68135.fasta",
+          "params": {},
+          "response_url": "https://rest.uniprot.org/uniprotkb/P68135.fasta",
+          "response_headers": {
+            "Vary": "accept,accept-encoding,x-uniprot-release,x-api-deployment-date, User-Agent, Accept-Encoding",
+            "Cache-Control": "public, max-age=43200",
+            "x-cache": "miss cached",
+            "Content-Type": "text/plain;format=fasta",
+            "Content-Encoding": "gzip",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Expose-Headers": "Link, X-Total-Results, X-UniProt-Release, X-UniProt-Release-Date, X-API-Deployment-Date",
+            "X-API-Deployment-Date": "06-November-2026",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "Date": "Fri, 06 Nov 2026 17:29:23 GMT",
+            "Access-Control-Max-Age": "1728000",
+            "X-UniProt-Release": "2026_04",
+            "Transfer-Encoding": "chunked",
+            "Access-Control-Allow-Origin": "*",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, PATCH, OPTIONS",
+            "Access-Control-Allow-Headers": "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization",
+            "X-UniProt-Release-Date": "04-November-2026"
+          },
+          "status": 200,
+          "retrieved_at_utc": "2026-11-06T17:29:23.737204+00:00",
+          "path": "reference_sources/e0910e447fadce21c919055303bc7eda6cd8f2e1bdc36bdabf1b95a8628fd690.fasta",
+          "sha256": "e0910e447fadce21c919055303bc7eda6cd8f2e1bdc36bdabf1b95a8628fd690",
+          "original_path": "/viper/u1/wazha/CLAUDIO-3.0/test/fixtures/merox_actin_d1d2/evidence/sources/P68135.fasta"
+        }
+      ]
+    },
+    "tr|D1D2|D1D2_RABIT": {
+      "reference_accession": "Q8VGC3",
+      "reference_taxon_id": 10116,
+      "reference_sequence": "MVQSDTSKSPPIAAVAQESQMELLESAAPAGALGAQSYGKGARRKNRFKGSDDSTSSDTTSNSFVRQGSADSYTSRPSDSDVSLEEDREAVRREAERQAQAQLEKAKTKPVAFAVRTNVRYSAAQEDDVPVPGMAISFEAKDFLHVKEKFNNDWWIGRLVKEGCEIGFIPSPVKLENMRLQHEQRAKQGKFYSSKSGGNSSSSLGDIVPSSRKSTPPSSAIDIDATGLDAEENDIPANHRSPKPSANSVTSPHSKEKRMPFFKKTEHTPPYDVVPSMRPVVLVGPSLKGYEVTDMMQKALFDFLKHRFEGRISITRVTADISLAKRSVLNNPSKHAIIERSNTRSSLAEVQSEIERIFELARTLQLVVLDADTINHPAQLSKTSLAPIIVYVKISSPKVLQRLIKSRGKSQAKHLNVQMVAADKLAQCPPQESFDVILDENQLEDACEHLADYLEAYWKATHPPSSNLPNPLLSRTLATSTLPLSPTLASNSQGSQGDQRTDRSAPRSASQAEEEPCLEPVKKSQHRSSSATHQNHRSGTGRGLSRQETFDSETQESRDSAYVEPKEDYSHEHVDRYVPHREHNHREESHSSNGHRHREPRHRTRDMGRDQDHNECSKQRSRHKSKDRYCDKEGEVISKRRSEAGEWNRDVYIRQ",
+      "sources": [
+        {
+          "kind": "uniprot_api",
+          "request_url": "https://rest.uniprot.org/uniprotkb/Q8VGC3.json",
+          "params": {},
+          "response_url": "https://rest.uniprot.org/uniprotkb/Q8VGC3.json",
+          "response_headers": {
+            "Vary": "accept,accept-encoding,x-uniprot-release,x-api-deployment-date, User-Agent, Accept-Encoding",
+            "Cache-Control": "public, max-age=43200",
+            "x-cache": "hit cached",
+            "Content-Type": "application/json",
+            "Content-Encoding": "gzip",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Expose-Headers": "Link, X-Total-Results, X-UniProt-Release, X-UniProt-Release-Date, X-API-Deployment-Date",
+            "X-API-Deployment-Date": "06-November-2026",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "Date": "Fri, 06 Nov 2026 17:44:52 GMT",
+            "Access-Control-Max-Age": "1728000",
+            "X-UniProt-Release": "2026_04",
+            "Access-Control-Allow-Origin": "*",
+            "Accept-Ranges": "bytes",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, PATCH, OPTIONS",
+            "Access-Control-Allow-Headers": "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization",
+            "Content-Length": "9027",
+            "X-UniProt-Release-Date": "04-November-2026"
+          },
+          "status": 200,
+          "retrieved_at_utc": "2026-11-06T17:44:52.506646+00:00",
+          "path": "reference_sources/6eb1d2dd8de0746715503325697eb3c10f5137f084b7fa03d92817dd91164ace.json",
+          "sha256": "6eb1d2dd8de0746715503325697eb3c10f5137f084b7fa03d92817dd91164ace",
+          "original_path": "/viper/u1/wazha/CLAUDIO-3.0/test/fixtures/merox_actin_d1d2/evidence/sources/Q8VGC3.json"
+        },
+        {
+          "kind": "uniprot_api",
+          "request_url": "https://rest.uniprot.org/uniprotkb/Q8VGC3-2.fasta",
+          "params": {},
+          "response_url": "https://rest.uniprot.org/uniprotkb/Q8VGC3-2.fasta",
+          "response_headers": {
+            "Vary": "accept,accept-encoding,x-uniprot-release,x-api-deployment-date, User-Agent, Accept-Encoding",
+            "Cache-Control": "public, max-age=43200",
+            "x-cache": "miss cached",
+            "Content-Type": "text/plain;format=fasta",
+            "Content-Encoding": "gzip",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Expose-Headers": "Link, X-Total-Results, X-UniProt-Release, X-UniProt-Release-Date, X-API-Deployment-Date",
+            "X-API-Deployment-Date": "06-November-2026",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "Date": "Fri, 06 Nov 2026 17:44:52 GMT",
+            "Access-Control-Max-Age": "1728000",
+            "X-UniProt-Release": "2026_04",
+            "Transfer-Encoding": "chunked",
+            "Access-Control-Allow-Origin": "*",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, PATCH, OPTIONS",
+            "Access-Control-Allow-Headers": "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization",
+            "X-UniProt-Release-Date": "04-November-2026"
+          },
+          "status": 200,
+          "retrieved_at_utc": "2026-11-06T17:44:52.911931+00:00",
+          "path": "reference_sources/42524cd982e455769d154e540fc543e90907c99f47eb0f346aa1c22fc1bc0de2.fasta",
+          "sha256": "42524cd982e455769d154e540fc543e90907c99f47eb0f346aa1c22fc1bc0de2",
+          "original_path": "/viper/u1/wazha/CLAUDIO-3.0/test/fixtures/merox_actin_d1d2/evidence/sources/Q8VGC3-2.fasta"
+        },
+        {
+          "kind": "repository_project_snapshot",
+          "request_url": "https://www.ebi.ac.uk/pride/ws/archive/v3/projects/PXD053481",
+          "path": "reference_sources/ab7d9fde7e9cf8ed4cc46d7a17245c41895d3c42043a4995ae83b1db600be1fd.json",
+          "sha256": "ab7d9fde7e9cf8ed4cc46d7a17245c41895d3c42043a4995ae83b1db600be1fd",
+          "original_path": "/viper/u1/wazha/CLAUDIO-3.0/test/fixtures/merox_actin_d1d2/evidence/sources/PXD053481.json"
+        },
+        {
+          "kind": "repository_project_snapshot",
+          "request_url": "https://www.ebi.ac.uk/pride/ws/archive/v3/projects/PXD044630",
+          "path": "reference_sources/dc4cc082977866ffcd5be076f8f716f0bf7aabf4220ee329e7798654e4b01e98.json",
+          "sha256": "dc4cc082977866ffcd5be076f8f716f0bf7aabf4220ee329e7798654e4b01e98",
+          "original_path": "/viper/u1/wazha/CLAUDIO-3.0/test/fixtures/merox_actin_d1d2/evidence/sources/PXD044630.json"
+        }
+      ],
+      "construct_review": {
+        "kind": "merox_construct_reference_review",
+        "schema_version": 1,
+        "review_status": "reviewed",
+        "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+        "source_fasta_sha256": "1d1d7f49aaebda9cf85259e30aebcc799345c77bf2aee6903ba1ec4a2b72994f",
+        "source_sequence_sha256": "3a46651e1b21eba6d255b4cfdcd8d7310a12846a4e20192557fead806fc4ccce",
+        "reference_accession": "Q8VGC3",
+        "reference_taxon_id": 10116,
+        "reference_sequence_sha256": "ee54b8104b9d95ba8989a60627aa3bc3069cb7e3c414b8cb2797548165a274f9",
+        "reported_reference_accession": "Q8VGC3-2",
+        "reported_reference_interval": [
+          23,
+          422
+        ],
+        "reference_interval": [
+          74,
+          473
+        ],
+        "max_optimal_alignments": 64,
+        "require_all_optimal_alignments": true,
+        "observed_core_differences": [
+          {
+            "source_position": 33,
+            "reference_position": 74,
+            "source_residue": "P",
+            "reference_residue": "T"
+          }
+        ],
+        "reason": "Project metadata identifies the CaVbeta2 core. Observed intact paired peptides have invariant coordinates across all optimal alignments. The source P33/reference T74 difference remains unchanged. Reference identity remains a candidate hypothesis.",
+        "sources": [
+          {
+            "kind": "merox_construct_reference_review",
+            "path": "reference_sources/327025f89458cc5c8245403854abae7ae9d1d1cc30935d104e4f6316ec34efc9.json",
+            "sha256": "327025f89458cc5c8245403854abae7ae9d1d1cc30935d104e4f6316ec34efc9",
+            "original_path": "/viper/u1/wazha/CLAUDIO-3.0/test/fixtures/merox_actin_d1d2/evidence/construct_review.json"
+          }
+        ]
+      }
+    }
+  }
+}
