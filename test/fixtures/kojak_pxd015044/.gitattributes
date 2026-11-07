@@ -1,2 +1,3 @@
 *.txt -text -whitespace
 *.fasta -text -whitespace
+evidence/sources/kojak.conf -text -whitespace

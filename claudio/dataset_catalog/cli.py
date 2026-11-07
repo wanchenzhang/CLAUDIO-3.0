@@ -588,6 +588,10 @@ def _detect_psm_format(results_path):
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
     help="Original mqpar.xml for the MaxLynx result table.",
 )
+@click.option(
+    "--kojak-linker-mass", "kojak_linker_masses", multiple=True,
+    help="Select a native Kojak linker mass without assigning chemical identity.",
+)
 def standardize_command(
     results_path,
     fasta_path,
@@ -611,6 +615,7 @@ def standardize_command(
     msannika_crosslinks_path=None,
     msannika_contaminants_path=None,
     maxlynx_parameters_path=None,
+    kojak_linker_masses=(),
 ):
     """Standardize supported XL-MS results or preserve a full import audit."""
     if output_dir.exists():
@@ -626,23 +631,23 @@ def standardize_command(
     except (ValueError, OSError) as error:
         raise click.ClickException(str(error)) from error
 
+
+    if kojak_linker_masses and source_format != "kojak_csm":
+        raise click.UsageError(
+            "--kojak-linker-mass only supports native Kojak inputs."
+        )
+
     if source_format == "kojak_csm":
-        if not audit_only:
-            raise click.UsageError(
-                "Kojak input currently requires --audit-only."
-            )
         if not decoy_prefix or not decoy_prefix.strip():
             raise click.UsageError(
-                "Kojak audit requires an explicit --decoy-prefix."
+                "Kojak requires an explicit --decoy-prefix."
             )
         forbidden = {
             "--mapping": mapping_path is not None,
-            "--reference-projection": reference_projection_path is not None,
             "--fdr-level": fdr_level is not None,
             "--fdr-cutoff": fdr_cutoff is not None,
             "--fdr-column": fdr_column is not None,
             "--crosslinker": bool(crosslinkers),
-            "--residue": bool(residues),
             "--source-protein": bool(source_proteins),
             "--plink-unfiltered": plink_unfiltered_path is not None,
             "--plink-parameters": plink_parameters_path is not None,
@@ -651,18 +656,40 @@ def standardize_command(
             "--msannika-crosslinks": msannika_crosslinks_path is not None,
             "--msannika-contaminants": msannika_contaminants_path is not None,
             "--maxlynx-parameters": maxlynx_parameters_path is not None,
-            "--export-unverified-candidates": export_unverified_candidates,
         }
+        if audit_only:
+            forbidden.update({
+                "--reference-projection": reference_projection_path is not None,
+                "--kojak-linker-mass": bool(kojak_linker_masses),
+                "--residue": bool(residues),
+                "--export-unverified-candidates": export_unverified_candidates,
+            })
         conflicts = [
             option for option, present in forbidden.items() if present
         ]
         if conflicts:
             raise click.UsageError(
-                "Unsupported options for Kojak audit: "
+                "Unsupported options for this Kojak mode: "
                 + ", ".join(conflicts)
             )
+        if not audit_only:
+            required = {
+                "--reference-projection": reference_projection_path is None,
+                "--kojak-linker-mass": not kojak_linker_masses,
+                "--residue": not residues,
+                "--export-unverified-candidates": not export_unverified_candidates,
+            }
+            missing = [
+                option for option, absent in required.items() if absent
+            ]
+            if missing:
+                raise click.UsageError(
+                    "Kojak candidate export requires "
+                    + ", ".join(missing)
+                    + "; use --audit-only to retain a complete import audit."
+                )
 
-        from .kojak import read_kojak_csms
+        from .kojak import read_kojak_csms, write_kojak_claudio_input
         from .xifdr import write_import_report as write_kojak_audit
         from collections import Counter as KojakCounter
 
@@ -674,7 +701,23 @@ def standardize_command(
                 dataset_accession=dataset_accession,
                 decoy_prefix=decoy_prefix,
             )
-            destination = write_kojak_audit(bundle, output_dir)
+            if audit_only:
+                destination = write_kojak_audit(bundle, output_dir)
+            else:
+                reference_mapping = _read_reference_projection(
+                    reference_projection_path
+                )
+                destination = write_kojak_claudio_input(
+                    bundle,
+                    reference_mapping,
+                    output_dir,
+                    allowed_linker_masses=kojak_linker_masses,
+                    allowed_residues=residues,
+                    export_unverified_candidates=export_unverified_candidates,
+                )
+            manifest = json.loads(
+                (destination / "manifest.json").read_text(encoding="utf-8")
+            )
         except (ValueError, OSError, RuntimeError) as error:
             raise click.ClickException(str(error)) from error
 
@@ -698,23 +741,36 @@ def standardize_command(
             "Rows without reported peptides retained: "
             + str(kinds["no_peptide_reported"])
         )
-        click.echo(
-            "Records with source errors: "
-            + str(sum(bool(record["source_errors"])
-                      for record in bundle["records"]))
-        )
         click.echo("Reader backend: native")
-        click.echo("pyXLMS validation: not performed")
         click.echo("FDR verification: unverified")
+        if audit_only:
+            click.echo(
+                "Scientific filtering, identity mapping and input export: "
+                "not performed"
+            )
+            report_name = "import_report.json"
+        else:
+            click.echo(
+                "Standardized input rows: "
+                + str(manifest["counts"]["pipeline_input_rows"])
+            )
+            click.echo("Input scope: unverified candidates")
+            click.echo("Identity scope: candidate_hypothesis")
+            click.echo("Native linker masses: retained without chemical assignment")
+            click.echo("Per-record FDR filtering: not performed")
+            click.echo("Author-reported filter applied: False")
+            click.echo("Configuration application verified: False")
+            click.echo("Model assessment: not performed")
+            click.echo(
+                f"Input: {(destination / 'claudio_input.csv').resolve()}"
+            )
+            report_name = "psm_audit.json"
         click.echo(
-            "Scientific filtering, identity mapping and input export: "
-            "not performed"
-        )
-        click.echo(
-            f"Audit report: {(destination / 'import_report.json').resolve()}"
+            f"Audit: {(destination / report_name).resolve()}"
         )
         click.echo(f"Output: {destination.resolve()}")
         return
+
 
     if source_format == "mzidentml_csm":
         forbidden = {

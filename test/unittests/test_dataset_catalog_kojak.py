@@ -375,3 +375,356 @@ class TestKojakAuditCLI(unittest.TestCase):
                     self.assertFalse(destination.exists())
                 finally:
                     path.write_bytes(original)
+
+class TestKojakInputExport(unittest.TestCase):
+    def setUp(self):
+        from claudio.dataset_catalog.cli import _read_reference_projection
+        from claudio.dataset_catalog.kojak import read_kojak_csms
+
+        self.fixture = (
+            Path(__file__).resolve().parents[1]
+            / "fixtures/kojak_pxd015044"
+        )
+        native = json.loads(
+            (self.fixture / "expected.json").read_text(encoding="utf-8")
+        )
+        self.expected = json.loads(
+            (self.fixture / "evidence/expected_input.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.bundle = read_kojak_csms(
+            self.fixture / native["result_filename"],
+            self.fixture / "search.fasta",
+            dataset_accession="PXD015044",
+            decoy_prefix="decoy_",
+        )
+        self.mapping = _read_reference_projection(
+            self.fixture / "evidence/reference_mapping.json"
+        )
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+
+    def export(self, *, bundle=None, mapping=None, name="input", **options):
+        from claudio.dataset_catalog import kojak
+
+        writer = getattr(kojak, "write_kojak_claudio_input", None)
+        self.assertTrue(
+            callable(writer), "Missing Kojak CLAUDIO input exporter"
+        )
+        arguments = {
+            "allowed_linker_masses": {"509.0974", "517.1476"},
+            "allowed_residues": {"K"},
+            "export_unverified_candidates": True,
+        }
+        arguments.update(options)
+        return Path(writer(
+            self.bundle if bundle is None else bundle,
+            self.mapping if mapping is None else mapping,
+            self.root / name,
+            **arguments,
+        ))
+
+    def rows(self, destination):
+        with (destination / "claudio_input.csv").open(
+            newline="", encoding="utf-8"
+        ) as handle:
+            reader = csv.DictReader(handle)
+            return reader.fieldnames, list(reader)
+
+    def test_exports_target_pairs_and_preserves_all_source_rows(self):
+        import copy
+
+        original = copy.deepcopy(self.bundle)
+        destination = self.export()
+        columns, rows = self.rows(destination)
+        self.assertEqual(columns[:8], [
+            "peptide1", "peptide2", "position1", "position2",
+            "k_pos1", "k_pos2", "entry1", "entry2",
+        ])
+        self.assertEqual(len(rows), 44)
+        for actual, expected in zip(rows, self.expected["rows"]):
+            for key, value in expected.items():
+                self.assertEqual(actual[key], value)
+            self.assertEqual(actual["input_scope"], "unverified_candidate")
+            self.assertEqual(actual["fdr_verification_status"], "unverified")
+            self.assertEqual(
+                actual["source_decoy_status"], "target_labels_only"
+            )
+            for key in (
+                "selected_fdr_level", "selected_fdr_value",
+                "selected_fdr_cutoff",
+            ):
+                self.assertEqual(actual[key], "")
+
+        audit = json.loads(
+            (destination / "psm_audit.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(len(audit), 344)
+        self.assertEqual(
+            Counter(item["input_status"] for item in audit),
+            {"candidate_ready": 44, "not_evaluable": 300},
+        )
+        for actual, source in zip(audit, self.bundle["records"]):
+            for key in (
+                "source_record_id", "source_record_number",
+                "source_fields", "source_values", "record_kind",
+                "decoy_status", "fdr",
+            ):
+                self.assertEqual(actual[key], source[key])
+            if (
+                source["record_kind"] == "paired_crosslink_candidate"
+                and source["decoy_status"] != "target_labels_only"
+            ):
+                self.assertIn("decoy_record", actual["input_reasons"])
+
+        manifest = json.loads(
+            (destination / "manifest.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(manifest["kind"], "kojak_claudio_input")
+        self.assertIs(
+            manifest["fdr_policy"]["per_record_fdr_applied"], False
+        )
+        self.assertIs(manifest["assessment_performed"], False)
+        self.assertEqual(self.bundle, original)
+
+    def test_export_requires_explicit_unverified_candidate_mode(self):
+        with self.assertRaisesRegex(ValueError, "(?i)unverified"):
+            self.export(export_unverified_candidates=False)
+        self.assertFalse((self.root / "input").exists())
+
+    def test_linker_mass_selection_preserves_native_isotope_values(self):
+        destination = self.export(allowed_linker_masses={"509.0974"})
+        _, rows = self.rows(destination)
+        self.assertEqual(len(rows), 21)
+        self.assertEqual(
+            {row["source_linker_mass"] for row in rows}, {"509.0974"}
+        )
+
+    def test_missing_construct_review_is_rejected_before_output(self):
+        import copy
+
+        mapping = copy.deepcopy(self.mapping)
+        del mapping["references"]["TAU-441-His"]["sequence_projection_review"]
+        with self.assertRaisesRegex(ValueError, "(?i)review"):
+            self.export(mapping=mapping)
+        self.assertFalse((self.root / "input").exists())
+
+    def test_changed_reference_evidence_is_rejected_before_output(self):
+        receipt = next(
+            source
+            for source in self.mapping["references"]["TAU-441-His"]["sources"]
+            if source["request_url"].endswith("/P10636-8.fasta")
+        )
+        path = Path(receipt["absolute_path"])
+        original = path.read_bytes()
+        try:
+            path.write_bytes(original + b"\n")
+            with self.assertRaisesRegex(ValueError, "(?i)checksum|changed"):
+                self.export()
+            self.assertFalse((self.root / "input").exists())
+        finally:
+            path.write_bytes(original)
+
+    def test_changed_decoy_evidence_is_rejected_before_output(self):
+        import copy
+
+        bundle = copy.deepcopy(self.bundle)
+        record = next(
+            item for item in bundle["records"]
+            if item["record_kind"] == "paired_crosslink_candidate"
+            and item["decoy_status"] == "decoy_only"
+        )
+        record["decoy_status"] = "target_labels_only"
+        with self.assertRaisesRegex(ValueError, "(?i)native|source|changed"):
+            self.export(bundle=bundle)
+        self.assertFalse((self.root / "input").exists())
+
+    def test_packaged_reference_evidence_can_be_loaded_after_copying(self):
+        import shutil
+        from claudio.dataset_catalog.cli import _read_reference_projection
+
+        destination = self.export()
+        moved = self.root / "moved"
+        shutil.copytree(destination, moved)
+        mapping = _read_reference_projection(moved / "reference_projection.json")
+
+        def check_receipts(value):
+            if isinstance(value, dict):
+                if (
+                    "kind" in value and "sha256" in value
+                    and "absolute_path" in value
+                ):
+                    self.assertTrue(
+                        Path(value["absolute_path"]).is_relative_to(moved)
+                    )
+                for child in value.values():
+                    check_receipts(child)
+            elif isinstance(value, list):
+                for child in value:
+                    check_receipts(child)
+
+        check_receipts(mapping)
+        repeated = self.export(mapping=mapping, name="repeated")
+        self.assertEqual(
+            (destination / "claudio_input.csv").read_bytes(),
+            (repeated / "claudio_input.csv").read_bytes(),
+        )
+
+class TestKojakExportCLI(unittest.TestCase):
+    def setUp(self):
+        self.fixture = (
+            Path(__file__).resolve().parents[1]
+            / "fixtures/kojak_pxd015044"
+        )
+        expected = json.loads(
+            (self.fixture / "expected.json").read_text(encoding="utf-8")
+        )
+        self.results = self.fixture / expected["result_filename"]
+        self.fasta = self.fixture / "search.fasta"
+        self.mapping = self.fixture / "evidence/reference_mapping.json"
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+
+    def arguments(self, destination):
+        return [
+            "standardize",
+            "--results", str(self.results),
+            "--fasta", str(self.fasta),
+            "--dataset-accession", "PXD015044",
+            "--decoy-prefix", "decoy_",
+            "--reference-projection", str(self.mapping),
+            "--kojak-linker-mass", "509.0974",
+            "--kojak-linker-mass", "517.1476",
+            "--residue", "K",
+            "--export-unverified-candidates",
+            "--output", str(destination),
+        ]
+
+    def test_cli_export_matches_the_verified_api_behavior(self):
+        from click.testing import CliRunner
+        from claudio.dataset_catalog.cli import (
+            main, _read_reference_projection,
+        )
+        from claudio.dataset_catalog.kojak import (
+            read_kojak_csms, write_kojak_claudio_input,
+        )
+
+        bundle = read_kojak_csms(
+            self.results, self.fasta,
+            dataset_accession="PXD015044", decoy_prefix="decoy_",
+        )
+        api = Path(write_kojak_claudio_input(
+            bundle, _read_reference_projection(self.mapping),
+            self.root / "api",
+            allowed_linker_masses={"509.0974", "517.1476"},
+            allowed_residues={"K"},
+            export_unverified_candidates=True,
+        ))
+        destination = self.root / "cli"
+        result = CliRunner().invoke(main, self.arguments(destination))
+        self.assertEqual(
+            result.exit_code, 0, result.output + repr(result.exception)
+        )
+        self.assertEqual(
+            (destination / "claudio_input.csv").read_bytes(),
+            (api / "claudio_input.csv").read_bytes(),
+        )
+        self.assertEqual(
+            json.loads(
+                (destination / "psm_audit.json").read_text(encoding="utf-8")
+            ),
+            json.loads(
+                (api / "psm_audit.json").read_text(encoding="utf-8")
+            ),
+        )
+        self.assertIn("unverified", result.output)
+
+    def test_export_requires_all_explicit_candidate_options(self):
+        from click.testing import CliRunner
+        from claudio.dataset_catalog.cli import main
+
+        required = (
+            "--reference-projection",
+            "--kojak-linker-mass",
+            "--residue",
+            "--export-unverified-candidates",
+            "--decoy-prefix",
+        )
+        for number, missing in enumerate(required):
+            with self.subTest(missing=missing):
+                destination = self.root / f"missing_{number}"
+                arguments = self.arguments(destination)
+                filtered = []
+                index = 0
+                while index < len(arguments):
+                    if arguments[index] == missing:
+                        index += (
+                            1 if missing == "--export-unverified-candidates"
+                            else 2
+                        )
+                    else:
+                        filtered.append(arguments[index])
+                        index += 1
+                result = CliRunner().invoke(main, filtered)
+                self.assertNotEqual(result.exit_code, 0)
+                self.assertIn(missing, result.output)
+                self.assertFalse(destination.exists())
+
+    def test_changed_reference_evidence_is_rejected_before_output(self):
+        import shutil
+        from click.testing import CliRunner
+        from claudio.dataset_catalog.cli import main
+
+        evidence = self.root / "evidence"
+        shutil.copytree(self.fixture / "evidence", evidence)
+        mapping = json.loads(
+            (evidence / "reference_mapping.json").read_text(encoding="utf-8")
+        )
+        receipt = next(
+            item
+            for item in mapping["references"]["TAU-441-His"]["sources"]
+            if item["request_url"].endswith("/P10636-8.fasta")
+        )
+        path = evidence / receipt["path"]
+        path.write_bytes(path.read_bytes() + b"\n")
+        destination = self.root / "rejected"
+        arguments = self.arguments(destination)
+        index = arguments.index("--reference-projection") + 1
+        arguments[index] = str(evidence / "reference_mapping.json")
+        result = CliRunner().invoke(main, arguments)
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertIn("checksum", result.output.lower())
+        self.assertFalse(destination.exists())
+
+    def test_linker_mass_option_is_restricted_to_kojak_export(self):
+        from click.testing import CliRunner
+        from claudio.dataset_catalog.cli import main
+
+        other_results = (
+            self.fixture.parent / "merox_pxd010895/velos.zhrm"
+        )
+        self.assertTrue(other_results.is_file())
+        for number, (results, audit_only) in enumerate((
+            (self.results, True),
+            (other_results, False),
+        )):
+            with self.subTest(results=results, audit_only=audit_only):
+                destination = self.root / f"scope_{number}"
+                arguments = [
+                    "standardize",
+                    "--results", str(results),
+                    "--fasta", str(self.fasta),
+                    "--dataset-accession", "PXD015044",
+                    "--decoy-prefix", "decoy_",
+                    "--kojak-linker-mass", "509.0974",
+                    "--output", str(destination),
+                ]
+                if audit_only:
+                    arguments.append("--audit-only")
+                result = CliRunner().invoke(main, arguments)
+                self.assertNotEqual(result.exit_code, 0)
+                self.assertIn("--kojak-linker-mass", result.output)
+                self.assertFalse(destination.exists())

@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "kind": "kojak_reference_mapping",
+  "source_psm_sha256": "586a32bf12df37355cbde92de5bb00163848d27522c4d26901db7369c34c03ad",
+  "source_fasta_sha256": "fa116adec37e298e9242de67df7d8b70498baa5a3471d913978371757da3468d",
+  "references": {
+    "TAU-441-His": {
+      "profile_id": "TAU-441-His:P10636-8:e7599d914ddf8ec9d8cdc94c7497b3a247e94d7396c93a8b7aaba6041628384b",
+      "source_fasta_id": "TAU-441-His",
+      "accession": "P10636-8",
+      "taxon_id": 9606,
+      "source_sequence": "MGSSHHHHHHSSGLVPRGSMAEPRQEFEVMEDHAGTYGLGDRKDQGGYTMHQDQEGDTDAGLKESPLQTPTEDGSEEPGSETSDAKSTPTAEDVTAPLVDEGAPGKQAAAQPHTEIPEGTTAEEAGIGDTPSLEDEAAGHVTQARMVSKSKDGTGSDDKKAKGADGKTKIATPRGAAPPGQKGQANATRIPAKTPPAPKTPPSSGEPPKSGDRSGYSSPGSPGTPGSRSRTPSLPTPPTREPKKVAVVRTPPKSPSSAKSRLQTAPVPMPDLKNVKSKIGSTENLKHQPGGGKVQIINKKLDLSNVQSKCGSKDNIKHVPGGGSVQIVYKPVDLSKVTSKCGSLGNIHHKPGGGQVEVKSEKLDFKDRVQSKIGSLDNITHVPGGGNKKIETHKLTFRENAKAKTDHGAEIVYKSPVVSGDTSPRHLSNVSSTGSIDMVDSPQLATLADEVSASLAKQGL",
+      "reference_sequence": "MAEPRQEFEVMEDHAGTYGLGDRKDQGGYTMHQDQEGDTDAGLKESPLQTPTEDGSEEPGSETSDAKSTPTAEDVTAPLVDEGAPGKQAAAQPHTEIPEGTTAEEAGIGDTPSLEDEAAGHVTQARMVSKSKDGTGSDDKKAKGADGKTKIATPRGAAPPGQKGQANATRIPAKTPPAPKTPPSSGEPPKSGDRSGYSSPGSPGTPGSRSRTPSLPTPPTREPKKVAVVRTPPKSPSSAKSRLQTAPVPMPDLKNVKSKIGSTENLKHQPGGGKVQIINKKLDLSNVQSKCGSKDNIKHVPGGGSVQIVYKPVDLSKVTSKCGSLGNIHHKPGGGQVEVKSEKLDFKDRVQSKIGSLDNITHVPGGGNKKIETHKLTFRENAKAKTDHGAEIVYKSPVVSGDTSPRHLSNVSSTGSIDMVDSPQLATLADEVSASLAKQGL",
+      "reference_sequence_sha256": "e7599d914ddf8ec9d8cdc94c7497b3a247e94d7396c93a8b7aaba6041628384b",
+      "identity_scope": "candidate_hypothesis",
+      "identity_accepted": false,
+      "require_all_optimal_alignments": true,
+      "coordinate_evidence": {
+        "method": "full_reference_exact_subsequence",
+        "source_start": 20,
+        "source_end": 460,
+        "reference_start": 1,
+        "reference_end": 441,
+        "mapping_options": 1
+      },
+      "sources": [
+        {
+          "kind": "uniprot_api",
+          "accession_requested": "P10636",
+          "request_url": "https://rest.uniprot.org/uniprotkb/P10636.json",
+          "retrieved_at_utc": "2026-11-07T18:28:26.508473+00:00",
+          "response_url": "https://rest.uniprot.org/uniprotkb/P10636.json",
+          "status_code": 200,
+          "response_headers": {
+            "Content-Type": "application/json",
+            "Date": "Sat, 07 Nov 2026 18:28:26 GMT",
+            "X-UniProt-Release": "2026_04",
+            "X-UniProt-Release-Date": "04-November-2026"
+          },
+          "path": "sources/P10636.json",
+          "sha256": "20e47a2fcf10227158358b67dc2616bffb7c49c65d357b717605c45cba74835f",
+          "bytes": 284383,
+          "status": 200
+        },
+        {
+          "kind": "uniprot_api",
+          "accession_requested": "P10636",
+          "request_url": "https://rest.uniprot.org/uniprotkb/P10636.fasta",
+          "retrieved_at_utc": "2026-11-07T18:28:54.732674+00:00",
+          "response_url": "https://rest.uniprot.org/uniprotkb/P10636.fasta",
+          "status_code": 200,
+          "response_headers": {
+            "Content-Type": "text/plain;format=fasta",
+            "Date": "Sat, 07 Nov 2026 18:28:54 GMT",
+            "X-UniProt-Release": "2026_04",
+            "X-UniProt-Release-Date": "04-November-2026"
+          },
+          "path": "sources/P10636.fasta",
+          "sha256": "69f13dc0999b96c05921b24baa86ae84e7bdaf932c561924179f303f58e6ff4b",
+          "bytes": 869,
+          "status": 200
+        },
+        {
+          "kind": "uniprot_api",
+          "accession_requested": "P10636-8",
+          "request_url": "https://rest.uniprot.org/uniprotkb/P10636-8.fasta",
+          "retrieved_at_utc": "2026-11-07T18:28:54.863955+00:00",
+          "response_url": "https://rest.uniprot.org/uniprotkb/P10636-8.fasta",
+          "status_code": 200,
+          "response_headers": {
+            "Content-Type": "text/plain;format=fasta",
+            "Date": "Sat, 07 Nov 2026 18:28:54 GMT",
+            "X-UniProt-Release": "2026_04",
+            "X-UniProt-Release-Date": "04-November-2026"
+          },
+          "path": "sources/P10636-8.fasta",
+          "sha256": "e30ed5b41ba21782ac58824b766367900791486b4cdf4c24b41028d392c09291",
+          "bytes": 556,
+          "status": 200
+        }
+      ],
+      "sequence_projection_review": {
+        "schema_version": 1,
+        "kind": "sequence_projection_review",
+        "review_status": "reviewed",
+        "source_fasta_id": "TAU-441-His",
+        "source_fasta_sha256": "fa116adec37e298e9242de67df7d8b70498baa5a3471d913978371757da3468d",
+        "source_sequence_sha256": "d710da819fd28ab8226eb16d9067b76288e384fe12a9d5be257122c4611be46b",
+        "declared_accession": null,
+        "reference_accession": "P10636-8",
+        "reference_sequence_sha256": "e7599d914ddf8ec9d8cdc94c7497b3a247e94d7396c93a8b7aaba6041628384b",
+        "taxon_id": 9606,
+        "mapping_method": "full_reference_exact_subsequence",
+        "source_interval": [
+          20,
+          460
+        ],
+        "reference_interval": [
+          1,
+          441
+        ],
+        "allowed_source_unmapped_positions": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19
+        ],
+        "require_all_optimal_alignments": true,
+        "identity_accepted": false,
+        "reason": "The unchanged search FASTA contains the complete 441-residue P10636-8 sequence after a 19-residue prefix. The saved project describes human 2N4R tau but reports a different fusion-tag sequence. Source FASTA coordinates remain authoritative. Only intact identical peptides within source positions 20 through 460 may project. Identity remains a candidate hypothesis.",
+        "sources": [
+          {
+            "kind": "sequence_projection_review",
+            "path": "reviews/sequence_projection_review.json",
+            "sha256": "a1a497723899170b79a0023913a531ea05a7ad97b469eb54485f1660116aa51a"
+          }
+        ]
+      }
+    }
+  },
+  "configuration_application_verified": false,
+  "crosslinker_identity_verified": false,
+  "native_linker_masses": [
+    "509.0974",
+    "517.1476"
+  ],
+  "author_reported_filtering": {
+    "reported_q_value_cutoff": 0.01,
+    "reported_level": "unspecified",
+    "protocol": "Crosslinking data were analyzed using Kojak (Hoopmann et al., 2015) and Percolator (Käll et al., 2007) using filtering criteria of Percolator q-value <= 0.01, score >= 1.675, population type = \"intra\", ppm error +/- 2.5.",
+    "application_to_export_verified": false,
+    "native_scores_used_as_percolator_scores": false
+  },
+  "context_sources": [
+    {
+      "kind": "native_search_configuration",
+      "path": "sources/kojak.conf",
+      "sha256": "3107f0cc27031a841822e19eb2978daa6cfdbf21d4f21b1eb5c9ec224048af28"
+    },
+    {
+      "kind": "repository_metadata",
+      "path": "sources/project_metadata.json",
+      "sha256": "c4462894b14a3668b60ba7a33adde0a94980621979bc60aa2eec9e6148371144"
+    }
+  ]
+}

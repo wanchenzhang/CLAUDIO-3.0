@@ -21,8 +21,44 @@
       "sha256": "f616df46445f4ac7c4fbf6b7f2526ee45a5202f5005825e9028a44bd57346cbe"
     },
     ".gitattributes": {
-      "bytes": 50,
-      "sha256": "46010c19799ca67c1f127c0a475dd77ef9435333c307aafe8e9c21d4edfa6a14"
+      "bytes": 96,
+      "sha256": "10da389341dfaf1c9cd879a6a0af236bd2e3cc15c6ff89115861f8238c14c089"
+    },
+    "evidence/sources/P10636.json": {
+      "bytes": 284383,
+      "sha256": "20e47a2fcf10227158358b67dc2616bffb7c49c65d357b717605c45cba74835f"
+    },
+    "evidence/sources/P10636.fasta": {
+      "bytes": 869,
+      "sha256": "69f13dc0999b96c05921b24baa86ae84e7bdaf932c561924179f303f58e6ff4b"
+    },
+    "evidence/sources/P10636-8.fasta": {
+      "bytes": 556,
+      "sha256": "e30ed5b41ba21782ac58824b766367900791486b4cdf4c24b41028d392c09291"
+    },
+    "evidence/reviews/sequence_projection_review.json": {
+      "bytes": 1294,
+      "sha256": "a1a497723899170b79a0023913a531ea05a7ad97b469eb54485f1660116aa51a"
+    },
+    "evidence/sources/kojak.conf": {
+      "bytes": 4199,
+      "sha256": "3107f0cc27031a841822e19eb2978daa6cfdbf21d4f21b1eb5c9ec224048af28"
+    },
+    "evidence/sources/project_metadata.json": {
+      "bytes": 6798,
+      "sha256": "c4462894b14a3668b60ba7a33adde0a94980621979bc60aa2eec9e6148371144"
+    },
+    "evidence/reference_mapping.json": {
+      "bytes": 7136,
+      "sha256": "a85b48aa1a7057468c751cc9e40161aad5444a6a25eb6083856cb5236d9afd2a"
+    },
+    "evidence/expected_input.json": {
+      "bytes": 19115,
+      "sha256": "29c9ea0f82e40c34b86522474c888ff1e2256bd4a5b690320657606bd3909b6f"
+    },
+    "evidence/manifest.json": {
+      "bytes": 982,
+      "sha256": "559a58a9f29bd023097a174358ea2c67cb1384ef975fa7f78a084a23c6d731da"
     }
   }
 }

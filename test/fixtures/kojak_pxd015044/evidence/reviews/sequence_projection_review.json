@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "kind": "sequence_projection_review",
+  "review_status": "reviewed",
+  "source_fasta_id": "TAU-441-His",
+  "source_fasta_sha256": "fa116adec37e298e9242de67df7d8b70498baa5a3471d913978371757da3468d",
+  "source_sequence_sha256": "d710da819fd28ab8226eb16d9067b76288e384fe12a9d5be257122c4611be46b",
+  "declared_accession": null,
+  "reference_accession": "P10636-8",
+  "reference_sequence_sha256": "e7599d914ddf8ec9d8cdc94c7497b3a247e94d7396c93a8b7aaba6041628384b",
+  "taxon_id": 9606,
+  "mapping_method": "full_reference_exact_subsequence",
+  "source_interval": [
+    20,
+    460
+  ],
+  "reference_interval": [
+    1,
+    441
+  ],
+  "allowed_source_unmapped_positions": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+  ],
+  "require_all_optimal_alignments": true,
+  "identity_accepted": false,
+  "reason": "The unchanged search FASTA contains the complete 441-residue P10636-8 sequence after a 19-residue prefix. The saved project describes human 2N4R tau but reports a different fusion-tag sequence. Source FASTA coordinates remain authoritative. Only intact identical peptides within source positions 20 through 460 may project. Identity remains a candidate hypothesis."
+}

@@ -1,0 +1,14 @@
+{
+  "kind": "kojak_candidate_export_evidence",
+  "source_reference_review_manifest_sha256": "df36c06884a047badb1e9e84ccc137db3a1af036e1067bae14d6794746334595",
+  "output_sha256": {
+    "sources/P10636.json": "20e47a2fcf10227158358b67dc2616bffb7c49c65d357b717605c45cba74835f",
+    "sources/P10636.fasta": "69f13dc0999b96c05921b24baa86ae84e7bdaf932c561924179f303f58e6ff4b",
+    "sources/P10636-8.fasta": "e30ed5b41ba21782ac58824b766367900791486b4cdf4c24b41028d392c09291",
+    "reviews/sequence_projection_review.json": "a1a497723899170b79a0023913a531ea05a7ad97b469eb54485f1660116aa51a",
+    "sources/kojak.conf": "3107f0cc27031a841822e19eb2978daa6cfdbf21d4f21b1eb5c9ec224048af28",
+    "sources/project_metadata.json": "c4462894b14a3668b60ba7a33adde0a94980621979bc60aa2eec9e6148371144",
+    "reference_mapping.json": "a85b48aa1a7057468c751cc9e40161aad5444a6a25eb6083856cb5236d9afd2a",
+    "expected_input.json": "29c9ea0f82e40c34b86522474c888ff1e2256bd4a5b690320657606bd3909b6f"
+  }
+}

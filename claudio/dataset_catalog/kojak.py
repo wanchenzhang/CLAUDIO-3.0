@@ -1,5 +1,7 @@
 """Read Kojak native results without assigning confidence or protein identities."""
 
+import json
+
 import csv
 import hashlib
 import io
@@ -405,3 +407,419 @@ def read_kojak_csms(
         "input_exported": False,
         "assessment_performed": False,
     }
+
+
+from copy import deepcopy
+from .xifdr import _reference_evidence, write_xifdr_outputs
+
+
+def _verify_kojak_sources(bundle):
+    for kind in ("psm", "fasta"):
+        path = Path(bundle["provenance"][kind + "_path"])
+        if _sha256(path) != bundle["provenance"][kind + "_sha256"]:
+            raise ValueError("Kojak input source checksum changed")
+
+
+def _verify_kojak_receipt(receipt):
+    if not isinstance(receipt, dict) or not receipt.get("absolute_path"):
+        raise ValueError("Evidence source path is unresolved")
+    path = Path(receipt["absolute_path"])
+    raw = path.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != receipt.get("sha256"):
+        raise ValueError("Kojak reference evidence checksum changed")
+    return raw
+
+
+def _kojak_reference_profiles(bundle, mapping):
+    if (
+        not isinstance(mapping, dict)
+        or mapping.get("schema_version") != 1
+        or mapping.get("kind") != "kojak_reference_mapping"
+    ):
+        raise ValueError("Unsupported Kojak reference mapping")
+    for kind in ("psm", "fasta"):
+        if mapping.get("source_" + kind + "_sha256") != (
+            bundle["provenance"][kind + "_sha256"]
+        ):
+            raise ValueError("Reference mapping source checksum differs")
+    if (
+        mapping.get("configuration_application_verified") is not False
+        or mapping.get("crosslinker_identity_verified") is not False
+    ):
+        raise ValueError("Unsupported Kojak confidence or chemistry declaration")
+    for receipt in mapping.get("context_sources", []):
+        _verify_kojak_receipt(receipt)
+
+    references = mapping.get("references")
+    if not isinstance(references, dict) or not references:
+        raise ValueError("Reference mapping has no profiles")
+
+    checked = {}
+    identities = {}
+    for identifier, profile in references.items():
+        if identifier not in bundle["proteins"]:
+            raise ValueError("Reference source protein is missing")
+        if identifier.startswith(bundle["decoy_policy"]["prefix"]):
+            raise ValueError("Decoy proteins cannot receive target references")
+
+        source = bundle["proteins"][identifier]
+        source_sequence = source["sequence"]
+        reference_sequence = profile.get("reference_sequence")
+        if (
+            profile.get("source_fasta_id") != identifier
+            or profile.get("source_sequence") != source_sequence
+        ):
+            raise ValueError("Reference source sequence changed")
+        if (
+            not isinstance(reference_sequence, str)
+            or re.fullmatch(r"[A-Z]+", reference_sequence) is None
+        ):
+            raise ValueError("Invalid reference sequence")
+        reference_hash = hashlib.sha256(
+            reference_sequence.encode("ascii")
+        ).hexdigest()
+        if profile.get("reference_sequence_sha256") != reference_hash:
+            raise ValueError("Reference sequence checksum changed")
+        if (
+            profile.get("identity_scope") != "candidate_hypothesis"
+            or profile.get("identity_accepted") is not False
+            or profile.get("require_all_optimal_alignments") is not True
+        ):
+            raise ValueError("Unsupported reference identity declaration")
+
+        receipts = profile.get("sources")
+        if not isinstance(receipts, list) or not receipts:
+            raise ValueError("Reference evidence is missing")
+        for receipt in receipts:
+            _verify_kojak_receipt(receipt)
+        _reference_evidence(
+            profile, profile, source,
+            require_declared_accession=False,
+        )
+
+        starts = [
+            position for position in range(len(source_sequence))
+            if source_sequence.startswith(reference_sequence, position)
+        ]
+        if len(starts) != 1:
+            raise ValueError("Reference containment is unresolved or ambiguous")
+        offset = starts[0]
+        end = offset + len(reference_sequence)
+        coordinate_evidence = {
+            "method": "full_reference_exact_subsequence",
+            "source_start": offset + 1,
+            "source_end": end,
+            "reference_start": 1,
+            "reference_end": len(reference_sequence),
+            "mapping_options": 1,
+        }
+        if profile.get("coordinate_evidence") != coordinate_evidence:
+            raise ValueError("Reference projection coordinates changed")
+
+        review = profile.get("sequence_projection_review")
+        if not isinstance(review, dict):
+            raise ValueError("A construct sequence projection review is required")
+        declaration = {
+            key: value for key, value in review.items()
+            if key != "sources"
+        }
+        unmapped = [
+            position for position in range(1, len(source_sequence) + 1)
+            if not offset + 1 <= position <= end
+        ]
+        required = {
+            "schema_version": 1,
+            "kind": "sequence_projection_review",
+            "review_status": "reviewed",
+            "source_fasta_id": identifier,
+            "source_fasta_sha256": bundle["provenance"]["fasta_sha256"],
+            "source_sequence_sha256": hashlib.sha256(
+                source_sequence.encode("ascii")
+            ).hexdigest(),
+            "declared_accession": source.get("uniprot_accession"),
+            "reference_accession": profile["accession"],
+            "reference_sequence_sha256": reference_hash,
+            "taxon_id": profile["taxon_id"],
+            "mapping_method": "full_reference_exact_subsequence",
+            "source_interval": [offset + 1, end],
+            "reference_interval": [1, len(reference_sequence)],
+            "allowed_source_unmapped_positions": unmapped,
+            "require_all_optimal_alignments": True,
+            "identity_accepted": False,
+        }
+        if any(declaration.get(key) != value for key, value in required.items()):
+            raise ValueError("Construct review differs from recomputed projection")
+        if not isinstance(declaration.get("reason"), str) or not (
+            declaration["reason"].strip()
+        ):
+            raise ValueError("Construct review requires a reason")
+        review_sources = review.get("sources")
+        if not isinstance(review_sources, list) or not review_sources:
+            raise ValueError("Construct review evidence is missing")
+        for receipt in review_sources:
+            if receipt.get("kind") != "sequence_projection_review":
+                raise ValueError("Unsupported construct review source")
+            raw = _verify_kojak_receipt(receipt)
+            if json.loads(raw) != declaration:
+                raise ValueError("Construct review document changed")
+
+        checked[identifier] = {
+            "profile": profile,
+            "source_start": offset + 1,
+            "source_end": end,
+            "offset": offset,
+        }
+        identities[identifier] = {
+            "status": "candidate_hypothesis",
+            "accession": profile["accession"],
+            "sequence": reference_sequence,
+            "taxon_id": profile["taxon_id"],
+            "identity_scope": "candidate_hypothesis",
+            "identity_accepted": False,
+            "sources": deepcopy(profile["sources"]),
+        }
+    return checked, identities
+
+
+def write_kojak_claudio_input(
+    bundle, reference_mapping, output_dir, *,
+    allowed_linker_masses, allowed_residues,
+    export_unverified_candidates=False,
+):
+    """Export explicitly selected native candidates with all source rows retained."""
+    if export_unverified_candidates is not True:
+        raise ValueError("Explicit unverified candidate export mode is required")
+    if Path(output_dir).exists():
+        raise FileExistsError("Output directory already exists")
+    if bundle.get("format") != "kojak_csm":
+        raise ValueError("Expected a native Kojak import")
+
+    selections = {}
+    for name, values in (
+        ("linker_masses", allowed_linker_masses),
+        ("residues", allowed_residues),
+    ):
+        if (
+            not isinstance(values, (set, frozenset, list, tuple))
+            or not values
+            or any(
+                not isinstance(value, str) or not value.strip()
+                for value in values
+            )
+        ):
+            raise ValueError("Explicit nonempty " + name + " are required")
+        selections[name] = set(values)
+    if any(
+        re.fullmatch(r"[A-Z]", residue) is None
+        for residue in selections["residues"]
+    ):
+        raise ValueError("Residues must be single uppercase letters")
+    masses = set()
+    for raw in selections["linker_masses"]:
+        if NUMBER.fullmatch(raw) is None:
+            raise ValueError("Invalid selected linker mass")
+        value = Decimal(raw)
+        if not value.is_finite():
+            raise ValueError("Selected linker mass must be finite")
+        masses.add(value)
+
+    _verify_kojak_sources(bundle)
+    provenance = bundle["provenance"]
+    native = read_kojak_csms(
+        provenance["psm_path"], provenance["fasta_path"],
+        dataset_accession=provenance["dataset_accession"],
+        decoy_prefix=bundle["decoy_policy"]["prefix"],
+    )
+    for key in (
+        "provenance", "source_columns", "source_preamble", "native_version",
+        "proteins", "records", "parser", "decoy_policy", "fdr_policy",
+    ):
+        if bundle.get(key) != native.get(key):
+            raise ValueError("Native Kojak source evidence changed after import")
+
+    profiles, identities = _kojak_reference_profiles(
+        bundle, reference_mapping
+    )
+    rows, audit = [], []
+    for record in bundle["records"]:
+        entry = deepcopy(record)
+        reasons = []
+        paired = record["record_kind"] == "paired_crosslink_candidate"
+        if not paired:
+            reasons.append(
+                record["record_reason"] or "not_pairwise_crosslink"
+            )
+        if record["decoy_status"] in (
+            "decoy_only", "contains_target_and_decoy_labels",
+        ):
+            reasons.append("decoy_record")
+        elif paired and record["decoy_status"] != "target_labels_only":
+            reasons.append("source_decoy_status_unresolved")
+        if paired and record["record_status"] != "valid":
+            reasons.append(
+                record["record_reason"] or "source_endpoint_unresolved"
+            )
+
+        projected = {}
+        if not reasons:
+            raw_mass = record["linker_mass_raw"]
+            if NUMBER.fullmatch(raw_mass) is None:
+                reasons.append("source_linker_mass_unresolved")
+            elif Decimal(raw_mass) not in masses:
+                reasons.append("linker_mass_not_selected")
+
+        if not reasons:
+            for side in ("a", "b"):
+                endpoint = record["endpoints"][side]
+                candidates = endpoint["protein_candidates"]
+                if len(candidates) != 1:
+                    reasons.append("source_protein_association_unresolved_" + side)
+                    continue
+                candidate = candidates[0]
+                identifier = candidate["protein_id"]
+                context = profiles.get(identifier)
+                if context is None:
+                    reasons.append("protein_identity_unresolved_" + side)
+                    continue
+                profile = context["profile"]
+                start = candidate["peptide_start"]
+                end = candidate["peptide_end"]
+                if (
+                    start < context["source_start"]
+                    or end > context["source_end"]
+                ):
+                    reasons.append("peptide_overlaps_unmapped_source_" + side)
+                    continue
+                reference_start = start - context["offset"]
+                reference_end = end - context["offset"]
+                position = (
+                    candidate["protein_position"] - context["offset"]
+                )
+                sequence = profile["reference_sequence"]
+                if sequence[reference_start - 1:reference_end] != (
+                    endpoint["peptide"]
+                ):
+                    reasons.append("reference_peptide_mismatch_" + side)
+                    continue
+                residue = sequence[position - 1]
+                if residue != candidate["residue"]:
+                    reasons.append("reference_residue_mismatch_" + side)
+                    continue
+                projected[side] = {
+                    "source_fasta_id": identifier,
+                    "accession": profile["accession"],
+                    "identity_scope": "candidate_hypothesis",
+                    "source_protein_position": candidate["protein_position"],
+                    "reference_protein_position": position,
+                    "reference_peptide_start": reference_start,
+                    "reference_peptide_end": reference_end,
+                    "residue": residue,
+                    "status": "projected",
+                }
+                if residue not in selections["residues"]:
+                    reasons.append("residue_not_selected_" + side)
+
+        entry.update(
+            input_status="not_evaluable" if reasons else "candidate_ready",
+            input_reasons=list(dict.fromkeys(reasons)),
+            reference_endpoints=deepcopy(projected),
+        )
+        audit.append(entry)
+        if reasons:
+            continue
+
+        fields = record["source_fields"]
+        row = {
+            "source_record_id": record["source_record_id"],
+            "source_record_number": record["source_record_number"],
+            "source_line_number": record["source_line_number"],
+            "dataset_accession": provenance["dataset_accession"],
+            "source_psm_sha256": provenance["psm_sha256"],
+            "source_fasta_sha256": provenance["fasta_sha256"],
+            "source_result_file_name": record["source_result_file_name"],
+            "source_scan_number": record["scan_number"],
+            "source_spectrum_file": record["spectrum_file"],
+            "source_linker_mass": record["linker_mass_raw"],
+            "source_decoy_status": record["decoy_status"],
+            "source_score": fields["Score"],
+            "source_delta_score": fields["dScore"],
+            "source_peptide_difference": fields["Pep. Diff."],
+            "source_retention_time_raw": fields["Ret Time"],
+            "source_fields_json": json.dumps(
+                fields, ensure_ascii=False, sort_keys=True
+            ),
+            "input_scope": "unverified_candidate",
+            "identity_scope": "candidate_hypothesis",
+            "protein_identity_accepted": False,
+            "crosslinker_identity_verified": False,
+            "configuration_application_verified": False,
+            "fdr_verification_status": "unverified",
+            "selected_fdr_level": None,
+            "selected_fdr_value": None,
+            "selected_fdr_cutoff": None,
+        }
+        for side in ("a", "b"):
+            endpoint = record["endpoints"][side]
+            candidate = endpoint["protein_candidates"][0]
+            projection = projected[side]
+            profile = profiles[candidate["protein_id"]]["profile"]
+            row.update({
+                "pep_" + side: endpoint["peptide"],
+                "pos_" + side: projection["reference_protein_position"],
+                "res_pos_" + side: endpoint["link_position"],
+                "unip_id_" + side: profile["accession"],
+                "seq_" + side: profile["reference_sequence"],
+                "source_protein_id_" + side: candidate["protein_id"],
+                "source_protein_position_" + side: candidate["protein_position"],
+                "source_peptide_start_" + side: candidate["peptide_start"],
+                "source_peptide_raw_" + side: endpoint["raw_peptide"],
+                "source_modifications_json_" + side: json.dumps(
+                    endpoint["modifications"], sort_keys=True
+                ),
+            })
+        rows.append(row)
+
+    bodies = {}
+    for kind, suffix in (("psm", ".kojak.txt"), ("fasta", ".fasta")):
+        path = Path(provenance[kind + "_path"])
+        raw = path.read_bytes()
+        if hashlib.sha256(raw).hexdigest() != provenance[kind + "_sha256"]:
+            raise ValueError("Kojak input source checksum changed before output")
+        bodies[
+            "native_sources/" + provenance[kind + "_sha256"] + suffix
+        ] = raw
+
+    prepared = {
+        "rows": rows,
+        "audit": audit,
+        "extra_source_bodies": bodies,
+        "reference_projection": deepcopy(reference_mapping),
+        "reference_projection_policy": {
+            "kind": "reviewed_full_reference_exact_subsequence",
+            "require_all_optimal_alignments": True,
+            "identity_accepted": False,
+        },
+        "fdr_policy": {
+            "kind": "unverified_candidates",
+            "verification_status": "unverified",
+            "level": None,
+            "cutoff": None,
+            "per_record_fdr_applied": False,
+            "author_filter_applied": False,
+            "native_scores_used_as_fdr": False,
+            "target_decoy_validation_performed": False,
+        },
+    }
+    return write_xifdr_outputs(
+        bundle, identities, prepared, output_dir,
+        pipeline_policy={
+            "input_scope": "unverified_candidate",
+            "linker_masses": sorted(str(value) for value in masses),
+            "residues": sorted(selections["residues"]),
+            "coordinate_basis": 1,
+            "decoy_policy": "exclude_decoy_and_unresolved_labels",
+            "configuration_application_verified": False,
+            "crosslinker_identity_verified": False,
+            "protein_association_policy": "single_reported_association",
+        },
+    )

@@ -2313,6 +2313,7 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
         "msannika_csm": "msannika",
         "maxlynx_csm": "maxlynx",
         "mzidentml_csm": "mzidentml",
+        "kojak_csm": "kojak",
     }.get(bundle.get("format"), "xifdr")
     if bundle.get("format") == "scout_csm":
         format_name = "scout"
