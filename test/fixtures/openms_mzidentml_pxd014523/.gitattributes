@@ -1,0 +1,4 @@
+*.mzid -text -whitespace
+*.fasta -text -whitespace
+*.csv -text -whitespace
+*.R -text -whitespace

@@ -1,0 +1,58 @@
+{
+  "kind": "openms_labeled_mzidentml_regression_fixture",
+  "project_accession": "PXD014523",
+  "source_profile": "openms_labeled",
+  "source_group_review_manifest_sha256": "c8e2f1386e33c91bd2fb7a880e5b74be5aeeb2052cf5ef303b242acc3c2852a9",
+  "search_fasta_kind": "derived_union_of_original_target_and_decoy_files",
+  "original_search_database_use_confirmed": false,
+  "source_rank_rewritten": false,
+  "native_fdr_values_clamped": false,
+  "support_count_mismatches": [
+    {
+      "summary_source_record_id": "PXD014523:f2bd4d8e59acf9454274eeffee96bf893ffc8e2f9dc31cab3fa6a80264735ab5:7",
+      "summary_source_row": 7,
+      "source_reported_spectral_count": 2,
+      "compatible_native_group_count": 1,
+      "native_group_ids": [
+        "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:96dd922a17e4248fac8b28165c292ed0ac81469e859c70616fd45181d29ff8bb"
+      ],
+      "count_agrees": false
+    }
+  ],
+  "identity_acceptance_performed": false,
+  "fdr_acceptance_performed": false,
+  "files": {
+    "OpenPepXL_BSA_PDH_CID.mzid": {
+      "bytes": 1542683,
+      "sha256": "143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d"
+    },
+    "OpenPepXL_xQuest_BSA.R": {
+      "bytes": 6972,
+      "sha256": "973d5831b456ba6be7341a927180e17d1dd325a8941faa3469aac79d8987ddc3"
+    },
+    "search.fasta": {
+      "bytes": 1352,
+      "sha256": "296b6a9dc8ee6a844b25fe9060ed7a2841a57f606a0ae705206b6b34901fe8f7"
+    },
+    "expected.json": {
+      "bytes": 317532,
+      "sha256": "66aac788a32ecc0377f3f79aa8549f3b58ac4477dc12fb32ade246dd379b5ac3"
+    },
+    ".gitattributes": {
+      "bytes": 97,
+      "sha256": "25907a264794b40899405bda63f71dc6556c44ad4e381bc6df9c62918c4fa8d8"
+    },
+    "summary.csv": {
+      "bytes": 2519,
+      "sha256": "f2bd4d8e59acf9454274eeffee96bf893ffc8e2f9dc31cab3fa6a80264735ab5"
+    },
+    "BSA_rev.fasta": {
+      "bytes": 672,
+      "sha256": "7f3392a7e5ffc112b27dfb48359d0e1ca40b3691151334b8258fdd05737ec820"
+    },
+    "BSA.fasta": {
+      "bytes": 680,
+      "sha256": "cf38d19c0a662d5a655da0f020d971f137d353287299881d3477b527e068feda"
+    }
+  }
+}
