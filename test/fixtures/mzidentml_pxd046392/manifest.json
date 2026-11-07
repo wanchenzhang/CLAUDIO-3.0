@@ -1,0 +1,37 @@
+{
+  "kind": "mzidentml_source_fixture",
+  "project_accession": "PXD046392",
+  "native_validation_manifest_sha256": "b925a8da906409f486260adcd3ecaca81e5c9249c729710434301f9b01d65b70",
+  "projection_validation_manifest_sha256": "c4a26b57d8e6fed95e043e2882ae23466e47ffcb4854aa015527dd533e1ef7e5",
+  "reference_evidence_manifest_sha256": "4b6385396ae622983f397c0a3cc189fa91d34ea0f7356ce978331c90adc9a0cb",
+  "files": {
+    "QBP_XL_BS3_replicates_d0_withGlutamine.mzid.gz": {
+      "bytes": 122953,
+      "sha256": "14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b"
+    },
+    "native.mzid": {
+      "bytes": 1811038,
+      "sha256": "f45fccade269cd74bca4bdb5a8e0a3fb36cbec0280c6f764acb5eccc8ab2c733"
+    },
+    "search.fasta": {
+      "bytes": 64350,
+      "sha256": "842e1a29412f9cc1acd7f0e91ec58843112f032cdc2168885e093edd66145110"
+    },
+    "expected.json": {
+      "bytes": 123497,
+      "sha256": "033cbce690852373170efd7c59585cdd6f9331495d4b5eeda0eb6a2266a80535"
+    },
+    ".gitattributes": {
+      "bytes": 109,
+      "sha256": "f55c93ffd648f6171b870e6dde22d3203e7849caa02a3a915e9aa5c80121bc64"
+    }
+  },
+  "residue_selection_expectations": {
+    "sequence_projectable_rows": 17,
+    "selected_residues": [
+      "K"
+    ],
+    "input_rows": 16,
+    "excluded_k_q_rows": 1
+  }
+}

@@ -323,6 +323,9 @@ def _detect_psm_format(results_path):
     results_path = Path(results_path).resolve()
     with results_path.open("rb") as handle:
         signature = handle.read(16)
+    from .mzidentml import looks_like_mzidentml
+    if looks_like_mzidentml(results_path):
+        return "mzidentml_csm"
 
     if signature == b"SQLite format 3\x00":
         connection = None
@@ -546,7 +549,7 @@ def _detect_psm_format(results_path):
     is_flag=True,
     default=False,
     help=(
-        "Export pLink or MaxLynx sequence/site candidates while preserving "
+        "Export pLink, MaxLynx or mzIdentML candidates while preserving "
         "unverified FDR and source decoy states."
     ),
 )
@@ -620,6 +623,97 @@ def standardize_command(
         source_format = _detect_psm_format(results_path)
     except (ValueError, OSError) as error:
         raise click.ClickException(str(error)) from error
+    if source_format == "mzidentml_csm":
+        forbidden = {
+            "--mapping": mapping_path is not None,
+            "--fdr-level": fdr_level is not None,
+            "--fdr-cutoff": fdr_cutoff is not None,
+            "--fdr-column": fdr_column is not None,
+            "--decoy-prefix": decoy_prefix is not None,
+            "--plink-unfiltered": plink_unfiltered_path is not None,
+            "--plink-parameters": plink_parameters_path is not None,
+            "--author-filter-evidence": author_filter_path is not None,
+            "--source-protein": bool(source_proteins),
+            "--allow-modification": bool(allowed_modifications),
+            "--msannika-crosslinks": msannika_crosslinks_path is not None,
+            "--msannika-contaminants": msannika_contaminants_path is not None,
+            "--maxlynx-parameters": maxlynx_parameters_path is not None,
+        }
+        if audit_only:
+            forbidden.update({
+                "--reference-projection": reference_projection_path is not None,
+                "--crosslinker": bool(crosslinkers),
+                "--residue": bool(residues),
+                "--export-unverified-candidates": export_unverified_candidates,
+            })
+        conflicts = [name for name, present in forbidden.items() if present]
+        if conflicts:
+            raise click.UsageError(
+                "Unsupported options for this mzIdentML mode: "
+                + ", ".join(conflicts)
+            )
+        if not audit_only:
+            required = {
+                "--reference-projection": reference_projection_path is None,
+                "--crosslinker": not crosslinkers,
+                "--residue": not residues,
+                "--export-unverified-candidates": not export_unverified_candidates,
+            }
+            missing = [name for name, absent in required.items() if absent]
+            if missing:
+                raise click.UsageError(
+                    "mzIdentML export requires " + ", ".join(missing) + "."
+                )
+        from .mzidentml import (
+            read_mzidentml_csms, write_mzidentml_claudio_input,
+        )
+        click.echo("Detected format: mzIdentML crosslink groups")
+        try:
+            bundle = read_mzidentml_csms(
+                results_path, fasta_path, dataset_accession=dataset_accession
+            )
+            if audit_only:
+                destination = write_import_report(bundle, output_dir)
+            else:
+                reference = _read_reference_projection(reference_projection_path)
+                destination = write_mzidentml_claudio_input(
+                    bundle, reference, output_dir,
+                    allowed_crosslinkers=crosslinkers,
+                    allowed_residues=residues,
+                    export_unverified_candidates=True,
+                )
+            manifest = json.loads(
+                (destination / "manifest.json").read_text(encoding="utf-8")
+            )
+        except (ValueError, OSError, RuntimeError) as error:
+            raise click.ClickException(str(error)) from error
+        click.echo(
+            "Native identification results: "
+            + str(len(bundle["source_identifications"]))
+        )
+        click.echo(
+            "Native identification items: "
+            + str(sum(len(item["items"]) for item in bundle["source_identifications"]))
+        )
+        click.echo(f"Source crosslink groups: {len(bundle['records'])}")
+        click.echo(f"Parsed CSM records: {bundle['parser']['parsed_records']}")
+        if audit_only:
+            click.echo(f"Audit report: {destination / 'import_report.json'}")
+        else:
+            click.echo(
+                "Standardized input rows: "
+                + str(manifest["counts"]["pipeline_input_rows"])
+            )
+            click.echo("Input scope: unverified candidates")
+            click.echo("Missing decoy states: retained as unknown")
+            click.echo("FDR verification: unverified")
+            click.echo("Per-record FDR filtering: not performed")
+            click.echo("Model assessment: not performed")
+            click.echo(f"Input: {destination / 'claudio_input.csv'}")
+            click.echo(f"Audit: {destination / 'psm_audit.json'}")
+        click.echo(f"Output: {destination.resolve()}")
+        return
+
     if maxlynx_parameters_path is not None and source_format != "maxlynx_csm":
         raise click.UsageError(
             "--maxlynx-parameters only supports MaxLynx CSM tables."

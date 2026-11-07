@@ -1048,6 +1048,7 @@ def write_import_report(bundle, output_dir):
     if output_dir.exists():
         raise FileExistsError("Import report output directory already exists")
     _verify_msannika_sources(bundle)
+    _verify_mzidentml_sources(bundle)
     _verify_maxlynx_sources(bundle)
     _verify_plink_native_sources(bundle)
     author_sources = _author_filter_source_bodies(bundle)
@@ -2236,6 +2237,7 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
     """Write source/audit snapshots and the eligible input table to a new directory."""
     output_dir = Path(output_dir)
     _verify_msannika_sources(bundle)
+    _verify_mzidentml_sources(bundle)
     _verify_maxlynx_sources(bundle)
     _verify_plink_native_sources(bundle)
     author_sources = _author_filter_source_bodies(bundle)
@@ -2310,6 +2312,7 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
         "merox_csm": "merox",
         "msannika_csm": "msannika",
         "maxlynx_csm": "maxlynx",
+        "mzidentml_csm": "mzidentml",
     }.get(bundle.get("format"), "xifdr")
     if bundle.get("format") == "scout_csm":
         format_name = "scout"
@@ -6085,3 +6088,10 @@ def _verify_maxlynx_sources(bundle):
     if bundle.get("format") == "maxlynx_csm":
         from .maxlynx import verify_maxlynx_sources
         verify_maxlynx_sources(bundle)
+
+
+def _verify_mzidentml_sources(bundle):
+    """Verify native mzIdentML and search FASTA before writing output."""
+    if bundle.get("format") == "mzidentml_csm":
+        from .mzidentml import verify_mzidentml_sources
+        verify_mzidentml_sources(bundle)

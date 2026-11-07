@@ -1,0 +1,4 @@
+*.gz -text
+*.mzid -text -whitespace
+*.fasta -text -whitespace
+evidence/reference_sources/* -text -whitespace

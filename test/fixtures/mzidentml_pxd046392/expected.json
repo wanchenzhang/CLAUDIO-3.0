@@ -1,0 +1,3704 @@
+{
+  "native_filename": "QBP_XL_BS3_replicates_d0_withGlutamine.mzid.gz",
+  "source_identification_results": 1212,
+  "source_identification_items": 1249,
+  "crosslink_groups": 17,
+  "input_rows": 16,
+  "rows": [
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:edf78aaa984f1891ead861ffc793e5aa1e891c2e1ccdb33221206bb967d0db97",
+      "identity_scope": "candidate_hypothesis",
+      "peptide1": "SGTGSVDYAKANIK",
+      "position1": "147",
+      "k_pos1": "10",
+      "entry1": "P0AEQ3",
+      "peptide2": "TKDLR",
+      "position2": "153",
+      "k_pos2": "2",
+      "entry2": "P0AEQ3"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:544610c25f3a57998c79c2d75ced128338c1e0d69a26507a0d74ae035b1cb6c2",
+      "identity_scope": "exact_sequence",
+      "peptide1": "EKCEAAK",
+      "position1": "959",
+      "k_pos1": "2",
+      "entry1": "A0A024R4E5",
+      "peptide2": "ASMTKK",
+      "position2": "1030",
+      "k_pos2": "5",
+      "entry2": "A0A075B6E9"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:f8b0f82845bfb07b9e0a03f5e08b58511690bbb07fc415fca46c14f5941a0a21",
+      "identity_scope": "candidate_hypothesis",
+      "peptide1": "ANNNDVKSVK",
+      "position1": "124",
+      "k_pos1": "7",
+      "entry1": "P0AEQ3",
+      "peptide2": "DLDGKVVAVK",
+      "position2": "132",
+      "k_pos2": "5",
+      "entry2": "P0AEQ3"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:237979860402c547fde7b7a9148338fe1155d5ff124012396f840924e56ff6bc",
+      "identity_scope": "exact_sequence",
+      "peptide1": "ENHLKTLPK",
+      "position1": "179",
+      "k_pos1": "5",
+      "entry1": "A0A075B6E9",
+      "peptide2": "SLTGYLEKK",
+      "position2": "1792",
+      "k_pos2": "8",
+      "entry2": "A0A075B6F3"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:1571a42d1e9e60a5b55fecefaf1333a0a02b852d035bc9feef907bf371d626c8",
+      "identity_scope": "candidate_hypothesis",
+      "peptide1": "SGTGSVDYAKANIKTK",
+      "position1": "151",
+      "k_pos1": "14",
+      "entry1": "P0AEQ3",
+      "peptide2": "EMPKEK",
+      "position2": "303",
+      "k_pos2": "4",
+      "entry2": "O94956"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:f76f50333efe1aa667cb5d700fac5b78e4740ea6dc7196c19bf89a3357daf001",
+      "identity_scope": "exact_sequence",
+      "peptide1": "VTDGESATSKNGK",
+      "position1": "1013",
+      "k_pos1": "10",
+      "entry1": "Q9Y485",
+      "peptide2": "SLTGYLEKK",
+      "position2": "1792",
+      "k_pos2": "8",
+      "entry2": "A0A075B6F3"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:0b97eed03f7a20a073dc0c842a9d65c3c45e369ddba561d9c758a5048b8c95ca",
+      "identity_scope": "candidate_hypothesis",
+      "peptide1": "LKNFYPGVAEHK",
+      "position1": "1187",
+      "k_pos1": "2",
+      "entry1": "A0A075B6F3",
+      "peptide2": "GVKKEDK",
+      "position2": "591",
+      "k_pos2": "3",
+      "entry2": "O94956"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:746b2f59577b8bcfd992969aa0a5029c9e2f31d7a1b60be8507a2843ca169eb1",
+      "identity_scope": "exact_sequence",
+      "peptide1": "SNKLEFLPEEIGQMQK",
+      "position1": "361",
+      "k_pos1": "3",
+      "entry1": "A0A075B6E9",
+      "peptide2": "NFIKSGTTFKVK",
+      "position2": "3752",
+      "k_pos2": "4",
+      "entry2": "A0A075B6F3"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:a7a5556b96fdc11d6c80350476ce2049483d4f2dda423c6994d82a258e1cb42a",
+      "identity_scope": "candidate_hypothesis",
+      "peptide1": "LDYELKPMDFSGIIPALQTKNVDLALAGITITDER",
+      "position1": "68",
+      "k_pos1": "6",
+      "entry1": "P0AEQ3",
+      "peptide2": "IKQEER",
+      "position2": "421",
+      "k_pos2": "2",
+      "entry2": "A0A075B6G6"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:937bff036d434263f409db716c6c2629c3f538a4130db6f6c337e1b44c6b3300",
+      "identity_scope": "exact_sequence",
+      "peptide1": "YPPAANELTMRKSWIPWMR",
+      "position1": "768",
+      "k_pos1": "12",
+      "entry1": "A0A075B6G6",
+      "peptide2": "SGTTFKVK",
+      "position2": "3758",
+      "k_pos2": "6",
+      "entry2": "A0A075B6F3"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:64dc8956bf6a3190dd4b63b578cf115133c183f0d83e38165dc766e01929a3b1",
+      "identity_scope": "exact_sequence",
+      "peptide1": "KEERSFEEAIPAR",
+      "position1": "1172",
+      "k_pos1": "1",
+      "entry1": "A0A075B6F3",
+      "peptide2": "DCSPSSPLKLDAR",
+      "position2": "1911",
+      "k_pos2": "9",
+      "entry2": "Q9Y485"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:16133301f9fec9d510673d492ee8f0366e02192463724c921352e71555d2e94a",
+      "identity_scope": "exact_sequence",
+      "peptide1": "AALKNAFSLLGKQR",
+      "position1": "1691",
+      "k_pos1": "12",
+      "entry1": "Q9Y485",
+      "peptide2": "WGEKLLR",
+      "position2": "285",
+      "k_pos2": "4",
+      "entry2": "A0A024RCV8"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:572fc9bbd3d748ec55614489bb1524a5b78cb88dc6468665ce9f86de1652ac6a",
+      "identity_scope": "candidate_hypothesis",
+      "peptide1": "KKAIDFSDGYYK",
+      "position1": "98",
+      "k_pos1": "1",
+      "entry1": "P0AEQ3",
+      "peptide2": "LEKAELSLK",
+      "position2": "390",
+      "k_pos2": "3",
+      "entry2": "A0A075B6G6"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:600bf38d5bfe22a7323ca2ef4c53480434de4345193dffe907ffbaf737227220",
+      "identity_scope": "candidate_hypothesis",
+      "peptide1": "KAIDFSDGYYKSGLLVMVK",
+      "position1": "99",
+      "k_pos1": "1",
+      "entry1": "P0AEQ3",
+      "peptide2": "KIMDEFKVDIR",
+      "position2": "1158",
+      "k_pos2": "7",
+      "entry2": "A0A024R4E5"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:a7892ecc4333ecb144463d830bf5bd90ac7600aad88f198837ee4fd1805c3dd5",
+      "identity_scope": "candidate_hypothesis",
+      "peptide1": "KKAIDFSDGYYK",
+      "position1": "98",
+      "k_pos1": "1",
+      "entry1": "P0AEQ3",
+      "peptide2": "DKAQK",
+      "position2": "3346",
+      "k_pos2": "2",
+      "entry2": "A0A075B6F3"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:cce13045f65d727dcec700228cc712aa9a60d88caa8f699e29331291a37b6160",
+      "identity_scope": "exact_sequence",
+      "peptide1": "GENIFLILDGPVDAIWIENLNSVLDDNKTLTLANGDR",
+      "position1": "2440",
+      "k_pos1": "28",
+      "entry1": "A0A075B6F3",
+      "peptide2": "LKMLVYLDMSK",
+      "position2": "235",
+      "k_pos2": "2",
+      "entry2": "A0A075B6E9"
+    }
+  ],
+  "groups": [
+    {
+      "source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:edf78aaa984f1891ead861ffc793e5aa1e891c2e1ccdb33221206bb967d0db97",
+      "sir_attributes": {
+        "spectraData_ref": "ID_MZML_FILE_with_spectra",
+        "spectrumID": "scan=142082",
+        "id": "SIR_142082_XLX6"
+      },
+      "group_value": "1",
+      "items": [
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_6_DON",
+            "experimentalMassToCharge": "545.794677601048",
+            "calculatedMassToCharge": "546.046496936317",
+            "chargeState": "4",
+            "id": "SII_142082_6_1__DON"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "1"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "38.0863"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_6_XL_-728_6_138_151_5394675814003302313"
+            }
+          ]
+        },
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_6_RCV",
+            "experimentalMassToCharge": "545.794677601048",
+            "calculatedMassToCharge": "546.046496936317",
+            "chargeState": "4",
+            "id": "SII_142082_6_1__RCV"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "1"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "38.0863"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_6_XL_-728_6_152_156_5394675814003302313"
+            }
+          ]
+        }
+      ],
+      "status": "validated_source",
+      "reason": "",
+      "endpoints": {
+        "a": {
+          "peptide_id": "XL_-728_6_DON",
+          "peptide": "SGTGSVDYAKANIK",
+          "link_position": 10,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002509",
+            "link_token": "28",
+            "location": "10",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "138.06808",
+              "location": "10"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002509",
+                "cvRef": "PSI-MS",
+                "name": "cross-link donor",
+                "value": "28"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_6_XL_-728_6_138_151_5394675814003302313",
+              "peptide_evidence_attributes": {
+                "post": "T",
+                "pre": "K",
+                "end": "151",
+                "start": "138",
+                "peptide_ref": "XL_-728_6_DON",
+                "dBSequence_ref": "5394675814003302313",
+                "id": "PE_6_XL_-728_6_138_151_5394675814003302313"
+              },
+              "db_sequence_id": "5394675814003302313",
+              "protein_accession": "P0AEQ3",
+              "peptide_start": 138,
+              "peptide_end": 151,
+              "protein_position": 147,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "sp|P0AEQ3|GLNH_ECOLI"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        },
+        "b": {
+          "peptide_id": "XL_-728_6_RCV",
+          "peptide": "TKDLR",
+          "link_position": 2,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002510",
+            "link_token": "28",
+            "location": "2",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "0.0",
+              "location": "2"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002510",
+                "cvRef": "PSI-MS",
+                "name": "cross-link receiver",
+                "value": "28"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_6_XL_-728_6_152_156_5394675814003302313",
+              "peptide_evidence_attributes": {
+                "post": "Q",
+                "pre": "K",
+                "end": "156",
+                "start": "152",
+                "peptide_ref": "XL_-728_6_RCV",
+                "dBSequence_ref": "5394675814003302313",
+                "id": "PE_6_XL_-728_6_152_156_5394675814003302313"
+              },
+              "db_sequence_id": "5394675814003302313",
+              "protein_accession": "P0AEQ3",
+              "peptide_start": 152,
+              "peptide_end": 156,
+              "protein_position": 153,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "sp|P0AEQ3|GLNH_ECOLI"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        }
+      },
+      "spectrum_file": "D:\\Kish\\GlnH_BS3_monolinking\\GlnH_XL_BS3_replicates_d0_withGlutamine.mzML",
+      "scan_number": 142082,
+      "rank_supported_by_parser": true,
+      "fasta_confirmed": true
+    },
+    {
+      "source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:544610c25f3a57998c79c2d75ced128338c1e0d69a26507a0d74ae035b1cb6c2",
+      "sir_attributes": {
+        "spectraData_ref": "ID_MZML_FILE_with_spectra",
+        "spectrumID": "scan=142132",
+        "id": "SIR_142132_XLX7"
+      },
+      "group_value": "2",
+      "items": [
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_7_DON",
+            "experimentalMassToCharge": "551.943298221331",
+            "calculatedMassToCharge": "552.279057275767",
+            "chargeState": "3",
+            "id": "SII_142132_7_1__DON"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "2"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "5.4798"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_7_XL_-728_7_958_964_-6568070672358433938"
+            }
+          ]
+        },
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_7_RCV",
+            "experimentalMassToCharge": "551.943298221331",
+            "calculatedMassToCharge": "552.279057275767",
+            "chargeState": "3",
+            "id": "SII_142132_7_1__RCV"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "2"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "5.4798"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_7_XL_-728_7_1026_1031_4607982092628485146"
+            }
+          ]
+        }
+      ],
+      "status": "validated_source",
+      "reason": "",
+      "endpoints": {
+        "a": {
+          "peptide_id": "XL_-728_7_DON",
+          "peptide": "EKCEAAK",
+          "link_position": 2,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002509",
+            "link_token": "1",
+            "location": "2",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "138.06808",
+              "location": "2"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002509",
+                "cvRef": "PSI-MS",
+                "name": "cross-link donor",
+                "value": "1"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_7_XL_-728_7_958_964_-6568070672358433938",
+              "peptide_evidence_attributes": {
+                "post": "E",
+                "pre": "K",
+                "end": "964",
+                "start": "958",
+                "peptide_ref": "XL_-728_7_DON",
+                "dBSequence_ref": "-6568070672358433938",
+                "id": "PE_7_XL_-728_7_958_964_-6568070672358433938"
+              },
+              "db_sequence_id": "-6568070672358433938",
+              "protein_accession": "A0A024R4E5",
+              "peptide_start": 958,
+              "peptide_end": 964,
+              "protein_position": 959,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A024R4E5|A0A024R4E5_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        },
+        "b": {
+          "peptide_id": "XL_-728_7_RCV",
+          "peptide": "ASMTKK",
+          "link_position": 5,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002510",
+            "link_token": "1",
+            "location": "5",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "0.0",
+              "location": "5"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002510",
+                "cvRef": "PSI-MS",
+                "name": "cross-link receiver",
+                "value": "1"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_7_XL_-728_7_1026_1031_4607982092628485146",
+              "peptide_evidence_attributes": {
+                "post": "V",
+                "pre": "K",
+                "end": "1031",
+                "start": "1026",
+                "peptide_ref": "XL_-728_7_RCV",
+                "dBSequence_ref": "4607982092628485146",
+                "id": "PE_7_XL_-728_7_1026_1031_4607982092628485146"
+              },
+              "db_sequence_id": "4607982092628485146",
+              "protein_accession": "A0A075B6E9",
+              "peptide_start": 1026,
+              "peptide_end": 1031,
+              "protein_position": 1030,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A075B6E9|A0A075B6E9_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        }
+      },
+      "spectrum_file": "D:\\Kish\\GlnH_BS3_monolinking\\GlnH_XL_BS3_replicates_d0_withGlutamine.mzML",
+      "scan_number": 142132,
+      "rank_supported_by_parser": true,
+      "fasta_confirmed": true
+    },
+    {
+      "source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:f8b0f82845bfb07b9e0a03f5e08b58511690bbb07fc415fca46c14f5941a0a21",
+      "sir_attributes": {
+        "spectraData_ref": "ID_MZML_FILE_with_spectra",
+        "spectrumID": "scan=143178",
+        "id": "SIR_143178_XLX13"
+      },
+      "group_value": "3",
+      "items": [
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_13_DON",
+            "experimentalMassToCharge": "568.067809925267",
+            "calculatedMassToCharge": "568.319629260536",
+            "chargeState": "4",
+            "id": "SII_143178_13_1__DON"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "3"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "76.8465"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_13_XL_-728_13_118_127_5394675814003302313"
+            }
+          ]
+        },
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_13_RCV",
+            "experimentalMassToCharge": "568.067809925267",
+            "calculatedMassToCharge": "568.319629260536",
+            "chargeState": "4",
+            "id": "SII_143178_13_1__RCV"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "3"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "76.8465"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_13_XL_-728_13_128_137_5394675814003302313"
+            }
+          ]
+        }
+      ],
+      "status": "validated_source",
+      "reason": "",
+      "endpoints": {
+        "a": {
+          "peptide_id": "XL_-728_13_DON",
+          "peptide": "ANNNDVKSVK",
+          "link_position": 7,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002509",
+            "link_token": "29",
+            "location": "7",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "138.06808",
+              "location": "7"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002509",
+                "cvRef": "PSI-MS",
+                "name": "cross-link donor",
+                "value": "29"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_13_XL_-728_13_118_127_5394675814003302313",
+              "peptide_evidence_attributes": {
+                "post": "D",
+                "pre": "K",
+                "end": "127",
+                "start": "118",
+                "peptide_ref": "XL_-728_13_DON",
+                "dBSequence_ref": "5394675814003302313",
+                "id": "PE_13_XL_-728_13_118_127_5394675814003302313"
+              },
+              "db_sequence_id": "5394675814003302313",
+              "protein_accession": "P0AEQ3",
+              "peptide_start": 118,
+              "peptide_end": 127,
+              "protein_position": 124,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "sp|P0AEQ3|GLNH_ECOLI"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        },
+        "b": {
+          "peptide_id": "XL_-728_13_RCV",
+          "peptide": "DLDGKVVAVK",
+          "link_position": 5,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002510",
+            "link_token": "29",
+            "location": "5",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "0.0",
+              "location": "5"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002510",
+                "cvRef": "PSI-MS",
+                "name": "cross-link receiver",
+                "value": "29"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_13_XL_-728_13_128_137_5394675814003302313",
+              "peptide_evidence_attributes": {
+                "post": "S",
+                "pre": "K",
+                "end": "137",
+                "start": "128",
+                "peptide_ref": "XL_-728_13_RCV",
+                "dBSequence_ref": "5394675814003302313",
+                "id": "PE_13_XL_-728_13_128_137_5394675814003302313"
+              },
+              "db_sequence_id": "5394675814003302313",
+              "protein_accession": "P0AEQ3",
+              "peptide_start": 128,
+              "peptide_end": 137,
+              "protein_position": 132,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "sp|P0AEQ3|GLNH_ECOLI"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        }
+      },
+      "spectrum_file": "D:\\Kish\\GlnH_BS3_monolinking\\GlnH_XL_BS3_replicates_d0_withGlutamine.mzML",
+      "scan_number": 143178,
+      "rank_supported_by_parser": true,
+      "fasta_confirmed": true
+    },
+    {
+      "source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:237979860402c547fde7b7a9148338fe1155d5ff124012396f840924e56ff6bc",
+      "sir_attributes": {
+        "spectraData_ref": "ID_MZML_FILE_with_spectra",
+        "spectrumID": "scan=143183",
+        "id": "SIR_143183_XLX14"
+      },
+      "group_value": "4",
+      "items": [
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_14_DON",
+            "experimentalMassToCharge": "564.569946155736",
+            "calculatedMassToCharge": "564.821765491005",
+            "chargeState": "4",
+            "id": "SII_143183_14_1__DON"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "4"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "9.5878"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_14_XL_-728_14_175_183_4607982092628485146"
+            }
+          ]
+        },
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_14_RCV",
+            "experimentalMassToCharge": "564.569946155736",
+            "calculatedMassToCharge": "564.821765491005",
+            "chargeState": "4",
+            "id": "SII_143183_14_1__RCV"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "4"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "9.5878"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_14_XL_-728_14_1785_1793_7021833442886202387"
+            }
+          ]
+        }
+      ],
+      "status": "validated_source",
+      "reason": "",
+      "endpoints": {
+        "a": {
+          "peptide_id": "XL_-728_14_DON",
+          "peptide": "ENHLKTLPK",
+          "link_position": 5,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002509",
+            "link_token": "20",
+            "location": "5",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "138.06808",
+              "location": "5"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002509",
+                "cvRef": "PSI-MS",
+                "name": "cross-link donor",
+                "value": "20"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_14_XL_-728_14_175_183_4607982092628485146",
+              "peptide_evidence_attributes": {
+                "post": "S",
+                "pre": "R",
+                "end": "183",
+                "start": "175",
+                "peptide_ref": "XL_-728_14_DON",
+                "dBSequence_ref": "4607982092628485146",
+                "id": "PE_14_XL_-728_14_175_183_4607982092628485146"
+              },
+              "db_sequence_id": "4607982092628485146",
+              "protein_accession": "A0A075B6E9",
+              "peptide_start": 175,
+              "peptide_end": 183,
+              "protein_position": 179,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A075B6E9|A0A075B6E9_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        },
+        "b": {
+          "peptide_id": "XL_-728_14_RCV",
+          "peptide": "SLTGYLEKK",
+          "link_position": 8,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002510",
+            "link_token": "20",
+            "location": "8",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "0.0",
+              "location": "8"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002510",
+                "cvRef": "PSI-MS",
+                "name": "cross-link receiver",
+                "value": "20"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_14_XL_-728_14_1785_1793_7021833442886202387",
+              "peptide_evidence_attributes": {
+                "post": "R",
+                "pre": "K",
+                "end": "1793",
+                "start": "1785",
+                "peptide_ref": "XL_-728_14_RCV",
+                "dBSequence_ref": "7021833442886202387",
+                "id": "PE_14_XL_-728_14_1785_1793_7021833442886202387"
+              },
+              "db_sequence_id": "7021833442886202387",
+              "protein_accession": "A0A075B6F3",
+              "peptide_start": 1785,
+              "peptide_end": 1793,
+              "protein_position": 1792,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A075B6F3|A0A075B6F3_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        }
+      },
+      "spectrum_file": "D:\\Kish\\GlnH_BS3_monolinking\\GlnH_XL_BS3_replicates_d0_withGlutamine.mzML",
+      "scan_number": 143183,
+      "rank_supported_by_parser": true,
+      "fasta_confirmed": true
+    },
+    {
+      "source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:1571a42d1e9e60a5b55fecefaf1333a0a02b852d035bc9feef907bf371d626c8",
+      "sir_attributes": {
+        "spectraData_ref": "ID_MZML_FILE_with_spectra",
+        "spectrumID": "scan=144109",
+        "id": "SIR_144109_XLX16"
+      },
+      "group_value": "5",
+      "items": [
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_16_DON",
+            "experimentalMassToCharge": "635.327758655736",
+            "calculatedMassToCharge": "635.579577991005",
+            "chargeState": "4",
+            "id": "SII_144109_16_1__DON"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "5"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "5.8423"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_16_XL_-728_16_138_153_5394675814003302313"
+            }
+          ]
+        },
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_16_RCV",
+            "experimentalMassToCharge": "635.327758655736",
+            "calculatedMassToCharge": "635.579577991005",
+            "chargeState": "4",
+            "id": "SII_144109_16_1__RCV"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "5"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "5.8423"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_16_XL_-728_16_300_305_-4605776315377770581"
+            }
+          ]
+        }
+      ],
+      "status": "validated_source",
+      "reason": "",
+      "endpoints": {
+        "a": {
+          "peptide_id": "XL_-728_16_DON",
+          "peptide": "SGTGSVDYAKANIKTK",
+          "link_position": 14,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002509",
+            "link_token": "8",
+            "location": "14",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "138.06808",
+              "location": "14"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002509",
+                "cvRef": "PSI-MS",
+                "name": "cross-link donor",
+                "value": "8"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_16_XL_-728_16_138_153_5394675814003302313",
+              "peptide_evidence_attributes": {
+                "post": "D",
+                "pre": "K",
+                "end": "153",
+                "start": "138",
+                "peptide_ref": "XL_-728_16_DON",
+                "dBSequence_ref": "5394675814003302313",
+                "id": "PE_16_XL_-728_16_138_153_5394675814003302313"
+              },
+              "db_sequence_id": "5394675814003302313",
+              "protein_accession": "P0AEQ3",
+              "peptide_start": 138,
+              "peptide_end": 153,
+              "protein_position": 151,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "sp|P0AEQ3|GLNH_ECOLI"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        },
+        "b": {
+          "peptide_id": "XL_-728_16_RCV",
+          "peptide": "EMPKEK",
+          "link_position": 4,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002510",
+            "link_token": "8",
+            "location": "4",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "0.0",
+              "location": "4"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002510",
+                "cvRef": "PSI-MS",
+                "name": "cross-link receiver",
+                "value": "8"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_16_XL_-728_16_300_305_-4605776315377770581",
+              "peptide_evidence_attributes": {
+                "post": "R",
+                "pre": "K",
+                "end": "305",
+                "start": "300",
+                "peptide_ref": "XL_-728_16_RCV",
+                "dBSequence_ref": "-4605776315377770581",
+                "id": "PE_16_XL_-728_16_300_305_-4605776315377770581"
+              },
+              "db_sequence_id": "-4605776315377770581",
+              "protein_accession": "A0A024R5I4",
+              "peptide_start": 300,
+              "peptide_end": 305,
+              "protein_position": 303,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A024R5I4|A0A024R5I4_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        }
+      },
+      "spectrum_file": "D:\\Kish\\GlnH_BS3_monolinking\\GlnH_XL_BS3_replicates_d0_withGlutamine.mzML",
+      "scan_number": 144109,
+      "rank_supported_by_parser": true,
+      "fasta_confirmed": true
+    },
+    {
+      "source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:f76f50333efe1aa667cb5d700fac5b78e4740ea6dc7196c19bf89a3357daf001",
+      "sir_attributes": {
+        "spectraData_ref": "ID_MZML_FILE_with_spectra",
+        "spectrumID": "scan=145195",
+        "id": "SIR_145195_XLX24"
+      },
+      "group_value": "6",
+      "items": [
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_24_DON",
+            "experimentalMassToCharge": "618.077880726048",
+            "calculatedMassToCharge": "618.329700061317",
+            "chargeState": "4",
+            "id": "SII_145195_24_1__DON"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "6"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "11.7688"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_24_XL_-728_24_1004_1016_8470400305204825802"
+            }
+          ]
+        },
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_24_RCV",
+            "experimentalMassToCharge": "618.077880726048",
+            "calculatedMassToCharge": "618.329700061317",
+            "chargeState": "4",
+            "id": "SII_145195_24_1__RCV"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "6"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "11.7688"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_24_XL_-728_24_1785_1793_7021833442886202387"
+            }
+          ]
+        }
+      ],
+      "status": "validated_source",
+      "reason": "",
+      "endpoints": {
+        "a": {
+          "peptide_id": "XL_-728_24_DON",
+          "peptide": "VTDGESATSKNGK",
+          "link_position": 10,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002509",
+            "link_token": "46",
+            "location": "10",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "138.06808",
+              "location": "10"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002509",
+                "cvRef": "PSI-MS",
+                "name": "cross-link donor",
+                "value": "46"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_24_XL_-728_24_1004_1016_8470400305204825802",
+              "peptide_evidence_attributes": {
+                "post": "I",
+                "pre": "R",
+                "end": "1016",
+                "start": "1004",
+                "peptide_ref": "XL_-728_24_DON",
+                "dBSequence_ref": "8470400305204825802",
+                "id": "PE_24_XL_-728_24_1004_1016_8470400305204825802"
+              },
+              "db_sequence_id": "8470400305204825802",
+              "protein_accession": "Q9Y485",
+              "peptide_start": 1004,
+              "peptide_end": 1016,
+              "protein_position": 1013,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "sp|Q9Y485|DMXL1_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        },
+        "b": {
+          "peptide_id": "XL_-728_24_RCV",
+          "peptide": "SLTGYLEKK",
+          "link_position": 8,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002510",
+            "link_token": "46",
+            "location": "8",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "0.0",
+              "location": "8"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002510",
+                "cvRef": "PSI-MS",
+                "name": "cross-link receiver",
+                "value": "46"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_24_XL_-728_24_1785_1793_7021833442886202387",
+              "peptide_evidence_attributes": {
+                "post": "R",
+                "pre": "K",
+                "end": "1793",
+                "start": "1785",
+                "peptide_ref": "XL_-728_24_RCV",
+                "dBSequence_ref": "7021833442886202387",
+                "id": "PE_24_XL_-728_24_1785_1793_7021833442886202387"
+              },
+              "db_sequence_id": "7021833442886202387",
+              "protein_accession": "A0A075B6F3",
+              "peptide_start": 1785,
+              "peptide_end": 1793,
+              "protein_position": 1792,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A075B6F3|A0A075B6F3_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        }
+      },
+      "spectrum_file": "D:\\Kish\\GlnH_BS3_monolinking\\GlnH_XL_BS3_replicates_d0_withGlutamine.mzML",
+      "scan_number": 145195,
+      "rank_supported_by_parser": true,
+      "fasta_confirmed": true
+    },
+    {
+      "source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:0b97eed03f7a20a073dc0c842a9d65c3c45e369ddba561d9c758a5048b8c95ca",
+      "sir_attributes": {
+        "spectraData_ref": "ID_MZML_FILE_with_spectra",
+        "spectrumID": "scan=145749",
+        "id": "SIR_145749_XLX28"
+      },
+      "group_value": "7",
+      "items": [
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_28_DON",
+            "experimentalMassToCharge": "781.754455447894",
+            "calculatedMassToCharge": "782.09021450233",
+            "chargeState": "3",
+            "id": "SII_145749_28_1__DON"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "7"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "4.6817"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_28_XL_-728_28_1186_1197_7021833442886202387"
+            }
+          ]
+        },
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_28_RCV",
+            "experimentalMassToCharge": "781.754455447894",
+            "calculatedMassToCharge": "782.09021450233",
+            "chargeState": "3",
+            "id": "SII_145749_28_1__RCV"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "7"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "4.6817"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_28_XL_-728_28_589_595_-4605776315377770581"
+            }
+          ]
+        }
+      ],
+      "status": "validated_source",
+      "reason": "",
+      "endpoints": {
+        "a": {
+          "peptide_id": "XL_-728_28_DON",
+          "peptide": "LKNFYPGVAEHK",
+          "link_position": 2,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002509",
+            "link_token": "10",
+            "location": "2",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "138.06808",
+              "location": "2"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002509",
+                "cvRef": "PSI-MS",
+                "name": "cross-link donor",
+                "value": "10"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_28_XL_-728_28_1186_1197_7021833442886202387",
+              "peptide_evidence_attributes": {
+                "post": "D",
+                "pre": "K",
+                "end": "1197",
+                "start": "1186",
+                "peptide_ref": "XL_-728_28_DON",
+                "dBSequence_ref": "7021833442886202387",
+                "id": "PE_28_XL_-728_28_1186_1197_7021833442886202387"
+              },
+              "db_sequence_id": "7021833442886202387",
+              "protein_accession": "A0A075B6F3",
+              "peptide_start": 1186,
+              "peptide_end": 1197,
+              "protein_position": 1187,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A075B6F3|A0A075B6F3_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        },
+        "b": {
+          "peptide_id": "XL_-728_28_RCV",
+          "peptide": "GVKKEDK",
+          "link_position": 3,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002510",
+            "link_token": "10",
+            "location": "3",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "0.0",
+              "location": "3"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002510",
+                "cvRef": "PSI-MS",
+                "name": "cross-link receiver",
+                "value": "10"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_28_XL_-728_28_589_595_-4605776315377770581",
+              "peptide_evidence_attributes": {
+                "post": "T",
+                "pre": "R",
+                "end": "595",
+                "start": "589",
+                "peptide_ref": "XL_-728_28_RCV",
+                "dBSequence_ref": "-4605776315377770581",
+                "id": "PE_28_XL_-728_28_589_595_-4605776315377770581"
+              },
+              "db_sequence_id": "-4605776315377770581",
+              "protein_accession": "A0A024R5I4",
+              "peptide_start": 589,
+              "peptide_end": 595,
+              "protein_position": 591,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A024R5I4|A0A024R5I4_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        }
+      },
+      "spectrum_file": "D:\\Kish\\GlnH_BS3_monolinking\\GlnH_XL_BS3_replicates_d0_withGlutamine.mzML",
+      "scan_number": 145749,
+      "rank_supported_by_parser": true,
+      "fasta_confirmed": true
+    },
+    {
+      "source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:746b2f59577b8bcfd992969aa0a5029c9e2f31d7a1b60be8507a2843ca169eb1",
+      "sir_attributes": {
+        "spectraData_ref": "ID_MZML_FILE_with_spectra",
+        "spectrumID": "scan=147607",
+        "id": "SIR_147607_XLX39"
+      },
+      "group_value": "8",
+      "items": [
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_39_DON",
+            "experimentalMassToCharge": "850.211913929173",
+            "calculatedMassToCharge": "850.463733264442",
+            "chargeState": "4",
+            "id": "SII_147607_39_1__DON"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "8"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "5.4934"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_39_XL_-728_39_359_374_4607982092628485146"
+            }
+          ]
+        },
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_39_RCV",
+            "experimentalMassToCharge": "850.211913929173",
+            "calculatedMassToCharge": "850.463733264442",
+            "chargeState": "4",
+            "id": "SII_147607_39_1__RCV"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "8"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "5.4934"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_39_XL_-728_39_3749_3760_7021833442886202387"
+            }
+          ]
+        }
+      ],
+      "status": "validated_source",
+      "reason": "",
+      "endpoints": {
+        "a": {
+          "peptide_id": "XL_-728_39_DON",
+          "peptide": "SNKLEFLPEEIGQMQK",
+          "link_position": 3,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002509",
+            "link_token": "21",
+            "location": "3",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "138.06808",
+              "location": "3"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002509",
+                "cvRef": "PSI-MS",
+                "name": "cross-link donor",
+                "value": "21"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_39_XL_-728_39_359_374_4607982092628485146",
+              "peptide_evidence_attributes": {
+                "post": "L",
+                "pre": "R",
+                "end": "374",
+                "start": "359",
+                "peptide_ref": "XL_-728_39_DON",
+                "dBSequence_ref": "4607982092628485146",
+                "id": "PE_39_XL_-728_39_359_374_4607982092628485146"
+              },
+              "db_sequence_id": "4607982092628485146",
+              "protein_accession": "A0A075B6E9",
+              "peptide_start": 359,
+              "peptide_end": 374,
+              "protein_position": 361,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A075B6E9|A0A075B6E9_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        },
+        "b": {
+          "peptide_id": "XL_-728_39_RCV",
+          "peptide": "NFIKSGTTFKVK",
+          "link_position": 4,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002510",
+            "link_token": "21",
+            "location": "4",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "0.0",
+              "location": "4"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002510",
+                "cvRef": "PSI-MS",
+                "name": "cross-link receiver",
+                "value": "21"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_39_XL_-728_39_3749_3760_7021833442886202387",
+              "peptide_evidence_attributes": {
+                "post": "V",
+                "pre": "K",
+                "end": "3760",
+                "start": "3749",
+                "peptide_ref": "XL_-728_39_RCV",
+                "dBSequence_ref": "7021833442886202387",
+                "id": "PE_39_XL_-728_39_3749_3760_7021833442886202387"
+              },
+              "db_sequence_id": "7021833442886202387",
+              "protein_accession": "A0A075B6F3",
+              "peptide_start": 3749,
+              "peptide_end": 3760,
+              "protein_position": 3752,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A075B6F3|A0A075B6F3_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        }
+      },
+      "spectrum_file": "D:\\Kish\\GlnH_BS3_monolinking\\GlnH_XL_BS3_replicates_d0_withGlutamine.mzML",
+      "scan_number": 147607,
+      "rank_supported_by_parser": true,
+      "fasta_confirmed": true
+    },
+    {
+      "source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:a7a5556b96fdc11d6c80350476ce2049483d4f2dda423c6994d82a258e1cb42a",
+      "sir_attributes": {
+        "spectraData_ref": "ID_MZML_FILE_with_spectra",
+        "spectrumID": "scan=148624",
+        "id": "SIR_148624_XLX46"
+      },
+      "group_value": "9",
+      "items": [
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_46_DON",
+            "experimentalMassToCharge": "1200.89147935886",
+            "calculatedMassToCharge": "1201.14329869413",
+            "chargeState": "4",
+            "id": "SII_148624_46_1__DON"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "9"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "15.6942"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_46_XL_-728_46_63_97_5394675814003302313"
+            }
+          ]
+        },
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_46_RCV",
+            "experimentalMassToCharge": "1200.89147935886",
+            "calculatedMassToCharge": "1201.14329869413",
+            "chargeState": "4",
+            "id": "SII_148624_46_1__RCV"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "9"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "15.6942"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_46_XL_-728_46_420_425_2428701125959757866"
+            }
+          ]
+        }
+      ],
+      "status": "validated_source",
+      "reason": "",
+      "endpoints": {
+        "a": {
+          "peptide_id": "XL_-728_46_DON",
+          "peptide": "LDYELKPMDFSGIIPALQTKNVDLALAGITITDER",
+          "link_position": 6,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002509",
+            "link_token": "13",
+            "location": "6",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "138.06808",
+              "location": "6"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002509",
+                "cvRef": "PSI-MS",
+                "name": "cross-link donor",
+                "value": "13"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_46_XL_-728_46_63_97_5394675814003302313",
+              "peptide_evidence_attributes": {
+                "post": "K",
+                "pre": "K",
+                "end": "97",
+                "start": "63",
+                "peptide_ref": "XL_-728_46_DON",
+                "dBSequence_ref": "5394675814003302313",
+                "id": "PE_46_XL_-728_46_63_97_5394675814003302313"
+              },
+              "db_sequence_id": "5394675814003302313",
+              "protein_accession": "P0AEQ3",
+              "peptide_start": 63,
+              "peptide_end": 97,
+              "protein_position": 68,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "sp|P0AEQ3|GLNH_ECOLI"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        },
+        "b": {
+          "peptide_id": "XL_-728_46_RCV",
+          "peptide": "IKQEER",
+          "link_position": 2,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002510",
+            "link_token": "13",
+            "location": "2",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "0.0",
+              "location": "2"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002510",
+                "cvRef": "PSI-MS",
+                "name": "cross-link receiver",
+                "value": "13"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_46_XL_-728_46_420_425_2428701125959757866",
+              "peptide_evidence_attributes": {
+                "post": "K",
+                "pre": "K",
+                "end": "425",
+                "start": "420",
+                "peptide_ref": "XL_-728_46_RCV",
+                "dBSequence_ref": "2428701125959757866",
+                "id": "PE_46_XL_-728_46_420_425_2428701125959757866"
+              },
+              "db_sequence_id": "2428701125959757866",
+              "protein_accession": "A0A075B6G6",
+              "peptide_start": 420,
+              "peptide_end": 425,
+              "protein_position": 421,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A075B6G6|A0A075B6G6_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        }
+      },
+      "spectrum_file": "D:\\Kish\\GlnH_BS3_monolinking\\GlnH_XL_BS3_replicates_d0_withGlutamine.mzML",
+      "scan_number": 148624,
+      "rank_supported_by_parser": true,
+      "fasta_confirmed": true
+    },
+    {
+      "source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:7879196582946d1482f57b31622dd42c7bda468f22a7f2e62a945d587461de11",
+      "sir_attributes": {
+        "spectraData_ref": "ID_MZML_FILE_with_spectra",
+        "spectrumID": "scan=148871",
+        "id": "SIR_148871_XLX47"
+      },
+      "group_value": "10",
+      "items": [
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_47_DON",
+            "experimentalMassToCharge": "756.699890018206",
+            "calculatedMassToCharge": "757.035649072642",
+            "chargeState": "3",
+            "id": "SII_148871_47_1__DON"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "10"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "6.8953"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_47_XL_-728_47_4631_4640_7021833442886202387"
+            }
+          ]
+        },
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_47_RCV",
+            "experimentalMassToCharge": "756.699890018206",
+            "calculatedMassToCharge": "757.035649072642",
+            "chargeState": "3",
+            "id": "SII_148871_47_1__RCV"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "10"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "6.8953"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_47_XL_-728_47_2_9_4607982092628485146"
+            }
+          ]
+        }
+      ],
+      "status": "validated_source",
+      "reason": "",
+      "endpoints": {
+        "a": {
+          "peptide_id": "XL_-728_47_DON",
+          "peptide": "NGKLMESTPK",
+          "link_position": 3,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002509",
+            "link_token": "22",
+            "location": "3",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "138.06808",
+              "location": "3"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002509",
+                "cvRef": "PSI-MS",
+                "name": "cross-link donor",
+                "value": "22"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_47_XL_-728_47_4631_4640_7021833442886202387",
+              "peptide_evidence_attributes": {
+                "post": "V",
+                "pre": "R",
+                "end": "4640",
+                "start": "4631",
+                "peptide_ref": "XL_-728_47_DON",
+                "dBSequence_ref": "7021833442886202387",
+                "id": "PE_47_XL_-728_47_4631_4640_7021833442886202387"
+              },
+              "db_sequence_id": "7021833442886202387",
+              "protein_accession": "A0A075B6F3",
+              "peptide_start": 4631,
+              "peptide_end": 4640,
+              "protein_position": 4633,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A075B6F3|A0A075B6F3_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        },
+        "b": {
+          "peptide_id": "XL_-728_47_RCV",
+          "peptide": "QCLEMTTK",
+          "link_position": 1,
+          "residue": "Q",
+          "source_link_site": {
+            "role": "MS:1002510",
+            "link_token": "22",
+            "location": "1",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "0.0",
+              "location": "1"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002510",
+                "cvRef": "PSI-MS",
+                "name": "cross-link receiver",
+                "value": "22"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_47_XL_-728_47_2_9_4607982092628485146",
+              "peptide_evidence_attributes": {
+                "post": "R",
+                "pre": "M",
+                "end": "9",
+                "start": "2",
+                "peptide_ref": "XL_-728_47_RCV",
+                "dBSequence_ref": "4607982092628485146",
+                "id": "PE_47_XL_-728_47_2_9_4607982092628485146"
+              },
+              "db_sequence_id": "4607982092628485146",
+              "protein_accession": "A0A075B6E9",
+              "peptide_start": 2,
+              "peptide_end": 9,
+              "protein_position": 2,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A075B6E9|A0A075B6E9_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        }
+      },
+      "spectrum_file": "D:\\Kish\\GlnH_BS3_monolinking\\GlnH_XL_BS3_replicates_d0_withGlutamine.mzML",
+      "scan_number": 148871,
+      "rank_supported_by_parser": true,
+      "fasta_confirmed": true
+    },
+    {
+      "source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:937bff036d434263f409db716c6c2629c3f538a4130db6f6c337e1b44c6b3300",
+      "sir_attributes": {
+        "spectraData_ref": "ID_MZML_FILE_with_spectra",
+        "spectrumID": "scan=148915",
+        "id": "SIR_148915_XLX48"
+      },
+      "group_value": "11",
+      "items": [
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_48_DON",
+            "experimentalMassToCharge": "674.354858256222",
+            "calculatedMassToCharge": "674.556313759991",
+            "chargeState": "5",
+            "id": "SII_148915_48_1__DON"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "11"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "12.3601"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_48_XL_-728_48_757_775_2428701125959757866"
+            }
+          ]
+        },
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_48_RCV",
+            "experimentalMassToCharge": "674.354858256222",
+            "calculatedMassToCharge": "674.556313759991",
+            "chargeState": "5",
+            "id": "SII_148915_48_1__RCV"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "11"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "12.3601"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_48_XL_-728_48_3753_3760_7021833442886202387"
+            }
+          ]
+        }
+      ],
+      "status": "validated_source",
+      "reason": "",
+      "endpoints": {
+        "a": {
+          "peptide_id": "XL_-728_48_DON",
+          "peptide": "YPPAANELTMRKSWIPWMR",
+          "link_position": 12,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002509",
+            "link_token": "14",
+            "location": "12",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "138.06808",
+              "location": "12"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002509",
+                "cvRef": "PSI-MS",
+                "name": "cross-link donor",
+                "value": "14"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_48_XL_-728_48_757_775_2428701125959757866",
+              "peptide_evidence_attributes": {
+                "post": "K",
+                "pre": "R",
+                "end": "775",
+                "start": "757",
+                "peptide_ref": "XL_-728_48_DON",
+                "dBSequence_ref": "2428701125959757866",
+                "id": "PE_48_XL_-728_48_757_775_2428701125959757866"
+              },
+              "db_sequence_id": "2428701125959757866",
+              "protein_accession": "A0A075B6G6",
+              "peptide_start": 757,
+              "peptide_end": 775,
+              "protein_position": 768,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A075B6G6|A0A075B6G6_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        },
+        "b": {
+          "peptide_id": "XL_-728_48_RCV",
+          "peptide": "SGTTFKVK",
+          "link_position": 6,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002510",
+            "link_token": "14",
+            "location": "6",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "0.0",
+              "location": "6"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002510",
+                "cvRef": "PSI-MS",
+                "name": "cross-link receiver",
+                "value": "14"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_48_XL_-728_48_3753_3760_7021833442886202387",
+              "peptide_evidence_attributes": {
+                "post": "V",
+                "pre": "K",
+                "end": "3760",
+                "start": "3753",
+                "peptide_ref": "XL_-728_48_RCV",
+                "dBSequence_ref": "7021833442886202387",
+                "id": "PE_48_XL_-728_48_3753_3760_7021833442886202387"
+              },
+              "db_sequence_id": "7021833442886202387",
+              "protein_accession": "A0A075B6F3",
+              "peptide_start": 3753,
+              "peptide_end": 3760,
+              "protein_position": 3758,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A075B6F3|A0A075B6F3_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        }
+      },
+      "spectrum_file": "D:\\Kish\\GlnH_BS3_monolinking\\GlnH_XL_BS3_replicates_d0_withGlutamine.mzML",
+      "scan_number": 148915,
+      "rank_supported_by_parser": true,
+      "fasta_confirmed": true
+    },
+    {
+      "source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:64dc8956bf6a3190dd4b63b578cf115133c183f0d83e38165dc766e01929a3b1",
+      "sir_attributes": {
+        "spectraData_ref": "ID_MZML_FILE_with_spectra",
+        "spectrumID": "scan=149550",
+        "id": "SIR_149550_XLX50"
+      },
+      "group_value": "12",
+      "items": [
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_50_DON",
+            "experimentalMassToCharge": "786.903259144017",
+            "calculatedMassToCharge": "787.155078479286",
+            "chargeState": "4",
+            "id": "SII_149550_50_1__DON"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "12"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "7.1282"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_50_XL_-728_50_1172_1184_7021833442886202387"
+            }
+          ]
+        },
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_50_RCV",
+            "experimentalMassToCharge": "786.903259144017",
+            "calculatedMassToCharge": "787.155078479286",
+            "chargeState": "4",
+            "id": "SII_149550_50_1__RCV"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "12"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "7.1282"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_50_XL_-728_50_1903_1915_8470400305204825802"
+            }
+          ]
+        }
+      ],
+      "status": "validated_source",
+      "reason": "",
+      "endpoints": {
+        "a": {
+          "peptide_id": "XL_-728_50_DON",
+          "peptide": "KEERSFEEAIPAR",
+          "link_position": 1,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002509",
+            "link_token": "48",
+            "location": "1",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "138.06808",
+              "location": "1"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002509",
+                "cvRef": "PSI-MS",
+                "name": "cross-link donor",
+                "value": "48"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_50_XL_-728_50_1172_1184_7021833442886202387",
+              "peptide_evidence_attributes": {
+                "post": "K",
+                "pre": "K",
+                "end": "1184",
+                "start": "1172",
+                "peptide_ref": "XL_-728_50_DON",
+                "dBSequence_ref": "7021833442886202387",
+                "id": "PE_50_XL_-728_50_1172_1184_7021833442886202387"
+              },
+              "db_sequence_id": "7021833442886202387",
+              "protein_accession": "A0A075B6F3",
+              "peptide_start": 1172,
+              "peptide_end": 1184,
+              "protein_position": 1172,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A075B6F3|A0A075B6F3_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        },
+        "b": {
+          "peptide_id": "XL_-728_50_RCV",
+          "peptide": "DCSPSSPLKLDAR",
+          "link_position": 9,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002510",
+            "link_token": "48",
+            "location": "9",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "0.0",
+              "location": "9"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002510",
+                "cvRef": "PSI-MS",
+                "name": "cross-link receiver",
+                "value": "48"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_50_XL_-728_50_1903_1915_8470400305204825802",
+              "peptide_evidence_attributes": {
+                "post": "E",
+                "pre": "K",
+                "end": "1915",
+                "start": "1903",
+                "peptide_ref": "XL_-728_50_RCV",
+                "dBSequence_ref": "8470400305204825802",
+                "id": "PE_50_XL_-728_50_1903_1915_8470400305204825802"
+              },
+              "db_sequence_id": "8470400305204825802",
+              "protein_accession": "Q9Y485",
+              "peptide_start": 1903,
+              "peptide_end": 1915,
+              "protein_position": 1911,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "sp|Q9Y485|DMXL1_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        }
+      },
+      "spectrum_file": "D:\\Kish\\GlnH_BS3_monolinking\\GlnH_XL_BS3_replicates_d0_withGlutamine.mzML",
+      "scan_number": 149550,
+      "rank_supported_by_parser": true,
+      "fasta_confirmed": true
+    },
+    {
+      "source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:16133301f9fec9d510673d492ee8f0366e02192463724c921352e71555d2e94a",
+      "sir_attributes": {
+        "spectraData_ref": "ID_MZML_FILE_with_spectra",
+        "spectrumID": "scan=149618",
+        "id": "SIR_149618_XLX52"
+      },
+      "group_value": "13",
+      "items": [
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_52_DON",
+            "experimentalMassToCharge": "639.619811878392",
+            "calculatedMassToCharge": "639.871631213661",
+            "chargeState": "4",
+            "id": "SII_149618_52_1__DON"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "13"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "19.7617"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_52_XL_-728_52_1680_1693_8470400305204825802"
+            }
+          ]
+        },
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_52_RCV",
+            "experimentalMassToCharge": "639.619811878392",
+            "calculatedMassToCharge": "639.871631213661",
+            "chargeState": "4",
+            "id": "SII_149618_52_1__RCV"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "13"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "19.7617"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_52_XL_-728_52_282_288_3504276008141112652"
+            }
+          ]
+        }
+      ],
+      "status": "validated_source",
+      "reason": "",
+      "endpoints": {
+        "a": {
+          "peptide_id": "XL_-728_52_DON",
+          "peptide": "AALKNAFSLLGKQR",
+          "link_position": 12,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002509",
+            "link_token": "18",
+            "location": "12",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "138.06808",
+              "location": "12"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002509",
+                "cvRef": "PSI-MS",
+                "name": "cross-link donor",
+                "value": "18"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_52_XL_-728_52_1680_1693_8470400305204825802",
+              "peptide_evidence_attributes": {
+                "post": "F",
+                "pre": "K",
+                "end": "1693",
+                "start": "1680",
+                "peptide_ref": "XL_-728_52_DON",
+                "dBSequence_ref": "8470400305204825802",
+                "id": "PE_52_XL_-728_52_1680_1693_8470400305204825802"
+              },
+              "db_sequence_id": "8470400305204825802",
+              "protein_accession": "Q9Y485",
+              "peptide_start": 1680,
+              "peptide_end": 1693,
+              "protein_position": 1691,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "sp|Q9Y485|DMXL1_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        },
+        "b": {
+          "peptide_id": "XL_-728_52_RCV",
+          "peptide": "WGEKLLR",
+          "link_position": 4,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002510",
+            "link_token": "18",
+            "location": "4",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "0.0",
+              "location": "4"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002510",
+                "cvRef": "PSI-MS",
+                "name": "cross-link receiver",
+                "value": "18"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_52_XL_-728_52_282_288_3504276008141112652",
+              "peptide_evidence_attributes": {
+                "post": "L",
+                "pre": "K",
+                "end": "288",
+                "start": "282",
+                "peptide_ref": "XL_-728_52_RCV",
+                "dBSequence_ref": "3504276008141112652",
+                "id": "PE_52_XL_-728_52_282_288_3504276008141112652"
+              },
+              "db_sequence_id": "3504276008141112652",
+              "protein_accession": "A0A024RCV8",
+              "peptide_start": 282,
+              "peptide_end": 288,
+              "protein_position": 285,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A024RCV8|A0A024RCV8_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        }
+      },
+      "spectrum_file": "D:\\Kish\\GlnH_BS3_monolinking\\GlnH_XL_BS3_replicates_d0_withGlutamine.mzML",
+      "scan_number": 149618,
+      "rank_supported_by_parser": true,
+      "fasta_confirmed": true
+    },
+    {
+      "source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:572fc9bbd3d748ec55614489bb1524a5b78cb88dc6468665ce9f86de1652ac6a",
+      "sir_attributes": {
+        "spectraData_ref": "ID_MZML_FILE_with_spectra",
+        "spectrumID": "scan=150157",
+        "id": "SIR_150157_XLX57"
+      },
+      "group_value": "14",
+      "items": [
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_57_DON",
+            "experimentalMassToCharge": "868.145080447894",
+            "calculatedMassToCharge": "868.48083950233",
+            "chargeState": "3",
+            "id": "SII_150157_57_1__DON"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "14"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "7.6457"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_57_XL_-728_57_98_109_5394675814003302313"
+            }
+          ]
+        },
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_57_RCV",
+            "experimentalMassToCharge": "868.145080447894",
+            "calculatedMassToCharge": "868.48083950233",
+            "chargeState": "3",
+            "id": "SII_150157_57_1__RCV"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "14"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "7.6457"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_57_XL_-728_57_388_396_2428701125959757866"
+            }
+          ]
+        }
+      ],
+      "status": "validated_source",
+      "reason": "",
+      "endpoints": {
+        "a": {
+          "peptide_id": "XL_-728_57_DON",
+          "peptide": "KKAIDFSDGYYK",
+          "link_position": 1,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002509",
+            "link_token": "17",
+            "location": "1",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "138.06808",
+              "location": "1"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002509",
+                "cvRef": "PSI-MS",
+                "name": "cross-link donor",
+                "value": "17"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_57_XL_-728_57_98_109_5394675814003302313",
+              "peptide_evidence_attributes": {
+                "post": "S",
+                "pre": "R",
+                "end": "109",
+                "start": "98",
+                "peptide_ref": "XL_-728_57_DON",
+                "dBSequence_ref": "5394675814003302313",
+                "id": "PE_57_XL_-728_57_98_109_5394675814003302313"
+              },
+              "db_sequence_id": "5394675814003302313",
+              "protein_accession": "P0AEQ3",
+              "peptide_start": 98,
+              "peptide_end": 109,
+              "protein_position": 98,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "sp|P0AEQ3|GLNH_ECOLI"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        },
+        "b": {
+          "peptide_id": "XL_-728_57_RCV",
+          "peptide": "LEKAELSLK",
+          "link_position": 3,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002510",
+            "link_token": "17",
+            "location": "3",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "0.0",
+              "location": "3"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002510",
+                "cvRef": "PSI-MS",
+                "name": "cross-link receiver",
+                "value": "17"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_57_XL_-728_57_388_396_2428701125959757866",
+              "peptide_evidence_attributes": {
+                "post": "D",
+                "pre": "R",
+                "end": "396",
+                "start": "388",
+                "peptide_ref": "XL_-728_57_RCV",
+                "dBSequence_ref": "2428701125959757866",
+                "id": "PE_57_XL_-728_57_388_396_2428701125959757866"
+              },
+              "db_sequence_id": "2428701125959757866",
+              "protein_accession": "A0A075B6G6",
+              "peptide_start": 388,
+              "peptide_end": 396,
+              "protein_position": 390,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A075B6G6|A0A075B6G6_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        }
+      },
+      "spectrum_file": "D:\\Kish\\GlnH_BS3_monolinking\\GlnH_XL_BS3_replicates_d0_withGlutamine.mzML",
+      "scan_number": 150157,
+      "rank_supported_by_parser": true,
+      "fasta_confirmed": true
+    },
+    {
+      "source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:600bf38d5bfe22a7323ca2ef4c53480434de4345193dffe907ffbaf737227220",
+      "sir_attributes": {
+        "spectraData_ref": "ID_MZML_FILE_with_spectra",
+        "spectrumID": "scan=150715",
+        "id": "SIR_150715_XLX59"
+      },
+      "group_value": "15",
+      "items": [
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_59_DON",
+            "experimentalMassToCharge": "924.995056019017",
+            "calculatedMassToCharge": "925.246875354286",
+            "chargeState": "4",
+            "id": "SII_150715_59_1__DON"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "15"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "10.8488"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_59_XL_-728_59_99_117_5394675814003302313"
+            }
+          ]
+        },
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_59_RCV",
+            "experimentalMassToCharge": "924.995056019017",
+            "calculatedMassToCharge": "925.246875354286",
+            "chargeState": "4",
+            "id": "SII_150715_59_1__RCV"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "15"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "10.8488"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_59_XL_-728_59_1152_1162_-6568070672358433938"
+            }
+          ]
+        }
+      ],
+      "status": "validated_source",
+      "reason": "",
+      "endpoints": {
+        "a": {
+          "peptide_id": "XL_-728_59_DON",
+          "peptide": "KAIDFSDGYYKSGLLVMVK",
+          "link_position": 1,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002509",
+            "link_token": "5",
+            "location": "1",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "138.06808",
+              "location": "1"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002509",
+                "cvRef": "PSI-MS",
+                "name": "cross-link donor",
+                "value": "5"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_59_XL_-728_59_99_117_5394675814003302313",
+              "peptide_evidence_attributes": {
+                "post": "A",
+                "pre": "K",
+                "end": "117",
+                "start": "99",
+                "peptide_ref": "XL_-728_59_DON",
+                "dBSequence_ref": "5394675814003302313",
+                "id": "PE_59_XL_-728_59_99_117_5394675814003302313"
+              },
+              "db_sequence_id": "5394675814003302313",
+              "protein_accession": "P0AEQ3",
+              "peptide_start": 99,
+              "peptide_end": 117,
+              "protein_position": 99,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "sp|P0AEQ3|GLNH_ECOLI"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        },
+        "b": {
+          "peptide_id": "XL_-728_59_RCV",
+          "peptide": "KIMDEFKVDIR",
+          "link_position": 7,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002510",
+            "link_token": "5",
+            "location": "7",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "0.0",
+              "location": "7"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002510",
+                "cvRef": "PSI-MS",
+                "name": "cross-link receiver",
+                "value": "5"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_59_XL_-728_59_1152_1162_-6568070672358433938",
+              "peptide_evidence_attributes": {
+                "post": "F",
+                "pre": "R",
+                "end": "1162",
+                "start": "1152",
+                "peptide_ref": "XL_-728_59_RCV",
+                "dBSequence_ref": "-6568070672358433938",
+                "id": "PE_59_XL_-728_59_1152_1162_-6568070672358433938"
+              },
+              "db_sequence_id": "-6568070672358433938",
+              "protein_accession": "A0A024R4E5",
+              "peptide_start": 1152,
+              "peptide_end": 1162,
+              "protein_position": 1158,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A024R4E5|A0A024R4E5_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        }
+      },
+      "spectrum_file": "D:\\Kish\\GlnH_BS3_monolinking\\GlnH_XL_BS3_replicates_d0_withGlutamine.mzML",
+      "scan_number": 150715,
+      "rank_supported_by_parser": true,
+      "fasta_confirmed": true
+    },
+    {
+      "source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:a7892ecc4333ecb144463d830bf5bd90ac7600aad88f198837ee4fd1805c3dd5",
+      "sir_attributes": {
+        "spectraData_ref": "ID_MZML_FILE_with_spectra",
+        "spectrumID": "scan=150806",
+        "id": "SIR_150806_XLX61"
+      },
+      "group_value": "16",
+      "items": [
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_61_DON",
+            "experimentalMassToCharge": "1081.06542959862",
+            "calculatedMassToCharge": "1081.56906809139",
+            "chargeState": "2",
+            "id": "SII_150806_61_1__DON"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "16"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "5.4561"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_61_XL_-728_61_98_109_5394675814003302313"
+            }
+          ]
+        },
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_61_RCV",
+            "experimentalMassToCharge": "1081.06542959862",
+            "calculatedMassToCharge": "1081.56906809139",
+            "chargeState": "2",
+            "id": "SII_150806_61_1__RCV"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "16"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "5.4561"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_61_XL_-728_61_3345_3349_7021833442886202387"
+            }
+          ]
+        }
+      ],
+      "status": "validated_source",
+      "reason": "",
+      "endpoints": {
+        "a": {
+          "peptide_id": "XL_-728_61_DON",
+          "peptide": "KKAIDFSDGYYK",
+          "link_position": 1,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002509",
+            "link_token": "41",
+            "location": "1",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "138.06808",
+              "location": "1"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002509",
+                "cvRef": "PSI-MS",
+                "name": "cross-link donor",
+                "value": "41"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_61_XL_-728_61_98_109_5394675814003302313",
+              "peptide_evidence_attributes": {
+                "post": "S",
+                "pre": "R",
+                "end": "109",
+                "start": "98",
+                "peptide_ref": "XL_-728_61_DON",
+                "dBSequence_ref": "5394675814003302313",
+                "id": "PE_61_XL_-728_61_98_109_5394675814003302313"
+              },
+              "db_sequence_id": "5394675814003302313",
+              "protein_accession": "P0AEQ3",
+              "peptide_start": 98,
+              "peptide_end": 109,
+              "protein_position": 98,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "sp|P0AEQ3|GLNH_ECOLI"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        },
+        "b": {
+          "peptide_id": "XL_-728_61_RCV",
+          "peptide": "DKAQK",
+          "link_position": 2,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002510",
+            "link_token": "41",
+            "location": "2",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "0.0",
+              "location": "2"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002510",
+                "cvRef": "PSI-MS",
+                "name": "cross-link receiver",
+                "value": "41"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_61_XL_-728_61_3345_3349_7021833442886202387",
+              "peptide_evidence_attributes": {
+                "post": "I",
+                "pre": "K",
+                "end": "3349",
+                "start": "3345",
+                "peptide_ref": "XL_-728_61_RCV",
+                "dBSequence_ref": "7021833442886202387",
+                "id": "PE_61_XL_-728_61_3345_3349_7021833442886202387"
+              },
+              "db_sequence_id": "7021833442886202387",
+              "protein_accession": "A0A075B6F3",
+              "peptide_start": 3345,
+              "peptide_end": 3349,
+              "protein_position": 3346,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A075B6F3|A0A075B6F3_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        }
+      },
+      "spectrum_file": "D:\\Kish\\GlnH_BS3_monolinking\\GlnH_XL_BS3_replicates_d0_withGlutamine.mzML",
+      "scan_number": 150806,
+      "rank_supported_by_parser": true,
+      "fasta_confirmed": true
+    },
+    {
+      "source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:cce13045f65d727dcec700228cc712aa9a60d88caa8f699e29331291a37b6160",
+      "sir_attributes": {
+        "spectraData_ref": "ID_MZML_FILE_with_spectra",
+        "spectrumID": "scan=151315",
+        "id": "SIR_151315_XLX72"
+      },
+      "group_value": "17",
+      "items": [
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_72_DON",
+            "experimentalMassToCharge": "925.147582859671",
+            "calculatedMassToCharge": "925.315462475774",
+            "chargeState": "6",
+            "id": "SII_151315_72_1__DON"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "17"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "17.5948"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_72_XL_-728_72_2413_2449_7021833442886202387"
+            }
+          ]
+        },
+        {
+          "attributes": {
+            "passThreshold": "true",
+            "rank": "1",
+            "peptide_ref": "XL_-728_72_RCV",
+            "experimentalMassToCharge": "925.147582859671",
+            "calculatedMassToCharge": "925.315462475774",
+            "chargeState": "6",
+            "id": "SII_151315_72_1__RCV"
+          },
+          "parameters": [
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002511",
+              "cvRef": "PSI-MS",
+              "name": "cross-link spectrum identification item",
+              "value": "17"
+            },
+            {
+              "parameter_type": "cvParam",
+              "accession": "MS:1002545",
+              "cvRef": "PSI-MS",
+              "name": "xi:score",
+              "value": "17.5948"
+            }
+          ],
+          "peptide_evidence_refs": [
+            {
+              "peptideEvidence_ref": "PE_72_XL_-728_72_234_244_4607982092628485146"
+            }
+          ]
+        }
+      ],
+      "status": "validated_source",
+      "reason": "",
+      "endpoints": {
+        "a": {
+          "peptide_id": "XL_-728_72_DON",
+          "peptide": "GENIFLILDGPVDAIWIENLNSVLDDNKTLTLANGDR",
+          "link_position": 28,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002509",
+            "link_token": "25",
+            "location": "28",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "138.06808",
+              "location": "28"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002509",
+                "cvRef": "PSI-MS",
+                "name": "cross-link donor",
+                "value": "25"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_72_XL_-728_72_2413_2449_7021833442886202387",
+              "peptide_evidence_attributes": {
+                "post": "I",
+                "pre": "K",
+                "end": "2449",
+                "start": "2413",
+                "peptide_ref": "XL_-728_72_DON",
+                "dBSequence_ref": "7021833442886202387",
+                "id": "PE_72_XL_-728_72_2413_2449_7021833442886202387"
+              },
+              "db_sequence_id": "7021833442886202387",
+              "protein_accession": "A0A075B6F3",
+              "peptide_start": 2413,
+              "peptide_end": 2449,
+              "protein_position": 2440,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A075B6F3|A0A075B6F3_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        },
+        "b": {
+          "peptide_id": "XL_-728_72_RCV",
+          "peptide": "LKMLVYLDMSK",
+          "link_position": 2,
+          "residue": "K",
+          "source_link_site": {
+            "role": "MS:1002510",
+            "link_token": "25",
+            "location": "2",
+            "modification_attributes": {
+              "monoisotopicMassDelta": "0.0",
+              "location": "2"
+            },
+            "modification_parameters": [
+              {
+                "parameter_type": "cvParam",
+                "accession": "XLMOD:02001",
+                "cvRef": "XLMOD",
+                "name": "DSS"
+              },
+              {
+                "parameter_type": "cvParam",
+                "accession": "MS:1002510",
+                "cvRef": "PSI-MS",
+                "name": "cross-link receiver",
+                "value": "25"
+              }
+            ]
+          },
+          "associations": [
+            {
+              "peptide_evidence_id": "PE_72_XL_-728_72_234_244_4607982092628485146",
+              "peptide_evidence_attributes": {
+                "post": "N",
+                "pre": "K",
+                "end": "244",
+                "start": "234",
+                "peptide_ref": "XL_-728_72_RCV",
+                "dBSequence_ref": "4607982092628485146",
+                "id": "PE_72_XL_-728_72_234_244_4607982092628485146"
+              },
+              "db_sequence_id": "4607982092628485146",
+              "protein_accession": "A0A075B6E9",
+              "peptide_start": 234,
+              "peptide_end": 244,
+              "protein_position": 235,
+              "is_decoy_raw": null,
+              "fasta_candidates": [
+                "tr|A0A075B6E9|A0A075B6E9_HUMAN"
+              ]
+            }
+          ],
+          "decoy": null,
+          "fasta_confirmed": true
+        }
+      },
+      "spectrum_file": "D:\\Kish\\GlnH_BS3_monolinking\\GlnH_XL_BS3_replicates_d0_withGlutamine.mzML",
+      "scan_number": 151315,
+      "rank_supported_by_parser": true,
+      "fasta_confirmed": true
+    }
+  ],
+  "sequence_projectable_rows": [
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:edf78aaa984f1891ead861ffc793e5aa1e891c2e1ccdb33221206bb967d0db97",
+      "identity_scope": "candidate_hypothesis",
+      "peptide1": "SGTGSVDYAKANIK",
+      "position1": "147",
+      "k_pos1": "10",
+      "entry1": "P0AEQ3",
+      "peptide2": "TKDLR",
+      "position2": "153",
+      "k_pos2": "2",
+      "entry2": "P0AEQ3"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:544610c25f3a57998c79c2d75ced128338c1e0d69a26507a0d74ae035b1cb6c2",
+      "identity_scope": "exact_sequence",
+      "peptide1": "EKCEAAK",
+      "position1": "959",
+      "k_pos1": "2",
+      "entry1": "A0A024R4E5",
+      "peptide2": "ASMTKK",
+      "position2": "1030",
+      "k_pos2": "5",
+      "entry2": "A0A075B6E9"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:f8b0f82845bfb07b9e0a03f5e08b58511690bbb07fc415fca46c14f5941a0a21",
+      "identity_scope": "candidate_hypothesis",
+      "peptide1": "ANNNDVKSVK",
+      "position1": "124",
+      "k_pos1": "7",
+      "entry1": "P0AEQ3",
+      "peptide2": "DLDGKVVAVK",
+      "position2": "132",
+      "k_pos2": "5",
+      "entry2": "P0AEQ3"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:237979860402c547fde7b7a9148338fe1155d5ff124012396f840924e56ff6bc",
+      "identity_scope": "exact_sequence",
+      "peptide1": "ENHLKTLPK",
+      "position1": "179",
+      "k_pos1": "5",
+      "entry1": "A0A075B6E9",
+      "peptide2": "SLTGYLEKK",
+      "position2": "1792",
+      "k_pos2": "8",
+      "entry2": "A0A075B6F3"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:1571a42d1e9e60a5b55fecefaf1333a0a02b852d035bc9feef907bf371d626c8",
+      "identity_scope": "candidate_hypothesis",
+      "peptide1": "SGTGSVDYAKANIKTK",
+      "position1": "151",
+      "k_pos1": "14",
+      "entry1": "P0AEQ3",
+      "peptide2": "EMPKEK",
+      "position2": "303",
+      "k_pos2": "4",
+      "entry2": "O94956"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:f76f50333efe1aa667cb5d700fac5b78e4740ea6dc7196c19bf89a3357daf001",
+      "identity_scope": "exact_sequence",
+      "peptide1": "VTDGESATSKNGK",
+      "position1": "1013",
+      "k_pos1": "10",
+      "entry1": "Q9Y485",
+      "peptide2": "SLTGYLEKK",
+      "position2": "1792",
+      "k_pos2": "8",
+      "entry2": "A0A075B6F3"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:0b97eed03f7a20a073dc0c842a9d65c3c45e369ddba561d9c758a5048b8c95ca",
+      "identity_scope": "candidate_hypothesis",
+      "peptide1": "LKNFYPGVAEHK",
+      "position1": "1187",
+      "k_pos1": "2",
+      "entry1": "A0A075B6F3",
+      "peptide2": "GVKKEDK",
+      "position2": "591",
+      "k_pos2": "3",
+      "entry2": "O94956"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:746b2f59577b8bcfd992969aa0a5029c9e2f31d7a1b60be8507a2843ca169eb1",
+      "identity_scope": "exact_sequence",
+      "peptide1": "SNKLEFLPEEIGQMQK",
+      "position1": "361",
+      "k_pos1": "3",
+      "entry1": "A0A075B6E9",
+      "peptide2": "NFIKSGTTFKVK",
+      "position2": "3752",
+      "k_pos2": "4",
+      "entry2": "A0A075B6F3"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:a7a5556b96fdc11d6c80350476ce2049483d4f2dda423c6994d82a258e1cb42a",
+      "identity_scope": "candidate_hypothesis",
+      "peptide1": "LDYELKPMDFSGIIPALQTKNVDLALAGITITDER",
+      "position1": "68",
+      "k_pos1": "6",
+      "entry1": "P0AEQ3",
+      "peptide2": "IKQEER",
+      "position2": "421",
+      "k_pos2": "2",
+      "entry2": "A0A075B6G6"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:7879196582946d1482f57b31622dd42c7bda468f22a7f2e62a945d587461de11",
+      "identity_scope": "exact_sequence",
+      "peptide1": "NGKLMESTPK",
+      "position1": "4633",
+      "k_pos1": "3",
+      "entry1": "A0A075B6F3",
+      "peptide2": "QCLEMTTK",
+      "position2": "2",
+      "k_pos2": "1",
+      "entry2": "A0A075B6E9"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:937bff036d434263f409db716c6c2629c3f538a4130db6f6c337e1b44c6b3300",
+      "identity_scope": "exact_sequence",
+      "peptide1": "YPPAANELTMRKSWIPWMR",
+      "position1": "768",
+      "k_pos1": "12",
+      "entry1": "A0A075B6G6",
+      "peptide2": "SGTTFKVK",
+      "position2": "3758",
+      "k_pos2": "6",
+      "entry2": "A0A075B6F3"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:64dc8956bf6a3190dd4b63b578cf115133c183f0d83e38165dc766e01929a3b1",
+      "identity_scope": "exact_sequence",
+      "peptide1": "KEERSFEEAIPAR",
+      "position1": "1172",
+      "k_pos1": "1",
+      "entry1": "A0A075B6F3",
+      "peptide2": "DCSPSSPLKLDAR",
+      "position2": "1911",
+      "k_pos2": "9",
+      "entry2": "Q9Y485"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:16133301f9fec9d510673d492ee8f0366e02192463724c921352e71555d2e94a",
+      "identity_scope": "exact_sequence",
+      "peptide1": "AALKNAFSLLGKQR",
+      "position1": "1691",
+      "k_pos1": "12",
+      "entry1": "Q9Y485",
+      "peptide2": "WGEKLLR",
+      "position2": "285",
+      "k_pos2": "4",
+      "entry2": "A0A024RCV8"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:572fc9bbd3d748ec55614489bb1524a5b78cb88dc6468665ce9f86de1652ac6a",
+      "identity_scope": "candidate_hypothesis",
+      "peptide1": "KKAIDFSDGYYK",
+      "position1": "98",
+      "k_pos1": "1",
+      "entry1": "P0AEQ3",
+      "peptide2": "LEKAELSLK",
+      "position2": "390",
+      "k_pos2": "3",
+      "entry2": "A0A075B6G6"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:600bf38d5bfe22a7323ca2ef4c53480434de4345193dffe907ffbaf737227220",
+      "identity_scope": "candidate_hypothesis",
+      "peptide1": "KAIDFSDGYYKSGLLVMVK",
+      "position1": "99",
+      "k_pos1": "1",
+      "entry1": "P0AEQ3",
+      "peptide2": "KIMDEFKVDIR",
+      "position2": "1158",
+      "k_pos2": "7",
+      "entry2": "A0A024R4E5"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:a7892ecc4333ecb144463d830bf5bd90ac7600aad88f198837ee4fd1805c3dd5",
+      "identity_scope": "candidate_hypothesis",
+      "peptide1": "KKAIDFSDGYYK",
+      "position1": "98",
+      "k_pos1": "1",
+      "entry1": "P0AEQ3",
+      "peptide2": "DKAQK",
+      "position2": "3346",
+      "k_pos2": "2",
+      "entry2": "A0A075B6F3"
+    },
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:cce13045f65d727dcec700228cc712aa9a60d88caa8f699e29331291a37b6160",
+      "identity_scope": "exact_sequence",
+      "peptide1": "GENIFLILDGPVDAIWIENLNSVLDDNKTLTLANGDR",
+      "position1": "2440",
+      "k_pos1": "28",
+      "entry1": "A0A075B6F3",
+      "peptide2": "LKMLVYLDMSK",
+      "position2": "235",
+      "k_pos2": "2",
+      "entry2": "A0A075B6E9"
+    }
+  ],
+  "sequence_projectable_row_count": 17,
+  "selected_residues": [
+    "K"
+  ],
+  "residue_selection_exclusions": [
+    {
+      "xlms_source_record_id": "PXD046392:14047d9e73ba8ce6e80a4cca218339aba2c65b4344427f20b7c55020b3805c7b:7879196582946d1482f57b31622dd42c7bda468f22a7f2e62a945d587461de11",
+      "endpoint_residues": [
+        "K",
+        "Q"
+      ],
+      "reason": "residue_not_selected_b"
+    }
+  ]
+}

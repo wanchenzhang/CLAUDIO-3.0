@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "review_status": "reviewed",
+  "source_fasta_id": "sp|P0AEQ3|GLNH_ECOLI",
+  "source_fasta_sha256": "842e1a29412f9cc1acd7f0e91ec58843112f032cdc2168885e093edd66145110",
+  "source_sequence_sha256": "438104d63e9d74242e937bf98e2d3e3f606cef84ef105ed6ecfd2dea64230016",
+  "declared_accession": "P0AEQ3",
+  "reference_accession": "P0AEQ3",
+  "reference_sequence_sha256": "2a29f643120b9ac504bf99e49f0022a4636e121e06d1f8783ce9e3a63e0daed6",
+  "taxon_id": 83333,
+  "identity_accepted": false,
+  "kind": "sequence_projection_review",
+  "max_optimal_alignments": 64,
+  "require_all_optimal_alignments": true,
+  "allowed_source_unmapped_positions": [
+    249,
+    250,
+    251,
+    252,
+    253,
+    254
+  ],
+  "reason": "The current reference equals source residues 1-248. Source residues 249-254 remain unchanged and unmapped. Only intact sequence-identical peptides may be projected; the reference remains a candidate hypothesis."
+}

@@ -1,0 +1,18 @@
+{
+  "kind": "mzidentml_frozen_reference_evidence",
+  "source_projection_manifest_sha256": "c4a26b57d8e6fed95e043e2882ae23466e47ffcb4854aa015527dd533e1ef7e5",
+  "source_identity_manifest_sha256": "6e9a207ee7fc90f4ec8bd699b72cb1916c4824b3a2b7f201ad48a6f6b2419b23",
+  "output_sha256": {
+    "reference_mapping.json": "fdce5f13ac5d7e7102e881d1ade7180cbf1465affa34ad8302ce53a73940ce6f",
+    "reviews/protein_004_reference_accession_review.json": "633a3d3e9dc29c562ed151f9e7cfdf5928e1aac7bc976aa7fdede87a52c71664",
+    "reviews/protein_001_sequence_projection_review.json": "ef247fd361d8a2cee73c73eb8a8d755c1258f133285c3a26c7a0efb25c86e71d",
+    "reference_sources/6223d899b466c831b7e3562cccf5f4cefdc1062898660cc715d138a514f7a294.fasta": "6223d899b466c831b7e3562cccf5f4cefdc1062898660cc715d138a514f7a294",
+    "reference_sources/d7a36d7c01c4615cb8b326323736cb956c621df05bb65a78f19dd66596d282d9.fasta": "d7a36d7c01c4615cb8b326323736cb956c621df05bb65a78f19dd66596d282d9",
+    "reference_sources/2fa755d8c3337c9dc7f22193116d52a6e9381b92087caba35aaafc54ed2f8a04.fasta": "2fa755d8c3337c9dc7f22193116d52a6e9381b92087caba35aaafc54ed2f8a04",
+    "reference_sources/2a092f5980c27ca5f59e81ef602988e025e3e9f290a3942384185a70a59e913c.fasta": "2a092f5980c27ca5f59e81ef602988e025e3e9f290a3942384185a70a59e913c",
+    "reference_sources/b0d1f329474651aa75ac692e165905f8042c10ef51042c496d84130417c838ab.fasta": "b0d1f329474651aa75ac692e165905f8042c10ef51042c496d84130417c838ab",
+    "reference_sources/fbbe38de647a95825e52fa59ed2469973b1707da78f464c7c6510c0a79f8d93d.fasta": "fbbe38de647a95825e52fa59ed2469973b1707da78f464c7c6510c0a79f8d93d",
+    "reference_sources/8ed195e99a157d4bef6a99f2fa08f5ef3223276dbd3a26a4fbe3146b4adc546e.fasta": "8ed195e99a157d4bef6a99f2fa08f5ef3223276dbd3a26a4fbe3146b4adc546e",
+    "reference_sources/7157d67b59ad73554dc4fac9830cfebcb3225c325f88fcf6064bcc6f0099cf7e.fasta": "7157d67b59ad73554dc4fac9830cfebcb3225c325f88fcf6064bcc6f0099cf7e"
+  }
+}

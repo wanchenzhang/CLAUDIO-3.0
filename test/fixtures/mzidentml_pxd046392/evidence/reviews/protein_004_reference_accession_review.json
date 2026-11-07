@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "review_status": "reviewed",
+  "source_fasta_id": "tr|A0A024R5I4|A0A024R5I4_HUMAN",
+  "source_fasta_sha256": "842e1a29412f9cc1acd7f0e91ec58843112f032cdc2168885e093edd66145110",
+  "source_sequence_sha256": "c14dc8f446426fbdead9d755d8114f9b49c27242fdbec244487cf37f2dababdb",
+  "declared_accession": "A0A024R5I4",
+  "reference_accession": "O94956",
+  "reference_sequence_sha256": "c14dc8f446426fbdead9d755d8114f9b49c27242fdbec244487cf37f2dababdb",
+  "taxon_id": 9606,
+  "identity_accepted": false,
+  "kind": "reference_accession_review",
+  "reason": "The saved official UniProt response for A0A024R5I4 contains O94956 with the same complete sequence and taxon. The original accession is retained and the reference remains a candidate hypothesis."
+}
