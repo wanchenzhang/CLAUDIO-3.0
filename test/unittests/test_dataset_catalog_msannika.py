@@ -591,3 +591,22 @@ class TestMSAnnikaExportCLI(unittest.TestCase):
             (self.output / "claudio_input.csv").read_bytes(),
             (moved / "claudio_input.csv").read_bytes(),
         )
+
+class TestMSAnnikaFixtureFootprint(unittest.TestCase):
+    def test_fixture_size_is_bounded(self):
+        root = (
+            Path(__file__).resolve().parents[1]
+            / "fixtures" / "msannika_pxd041955"
+        )
+        sizes = {
+            str(path.relative_to(root)): path.stat().st_size
+            for path in root.rglob("*") if path.is_file()
+        }
+        oversized = [
+            name for name, size in sizes.items() if size > 2 * 1024 * 1024
+        ]
+        self.assertFalse(
+            oversized,
+            f"{len(oversized)} files exceed 2 MiB: {oversized[:5]}",
+        )
+        self.assertLessEqual(sum(sizes.values()), 10 * 1024 * 1024)
