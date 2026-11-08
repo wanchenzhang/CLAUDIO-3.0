@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "kind": "sequence_projection_review",
+  "review_status": "reviewed",
+  "projection_rule_version": "intact-peptide-projection-v1",
+  "source_fasta_id": "SpyL32P",
+  "source_fasta_sha256": "6373694e8a2c6528dcd8dfa809e5bc81c4129a04ab74562454ee0a2cae8da02b",
+  "source_sequence_sha256": "c8a13b66965aa2559a02d86e5c81100e59604100cc003282e91b8897d2a37c20",
+  "declared_accession": null,
+  "reference_accession": "P77754",
+  "reference_sequence_sha256": "6d016358b0fa15777dcb8ce6be621a9d7e1435bc9fe0ae44b7c7e52505db40ad",
+  "taxon_id": 83333,
+  "mapping_method": "optimal_global_alignments",
+  "max_optimal_alignments": 64,
+  "coordinate_evidence": {
+    "method": "optimal_global_alignments",
+    "optimal_alignment_count": 2,
+    "reason": "",
+    "mapping_option_count": 2,
+    "alignment_blocks_zero_based": [
+      [
+        {
+          "source": [
+            0,
+            139
+          ],
+          "reference": [
+            22,
+            161
+          ]
+        }
+      ],
+      [
+        {
+          "source": [
+            0,
+            1
+          ],
+          "reference": [
+            0,
+            1
+          ]
+        },
+        {
+          "source": [
+            1,
+            139
+          ],
+          "reference": [
+            23,
+            161
+          ]
+        }
+      ]
+    ]
+  },
+  "invariant_mismatches": [
+    {
+      "source_position": 33,
+      "reference_position": 55,
+      "source_residue": "P",
+      "reference_residue": "L"
+    }
+  ],
+  "variable_or_unmapped_source_positions": [
+    1
+  ],
+  "require_all_optimal_alignments": true,
+  "intact_peptide_match_required": true,
+  "identity_accepted": false,
+  "reason": "Retain the source construct unchanged. Only intact peptides that match the reference with one position under every optimal mapping may be projected. Sequence differences and unresolved source positions remain exclusion evidence."
+}

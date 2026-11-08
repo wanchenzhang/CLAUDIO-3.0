@@ -1,0 +1,132 @@
+{
+  "kind": "kojak_reference_selection_review",
+  "selected_reference_hypotheses": {
+    "SpyL32P": "P77754",
+    "Im7_7-45": "Q03708"
+  },
+  "alternative_reference_evidence_retained": {
+    "Im7_7-45": [
+      {
+        "accession": "Q03708",
+        "taxon_id": 562,
+        "comparison": {
+          "invariant_mismatches": [],
+          "variable_or_unmapped_source_positions": [],
+          "longest_invariant_exact_blocks": [
+            {
+              "source_interval": [
+                1,
+                40
+              ],
+              "reference_interval": [
+                6,
+                45
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "SpyL32P": [
+      {
+        "accession": "Q8XDZ4",
+        "taxon_id": 83334,
+        "comparison": {
+          "invariant_mismatches": [
+            {
+              "source_position": 33,
+              "reference_position": 55,
+              "source_residue": "P",
+              "reference_residue": "L"
+            },
+            {
+              "source_position": 77,
+              "reference_position": 99,
+              "source_residue": "V",
+              "reference_residue": "A"
+            }
+          ],
+          "variable_or_unmapped_source_positions": [
+            1
+          ],
+          "longest_invariant_exact_blocks": [
+            {
+              "source_interval": [
+                78,
+                139
+              ],
+              "reference_interval": [
+                100,
+                161
+              ]
+            },
+            {
+              "source_interval": [
+                34,
+                76
+              ],
+              "reference_interval": [
+                56,
+                98
+              ]
+            },
+            {
+              "source_interval": [
+                2,
+                32
+              ],
+              "reference_interval": [
+                24,
+                54
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "accession": "P77754",
+        "taxon_id": 83333,
+        "comparison": {
+          "invariant_mismatches": [
+            {
+              "source_position": 33,
+              "reference_position": 55,
+              "source_residue": "P",
+              "reference_residue": "L"
+            }
+          ],
+          "variable_or_unmapped_source_positions": [
+            1
+          ],
+          "longest_invariant_exact_blocks": [
+            {
+              "source_interval": [
+                34,
+                139
+              ],
+              "reference_interval": [
+                56,
+                161
+              ]
+            },
+            {
+              "source_interval": [
+                2,
+                32
+              ],
+              "reference_interval": [
+                24,
+                54
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "project_metadata_species_taxon_id": 562,
+  "source_strain_identity_accepted": false,
+  "source_annotations_changed": false,
+  "identity_accepted": false,
+  "reason": "P77754 has one reviewed source/reference difference, while Q8XDZ4 has two. Q03708 contains the complete Im7 source fragment. Selection establishes coordinate hypotheses, not protein identity."
+}

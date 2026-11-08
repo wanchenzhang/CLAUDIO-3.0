@@ -1,0 +1,648 @@
+{
+  "schema_version": 1,
+  "kind": "kojak_reference_mapping",
+  "projection_rule_version": "intact-peptide-projection-v1",
+  "max_optimal_alignments": 64,
+  "source_psm_sha256": "e27db804f21299b158332b224700eb500e79fbee7028d8239eb6e3c7ba4ad3cb",
+  "source_fasta_sha256": "6373694e8a2c6528dcd8dfa809e5bc81c4129a04ab74562454ee0a2cae8da02b",
+  "configuration_application_verified": false,
+  "crosslinker_identity_verified": false,
+  "context_sources": [
+    {
+      "kind": "uniprot_api",
+      "request_url": "https://rest.uniprot.org/uniprotkb/Q03708.json",
+      "params": {},
+      "response_url": "https://rest.uniprot.org/uniprotkb/Q03708.json",
+      "response_headers": {
+        "Vary": "accept,accept-encoding,x-uniprot-release,x-api-deployment-date, User-Agent, Accept-Encoding",
+        "Cache-Control": "public, max-age=43200",
+        "x-cache": "miss cached",
+        "Content-Type": "application/json",
+        "Content-Encoding": "gzip",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Expose-Headers": "Link, X-Total-Results, X-UniProt-Release, X-UniProt-Release-Date, X-API-Deployment-Date",
+        "X-API-Deployment-Date": "07-November-2026",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "Date": "Sun, 08 Nov 2026 14:52:14 GMT",
+        "Access-Control-Max-Age": "1728000",
+        "X-UniProt-Release": "2026_04",
+        "Transfer-Encoding": "chunked",
+        "Access-Control-Allow-Origin": "*",
+        "Connection": "keep-alive",
+        "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, PATCH, OPTIONS",
+        "Access-Control-Allow-Headers": "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization",
+        "X-UniProt-Release-Date": "04-November-2026"
+      },
+      "status": 200,
+      "retrieved_at_utc": "2026-11-08T14:52:14.605084+00:00",
+      "path": "sources/e8bdb1d895b6ab877248385fa2fc2469ea6f82bd5972e4bbf667b393e0cf090a.json",
+      "sha256": "e8bdb1d895b6ab877248385fa2fc2469ea6f82bd5972e4bbf667b393e0cf090a",
+      "saved_body_bytes": 12175,
+      "original_path": "/viper/u1/wazha/xlms_assessment/standardization_tracking/existing_adapter_queue_20261108T133053Z_7h7x030v/content_review_o3_p_rhb/kojak151_actual_audit_ea6n1ion/reference_review_plan_urbiiyv_/reference_candidates_35vmv9gq/sources/response_0005.json"
+    },
+    {
+      "kind": "uniprot_api",
+      "request_url": "https://rest.uniprot.org/uniprotkb/Q03708.fasta",
+      "params": {},
+      "response_url": "https://rest.uniprot.org/uniprotkb/Q03708.fasta",
+      "response_headers": {
+        "Vary": "accept,accept-encoding,x-uniprot-release,x-api-deployment-date, User-Agent, Accept-Encoding",
+        "Cache-Control": "public, max-age=43200",
+        "x-cache": "miss cached",
+        "Content-Type": "text/plain;format=fasta",
+        "Content-Encoding": "gzip",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Expose-Headers": "Link, X-Total-Results, X-UniProt-Release, X-UniProt-Release-Date, X-API-Deployment-Date",
+        "X-API-Deployment-Date": "07-November-2026",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "Date": "Sun, 08 Nov 2026 14:52:14 GMT",
+        "Access-Control-Max-Age": "1728000",
+        "X-UniProt-Release": "2026_04",
+        "Transfer-Encoding": "chunked",
+        "Access-Control-Allow-Origin": "*",
+        "Connection": "keep-alive",
+        "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, PATCH, OPTIONS",
+        "Access-Control-Allow-Headers": "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization",
+        "X-UniProt-Release-Date": "04-November-2026"
+      },
+      "status": 200,
+      "retrieved_at_utc": "2026-11-08T14:52:14.642419+00:00",
+      "path": "sources/c011bc40f5de1850ea5b5d59c0d0cc30ad3f7ee5aa841ba7e455a00930207bce.fasta",
+      "sha256": "c011bc40f5de1850ea5b5d59c0d0cc30ad3f7ee5aa841ba7e455a00930207bce",
+      "saved_body_bytes": 183,
+      "original_path": "/viper/u1/wazha/xlms_assessment/standardization_tracking/existing_adapter_queue_20261108T133053Z_7h7x030v/content_review_o3_p_rhb/kojak151_actual_audit_ea6n1ion/reference_review_plan_urbiiyv_/reference_candidates_35vmv9gq/sources/response_0006.fasta"
+    },
+    {
+      "kind": "uniprot_api",
+      "request_url": "https://rest.uniprot.org/uniprotkb/Q8XDZ4.json",
+      "params": {},
+      "response_url": "https://rest.uniprot.org/uniprotkb/Q8XDZ4.json",
+      "response_headers": {
+        "Vary": "accept,accept-encoding,x-uniprot-release,x-api-deployment-date, User-Agent, Accept-Encoding",
+        "Cache-Control": "public, max-age=43200",
+        "x-cache": "miss cached",
+        "Content-Type": "application/json",
+        "Content-Encoding": "gzip",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Expose-Headers": "Link, X-Total-Results, X-UniProt-Release, X-UniProt-Release-Date, X-API-Deployment-Date",
+        "X-API-Deployment-Date": "07-November-2026",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "Date": "Sun, 08 Nov 2026 14:52:12 GMT",
+        "Access-Control-Max-Age": "1728000",
+        "X-UniProt-Release": "2026_04",
+        "Transfer-Encoding": "chunked",
+        "Access-Control-Allow-Origin": "*",
+        "Connection": "keep-alive",
+        "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, PATCH, OPTIONS",
+        "Access-Control-Allow-Headers": "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization",
+        "X-UniProt-Release-Date": "04-November-2026"
+      },
+      "status": 200,
+      "retrieved_at_utc": "2026-11-08T14:52:12.396788+00:00",
+      "path": "sources/1909450f9c59874be058ca0e12d148bb961e172df93922d8c4195caa5d15269c.json",
+      "sha256": "1909450f9c59874be058ca0e12d148bb961e172df93922d8c4195caa5d15269c",
+      "saved_body_bytes": 12761,
+      "original_path": "/viper/u1/wazha/xlms_assessment/standardization_tracking/existing_adapter_queue_20261108T133053Z_7h7x030v/content_review_o3_p_rhb/kojak151_actual_audit_ea6n1ion/reference_review_plan_urbiiyv_/reference_candidates_35vmv9gq/sources/response_0001.json"
+    },
+    {
+      "kind": "uniprot_api",
+      "request_url": "https://rest.uniprot.org/uniprotkb/Q8XDZ4.fasta",
+      "params": {},
+      "response_url": "https://rest.uniprot.org/uniprotkb/Q8XDZ4.fasta",
+      "response_headers": {
+        "Vary": "accept,accept-encoding,x-uniprot-release,x-api-deployment-date, User-Agent, Accept-Encoding",
+        "Cache-Control": "public, max-age=43200",
+        "x-cache": "miss cached",
+        "Content-Type": "text/plain;format=fasta",
+        "Content-Encoding": "gzip",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Expose-Headers": "Link, X-Total-Results, X-UniProt-Release, X-UniProt-Release-Date, X-API-Deployment-Date",
+        "X-API-Deployment-Date": "07-November-2026",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "Date": "Sun, 08 Nov 2026 14:52:12 GMT",
+        "Access-Control-Max-Age": "1728000",
+        "X-UniProt-Release": "2026_04",
+        "Transfer-Encoding": "chunked",
+        "Access-Control-Allow-Origin": "*",
+        "Connection": "keep-alive",
+        "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, PATCH, OPTIONS",
+        "Access-Control-Allow-Headers": "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization",
+        "X-UniProt-Release-Date": "04-November-2026"
+      },
+      "status": 200,
+      "retrieved_at_utc": "2026-11-08T14:52:12.621233+00:00",
+      "path": "sources/118e661e59879abb907090420be81d08a57ef22a8239b1ceab50db268533ad07.fasta",
+      "sha256": "118e661e59879abb907090420be81d08a57ef22a8239b1ceab50db268533ad07",
+      "saved_body_bytes": 265,
+      "original_path": "/viper/u1/wazha/xlms_assessment/standardization_tracking/existing_adapter_queue_20261108T133053Z_7h7x030v/content_review_o3_p_rhb/kojak151_actual_audit_ea6n1ion/reference_review_plan_urbiiyv_/reference_candidates_35vmv9gq/sources/response_0002.fasta"
+    },
+    {
+      "kind": "uniprot_api",
+      "request_url": "https://rest.uniprot.org/uniprotkb/P77754.json",
+      "params": {},
+      "response_url": "https://rest.uniprot.org/uniprotkb/P77754.json",
+      "response_headers": {
+        "Vary": "accept,accept-encoding,x-uniprot-release,x-api-deployment-date, User-Agent, Accept-Encoding",
+        "Cache-Control": "public, max-age=43200",
+        "x-cache": "miss cached",
+        "Content-Type": "application/json",
+        "Content-Encoding": "gzip",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Expose-Headers": "Link, X-Total-Results, X-UniProt-Release, X-UniProt-Release-Date, X-API-Deployment-Date",
+        "X-API-Deployment-Date": "07-November-2026",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "Date": "Sun, 08 Nov 2026 14:52:14 GMT",
+        "Access-Control-Max-Age": "1728000",
+        "X-UniProt-Release": "2026_04",
+        "Transfer-Encoding": "chunked",
+        "Access-Control-Allow-Origin": "*",
+        "Connection": "keep-alive",
+        "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, PATCH, OPTIONS",
+        "Access-Control-Allow-Headers": "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization",
+        "X-UniProt-Release-Date": "04-November-2026"
+      },
+      "status": 200,
+      "retrieved_at_utc": "2026-11-08T14:52:14.529660+00:00",
+      "path": "sources/fe1e2c062b7fc5ee310ab9faf1d89d2a66361095f1b82fb1bc2e73cf4ca77926.json",
+      "sha256": "fe1e2c062b7fc5ee310ab9faf1d89d2a66361095f1b82fb1bc2e73cf4ca77926",
+      "saved_body_bytes": 26040,
+      "original_path": "/viper/u1/wazha/xlms_assessment/standardization_tracking/existing_adapter_queue_20261108T133053Z_7h7x030v/content_review_o3_p_rhb/kojak151_actual_audit_ea6n1ion/reference_review_plan_urbiiyv_/reference_candidates_35vmv9gq/sources/response_0003.json"
+    },
+    {
+      "kind": "uniprot_api",
+      "request_url": "https://rest.uniprot.org/uniprotkb/P77754.fasta",
+      "params": {},
+      "response_url": "https://rest.uniprot.org/uniprotkb/P77754.fasta",
+      "response_headers": {
+        "Vary": "accept,accept-encoding,x-uniprot-release,x-api-deployment-date, User-Agent, Accept-Encoding",
+        "Cache-Control": "public, max-age=43200",
+        "x-cache": "miss cached",
+        "Content-Type": "text/plain;format=fasta",
+        "Content-Encoding": "gzip",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Expose-Headers": "Link, X-Total-Results, X-UniProt-Release, X-UniProt-Release-Date, X-API-Deployment-Date",
+        "X-API-Deployment-Date": "07-November-2026",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "Date": "Sun, 08 Nov 2026 14:52:14 GMT",
+        "Access-Control-Max-Age": "1728000",
+        "X-UniProt-Release": "2026_04",
+        "Access-Control-Allow-Origin": "*",
+        "Connection": "keep-alive",
+        "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, PATCH, OPTIONS",
+        "Access-Control-Allow-Headers": "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization",
+        "Content-Length": "235",
+        "X-UniProt-Release-Date": "04-November-2026"
+      },
+      "status": 200,
+      "retrieved_at_utc": "2026-11-08T14:52:14.571517+00:00",
+      "path": "sources/0d61596637e740235dc545b7878639e24acdd49f38f32f20f8d9ed81162b20f5.fasta",
+      "sha256": "0d61596637e740235dc545b7878639e24acdd49f38f32f20f8d9ed81162b20f5",
+      "saved_body_bytes": 270,
+      "original_path": "/viper/u1/wazha/xlms_assessment/standardization_tracking/existing_adapter_queue_20261108T133053Z_7h7x030v/content_review_o3_p_rhb/kojak151_actual_audit_ea6n1ion/reference_review_plan_urbiiyv_/reference_candidates_35vmv9gq/sources/response_0004.fasta"
+    },
+    {
+      "kind": "repository_project_metadata",
+      "path": "project_metadata.json",
+      "sha256": "96b8bfb82ddbed425dacb2ba557d8aaf46a98275829a226cb5c6db51f11cd6aa"
+    },
+    {
+      "kind": "kojak_reference_selection_review",
+      "path": "selection_review.json",
+      "sha256": "d2dfeb78da503688bde9e0a2781031e21c484f8eff769a279b497650db4fc768"
+    }
+  ],
+  "references": {
+    "Im7_7-45": {
+      "profile_id": "Im7_7-45:Q03708:Q03708",
+      "source_fasta_id": "Im7_7-45",
+      "requested_accession": "Q03708",
+      "accession": "Q03708",
+      "accession_redirect_or_change": false,
+      "source_sequence": "SISDYTEAEFVQLLKEIEKENVAATDDVLDVLLEHFVKIT",
+      "reference_sequence": "MELKNSISDYTEAEFVQLLKEIEKENVAATDDVLDVLLEHFVKITEHPDGTDLIYYPSDNRDDSPEGIVKEIKEWRAANGKPGFKQG",
+      "reference_sequence_sha256": "a707b41439accaf25315e28be157c91cd31af3180c307b8776e0f6281948801a",
+      "taxon_id": 562,
+      "reference_organism": {
+        "scientificName": "Escherichia coli",
+        "taxonId": 562,
+        "lineage": [
+          "Bacteria",
+          "Pseudomonadati",
+          "Pseudomonadota",
+          "Gammaproteobacteria",
+          "Enterobacterales",
+          "Enterobacteriaceae",
+          "Escherichia"
+        ]
+      },
+      "identity_scope": "candidate_hypothesis",
+      "identity_accepted": false,
+      "require_all_optimal_alignments": true,
+      "coordinate_evidence": {
+        "method": "full_source_exact_subsequence",
+        "optimal_alignment_count": null,
+        "reason": "",
+        "mapping_option_count": 1,
+        "alignment_blocks_zero_based": [
+          [
+            {
+              "source": [
+                0,
+                40
+              ],
+              "reference": [
+                5,
+                45
+              ]
+            }
+          ]
+        ]
+      },
+      "comparison": {
+        "invariant_mismatches": [],
+        "variable_or_unmapped_source_positions": [],
+        "longest_invariant_exact_blocks": [
+          {
+            "source_interval": [
+              1,
+              40
+            ],
+            "reference_interval": [
+              6,
+              45
+            ]
+          }
+        ]
+      },
+      "full_reference_occurrences_in_source": 0,
+      "sources": [
+        {
+          "kind": "uniprot_api",
+          "request_url": "https://rest.uniprot.org/uniprotkb/Q03708.json",
+          "params": {},
+          "response_url": "https://rest.uniprot.org/uniprotkb/Q03708.json",
+          "response_headers": {
+            "Vary": "accept,accept-encoding,x-uniprot-release,x-api-deployment-date, User-Agent, Accept-Encoding",
+            "Cache-Control": "public, max-age=43200",
+            "x-cache": "miss cached",
+            "Content-Type": "application/json",
+            "Content-Encoding": "gzip",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Expose-Headers": "Link, X-Total-Results, X-UniProt-Release, X-UniProt-Release-Date, X-API-Deployment-Date",
+            "X-API-Deployment-Date": "07-November-2026",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "Date": "Sun, 08 Nov 2026 14:52:14 GMT",
+            "Access-Control-Max-Age": "1728000",
+            "X-UniProt-Release": "2026_04",
+            "Transfer-Encoding": "chunked",
+            "Access-Control-Allow-Origin": "*",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, PATCH, OPTIONS",
+            "Access-Control-Allow-Headers": "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization",
+            "X-UniProt-Release-Date": "04-November-2026"
+          },
+          "status": 200,
+          "retrieved_at_utc": "2026-11-08T14:52:14.605084+00:00",
+          "path": "sources/e8bdb1d895b6ab877248385fa2fc2469ea6f82bd5972e4bbf667b393e0cf090a.json",
+          "sha256": "e8bdb1d895b6ab877248385fa2fc2469ea6f82bd5972e4bbf667b393e0cf090a",
+          "saved_body_bytes": 12175,
+          "original_path": "/viper/u1/wazha/xlms_assessment/standardization_tracking/existing_adapter_queue_20261108T133053Z_7h7x030v/content_review_o3_p_rhb/kojak151_actual_audit_ea6n1ion/reference_review_plan_urbiiyv_/reference_candidates_35vmv9gq/sources/response_0005.json"
+        },
+        {
+          "kind": "uniprot_api",
+          "request_url": "https://rest.uniprot.org/uniprotkb/Q03708.fasta",
+          "params": {},
+          "response_url": "https://rest.uniprot.org/uniprotkb/Q03708.fasta",
+          "response_headers": {
+            "Vary": "accept,accept-encoding,x-uniprot-release,x-api-deployment-date, User-Agent, Accept-Encoding",
+            "Cache-Control": "public, max-age=43200",
+            "x-cache": "miss cached",
+            "Content-Type": "text/plain;format=fasta",
+            "Content-Encoding": "gzip",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Expose-Headers": "Link, X-Total-Results, X-UniProt-Release, X-UniProt-Release-Date, X-API-Deployment-Date",
+            "X-API-Deployment-Date": "07-November-2026",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "Date": "Sun, 08 Nov 2026 14:52:14 GMT",
+            "Access-Control-Max-Age": "1728000",
+            "X-UniProt-Release": "2026_04",
+            "Transfer-Encoding": "chunked",
+            "Access-Control-Allow-Origin": "*",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, PATCH, OPTIONS",
+            "Access-Control-Allow-Headers": "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization",
+            "X-UniProt-Release-Date": "04-November-2026"
+          },
+          "status": 200,
+          "retrieved_at_utc": "2026-11-08T14:52:14.642419+00:00",
+          "path": "sources/c011bc40f5de1850ea5b5d59c0d0cc30ad3f7ee5aa841ba7e455a00930207bce.fasta",
+          "sha256": "c011bc40f5de1850ea5b5d59c0d0cc30ad3f7ee5aa841ba7e455a00930207bce",
+          "saved_body_bytes": 183,
+          "original_path": "/viper/u1/wazha/xlms_assessment/standardization_tracking/existing_adapter_queue_20261108T133053Z_7h7x030v/content_review_o3_p_rhb/kojak151_actual_audit_ea6n1ion/reference_review_plan_urbiiyv_/reference_candidates_35vmv9gq/sources/response_0006.fasta"
+        }
+      ],
+      "source_taxon_annotation": null,
+      "source_accession_annotation": null,
+      "sequence_projection_review": {
+        "schema_version": 1,
+        "kind": "sequence_projection_review",
+        "review_status": "reviewed",
+        "projection_rule_version": "intact-peptide-projection-v1",
+        "source_fasta_id": "Im7_7-45",
+        "source_fasta_sha256": "6373694e8a2c6528dcd8dfa809e5bc81c4129a04ab74562454ee0a2cae8da02b",
+        "source_sequence_sha256": "2a239e72d326f5212b625664eee6f85ff1690e3a3107bcf55b395587ae39e851",
+        "declared_accession": null,
+        "reference_accession": "Q03708",
+        "reference_sequence_sha256": "a707b41439accaf25315e28be157c91cd31af3180c307b8776e0f6281948801a",
+        "taxon_id": 562,
+        "mapping_method": "full_source_exact_subsequence",
+        "max_optimal_alignments": 64,
+        "coordinate_evidence": {
+          "method": "full_source_exact_subsequence",
+          "optimal_alignment_count": null,
+          "reason": "",
+          "mapping_option_count": 1,
+          "alignment_blocks_zero_based": [
+            [
+              {
+                "source": [
+                  0,
+                  40
+                ],
+                "reference": [
+                  5,
+                  45
+                ]
+              }
+            ]
+          ]
+        },
+        "invariant_mismatches": [],
+        "variable_or_unmapped_source_positions": [],
+        "require_all_optimal_alignments": true,
+        "intact_peptide_match_required": true,
+        "identity_accepted": false,
+        "reason": "Retain the source construct unchanged. Only intact peptides that match the reference with one position under every optimal mapping may be projected. Sequence differences and unresolved source positions remain exclusion evidence.",
+        "sources": [
+          {
+            "kind": "sequence_projection_review",
+            "path": "reviews/Im7_7-45.json",
+            "sha256": "654bfa49c5eb983137d6fc75b70f0f0db426d65337bc1d4cd210b10fbd15c89e"
+          }
+        ]
+      }
+    },
+    "SpyL32P": {
+      "profile_id": "SpyL32P:P77754:P77754",
+      "source_fasta_id": "SpyL32P",
+      "requested_accession": "P77754",
+      "accession": "P77754",
+      "accession_redirect_or_change": false,
+      "source_sequence": "SADTTTAAPADAKPMMHHKGKFGPHQDMMFKDPNLTDAQKQQIREIMKGQRDQMKRPPLEERRAMHDIIASDTFDKVKAEAQIAKMEEQRKANMLAHMETQNKIYNILTPEQKKQFNANFEKRLTERPAAKGKMPATAE",
+      "reference_sequence": "MRKLTALFVASTLALGAANLAHAADTTTAAPADAKPMMHHKGKFGPHQDMMFKDLNLTDAQKQQIREIMKGQRDQMKRPPLEERRAMHDIIASDTFDKVKAEAQIAKMEEQRKANMLAHMETQNKIYNILTPEQKKQFNANFEKRLTERPAAKGKMPATAE",
+      "reference_sequence_sha256": "6d016358b0fa15777dcb8ce6be621a9d7e1435bc9fe0ae44b7c7e52505db40ad",
+      "taxon_id": 83333,
+      "reference_organism": {
+        "scientificName": "Escherichia coli (strain K12)",
+        "taxonId": 83333,
+        "lineage": [
+          "Bacteria",
+          "Pseudomonadati",
+          "Pseudomonadota",
+          "Gammaproteobacteria",
+          "Enterobacterales",
+          "Enterobacteriaceae",
+          "Escherichia"
+        ]
+      },
+      "identity_scope": "candidate_hypothesis",
+      "identity_accepted": false,
+      "require_all_optimal_alignments": true,
+      "coordinate_evidence": {
+        "method": "optimal_global_alignments",
+        "optimal_alignment_count": 2,
+        "reason": "",
+        "mapping_option_count": 2,
+        "alignment_blocks_zero_based": [
+          [
+            {
+              "source": [
+                0,
+                139
+              ],
+              "reference": [
+                22,
+                161
+              ]
+            }
+          ],
+          [
+            {
+              "source": [
+                0,
+                1
+              ],
+              "reference": [
+                0,
+                1
+              ]
+            },
+            {
+              "source": [
+                1,
+                139
+              ],
+              "reference": [
+                23,
+                161
+              ]
+            }
+          ]
+        ]
+      },
+      "comparison": {
+        "invariant_mismatches": [
+          {
+            "source_position": 33,
+            "reference_position": 55,
+            "source_residue": "P",
+            "reference_residue": "L"
+          }
+        ],
+        "variable_or_unmapped_source_positions": [
+          1
+        ],
+        "longest_invariant_exact_blocks": [
+          {
+            "source_interval": [
+              34,
+              139
+            ],
+            "reference_interval": [
+              56,
+              161
+            ]
+          },
+          {
+            "source_interval": [
+              2,
+              32
+            ],
+            "reference_interval": [
+              24,
+              54
+            ]
+          }
+        ]
+      },
+      "full_reference_occurrences_in_source": 0,
+      "sources": [
+        {
+          "kind": "uniprot_api",
+          "request_url": "https://rest.uniprot.org/uniprotkb/P77754.json",
+          "params": {},
+          "response_url": "https://rest.uniprot.org/uniprotkb/P77754.json",
+          "response_headers": {
+            "Vary": "accept,accept-encoding,x-uniprot-release,x-api-deployment-date, User-Agent, Accept-Encoding",
+            "Cache-Control": "public, max-age=43200",
+            "x-cache": "miss cached",
+            "Content-Type": "application/json",
+            "Content-Encoding": "gzip",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Expose-Headers": "Link, X-Total-Results, X-UniProt-Release, X-UniProt-Release-Date, X-API-Deployment-Date",
+            "X-API-Deployment-Date": "07-November-2026",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "Date": "Sun, 08 Nov 2026 14:52:14 GMT",
+            "Access-Control-Max-Age": "1728000",
+            "X-UniProt-Release": "2026_04",
+            "Transfer-Encoding": "chunked",
+            "Access-Control-Allow-Origin": "*",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, PATCH, OPTIONS",
+            "Access-Control-Allow-Headers": "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization",
+            "X-UniProt-Release-Date": "04-November-2026"
+          },
+          "status": 200,
+          "retrieved_at_utc": "2026-11-08T14:52:14.529660+00:00",
+          "path": "sources/fe1e2c062b7fc5ee310ab9faf1d89d2a66361095f1b82fb1bc2e73cf4ca77926.json",
+          "sha256": "fe1e2c062b7fc5ee310ab9faf1d89d2a66361095f1b82fb1bc2e73cf4ca77926",
+          "saved_body_bytes": 26040,
+          "original_path": "/viper/u1/wazha/xlms_assessment/standardization_tracking/existing_adapter_queue_20261108T133053Z_7h7x030v/content_review_o3_p_rhb/kojak151_actual_audit_ea6n1ion/reference_review_plan_urbiiyv_/reference_candidates_35vmv9gq/sources/response_0003.json"
+        },
+        {
+          "kind": "uniprot_api",
+          "request_url": "https://rest.uniprot.org/uniprotkb/P77754.fasta",
+          "params": {},
+          "response_url": "https://rest.uniprot.org/uniprotkb/P77754.fasta",
+          "response_headers": {
+            "Vary": "accept,accept-encoding,x-uniprot-release,x-api-deployment-date, User-Agent, Accept-Encoding",
+            "Cache-Control": "public, max-age=43200",
+            "x-cache": "miss cached",
+            "Content-Type": "text/plain;format=fasta",
+            "Content-Encoding": "gzip",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Expose-Headers": "Link, X-Total-Results, X-UniProt-Release, X-UniProt-Release-Date, X-API-Deployment-Date",
+            "X-API-Deployment-Date": "07-November-2026",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "Date": "Sun, 08 Nov 2026 14:52:14 GMT",
+            "Access-Control-Max-Age": "1728000",
+            "X-UniProt-Release": "2026_04",
+            "Access-Control-Allow-Origin": "*",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, PATCH, OPTIONS",
+            "Access-Control-Allow-Headers": "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization",
+            "Content-Length": "235",
+            "X-UniProt-Release-Date": "04-November-2026"
+          },
+          "status": 200,
+          "retrieved_at_utc": "2026-11-08T14:52:14.571517+00:00",
+          "path": "sources/0d61596637e740235dc545b7878639e24acdd49f38f32f20f8d9ed81162b20f5.fasta",
+          "sha256": "0d61596637e740235dc545b7878639e24acdd49f38f32f20f8d9ed81162b20f5",
+          "saved_body_bytes": 270,
+          "original_path": "/viper/u1/wazha/xlms_assessment/standardization_tracking/existing_adapter_queue_20261108T133053Z_7h7x030v/content_review_o3_p_rhb/kojak151_actual_audit_ea6n1ion/reference_review_plan_urbiiyv_/reference_candidates_35vmv9gq/sources/response_0004.fasta"
+        }
+      ],
+      "source_taxon_annotation": null,
+      "source_accession_annotation": null,
+      "sequence_projection_review": {
+        "schema_version": 1,
+        "kind": "sequence_projection_review",
+        "review_status": "reviewed",
+        "projection_rule_version": "intact-peptide-projection-v1",
+        "source_fasta_id": "SpyL32P",
+        "source_fasta_sha256": "6373694e8a2c6528dcd8dfa809e5bc81c4129a04ab74562454ee0a2cae8da02b",
+        "source_sequence_sha256": "c8a13b66965aa2559a02d86e5c81100e59604100cc003282e91b8897d2a37c20",
+        "declared_accession": null,
+        "reference_accession": "P77754",
+        "reference_sequence_sha256": "6d016358b0fa15777dcb8ce6be621a9d7e1435bc9fe0ae44b7c7e52505db40ad",
+        "taxon_id": 83333,
+        "mapping_method": "optimal_global_alignments",
+        "max_optimal_alignments": 64,
+        "coordinate_evidence": {
+          "method": "optimal_global_alignments",
+          "optimal_alignment_count": 2,
+          "reason": "",
+          "mapping_option_count": 2,
+          "alignment_blocks_zero_based": [
+            [
+              {
+                "source": [
+                  0,
+                  139
+                ],
+                "reference": [
+                  22,
+                  161
+                ]
+              }
+            ],
+            [
+              {
+                "source": [
+                  0,
+                  1
+                ],
+                "reference": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "source": [
+                  1,
+                  139
+                ],
+                "reference": [
+                  23,
+                  161
+                ]
+              }
+            ]
+          ]
+        },
+        "invariant_mismatches": [
+          {
+            "source_position": 33,
+            "reference_position": 55,
+            "source_residue": "P",
+            "reference_residue": "L"
+          }
+        ],
+        "variable_or_unmapped_source_positions": [
+          1
+        ],
+        "require_all_optimal_alignments": true,
+        "intact_peptide_match_required": true,
+        "identity_accepted": false,
+        "reason": "Retain the source construct unchanged. Only intact peptides that match the reference with one position under every optimal mapping may be projected. Sequence differences and unresolved source positions remain exclusion evidence.",
+        "sources": [
+          {
+            "kind": "sequence_projection_review",
+            "path": "reviews/SpyL32P.json",
+            "sha256": "a6e8c8b8490c457f1a04361edcf2f6f32af2374f929e4499f5e99de7ea726f2a"
+          }
+        ]
+      }
+    }
+  }
+}

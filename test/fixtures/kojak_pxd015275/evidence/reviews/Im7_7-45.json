@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "sequence_projection_review",
+  "review_status": "reviewed",
+  "projection_rule_version": "intact-peptide-projection-v1",
+  "source_fasta_id": "Im7_7-45",
+  "source_fasta_sha256": "6373694e8a2c6528dcd8dfa809e5bc81c4129a04ab74562454ee0a2cae8da02b",
+  "source_sequence_sha256": "2a239e72d326f5212b625664eee6f85ff1690e3a3107bcf55b395587ae39e851",
+  "declared_accession": null,
+  "reference_accession": "Q03708",
+  "reference_sequence_sha256": "a707b41439accaf25315e28be157c91cd31af3180c307b8776e0f6281948801a",
+  "taxon_id": 562,
+  "mapping_method": "full_source_exact_subsequence",
+  "max_optimal_alignments": 64,
+  "coordinate_evidence": {
+    "method": "full_source_exact_subsequence",
+    "optimal_alignment_count": null,
+    "reason": "",
+    "mapping_option_count": 1,
+    "alignment_blocks_zero_based": [
+      [
+        {
+          "source": [
+            0,
+            40
+          ],
+          "reference": [
+            5,
+            45
+          ]
+        }
+      ]
+    ]
+  },
+  "invariant_mismatches": [],
+  "variable_or_unmapped_source_positions": [],
+  "require_all_optimal_alignments": true,
+  "intact_peptide_match_required": true,
+  "identity_accepted": false,
+  "reason": "Retain the source construct unchanged. Only intact peptides that match the reference with one position under every optimal mapping may be projected. Sequence differences and unresolved source positions remain exclusion evidence."
+}

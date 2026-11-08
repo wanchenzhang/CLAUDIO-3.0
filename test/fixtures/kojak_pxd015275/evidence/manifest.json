@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "kind": "kojak_reviewed_reference_projection_evidence",
+  "git_base_commit": "d1ac161d3d2766be26525c1d6a8d67bf6fbff122",
+  "source_reference_review_manifest_sha256": "b5c504b1353db74ed5e482d90f12aebc082a32864130c8b1badd5357c1d0cba5",
+  "source_records": 1769,
+  "expected_k_k_candidate_rows": 56,
+  "identity_accepted": false,
+  "input_exported": false,
+  "output_sha256": {
+    ".gitattributes": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da",
+    "expected_input.json": "3e281425ac28d2cbac92de5f364c136647a37c70fc70fbed52a6426cd17f7196",
+    "project_metadata.json": "96b8bfb82ddbed425dacb2ba557d8aaf46a98275829a226cb5c6db51f11cd6aa",
+    "reference_mapping.json": "0c0b880de80ed7c9a57cc91bee7a0d7052685689971ada3eadd1b01548d21990",
+    "reviews/Im7_7-45.json": "654bfa49c5eb983137d6fc75b70f0f0db426d65337bc1d4cd210b10fbd15c89e",
+    "reviews/SpyL32P.json": "a6e8c8b8490c457f1a04361edcf2f6f32af2374f929e4499f5e99de7ea726f2a",
+    "selection_review.json": "d2dfeb78da503688bde9e0a2781031e21c484f8eff769a279b497650db4fc768",
+    "sources/0d61596637e740235dc545b7878639e24acdd49f38f32f20f8d9ed81162b20f5.fasta": "0d61596637e740235dc545b7878639e24acdd49f38f32f20f8d9ed81162b20f5",
+    "sources/118e661e59879abb907090420be81d08a57ef22a8239b1ceab50db268533ad07.fasta": "118e661e59879abb907090420be81d08a57ef22a8239b1ceab50db268533ad07",
+    "sources/1909450f9c59874be058ca0e12d148bb961e172df93922d8c4195caa5d15269c.json": "1909450f9c59874be058ca0e12d148bb961e172df93922d8c4195caa5d15269c",
+    "sources/c011bc40f5de1850ea5b5d59c0d0cc30ad3f7ee5aa841ba7e455a00930207bce.fasta": "c011bc40f5de1850ea5b5d59c0d0cc30ad3f7ee5aa841ba7e455a00930207bce",
+    "sources/e8bdb1d895b6ab877248385fa2fc2469ea6f82bd5972e4bbf667b393e0cf090a.json": "e8bdb1d895b6ab877248385fa2fc2469ea6f82bd5972e4bbf667b393e0cf090a",
+    "sources/fe1e2c062b7fc5ee310ab9faf1d89d2a66361095f1b82fb1bc2e73cf4ca77926.json": "fe1e2c062b7fc5ee310ab9faf1d89d2a66361095f1b82fb1bc2e73cf4ca77926"
+  }
+}

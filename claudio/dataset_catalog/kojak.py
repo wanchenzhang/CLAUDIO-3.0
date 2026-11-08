@@ -430,6 +430,149 @@ def _verify_kojak_receipt(receipt):
     return raw
 
 
+_KOJAK_INTACT_PEPTIDE_RULE = "intact-peptide-projection-v1"
+
+
+def _kojak_reviewed_projection_context(
+    bundle, identifier, profile, max_optimal_alignments
+):
+    """Verify reviewed reference coordinates without accepting identity."""
+    from .xifdr import _projection_coordinate_options
+
+    source = bundle["proteins"][identifier]
+    source_sequence = source["sequence"]
+    reference_sequence = profile["reference_sequence"]
+
+    if not isinstance(profile.get("profile_id"), str) or not (
+        profile["profile_id"].strip()
+    ):
+        raise ValueError("Reference profile identifier is missing")
+
+    options, evidence = _projection_coordinate_options(
+        source_sequence, reference_sequence, max_optimal_alignments
+    )
+    if not options or evidence.get("reason"):
+        raise ValueError(
+            "Reference projection coordinates are unresolved: "
+            + str(evidence.get("reason", "no_mapping_options"))
+        )
+    if profile.get("coordinate_evidence") != evidence:
+        raise ValueError("Reference projection coordinates changed")
+
+    mismatches = []
+    variable = []
+    for position, source_residue in enumerate(source_sequence, start=1):
+        positions = [option.get(position) for option in options]
+        if any(value is None for value in positions) or len(set(positions)) != 1:
+            variable.append(position)
+            continue
+        reference_position = positions[0]
+        reference_residue = reference_sequence[reference_position - 1]
+        if source_residue != reference_residue:
+            mismatches.append({
+                "source_position": position,
+                "reference_position": reference_position,
+                "source_residue": source_residue,
+                "reference_residue": reference_residue,
+            })
+
+    review = profile.get("sequence_projection_review")
+    if not isinstance(review, dict):
+        raise ValueError("A construct sequence projection review is required")
+    declaration = {
+        key: value for key, value in review.items() if key != "sources"
+    }
+    required = {
+        "schema_version": 1,
+        "kind": "sequence_projection_review",
+        "review_status": "reviewed",
+        "projection_rule_version": _KOJAK_INTACT_PEPTIDE_RULE,
+        "source_fasta_id": identifier,
+        "source_fasta_sha256": bundle["provenance"]["fasta_sha256"],
+        "source_sequence_sha256": hashlib.sha256(
+            source_sequence.encode("ascii")
+        ).hexdigest(),
+        "declared_accession": source.get("uniprot_accession"),
+        "reference_accession": profile["accession"],
+        "reference_sequence_sha256": hashlib.sha256(
+            reference_sequence.encode("ascii")
+        ).hexdigest(),
+        "taxon_id": profile["taxon_id"],
+        "mapping_method": evidence["method"],
+        "max_optimal_alignments": max_optimal_alignments,
+        "coordinate_evidence": evidence,
+        "invariant_mismatches": mismatches,
+        "variable_or_unmapped_source_positions": variable,
+        "require_all_optimal_alignments": True,
+        "intact_peptide_match_required": True,
+        "identity_accepted": False,
+    }
+    if any(declaration.get(key) != value for key, value in required.items()):
+        raise ValueError("Construct review differs from recomputed projection")
+    if not isinstance(declaration.get("reason"), str) or not (
+        declaration["reason"].strip()
+    ):
+        raise ValueError("Construct review requires a reason")
+
+    receipts = review.get("sources")
+    if not isinstance(receipts, list) or not receipts:
+        raise ValueError("Construct review evidence is missing")
+    for receipt in receipts:
+        if receipt.get("kind") != "sequence_projection_review":
+            raise ValueError("Unsupported construct review source")
+        raw = _verify_kojak_receipt(receipt)
+        if json.loads(raw) != declaration:
+            raise ValueError("Construct review document changed")
+
+    return {
+        "profile": profile,
+        "coordinate_options": options,
+        "projection_rule_version": _KOJAK_INTACT_PEPTIDE_RULE,
+    }
+
+
+def _kojak_project_reviewed_endpoint(endpoint, candidate, context):
+    """Require the same intact peptide projection under every mapping."""
+    from .xifdr import _project_peptide
+
+    profile = context["profile"]
+    options = context["coordinate_options"]
+    source_endpoint = {
+        "status": endpoint["status"],
+        "peptide": endpoint["peptide"],
+        "link_position": endpoint["link_position"],
+        "peptide_start": candidate["peptide_start"],
+        "protein_position": candidate["protein_position"],
+    }
+    result = _project_peptide(source_endpoint, profile, options)
+    result["source_fasta_id"] = candidate["protein_id"]
+
+    supported = (
+        bool(options)
+        and result["status"] == "projected"
+        and result["compatible_alignment_count"] == len(options)
+        and result["distinct_projection_count"] == 1
+    )
+    result["all_mapping_options_support_projection"] = supported
+
+    if not supported:
+        result["status"] = "not_evaluable"
+        if not result.get("reason"):
+            result["reason"] = "not_supported_by_all_optimal_alignments"
+        return result
+
+    position = result["reference_protein_position"]
+    residue = profile["reference_sequence"][position - 1]
+    if residue != candidate["residue"]:
+        result.update(
+            status="not_evaluable",
+            reason="reference_residue_mismatch",
+        )
+        return result
+
+    result["residue"] = residue
+    return result
+
 def _kojak_reference_profiles(bundle, mapping):
     if (
         not isinstance(mapping, dict)
@@ -437,6 +580,17 @@ def _kojak_reference_profiles(bundle, mapping):
         or mapping.get("kind") != "kojak_reference_mapping"
     ):
         raise ValueError("Unsupported Kojak reference mapping")
+    projection_rule = mapping.get("projection_rule_version")
+    if projection_rule not in (None, _KOJAK_INTACT_PEPTIDE_RULE):
+        raise ValueError("Unsupported Kojak reference projection rule")
+    max_optimal_alignments = mapping.get("max_optimal_alignments")
+    if projection_rule == _KOJAK_INTACT_PEPTIDE_RULE:
+        if (
+            type(max_optimal_alignments) is not int
+            or not 1 <= max_optimal_alignments <= 64
+        ):
+            raise ValueError("Choose a reviewed alignment limit from 1 to 64")
+
     for kind in ("psm", "fasta"):
         if mapping.get("source_" + kind + "_sha256") != (
             bundle["provenance"][kind + "_sha256"]
@@ -497,78 +651,83 @@ def _kojak_reference_profiles(bundle, mapping):
             require_declared_accession=False,
         )
 
-        starts = [
-            position for position in range(len(source_sequence))
-            if source_sequence.startswith(reference_sequence, position)
-        ]
-        if len(starts) != 1:
-            raise ValueError("Reference containment is unresolved or ambiguous")
-        offset = starts[0]
-        end = offset + len(reference_sequence)
-        coordinate_evidence = {
-            "method": "full_reference_exact_subsequence",
-            "source_start": offset + 1,
-            "source_end": end,
-            "reference_start": 1,
-            "reference_end": len(reference_sequence),
-            "mapping_options": 1,
-        }
-        if profile.get("coordinate_evidence") != coordinate_evidence:
-            raise ValueError("Reference projection coordinates changed")
+        if projection_rule == _KOJAK_INTACT_PEPTIDE_RULE:
+            checked[identifier] = _kojak_reviewed_projection_context(
+                bundle, identifier, profile, max_optimal_alignments
+            )
+        else:
+            starts = [
+                position for position in range(len(source_sequence))
+                if source_sequence.startswith(reference_sequence, position)
+            ]
+            if len(starts) != 1:
+                raise ValueError("Reference containment is unresolved or ambiguous")
+            offset = starts[0]
+            end = offset + len(reference_sequence)
+            coordinate_evidence = {
+                "method": "full_reference_exact_subsequence",
+                "source_start": offset + 1,
+                "source_end": end,
+                "reference_start": 1,
+                "reference_end": len(reference_sequence),
+                "mapping_options": 1,
+            }
+            if profile.get("coordinate_evidence") != coordinate_evidence:
+                raise ValueError("Reference projection coordinates changed")
 
-        review = profile.get("sequence_projection_review")
-        if not isinstance(review, dict):
-            raise ValueError("A construct sequence projection review is required")
-        declaration = {
-            key: value for key, value in review.items()
-            if key != "sources"
-        }
-        unmapped = [
-            position for position in range(1, len(source_sequence) + 1)
-            if not offset + 1 <= position <= end
-        ]
-        required = {
-            "schema_version": 1,
-            "kind": "sequence_projection_review",
-            "review_status": "reviewed",
-            "source_fasta_id": identifier,
-            "source_fasta_sha256": bundle["provenance"]["fasta_sha256"],
-            "source_sequence_sha256": hashlib.sha256(
-                source_sequence.encode("ascii")
-            ).hexdigest(),
-            "declared_accession": source.get("uniprot_accession"),
-            "reference_accession": profile["accession"],
-            "reference_sequence_sha256": reference_hash,
-            "taxon_id": profile["taxon_id"],
-            "mapping_method": "full_reference_exact_subsequence",
-            "source_interval": [offset + 1, end],
-            "reference_interval": [1, len(reference_sequence)],
-            "allowed_source_unmapped_positions": unmapped,
-            "require_all_optimal_alignments": True,
-            "identity_accepted": False,
-        }
-        if any(declaration.get(key) != value for key, value in required.items()):
-            raise ValueError("Construct review differs from recomputed projection")
-        if not isinstance(declaration.get("reason"), str) or not (
-            declaration["reason"].strip()
-        ):
-            raise ValueError("Construct review requires a reason")
-        review_sources = review.get("sources")
-        if not isinstance(review_sources, list) or not review_sources:
-            raise ValueError("Construct review evidence is missing")
-        for receipt in review_sources:
-            if receipt.get("kind") != "sequence_projection_review":
-                raise ValueError("Unsupported construct review source")
-            raw = _verify_kojak_receipt(receipt)
-            if json.loads(raw) != declaration:
-                raise ValueError("Construct review document changed")
+            review = profile.get("sequence_projection_review")
+            if not isinstance(review, dict):
+                raise ValueError("A construct sequence projection review is required")
+            declaration = {
+                key: value for key, value in review.items()
+                if key != "sources"
+            }
+            unmapped = [
+                position for position in range(1, len(source_sequence) + 1)
+                if not offset + 1 <= position <= end
+            ]
+            required = {
+                "schema_version": 1,
+                "kind": "sequence_projection_review",
+                "review_status": "reviewed",
+                "source_fasta_id": identifier,
+                "source_fasta_sha256": bundle["provenance"]["fasta_sha256"],
+                "source_sequence_sha256": hashlib.sha256(
+                    source_sequence.encode("ascii")
+                ).hexdigest(),
+                "declared_accession": source.get("uniprot_accession"),
+                "reference_accession": profile["accession"],
+                "reference_sequence_sha256": reference_hash,
+                "taxon_id": profile["taxon_id"],
+                "mapping_method": "full_reference_exact_subsequence",
+                "source_interval": [offset + 1, end],
+                "reference_interval": [1, len(reference_sequence)],
+                "allowed_source_unmapped_positions": unmapped,
+                "require_all_optimal_alignments": True,
+                "identity_accepted": False,
+            }
+            if any(declaration.get(key) != value for key, value in required.items()):
+                raise ValueError("Construct review differs from recomputed projection")
+            if not isinstance(declaration.get("reason"), str) or not (
+                declaration["reason"].strip()
+            ):
+                raise ValueError("Construct review requires a reason")
+            review_sources = review.get("sources")
+            if not isinstance(review_sources, list) or not review_sources:
+                raise ValueError("Construct review evidence is missing")
+            for receipt in review_sources:
+                if receipt.get("kind") != "sequence_projection_review":
+                    raise ValueError("Unsupported construct review source")
+                raw = _verify_kojak_receipt(receipt)
+                if json.loads(raw) != declaration:
+                    raise ValueError("Construct review document changed")
 
-        checked[identifier] = {
-            "profile": profile,
-            "source_start": offset + 1,
-            "source_end": end,
-            "offset": offset,
-        }
+            checked[identifier] = {
+                "profile": profile,
+                "source_start": offset + 1,
+                "source_end": end,
+                "offset": offset,
+            }
         identities[identifier] = {
             "status": "candidate_hypothesis",
             "accession": profile["accession"],
@@ -681,6 +840,21 @@ def write_kojak_claudio_input(
                 if context is None:
                     reasons.append("protein_identity_unresolved_" + side)
                     continue
+                if (
+                    context.get("projection_rule_version")
+                    == _KOJAK_INTACT_PEPTIDE_RULE
+                ):
+                    projection = _kojak_project_reviewed_endpoint(
+                        endpoint, candidate, context
+                    )
+                    projected[side] = projection
+                    if projection["status"] != "projected":
+                        reasons.append("reference_projection_unresolved_" + side)
+                        continue
+                    if projection["residue"] not in selections["residues"]:
+                        reasons.append("residue_not_selected_" + side)
+                    continue
+
                 profile = context["profile"]
                 start = candidate["peptide_start"]
                 end = candidate["peptide_end"]
@@ -795,7 +969,12 @@ def write_kojak_claudio_input(
         "extra_source_bodies": bodies,
         "reference_projection": deepcopy(reference_mapping),
         "reference_projection_policy": {
-            "kind": "reviewed_full_reference_exact_subsequence",
+            "kind": (
+                "reviewed_intact_peptide_projection"
+                if reference_mapping.get("projection_rule_version")
+                == _KOJAK_INTACT_PEPTIDE_RULE
+                else "reviewed_full_reference_exact_subsequence"
+            ),
             "require_all_optimal_alignments": True,
             "identity_accepted": False,
         },
