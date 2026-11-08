@@ -1,0 +1,65 @@
+{
+  "project_accession": "PXD053456",
+  "download_receipt": {
+    "pilot_file_id": "maxlynx_mqpar_001",
+    "project_accession": "PXD053456",
+    "repository": "PRIDE",
+    "reported_file_name": "mqpar.xml",
+    "pilot_role": "parameters_candidate",
+    "requested_url": "ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2025/04/PXD053456/mqpar.xml",
+    "transfer_url": "ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2025/04/PXD053456/mqpar.xml",
+    "url_rewrite_reason": "",
+    "response_url": "",
+    "response_headers": {},
+    "response_metadata_available": false,
+    "transport_attempts": [
+      {
+        "scope": "library_call",
+        "internal_attempt_count": null,
+        "transfer_url": "ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2025/04/PXD053456/mqpar.xml",
+        "backend": "pridepy",
+        "outcome": "downloaded"
+      }
+    ],
+    "download_backend": "pridepy",
+    "backend_version": "0.0.16",
+    "accounting_mode": "planned_file_sizes",
+    "download_status": "downloaded",
+    "local_path": "/viper/u1/wazha/xlms_assessment/standardization_tracking/existing_adapter_queue_20261108T164355Z_tlza__f6/content_review_8o2oqt8h/maxlynx_native57_actual_t7q62x2f/mqpar.xml",
+    "confirmed_payload_bytes": 25008,
+    "charged_payload_bytes": 25008,
+    "file_sha256": "9c568feac7de4dfd3a69defcfe0b3bd3f0a8a5eda1f1f7edb768b66438d2190e",
+    "observed_file_size_bytes": 25008,
+    "error_type": "",
+    "error_message": "",
+    "content_probe": {
+      "status": "unstructured_text",
+      "nonempty_line_count": 522,
+      "preview": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<MaxQuantParams xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\r\n   <fastaFiles>\r\n      <FastaFileInfo>\r\n         <fastaFilePath>Z:\\Data\\FASTA\\Single Proteins\\F-Actin_D1D2.fasta</fastaFilePath>\r\n         <identifierParseRule>>.*\\|(.*)\\|</identifierParseRule>\r\n         <descriptionParseRule>>(.*)</descriptionParseRule>\r\n         <taxonomyParseRule></taxonomyParseRule>\r\n         <variationParseRule></variat"
+    },
+    "started_at_utc": "2026-11-08T17:37:25.851983+00:00",
+    "finished_at_utc": "2026-11-08T17:37:36.833694+00:00"
+  },
+  "parameter_sha256": "9c568feac7de4dfd3a69defcfe0b3bd3f0a8a5eda1f1f7edb768b66438d2190e",
+  "raw_file_coverage_review": {
+    "project_accession": "PXD053456",
+    "parameter_sha256": "9c568feac7de4dfd3a69defcfe0b3bd3f0a8a5eda1f1f7edb768b66438d2190e",
+    "source_raw_files": [
+      "20191108_Q3_SK_ColID_860_30cm_PitterHuesgen_XLDID2_01",
+      "20191108_Q3_SK_ColID_860_30cm_PitterHuesgen_XLDID2_02",
+      "20191108_Q3_SK_ColID_860_30cm_PitterHuesgen_XLDID2_03",
+      "20191108_Q3_SK_ColID_860_30cm_PitterHuesgen_XLDID2_04"
+    ],
+    "configured_raw_file_paths": [
+      "Z:\\Analysis\\Francisco\\240315_REVISION PAPER\\MaxLynx_DSBU-reanalysed\\20191108_Q3_SK_ColID_860_30cm_PitterHuesgen_XLDID2_04.raw",
+      "Z:\\Analysis\\Francisco\\240315_REVISION PAPER\\MaxLynx_DSBU-reanalysed\\20191108_Q3_SK_ColID_860_30cm_PitterHuesgen_XLDID2_01.raw",
+      "Z:\\Analysis\\Francisco\\240315_REVISION PAPER\\MaxLynx_DSBU-reanalysed\\20191108_Q3_SK_ColID_860_30cm_PitterHuesgen_XLDID2_02.raw",
+      "Z:\\Analysis\\Francisco\\240315_REVISION PAPER\\MaxLynx_DSBU-reanalysed\\20191108_Q3_SK_ColID_860_30cm_PitterHuesgen_XLDID2_03.raw"
+    ],
+    "source_runs_absent_from_configuration": [],
+    "raw_file_coverage_verified": true,
+    "configuration_application_verified": false
+  },
+  "configuration_application_verified": false,
+  "fdr_verification_status": "configured_only"
+}

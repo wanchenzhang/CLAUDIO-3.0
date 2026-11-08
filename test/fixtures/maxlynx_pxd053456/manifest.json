@@ -1,0 +1,16 @@
+{
+  "kind": "maxlynx_native57_fixture",
+  "source_batch_manifest_sha256": "e1746d83bb4a2c4f968d620976d3fec956e12376d9710a30ac4ec3991d474f15",
+  "source_results_sha256": "15b2344fa1e1675ddfe058b25687a2118bdcd48d8dc0ab1f9db10cae6786d8c8",
+  "source_fasta_sha256": "1d1d7f49aaebda9cf85259e30aebcc799345c77bf2aee6903ba1ec4a2b72994f",
+  "output_sha256": {
+    ".gitattributes": "c167b7bb9268ad90277d5cfc0c918f684a937112421e846ec0ccf344c808cff9",
+    "DSBU_crosslinkMsms.txt": "15b2344fa1e1675ddfe058b25687a2118bdcd48d8dc0ab1f9db10cae6786d8c8",
+    "parameter_source.json": "c7c6c75b94302492e32da57afb5528b3a6939d6d8375816eb6cd76951f41f260",
+    "parameters.xml": "9c568feac7de4dfd3a69defcfe0b3bd3f0a8a5eda1f1f7edb768b66438d2190e",
+    "profile_review.json": "4ee4a0f23bd1e272b9b7d71762ab8199e3fe9642180f637d410f0ed946259679",
+    "search.fasta": "1d1d7f49aaebda9cf85259e30aebcc799345c77bf2aee6903ba1ec4a2b72994f"
+  },
+  "parameter_source": "parameter_source.json",
+  "parameter_application_verified": false
+}

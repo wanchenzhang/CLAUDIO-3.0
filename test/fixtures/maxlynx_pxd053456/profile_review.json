@@ -1,0 +1,555 @@
+{
+  "project_accession": "PXD053456",
+  "source_records": 3228,
+  "source_columns": [
+    "Raw file",
+    "Scan number",
+    "Scan index",
+    "Sequence1",
+    "Sequence2",
+    "Modified sequence1",
+    "Modified sequence2",
+    "Length1",
+    "Length2",
+    "#Matches1",
+    "#Matches2",
+    "Decoy",
+    "Score",
+    "Crosslink product type",
+    "PEP",
+    "Search mode",
+    "Proteins1",
+    "Proteins2",
+    "Pair of linked residues",
+    "Protein index of Crosslink 1",
+    "Peptide index of Crosslink 1",
+    "AA name of Crosslink 1",
+    "Protein index of Crosslink 2",
+    "Peptide index of Crosslink 2",
+    "AA name of Crosslink 2",
+    "Protein index of Looplink 1 (first residue)",
+    "Peptide index of Looplink 1 (first residue)",
+    "AA name of Looplink 1 (first residue)",
+    "Protein index of Looplink 1 (second residue)",
+    "Peptide index of Looplink 1 (second residue)",
+    "AA name of Looplink 1 (second residue)",
+    "Protein index of Looplink 2 (first residue)",
+    "Peptide index of Looplink 2 (first residue)",
+    "AA name of Looplink 2 (first residue)",
+    "Protein index of Looplink 2 (second residue)",
+    "Peptide index of Looplink 2 (second residue)",
+    "AA name of Looplink 2 (second residue)",
+    "Protein index of Monolink 1",
+    "Peptide index of Monolink 1",
+    "AA name of of Monolink 1",
+    "Protein index of Monolink 2",
+    "Peptide index of Monolink 2",
+    "AA name of of Monolink 2",
+    "All possible linking sites on peptide 1",
+    "All possible linking sites on peptide 2",
+    "Delta score",
+    "Partial score 1",
+    "Partial score 2",
+    "Charge",
+    "m/z",
+    "Mass",
+    "Mass error [ppm]",
+    "Annotation ions",
+    "Annotation m/z",
+    "Query Type",
+    "#Overlapped fragments 1",
+    "#Overlapped fragments 2"
+  ],
+  "product_type_counts": {
+    "Linear": 2892,
+    "Mono-linked": 221,
+    "Intra-protein link": 31,
+    "Loop-linked": 68,
+    "Inter-protein link": 11,
+    "Mono- and loop-linked": 5
+  },
+  "independent_coordinate_hypotheses": [
+    {
+      "protein_position_shift": 0,
+      "peptide_position_shift": 0,
+      "counts": {
+        "both_endpoints_match": 42
+      },
+      "examples": [
+        {
+          "scan": "1549",
+          "native_decoy_label": "forward",
+          "endpoints": [
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "GKSQAK",
+              "protein_position": 368,
+              "link_position": 2,
+              "peptide_start": 367,
+              "peptide_end": 372,
+              "sequence_and_site_match": true
+            },
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "LIKSR",
+              "protein_position": 364,
+              "link_position": 3,
+              "peptide_start": 362,
+              "peptide_end": 366,
+              "sequence_and_site_match": true
+            }
+          ],
+          "reasons": []
+        },
+        {
+          "scan": "3693",
+          "native_decoy_label": "forward",
+          "endpoints": [
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "ISSPKVLQR",
+              "protein_position": 357,
+              "link_position": 5,
+              "peptide_start": 353,
+              "peptide_end": 361,
+              "sequence_and_site_match": true
+            },
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "LIKSR",
+              "protein_position": 364,
+              "link_position": 3,
+              "peptide_start": 362,
+              "peptide_end": 366,
+              "sequence_and_site_match": true
+            }
+          ],
+          "reasons": []
+        },
+        {
+          "scan": "3701",
+          "native_decoy_label": "forward",
+          "endpoints": [
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "ISSPKVLQR",
+              "protein_position": 357,
+              "link_position": 5,
+              "peptide_start": 353,
+              "peptide_end": 361,
+              "sequence_and_site_match": true
+            },
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "LIKSR",
+              "protein_position": 364,
+              "link_position": 3,
+              "peptide_start": 362,
+              "peptide_end": 366,
+              "sequence_and_site_match": true
+            }
+          ],
+          "reasons": []
+        },
+        {
+          "scan": "3718",
+          "native_decoy_label": "forward",
+          "endpoints": [
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "ISSPKVLQR",
+              "protein_position": 357,
+              "link_position": 5,
+              "peptide_start": 353,
+              "peptide_end": 361,
+              "sequence_and_site_match": true
+            },
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "LIKSR",
+              "protein_position": 364,
+              "link_position": 3,
+              "peptide_start": 362,
+              "peptide_end": 366,
+              "sequence_and_site_match": true
+            }
+          ],
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "protein_position_shift": 0,
+      "peptide_position_shift": 1,
+      "counts": {
+        "requires_review": 42,
+        "sequence_or_site_mismatch_1": 42,
+        "sequence_or_site_mismatch_2": 42
+      },
+      "examples": [
+        {
+          "scan": "1549",
+          "native_decoy_label": "forward",
+          "endpoints": [
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "GKSQAK",
+              "protein_position": 368,
+              "link_position": 3,
+              "peptide_start": 366,
+              "peptide_end": 371,
+              "sequence_and_site_match": false
+            },
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "LIKSR",
+              "protein_position": 364,
+              "link_position": 4,
+              "peptide_start": 361,
+              "peptide_end": 365,
+              "sequence_and_site_match": false
+            }
+          ],
+          "reasons": [
+            "sequence_or_site_mismatch_1",
+            "sequence_or_site_mismatch_2"
+          ]
+        },
+        {
+          "scan": "3693",
+          "native_decoy_label": "forward",
+          "endpoints": [
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "ISSPKVLQR",
+              "protein_position": 357,
+              "link_position": 6,
+              "peptide_start": 352,
+              "peptide_end": 360,
+              "sequence_and_site_match": false
+            },
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "LIKSR",
+              "protein_position": 364,
+              "link_position": 4,
+              "peptide_start": 361,
+              "peptide_end": 365,
+              "sequence_and_site_match": false
+            }
+          ],
+          "reasons": [
+            "sequence_or_site_mismatch_1",
+            "sequence_or_site_mismatch_2"
+          ]
+        },
+        {
+          "scan": "3701",
+          "native_decoy_label": "forward",
+          "endpoints": [
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "ISSPKVLQR",
+              "protein_position": 357,
+              "link_position": 6,
+              "peptide_start": 352,
+              "peptide_end": 360,
+              "sequence_and_site_match": false
+            },
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "LIKSR",
+              "protein_position": 364,
+              "link_position": 4,
+              "peptide_start": 361,
+              "peptide_end": 365,
+              "sequence_and_site_match": false
+            }
+          ],
+          "reasons": [
+            "sequence_or_site_mismatch_1",
+            "sequence_or_site_mismatch_2"
+          ]
+        },
+        {
+          "scan": "3718",
+          "native_decoy_label": "forward",
+          "endpoints": [
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "ISSPKVLQR",
+              "protein_position": 357,
+              "link_position": 6,
+              "peptide_start": 352,
+              "peptide_end": 360,
+              "sequence_and_site_match": false
+            },
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "LIKSR",
+              "protein_position": 364,
+              "link_position": 4,
+              "peptide_start": 361,
+              "peptide_end": 365,
+              "sequence_and_site_match": false
+            }
+          ],
+          "reasons": [
+            "sequence_or_site_mismatch_1",
+            "sequence_or_site_mismatch_2"
+          ]
+        }
+      ]
+    },
+    {
+      "protein_position_shift": 1,
+      "peptide_position_shift": 0,
+      "counts": {
+        "requires_review": 42,
+        "sequence_or_site_mismatch_1": 42,
+        "sequence_or_site_mismatch_2": 42
+      },
+      "examples": [
+        {
+          "scan": "1549",
+          "native_decoy_label": "forward",
+          "endpoints": [
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "GKSQAK",
+              "protein_position": 369,
+              "link_position": 2,
+              "peptide_start": 368,
+              "peptide_end": 373,
+              "sequence_and_site_match": false
+            },
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "LIKSR",
+              "protein_position": 365,
+              "link_position": 3,
+              "peptide_start": 363,
+              "peptide_end": 367,
+              "sequence_and_site_match": false
+            }
+          ],
+          "reasons": [
+            "sequence_or_site_mismatch_1",
+            "sequence_or_site_mismatch_2"
+          ]
+        },
+        {
+          "scan": "3693",
+          "native_decoy_label": "forward",
+          "endpoints": [
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "ISSPKVLQR",
+              "protein_position": 358,
+              "link_position": 5,
+              "peptide_start": 354,
+              "peptide_end": 362,
+              "sequence_and_site_match": false
+            },
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "LIKSR",
+              "protein_position": 365,
+              "link_position": 3,
+              "peptide_start": 363,
+              "peptide_end": 367,
+              "sequence_and_site_match": false
+            }
+          ],
+          "reasons": [
+            "sequence_or_site_mismatch_1",
+            "sequence_or_site_mismatch_2"
+          ]
+        },
+        {
+          "scan": "3701",
+          "native_decoy_label": "forward",
+          "endpoints": [
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "ISSPKVLQR",
+              "protein_position": 358,
+              "link_position": 5,
+              "peptide_start": 354,
+              "peptide_end": 362,
+              "sequence_and_site_match": false
+            },
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "LIKSR",
+              "protein_position": 365,
+              "link_position": 3,
+              "peptide_start": 363,
+              "peptide_end": 367,
+              "sequence_and_site_match": false
+            }
+          ],
+          "reasons": [
+            "sequence_or_site_mismatch_1",
+            "sequence_or_site_mismatch_2"
+          ]
+        },
+        {
+          "scan": "3718",
+          "native_decoy_label": "forward",
+          "endpoints": [
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "ISSPKVLQR",
+              "protein_position": 358,
+              "link_position": 5,
+              "peptide_start": 354,
+              "peptide_end": 362,
+              "sequence_and_site_match": false
+            },
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "LIKSR",
+              "protein_position": 365,
+              "link_position": 3,
+              "peptide_start": 363,
+              "peptide_end": 367,
+              "sequence_and_site_match": false
+            }
+          ],
+          "reasons": [
+            "sequence_or_site_mismatch_1",
+            "sequence_or_site_mismatch_2"
+          ]
+        }
+      ]
+    },
+    {
+      "protein_position_shift": 1,
+      "peptide_position_shift": 1,
+      "counts": {
+        "requires_review": 42,
+        "sequence_or_site_mismatch_1": 42,
+        "sequence_or_site_mismatch_2": 42
+      },
+      "examples": [
+        {
+          "scan": "1549",
+          "native_decoy_label": "forward",
+          "endpoints": [
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "GKSQAK",
+              "protein_position": 369,
+              "link_position": 3,
+              "peptide_start": 367,
+              "peptide_end": 372,
+              "sequence_and_site_match": false
+            },
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "LIKSR",
+              "protein_position": 365,
+              "link_position": 4,
+              "peptide_start": 362,
+              "peptide_end": 366,
+              "sequence_and_site_match": false
+            }
+          ],
+          "reasons": [
+            "sequence_or_site_mismatch_1",
+            "sequence_or_site_mismatch_2"
+          ]
+        },
+        {
+          "scan": "3693",
+          "native_decoy_label": "forward",
+          "endpoints": [
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "ISSPKVLQR",
+              "protein_position": 358,
+              "link_position": 6,
+              "peptide_start": 353,
+              "peptide_end": 361,
+              "sequence_and_site_match": false
+            },
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "LIKSR",
+              "protein_position": 365,
+              "link_position": 4,
+              "peptide_start": 362,
+              "peptide_end": 366,
+              "sequence_and_site_match": false
+            }
+          ],
+          "reasons": [
+            "sequence_or_site_mismatch_1",
+            "sequence_or_site_mismatch_2"
+          ]
+        },
+        {
+          "scan": "3701",
+          "native_decoy_label": "forward",
+          "endpoints": [
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "ISSPKVLQR",
+              "protein_position": 358,
+              "link_position": 6,
+              "peptide_start": 353,
+              "peptide_end": 361,
+              "sequence_and_site_match": false
+            },
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "LIKSR",
+              "protein_position": 365,
+              "link_position": 4,
+              "peptide_start": 362,
+              "peptide_end": 366,
+              "sequence_and_site_match": false
+            }
+          ],
+          "reasons": [
+            "sequence_or_site_mismatch_1",
+            "sequence_or_site_mismatch_2"
+          ]
+        },
+        {
+          "scan": "3718",
+          "native_decoy_label": "forward",
+          "endpoints": [
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "ISSPKVLQR",
+              "protein_position": 358,
+              "link_position": 6,
+              "peptide_start": 353,
+              "peptide_end": 361,
+              "sequence_and_site_match": false
+            },
+            {
+              "source_fasta_id": "tr|D1D2|D1D2_RABIT",
+              "peptide": "LIKSR",
+              "protein_position": 365,
+              "link_position": 4,
+              "peptide_start": 362,
+              "peptide_end": 366,
+              "sequence_and_site_match": false
+            }
+          ],
+          "reasons": [
+            "sequence_or_site_mismatch_1",
+            "sequence_or_site_mismatch_2"
+          ]
+        }
+      ]
+    }
+  ],
+  "identifier_alias_method": "unique_full_id_or_literal_pipe_accession",
+  "search_parameter_application_verified": false,
+  "identity_acceptance_performed": false,
+  "fdr_acceptance_performed": false
+}

@@ -318,6 +318,21 @@ def _read_reference_projection(path):
     return projection
 
 
+def _maxlynx_format_description(results_path):
+    """Describe the recognized MaxLynx source layout."""
+    from .maxlynx import _maxlynx_header_profile
+
+    with Path(results_path).open(encoding="utf-8-sig", newline="") as handle:
+        columns = next(csv.reader(handle, delimiter="\t"), [])
+    profile = _maxlynx_header_profile(columns)
+    label = (
+        "native 57-column TSV"
+        if profile == "native_57_column"
+        else "semicolon-localized TSV"
+    )
+    return f"Detected format: MaxLynx CSM ({label})"
+
+
 def _detect_psm_format(results_path):
     """Recognize supported tables and native MeroX containers."""
     results_path = Path(results_path).resolve()
@@ -440,7 +455,7 @@ def _detect_psm_format(results_path):
     with results_path.open(encoding="utf-8-sig", newline="") as handle:
         columns = set(next(csv.reader(handle), []))
         handle.seek(0)
-        maxlynx_columns = set(next(csv.reader(handle, delimiter="\t"), []))
+        maxlynx_columns = next(csv.reader(handle, delimiter="\t"), [])
 
     signatures = {
         "xifdr_psm": {
@@ -461,8 +476,12 @@ def _detect_psm_format(results_path):
         name for name, required in signatures.items()
         if required <= columns
     ]
-    from .maxlynx import REQUIRED_COLUMNS as maxlynx_required
-    if maxlynx_required <= maxlynx_columns:
+    from .maxlynx import _maxlynx_header_profile
+    try:
+        _maxlynx_header_profile(maxlynx_columns)
+    except ValueError:
+        pass
+    else:
         matches.append("maxlynx_csm")
     if len(matches) != 1:
         raise ValueError(
@@ -1045,7 +1064,7 @@ def standardize_command(
 
         from .maxlynx import read_maxlynx_csms, write_maxlynx_claudio_input
 
-        click.echo("Detected format: MaxLynx CSM (semicolon-localized TSV)")
+        click.echo(_maxlynx_format_description(results_path))
         try:
             bundle = read_maxlynx_csms(
                 results_path, fasta_path,

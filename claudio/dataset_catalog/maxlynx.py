@@ -50,6 +50,59 @@ KINDS = {
 }
 
 
+NATIVE_57_COLUMNS = frozenset(('Raw file', 'Scan number', 'Scan index', 'Sequence1', 'Sequence2', 'Modified sequence1', 'Modified sequence2', 'Length1', 'Length2', '#Matches1', '#Matches2', 'Decoy', 'Score', 'Crosslink product type', 'PEP', 'Search mode', 'Proteins1', 'Proteins2', 'Pair of linked residues', 'Protein index of Crosslink 1', 'Peptide index of Crosslink 1', 'AA name of Crosslink 1', 'Protein index of Crosslink 2', 'Peptide index of Crosslink 2', 'AA name of Crosslink 2', 'Protein index of Looplink 1 (first residue)', 'Peptide index of Looplink 1 (first residue)', 'AA name of Looplink 1 (first residue)', 'Protein index of Looplink 1 (second residue)', 'Peptide index of Looplink 1 (second residue)', 'AA name of Looplink 1 (second residue)', 'Protein index of Looplink 2 (first residue)', 'Peptide index of Looplink 2 (first residue)', 'AA name of Looplink 2 (first residue)', 'Protein index of Looplink 2 (second residue)', 'Peptide index of Looplink 2 (second residue)', 'AA name of Looplink 2 (second residue)', 'Protein index of Monolink 1', 'Peptide index of Monolink 1', 'AA name of of Monolink 1', 'Protein index of Monolink 2', 'Peptide index of Monolink 2', 'AA name of of Monolink 2', 'All possible linking sites on peptide 1', 'All possible linking sites on peptide 2', 'Delta score', 'Partial score 1', 'Partial score 2', 'Charge', 'm/z', 'Mass', 'Mass error [ppm]', 'Annotation ions', 'Annotation m/z', 'Query Type', '#Overlapped fragments 1', '#Overlapped fragments 2'))
+
+NATIVE_57_COLUMN_MAP = {
+    "Crosslink product type": "Crosslink Product Type",
+    "Pair of linked residues": "InterLinks",
+    "Protein index of Crosslink 1": "Pro_InterLink1",
+    "Peptide index of Crosslink 1": "Pep_InterLink1",
+    "AA name of Crosslink 1": "AA_InterLink1",
+    "Protein index of Crosslink 2": "Pro_InterLink2",
+    "Peptide index of Crosslink 2": "Pep_InterLink2",
+    "AA name of Crosslink 2": "AA_InterLink2",
+}
+NATIVE_57_PRODUCT_MAP = {
+    "Linear": "SingleProtein",
+    "Mono-linked": "Monolinked",
+    "Loop-linked": "Looplinked",
+    "Intra-protein link": "IntraProXL",
+    "Inter-protein link": "InterProXL",
+    "Mono- and loop-linked": "MonoAndLooplinked",
+}
+KINDS["MonoAndLooplinked"] = "mono_and_loop_link"
+NONPAIR_REASONS["MonoAndLooplinked"] = "mono_and_loop_linked_not_pairwise"
+
+
+def _maxlynx_header_profile(columns):
+    """Recognize reviewed layouts without modifying source columns."""
+    names = set(columns)
+    if len(columns) != len(names):
+        raise ValueError("Unsupported or ambiguous MaxLynx table header")
+    if {
+        "Crosslink Product Type", "Crosslink product type"
+    } <= names:
+        raise ValueError("Ambiguous MaxLynx product type columns")
+    if REQUIRED_COLUMNS <= names:
+        return "semicolon_localized"
+    if names == NATIVE_57_COLUMNS:
+        return "native_57_column"
+    raise ValueError("Unsupported or ambiguous MaxLynx table header")
+
+
+def _maxlynx_validation_fields(fields, profile):
+    """Create a validation view while retaining native fields separately."""
+    view = deepcopy(fields)
+    if profile == "native_57_column":
+        for native, canonical in NATIVE_57_COLUMN_MAP.items():
+            view[canonical] = fields.get(native, "")
+        product = fields.get("Crosslink product type", "")
+        view["Crosslink Product Type"] = NATIVE_57_PRODUCT_MAP.get(
+            product, product
+        )
+    return view
+
+
 def _sha256(path):
     digest = hashlib.sha256()
     with Path(path).open("rb") as handle:
@@ -222,7 +275,10 @@ def _read_with_pyxlms(bundle):
     views = []
     missing_numeric = 0
     for record in eligible:
-        view = deepcopy(record["source_fields"])
+        view = _maxlynx_validation_fields(
+            record["source_fields"],
+            _maxlynx_header_profile(bundle["source_columns"]),
+        )
         for side, site in (("1", "a"), ("2", "b")):
             endpoint = record["endpoints"][site]
             view[f"Protein index of Crosslink {side}"] = endpoint["protein_position"]
@@ -338,20 +394,20 @@ def read_maxlynx_csms(
     with paths["psm"].open(encoding="utf-8-sig", newline="") as handle:
         reader = csv.reader(handle, delimiter="\t")
         columns = next(reader, [])
-        if len(columns) != len(set(columns)) or not REQUIRED_COLUMNS <= set(columns):
-            raise ValueError("Unsupported or ambiguous MaxLynx table header")
+        profile = _maxlynx_header_profile(columns)
         records = []
         for values in reader:
             if not any(value.strip() for value in values):
                 continue
             fields = dict(zip(columns, values))
+            validation_fields = _maxlynx_validation_fields(fields, profile)
             number = len(records) + 1
             label = fields.get("Decoy", "").strip().casefold()
             status = (
                 "target_target" if label == "forward"
                 else "source_decoy" if label == "decoy" else "unknown"
             )
-            product = fields.get("Crosslink Product Type", "")
+            product = validation_fields.get("Crosslink Product Type", "")
             record = {
                 "source_record_id": (
                     f"{dataset_accession}:{provenance['psm_sha256']}:{number:06d}"
@@ -391,7 +447,9 @@ def read_maxlynx_csms(
                 record["record_reason"] = "conflicting_target_decoy_annotations"
                 continue
             try:
-                candidates = _localizations(fields, proteins, aliases)
+                candidates = _localizations(
+                    validation_fields, proteins, aliases
+                )
                 record["localization"] = {
                     "status": (
                         "single_candidate" if len(candidates) == 1
@@ -562,7 +620,10 @@ def write_maxlynx_claudio_input(
             "source_crosslinker": crosslinker,
             "source_decoy_status": record["decoy_status"],
             "source_native_decoy_label": fields["Decoy"],
-            "source_native_product_type": fields["Crosslink Product Type"],
+            "source_native_product_type": fields.get(
+                "Crosslink product type",
+                fields.get("Crosslink Product Type", ""),
+            ),
             "source_pep_raw": fields["PEP"],
             "source_score_raw": fields["Score"],
             "source_spectrum_file": fields["Raw file"],
