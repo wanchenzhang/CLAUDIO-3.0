@@ -1975,7 +1975,7 @@ def _prepare_reference_input(bundle, mappings, prepared, projection):
     for profile in profiles.values():
         if profile["identity_scope"] != "exact_sequence":
             identifier = profile["source_fasta_id"]
-            _reference_evidence(profile, reports[identifier], bundle["proteins"][identifier])
+            _reference_evidence(profile, reports[identifier], bundle['proteins'][identifier], require_declared_accession=not candidate_mode)
 
     rows = []
     for record, entry, projected in zip(bundle["records"], prepared["audit"], checked["records"]):
@@ -2008,7 +2008,7 @@ def _prepare_reference_input(bundle, mappings, prepared, projection):
                      projection_candidate_id=pair["projection_candidate_id"], identity_scope=pair["identity_scope"])
         rows.append(row)
     projection_policy = {
-        "scope": "declared_source_accession",
+        "scope": ("explicit_candidate_references" if candidate_mode else "declared_source_accession"),
         "intact_peptide_required": True,
         "unique_coordinates_required": True,
         "identity_acceptance_performed": False,
