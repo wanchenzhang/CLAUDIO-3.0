@@ -53,6 +53,34 @@
     "BSA.fasta": {
       "bytes": 680,
       "sha256": "cf38d19c0a662d5a655da0f020d971f137d353287299881d3477b527e068feda"
+    },
+    "evidence/.gitattributes": {
+      "bytes": 51,
+      "sha256": "22cb2a341ac25d64a5cc263d5516cae5f49e62bcaa667db4296403df5f49d711"
+    },
+    "evidence/expected_input.json": {
+      "bytes": 22510,
+      "sha256": "28a1a523f50e164c12335d52428b1f9d841d2c30bf25a5030e25578553ad4c70"
+    },
+    "evidence/manifest.json": {
+      "bytes": 956,
+      "sha256": "8aeb6cc0c207e0a74dd13eda47064d7adf1939fcba168e20cc64626361eed0fe"
+    },
+    "evidence/reference_mapping.json": {
+      "bytes": 1823,
+      "sha256": "c0d7e729994de7ae27b4ce303a0ead3f3fbdc03927c07e7f24f6561338a21256"
+    },
+    "evidence/sequence_projection_review.json": {
+      "bytes": 561,
+      "sha256": "892913b21726b735525d67e5592ed650f8a3258297bc595b67ba4980ab7aeef0"
+    },
+    "evidence/sources/P02769.fasta": {
+      "bytes": 687,
+      "sha256": "a42fcd8e4290c9e2be37db7cd97ff45180c1643412834830a6216e65eb5a0db3"
+    },
+    "evidence/sources/P02769.json": {
+      "bytes": 62705,
+      "sha256": "ed6e3dcfdada5565dd056a35fcf2230743352c359eccf18d9846ccb0e3be17e4"
     }
   }
 }

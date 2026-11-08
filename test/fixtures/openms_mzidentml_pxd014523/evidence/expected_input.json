@@ -1,0 +1,898 @@
+[
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:23611d503ea9bf944c67b86e957e96285db0e511d0b773058f91f5758228d314",
+    "peptide1": "YICDNQDTISSK",
+    "peptide2": "ECCDKPLLEK",
+    "position1": 292,
+    "position2": 300,
+    "k_pos1": 7,
+    "k_pos2": 1,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=2224",
+      "controllerType=0 controllerNumber=1 scan=2208"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:d086c5455807c0a3fc81cc73ffdc61c27d2c6a37d7a5c3a261524caba79a0c0b",
+    "peptide1": "YICDNQDTISSK",
+    "peptide2": "ECCDKPLLEK",
+    "position1": 292,
+    "position2": 303,
+    "k_pos1": 7,
+    "k_pos2": 4,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=2261",
+      "controllerType=0 controllerNumber=1 scan=2250"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "-0.5"
+      ],
+      "value": null,
+      "status": "out_of_range"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:498763243ed1b76e98235d50f7989f5d2573da710876be132852813a83ae2655",
+    "peptide1": "YICDNQDTISSK",
+    "peptide2": "AEFVEVTK",
+    "position1": 292,
+    "position2": 250,
+    "k_pos1": 7,
+    "k_pos2": 2,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=2954",
+      "controllerType=0 controllerNumber=1 scan=2943"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:a5074e70676a185397d1302a7496340e6550bf4b6bdd08d10660bb0743024260",
+    "peptide1": "YICDNQDTISSK",
+    "peptide2": "AEFVEVTK",
+    "position1": 292,
+    "position2": 250,
+    "k_pos1": 7,
+    "k_pos2": 2,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=2978",
+      "controllerType=0 controllerNumber=1 scan=3054"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:39ba941c07d72e0280f6694f53220d1f1d280049de65522c8bdc71fd873e543e",
+    "peptide1": "YICDNQDTISSK",
+    "peptide2": "AEFVEVTK",
+    "position1": 292,
+    "position2": 250,
+    "k_pos1": 7,
+    "k_pos2": 2,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=2999",
+      "controllerType=0 controllerNumber=1 scan=2988"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:9c8bcb9e50020c05822902a6cdbdee591256589191c4b5f1d6cd7a66b3ca038d",
+    "peptide1": "YICDNQDTISSK",
+    "peptide2": "AEFVEVTK",
+    "position1": 292,
+    "position2": 250,
+    "k_pos1": 7,
+    "k_pos2": 2,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=3004",
+      "controllerType=0 controllerNumber=1 scan=2992"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:bbc7bb740ac738e1bb1b43a542b22cb363333ce3271342da82ad84f95a7e56a2",
+    "peptide1": "YICDNQDTISSK",
+    "peptide2": "AEFVEVTK",
+    "position1": 292,
+    "position2": 250,
+    "k_pos1": 7,
+    "k_pos2": 2,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=3052",
+      "controllerType=0 controllerNumber=1 scan=3020"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:b8922599a935af432ec25251b316f2df07c0f5ee9c3e2da64554b11d148a2424",
+    "peptide1": "YICDNQDTISSK",
+    "peptide2": "AEFVEVTK",
+    "position1": 289,
+    "position2": 250,
+    "k_pos1": 4,
+    "k_pos2": 2,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=3082",
+      "controllerType=0 controllerNumber=1 scan=3071"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:dacbeda2539047bf703519ace68fa0e718c2f91ca909b56b082246bc4623f6d8",
+    "peptide1": "ECCHGDLLECADDRADLAK",
+    "peptide2": "LVTDLTK",
+    "position1": 282,
+    "position2": 260,
+    "k_pos1": 16,
+    "k_pos2": 4,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=3674",
+      "controllerType=0 controllerNumber=1 scan=3673"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:8314bdd19027d46c8342687aaea3ae1378fa528f44bdcf8b5cc5a79725cad88a",
+    "peptide1": "ECCHGDLLECADDRADLAK",
+    "peptide2": "LVTDLTK",
+    "position1": 282,
+    "position2": 260,
+    "k_pos1": 16,
+    "k_pos2": 4,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=3755",
+      "controllerType=0 controllerNumber=1 scan=3725"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:c308d0dad58d1c415a52596bf9a28ab747c9ef5522576b5b72f350172a54cae5",
+    "peptide1": "ECCHGDLLECADDRADLAK",
+    "peptide2": "LVTDLTK",
+    "position1": 282,
+    "position2": 260,
+    "k_pos1": 16,
+    "k_pos2": 4,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=3757",
+      "controllerType=0 controllerNumber=1 scan=3722"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:0af71a78fadf8175c33cfeb1f87ad048d1f17406f90698abdec194ac738ed7b3",
+    "peptide1": "YNGVFQECCQAEDK",
+    "peptide2": "LKPDPNTLCDEFK",
+    "position1": 196,
+    "position2": 148,
+    "k_pos1": 13,
+    "k_pos2": 10,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=4435",
+      "controllerType=0 controllerNumber=1 scan=4422"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:18b739cc182565e6ef72ed2dc2c0ccc0b5e2176280ae611a2746032a4b9ecd79",
+    "peptide1": "YNGVFQECCQAEDK",
+    "peptide2": "LKPDPNTLCDEFK",
+    "position1": 196,
+    "position2": 148,
+    "k_pos1": 13,
+    "k_pos2": 10,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=4469",
+      "controllerType=0 controllerNumber=1 scan=4473"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:1f2ee5855bff11ea2e9d16b2f19eaea5656cff22041f5a1df75e197726a43a38",
+    "peptide1": "SLHTLFGDELCK",
+    "peptide2": "LVNELTEFAK",
+    "position1": 97,
+    "position2": 69,
+    "k_pos1": 9,
+    "k_pos2": 4,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=5818",
+      "controllerType=0 controllerNumber=1 scan=5800"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:96dd922a17e4248fac8b28165c292ed0ac81469e859c70616fd45181d29ff8bb",
+    "peptide1": "SLHTLFGDELCK",
+    "peptide2": "LVNELTEFAK",
+    "position1": 96,
+    "position2": 69,
+    "k_pos1": 8,
+    "k_pos2": 4,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=5829",
+      "controllerType=0 controllerNumber=1 scan=5805"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:574db4e22529f1e0d2a858460d0764a435599e47805af6ef486c6f550c33c25c",
+    "peptide1": "SLHTLFGDELCK",
+    "peptide2": "LVNELTEFAK",
+    "position1": 97,
+    "position2": 69,
+    "k_pos1": 9,
+    "k_pos2": 4,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=5844",
+      "controllerType=0 controllerNumber=1 scan=5832"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:5405f4554ae3064f82bd5d80afa40c1098998cc97c0662b57860c62a1e41c4fa",
+    "peptide1": "SLHTLFGDELCK",
+    "peptide2": "LVNELTEFAK",
+    "position1": 97,
+    "position2": 69,
+    "k_pos1": 9,
+    "k_pos2": 4,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=5859",
+      "controllerType=0 controllerNumber=1 scan=5835"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:d22ea605c39a1b50ad7052f676fd9381e3a8c772b214859606d3a1abf124ab42",
+    "peptide1": "SLHTLFGDELCK",
+    "peptide2": "LVNELTEFAK",
+    "position1": 97,
+    "position2": 69,
+    "k_pos1": 9,
+    "k_pos2": 4,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=5953",
+      "controllerType=0 controllerNumber=1 scan=5943"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "-0.5"
+      ],
+      "value": null,
+      "status": "out_of_range"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:5dfb7473d0620e8aae50c7d9bbdf66f9067aedffab45ba445f1f744784bfc805",
+    "peptide1": "SLHTLFGDELCK",
+    "peptide2": "LVNELTEFAK",
+    "position1": 97,
+    "position2": 69,
+    "k_pos1": 9,
+    "k_pos2": 4,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=5954",
+      "controllerType=0 controllerNumber=1 scan=5951"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "-0.5"
+      ],
+      "value": null,
+      "status": "out_of_range"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:769d78800d6d07760a959bcfd17d19dfe221d4ce6d33bb7eff5a3f4e09f18bb0",
+    "peptide1": "SLHTLFGDELCK",
+    "peptide2": "LVNELTEFAK",
+    "position1": 97,
+    "position2": 69,
+    "k_pos1": 9,
+    "k_pos2": 4,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=5984",
+      "controllerType=0 controllerNumber=1 scan=5952"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "-0.5"
+      ],
+      "value": null,
+      "status": "out_of_range"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:dc5d4967bbdeee0327863daa4666ce667361666a0e6e035f00cff478304a951d",
+    "peptide1": "SLHTLFGDELCK",
+    "peptide2": "LVNELTEFAK",
+    "position1": 97,
+    "position2": 72,
+    "k_pos1": 9,
+    "k_pos2": 7,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=6109",
+      "controllerType=0 controllerNumber=1 scan=6092"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:a327f7861e70b58bc92d835414e7a5b28f1a31d4bbef2624e3e612012c9d45b6",
+    "peptide1": "SLHTLFGDELCK",
+    "peptide2": "LVNELTEFAK",
+    "position1": 97,
+    "position2": 72,
+    "k_pos1": 9,
+    "k_pos2": 7,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=6115",
+      "controllerType=0 controllerNumber=1 scan=6112"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:08b95b9d34efa39c7a840e9b97c09a97820084d7e136190b2b78854be81acaa5",
+    "peptide1": "SLHTLFGDELCK",
+    "peptide2": "LVNELTEFAK",
+    "position1": 97,
+    "position2": 72,
+    "k_pos1": 9,
+    "k_pos2": 7,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=6216",
+      "controllerType=0 controllerNumber=1 scan=6194"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "-0.5"
+      ],
+      "value": null,
+      "status": "out_of_range"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:15645dbea87ec5b819ff1ee6c748e860167694aa87828fc174f267fd14fc62fd",
+    "peptide1": "SLHTLFGDELCK",
+    "peptide2": "LVNELTEFAK",
+    "position1": 97,
+    "position2": 72,
+    "k_pos1": 9,
+    "k_pos2": 7,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=6258",
+      "controllerType=0 controllerNumber=1 scan=6201"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "-0.5"
+      ],
+      "value": null,
+      "status": "out_of_range"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:1d4ae3cc61211f1201c469db94ec8b0b7c086e983a6f335edc7bbe6e1f134668",
+    "peptide1": "DDPHACYSTVFDKLK",
+    "peptide2": "EYEATLEECCAK",
+    "position1": 387,
+    "position2": 375,
+    "k_pos1": 1,
+    "k_pos2": 1,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=6740",
+      "controllerType=0 controllerNumber=1 scan=6743"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:89f956379addc8856a028f2acb0d4741c7aeda25e0bf0772958ad660edd3bd38",
+    "peptide1": "DAIPENLPPLTADFAEDK",
+    "peptide2": "AEFVEVTK",
+    "position1": 319,
+    "position2": 250,
+    "k_pos1": 1,
+    "k_pos2": 2,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=7022",
+      "controllerType=0 controllerNumber=1 scan=7012"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:df9818161dedc9873bbba10e7cec43e73d90f51a3a7cfb517da87894eab3301a",
+    "peptide1": "DAIPENLPPLTADFAEDK",
+    "peptide2": "AEFVEVTK",
+    "position1": 323,
+    "position2": 250,
+    "k_pos1": 5,
+    "k_pos2": 2,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=7030",
+      "controllerType=0 controllerNumber=1 scan=7031"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:0b6c9d26ba5bf19fc0ba4c03cff720a53c66d7500cc9aa714e9e8a057b389fb0",
+    "peptide1": "DAIPENLPPLTADFAEDK",
+    "peptide2": "AEFVEVTK",
+    "position1": 323,
+    "position2": 250,
+    "k_pos1": 5,
+    "k_pos2": 2,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=7040",
+      "controllerType=0 controllerNumber=1 scan=7042"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:a7e455b9b0588818b8a04c47e5a1465b4b95fddbfd68c2e722b52961a3823c7b",
+    "peptide1": "DAIPENLPPLTADFAEDK",
+    "peptide2": "AEFVEVTK",
+    "position1": 319,
+    "position2": 250,
+    "k_pos1": 1,
+    "k_pos2": 2,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=7041",
+      "controllerType=0 controllerNumber=1 scan=7033"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:7799aeb65ef7012ee6fa8660490b08c3fe7134e74be39327790b20d9411c5825",
+    "peptide1": "DDPHACYSTVFDKLK",
+    "peptide2": "EYEATLEECCAK",
+    "position1": 387,
+    "position2": 375,
+    "k_pos1": 1,
+    "k_pos2": 1,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=7220",
+      "controllerType=0 controllerNumber=1 scan=7256"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "-0.333333333333333"
+      ],
+      "value": null,
+      "status": "out_of_range"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:477ccf7039e5d8c3c14fb64dec24086e85662b13f15c45914e6de0fdbedaa180",
+    "peptide1": "DDPHACYSTVFDKLK",
+    "peptide2": "EYEATLEECCAK",
+    "position1": 398,
+    "position2": 375,
+    "k_pos1": 12,
+    "k_pos2": 1,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=7396",
+      "controllerType=0 controllerNumber=1 scan=7294"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  },
+  {
+    "source_record_id": "PXD014523:143c2f73b1673f8223eeead7858a9ce3236a6507fffc0550880ac41fd696506d:530034ad4f3060f86aa139cc0874532917d59c13c8a20d11bba44d3c78945e25",
+    "peptide1": "SLHTLFGDELCKVASLR",
+    "peptide2": "LVNELTEFAK",
+    "position1": 96,
+    "position2": 69,
+    "k_pos1": 8,
+    "k_pos2": 4,
+    "entry1": "P02769",
+    "entry2": "P02769",
+    "source_native_ids": [
+      "controllerType=0 controllerNumber=1 scan=8158",
+      "controllerType=0 controllerNumber=1 scan=8120"
+    ],
+    "source_rank_values": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "native_fdr": {
+      "raw_values": [
+        "0.0"
+      ],
+      "value": 0.0,
+      "status": "valid"
+    }
+  }
+]

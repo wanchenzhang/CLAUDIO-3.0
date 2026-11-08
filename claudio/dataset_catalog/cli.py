@@ -643,89 +643,124 @@ def standardize_command(
             "--mzidentml-profile only supports mzIdentML inputs."
         )
 
-    if (
-        source_format == "mzidentml_csm"
-        and mzidentml_profile == "openms-labeled"
-    ):
-        if not audit_only:
-            raise click.UsageError(
-                "The openms-labeled profile currently requires --audit-only."
-            )
-        forbidden = {
-            "--mapping": mapping_path is not None,
-            "--reference-projection": reference_projection_path is not None,
-            "--fdr-level": fdr_level is not None,
-            "--fdr-cutoff": fdr_cutoff is not None,
-            "--fdr-column": fdr_column is not None,
-            "--crosslinker": bool(crosslinkers),
-            "--residue": bool(residues),
-            "--source-protein": bool(source_proteins),
-            "--plink-unfiltered": plink_unfiltered_path is not None,
-            "--plink-parameters": plink_parameters_path is not None,
-            "--author-filter-evidence": author_filter_path is not None,
-            "--allow-modification": bool(allowed_modifications),
-            "--msannika-crosslinks": msannika_crosslinks_path is not None,
-            "--msannika-contaminants": msannika_contaminants_path is not None,
-            "--maxlynx-parameters": maxlynx_parameters_path is not None,
-            "--kojak-linker-mass": bool(kojak_linker_masses),
-            "--export-unverified-candidates": export_unverified_candidates,
-        }
-        conflicts = [
-            option for option, present in forbidden.items() if present
+    if source_format == "mzidentml_csm" and mzidentml_profile == "openms-labeled":
+        unsupported = [
+            ("--mapping", mapping_path is not None),
+            ("--crosslinker", bool(crosslinkers)),
+            ("--fdr-level", fdr_level is not None),
+            ("--fdr-cutoff", fdr_cutoff is not None),
+            ("--fdr-column", fdr_column is not None),
+            ("--source-protein", bool(source_proteins)),
+            ("--plink-unfiltered", plink_unfiltered_path is not None),
+            ("--plink-parameters", plink_parameters_path is not None),
+            ("--author-filter-evidence", author_filter_path is not None),
+            ("--allow-modification", bool(allowed_modifications)),
+            ("--msannika-crosslinks", msannika_crosslinks_path is not None),
+            ("--msannika-contaminants", msannika_contaminants_path is not None),
+            ("--maxlynx-parameters", maxlynx_parameters_path is not None),
+            ("--kojak-linker-mass", bool(kojak_linker_masses)),
         ]
-        if conflicts:
-            raise click.UsageError(
-                "Unsupported options for OpenMS labeled audit: "
-                + ", ".join(conflicts)
-            )
+        for option, supplied in unsupported:
+            if supplied:
+                raise click.UsageError(
+                    option + " is not supported by the OpenMS labeled profile."
+                )
+        if audit_only:
+            for option, supplied in [
+                ("--reference-projection", reference_projection_path is not None),
+                ("--residue", bool(residues)),
+                ("--export-unverified-candidates", export_unverified_candidates),
+            ]:
+                if supplied:
+                    raise click.UsageError(
+                        option + " cannot be combined with --audit-only."
+                    )
+        else:
+            if not export_unverified_candidates:
+                raise click.UsageError(
+                    "OpenMS labeled input requires --audit-only or "
+                    "--export-unverified-candidates."
+                )
+            if reference_projection_path is None:
+                raise click.UsageError(
+                    "Candidate export requires --reference-projection."
+                )
+            if not residues:
+                raise click.UsageError(
+                    "Candidate export requires explicit --residue selections."
+                )
 
-        from .openms_mzidentml import read_openms_labeled_mzidentml
+        from .openms_mzidentml import (
+            read_openms_labeled_mzidentml as read_openms_native,
+            write_openms_labeled_claudio_input as write_openms_candidates,
+        )
         from .xifdr import write_import_report as write_openms_audit
         from collections import Counter as OpenMSCounter
 
         click.echo("Detected format: mzIdentML (legacy OpenMS labeled profile)")
         try:
-            bundle = read_openms_labeled_mzidentml(
-                results_path,
-                fasta_path,
+            bundle = read_openms_native(
+                results_path, fasta_path,
                 dataset_accession=dataset_accession,
-                decoy_prefix=(
-                    "decoy_" if decoy_prefix is None else decoy_prefix
-                ),
+                decoy_prefix="decoy_" if decoy_prefix is None else decoy_prefix,
             )
-            destination = write_openms_audit(bundle, output_dir)
+            if audit_only:
+                destination = write_openms_audit(bundle, output_dir)
+            else:
+                reference_mapping = _read_reference_projection(
+                    reference_projection_path
+                )
+                destination = write_openms_candidates(
+                    bundle, reference_mapping, output_dir,
+                    allowed_residues=residues,
+                    export_unverified_candidates=True,
+                )
+            manifest = json.loads(
+                (destination / "manifest.json").read_text(encoding="utf-8")
+            )
         except (ValueError, OSError, RuntimeError) as error:
             raise click.ClickException(str(error)) from error
 
-        kinds = OpenMSCounter(
-            record["record_kind"] for record in bundle["records"]
-        )
-        fdr_statuses = OpenMSCounter(
-            record["native_fdr"]["status"] for record in bundle["records"]
-        )
         click.echo(f"Source spectrum groups: {len(bundle['records'])}")
         click.echo(
             "Native identification items: "
-            + str(bundle["parser"]["source_identification_items"])
+            + str(sum(len(item["items"]) for item in bundle["source_identifications"]))
         )
         click.echo(
             "Native validated groups: "
-            + str(bundle["parser"]["validated_groups"])
+            + str(sum(record["record_status"] == "valid"
+                      for record in bundle["records"]))
         )
-        click.echo("Crosslink groups: " + str(kinds["crosslink_group"]))
-        click.echo("Loop-link groups: " + str(kinds["loop_link_group"]))
-        click.echo("Native FDR numeric statuses: " + str(dict(fdr_statuses)))
+        kinds = OpenMSCounter(record["record_kind"] for record in bundle["records"])
+        click.echo(f"Crosslink groups: {kinds.get('crosslink_group', 0)}")
+        click.echo(f"Loop-link groups: {kinds.get('loop_link_group', 0)}")
+        numeric = OpenMSCounter(
+            record["native_fdr"]["status"] for record in bundle["records"]
+        )
+        click.echo(f"Native FDR numeric statuses: {dict(numeric)}")
         click.echo("Source rank attributes: preserved")
         click.echo("Reader backend: native")
         click.echo("pyXLMS validation: not performed")
-        click.echo("FDR scope and chemical linker identity: unverified")
-        click.echo(
-            "Scientific filtering, identity mapping and input export: "
-            "not performed"
-        )
-        click.echo(
-            f"Audit report: {(destination / 'import_report.json').resolve()}"
-        )
+        if audit_only:
+            click.echo("FDR scope and chemical linker identity: unverified")
+            click.echo(
+                "Scientific filtering, identity mapping and input export: not performed"
+            )
+            click.echo(f"Audit report: {(destination / 'import_report.json').resolve()}")
+        else:
+            click.echo(
+                "Standardized candidate rows: "
+                + str(manifest["counts"]["pipeline_input_rows"])
+            )
+            click.echo("Input scope: unverified candidates")
+            click.echo("Identity scope: candidate_hypothesis")
+            click.echo("FDR verification: unverified")
+            click.echo("Native FDR values: preserved")
+            click.echo("Per-record FDR filtering: not performed")
+            click.echo("Chemical linker identity: unverified")
+            click.echo("Model assessment: not performed")
+            click.echo(f"Input: {(destination / 'claudio_input.csv').resolve()}")
+            click.echo(f"Audit: {(destination / 'psm_audit.json').resolve()}")
         click.echo(f"Output: {destination.resolve()}")
         return
 

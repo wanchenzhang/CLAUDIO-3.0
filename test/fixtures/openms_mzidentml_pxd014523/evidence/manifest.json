@@ -1,0 +1,17 @@
+{
+  "kind": "openms_labeled_candidate_export_evidence",
+  "source_review_manifest_sha256": "8c3023dfc4369482c8c423f29210e4ba62e146861a94fec3e741673f8916ce5f",
+  "source_records": 70,
+  "expected_candidate_rows": 32,
+  "identity_scope": "candidate_hypothesis",
+  "fdr_verification_status": "unverified",
+  "chemical_linker_identity_verified": false,
+  "output_sha256": {
+    ".gitattributes": "22cb2a341ac25d64a5cc263d5516cae5f49e62bcaa667db4296403df5f49d711",
+    "expected_input.json": "28a1a523f50e164c12335d52428b1f9d841d2c30bf25a5030e25578553ad4c70",
+    "reference_mapping.json": "c0d7e729994de7ae27b4ce303a0ead3f3fbdc03927c07e7f24f6561338a21256",
+    "sequence_projection_review.json": "892913b21726b735525d67e5592ed650f8a3258297bc595b67ba4980ab7aeef0",
+    "sources/P02769.fasta": "a42fcd8e4290c9e2be37db7cd97ff45180c1643412834830a6216e65eb5a0db3",
+    "sources/P02769.json": "ed6e3dcfdada5565dd056a35fcf2230743352c359eccf18d9846ccb0e3be17e4"
+  }
+}

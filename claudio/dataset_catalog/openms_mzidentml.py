@@ -605,3 +605,344 @@ def read_openms_labeled_mzidentml(
         "input_exported": False,
         "assessment_performed": False,
     }
+
+
+
+def write_openms_labeled_claudio_input(
+    bundle, reference_mapping, output_dir, *,
+    allowed_residues,
+    export_unverified_candidates=False,
+):
+    """Export explicit candidate coordinates while preserving native evidence."""
+    import hashlib
+    import json
+    import re
+    from copy import deepcopy
+    from pathlib import Path
+
+    from .xifdr import _reference_evidence, write_xifdr_outputs
+
+    if export_unverified_candidates is not True:
+        raise ValueError(
+            "OpenMS labeled export requires explicit unverified candidate mode"
+        )
+    if (
+        not isinstance(allowed_residues, (set, frozenset, list, tuple))
+        or not allowed_residues
+        or any(
+            not isinstance(value, str)
+            or re.fullmatch(r"[A-Z]", value) is None
+            for value in allowed_residues
+        )
+    ):
+        raise ValueError("allowed_residues requires explicit residue codes")
+    residues = set(allowed_residues)
+    output_dir = Path(output_dir)
+    if output_dir.exists():
+        raise FileExistsError("Candidate output directory already exists")
+    if (
+        bundle.get("format") != "mzidentml_csm"
+        or bundle.get("source_profile") != "openms_labeled"
+    ):
+        raise ValueError("Unsupported OpenMS source profile")
+
+    def digest(raw):
+        return hashlib.sha256(raw).hexdigest()
+
+    def json_text(value):
+        return json.dumps(
+            value, ensure_ascii=False, sort_keys=True,
+            separators=(",", ":"), allow_nan=False,
+        )
+
+    def source_bodies():
+        bodies = {}
+        for kind in ("psm", "fasta"):
+            path = Path(bundle["provenance"][kind + "_path"])
+            raw = path.read_bytes()
+            if digest(raw) != bundle["provenance"][kind + "_sha256"]:
+                raise ValueError("An OpenMS input source checksum changed")
+            bodies["native_sources/" + kind + "_" + path.name] = raw
+        return bodies
+
+    bodies = source_bodies()
+    provenance = bundle["provenance"]
+    checked = read_openms_labeled_mzidentml(
+        provenance["psm_path"],
+        provenance["fasta_path"],
+        dataset_accession=provenance["dataset_accession"],
+        decoy_prefix=bundle["decoy_policy"]["prefix"],
+        max_xml_bytes=provenance.get(
+            "max_xml_bytes", 16 * 1024 * 1024
+        ),
+    )
+    if checked != bundle:
+        raise ValueError(
+            "OpenMS source records or coordinates changed after native import"
+        )
+
+    if not isinstance(reference_mapping, dict) or not reference_mapping:
+        raise ValueError("Candidate reference mapping is required")
+
+    profiles = {}
+    for identifier, report in reference_mapping.items():
+        if identifier not in bundle["proteins"]:
+            raise ValueError("Reference mapping uses an unknown source protein")
+        if not isinstance(report, dict):
+            raise ValueError("Invalid reference mapping report")
+        source = bundle["proteins"][identifier]
+        sequence = source["sequence"]
+        reference_sequence = report.get("sequence")
+        accession = report.get("accession")
+        taxon = report.get("taxon_id")
+        if (
+            report.get("status") != "candidate_reference"
+            or report.get("identity_scope") != "candidate_hypothesis"
+            or report.get("match_method")
+            != "full_source_exact_subsequence"
+            or not isinstance(reference_sequence, str)
+            or re.fullmatch(r"[A-Z]+", reference_sequence) is None
+            or not isinstance(accession, str)
+            or not accession
+            or type(taxon) is not int
+            or taxon <= 0
+        ):
+            raise ValueError("Unsupported candidate reference projection")
+
+        first = reference_sequence.find(sequence)
+        if (
+            first < 0
+            or reference_sequence.find(sequence, first + 1) >= 0
+            or type(report.get("source_to_reference_position_offset"))
+            is not int
+            or report["source_to_reference_position_offset"] != first
+        ):
+            raise ValueError(
+                "Reference projection offset differs from unique containment"
+            )
+
+        review = report.get("sequence_projection_review")
+        if not isinstance(review, dict):
+            raise ValueError("Reference projection review is required")
+        review_path = review.get("absolute_path")
+        if not review_path:
+            raise ValueError("Reference projection review path is required")
+        raw = Path(review_path).read_bytes()
+        if digest(raw) != review.get("sha256"):
+            raise ValueError("Reference projection review checksum changed")
+        declaration = json.loads(raw)
+        expected = {
+            "kind": "sequence_projection_review",
+            "source_fasta_id": identifier,
+            "source_sequence_sha256": digest(sequence.encode("utf-8")),
+            "reference_accession": accession,
+            "reference_sequence_sha256": digest(
+                reference_sequence.encode("utf-8")
+            ),
+            "reference_taxon_id": taxon,
+            "method": "full_source_exact_subsequence",
+            "source_to_reference_position_offset": first,
+            "decision": "coordinate_projection_only",
+            "identity_acceptance_performed": False,
+            "fdr_acceptance_performed": False,
+        }
+        if declaration != expected:
+            raise ValueError(
+                "Reference projection review differs from the coordinates"
+            )
+
+        profile = {
+            "accession": accession,
+            "taxon_id": taxon,
+            "reference_sequence": reference_sequence,
+        }
+        _reference_evidence(profile, report, source)
+        profiles[identifier] = {
+            **profile,
+            "offset": first,
+            "identity_scope": "candidate_hypothesis",
+        }
+
+    audit = deepcopy(bundle["records"])
+    rows = []
+    projection_records = []
+
+    for record, entry in zip(bundle["records"], audit):
+        reasons = []
+        endpoints = {}
+        if record["record_kind"] == "loop_link_group":
+            reasons.append("loop_link_requires_single_peptide_support")
+        elif record["record_kind"] != "crosslink_group":
+            reasons.append("unsupported_source_record_kind")
+        else:
+            if record["record_status"] != "valid":
+                reasons.append("source_group_unresolved")
+            if record["native_decoy_status"] != "target_target":
+                reasons.append("decoy_or_unknown_target_record")
+
+            for side, role in (("a", "donor"), ("b", "acceptor")):
+                site = record["normalized_sites"].get(role)
+                if not isinstance(site, dict):
+                    reasons.append("source_endpoint_unresolved_" + side)
+                    continue
+                profile = profiles.get(site["source_protein_id"])
+                if profile is None:
+                    reasons.append("protein_identity_unresolved_" + side)
+                    continue
+
+                peptide = site["peptide"]
+                start = site["peptide_start"] + profile["offset"]
+                position = site["protein_position"] + profile["offset"]
+                link = site["link_position"]
+                sequence = profile["reference_sequence"]
+                if not (
+                    start >= 1
+                    and 1 <= link <= len(peptide)
+                    and sequence[start - 1:start - 1 + len(peptide)]
+                    == peptide
+                    and position == start + link - 1
+                    and 1 <= position <= len(sequence)
+                    and sequence[position - 1] == site["residue"]
+                ):
+                    reasons.append("reference_projection_unresolved_" + side)
+                    continue
+                if site["residue"] not in residues:
+                    reasons.append("residue_not_selected_" + side)
+
+                endpoints[side] = {
+                    "accession": profile["accession"],
+                    "sequence": sequence,
+                    "peptide": peptide,
+                    "peptide_start": start,
+                    "protein_position": position,
+                    "peptide_link_position": link,
+                    "residue": site["residue"],
+                    "source_site": deepcopy(site),
+                }
+
+        reasons = list(dict.fromkeys(reasons))
+        if not reasons and len(endpoints) != 2:
+            reasons.append("reference_projection_unresolved")
+        entry["input_status"] = (
+            "not_evaluable" if reasons else "candidate_ready"
+        )
+        entry["input_reasons"] = reasons
+        entry["reference_endpoints"] = deepcopy(endpoints)
+        projection_records.append({
+            "source_record_id": record["source_record_id"],
+            "input_status": entry["input_status"],
+            "input_reasons": list(reasons),
+            "reference_endpoints": deepcopy(endpoints),
+        })
+        if reasons:
+            continue
+
+        a, b = endpoints["a"], endpoints["b"]
+        rows.append({
+            "source_record_id": record["source_record_id"],
+            "pep_a": a["peptide"],
+            "pep_b": b["peptide"],
+            "pos_a": a["protein_position"],
+            "pos_b": b["protein_position"],
+            "res_pos_a": a["peptide_link_position"],
+            "res_pos_b": b["peptide_link_position"],
+            "unip_id_a": a["accession"],
+            "unip_id_b": b["accession"],
+            "seq_a": a["sequence"],
+            "seq_b": b["sequence"],
+            "input_scope": "unverified_candidate",
+            "identity_scope": "candidate_hypothesis",
+            "fdr_verification_status": "unverified",
+            "selected_fdr_level": "",
+            "selected_fdr_value": "",
+            "selected_fdr_cutoff": "",
+            "source_decoy_status": record["native_decoy_status"],
+            "source_native_ids_json": json_text(record["source_native_ids"]),
+            "source_rank_values_json": json_text(record["source_rank_values"]),
+            "source_precursor_variants_json": json_text(
+                record["source_precursor_variants"]
+            ),
+            "native_fdr_raw_values_json": json_text(
+                record["native_fdr"]["raw_values"]
+            ),
+            "native_fdr_numeric_status": record["native_fdr"]["status"],
+            "source_crosslinker_terms_json": json_text(
+                record["source_crosslinker_terms"]
+            ),
+            "chemical_linker_identity_verified": False,
+            "source_fields_json": json_text(record["source_fields"]),
+            "source_peptide_start_a": a["source_site"]["peptide_start"],
+            "source_peptide_start_b": b["source_site"]["peptide_start"],
+            "reference_peptide_start_a": a["peptide_start"],
+            "reference_peptide_start_b": b["peptide_start"],
+        })
+
+    policy = {
+        "kind": "unverified_candidates",
+        "level": None,
+        "cutoff": None,
+        "verification_status": "unverified",
+        "per_record_fdr_applied": False,
+        "application_verified": False,
+        "target_decoy_validation_performed": False,
+        "negative_values_clamped": False,
+        "native_numeric_validity_implies_acceptance": False,
+    }
+    projection = {
+        "kind": "openms_labeled_reference_projection",
+        "provenance": deepcopy(bundle["provenance"]),
+        "reference_mapping": deepcopy(reference_mapping),
+        "records": projection_records,
+        "identity_acceptance_performed": False,
+        "chemical_linker_identity_verified": False,
+    }
+    packaged_mapping = deepcopy(reference_mapping)
+    for report in packaged_mapping.values():
+        review = report["sequence_projection_review"]
+        original_path = review.pop("absolute_path")
+        review["original_path"] = original_path
+        review["path"] = (
+            "reference_sources/"
+            + review["sha256"]
+            + Path(original_path).suffix
+        )
+
+    bodies["source_import.json"] = (
+        json_text(bundle) + "\n"
+    ).encode("utf-8")
+    prepared = {
+        "rows": rows,
+        "audit": audit,
+        "provenance": deepcopy(bundle["provenance"]),
+        "fdr_policy": policy,
+        "reference_projection": projection,
+        "reference_projection_policy": {
+            "source_profile": "openms_labeled",
+            "scope": "candidate_hypothesis",
+            "intact_peptide_required": True,
+            "unique_coordinates_required": True,
+            "identity_acceptance_performed": False,
+            "chemical_linker_identity_verified": False,
+        },
+        "extra_source_bodies": bodies,
+    }
+    if source_bodies() != {
+        name: raw
+        for name, raw in bodies.items()
+        if name.startswith("native_sources/")
+    }:
+        raise ValueError("An OpenMS source changed before output")
+
+    return write_xifdr_outputs(
+        bundle, packaged_mapping, prepared, output_dir,
+        pipeline_policy={
+            "source_profile": "openms_labeled",
+            "input_scope": "unverified_candidate",
+            "allowed_residues": sorted(residues),
+            "one_row_per_source_crosslink_group": True,
+            "loop_links_exported": False,
+            "native_spectrum_identifiers_preserved": True,
+            "native_rank_rewritten": False,
+            "chemical_linker_identity_verified": False,
+        },
+    )

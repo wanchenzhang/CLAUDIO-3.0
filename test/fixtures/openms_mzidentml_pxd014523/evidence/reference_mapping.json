@@ -1,0 +1,34 @@
+{
+  "sp|P02769|ALBU_BOVIN": {
+    "status": "candidate_reference",
+    "accession": "P02769",
+    "sequence": "MKWVTFISLLLLFSSAYSRGVFRRDTHKSEIAHRFKDLGEEHFKGLVLIAFSQYLQQCPFDEHVKLVNELTEFAKTCVADESHAGCEKSLHTLFGDELCKVASLRETYGDMADCCEKQEPERNECFLSHKDDSPDLPKLKPDPNTLCDEFKADEKKFWGKYLYEIARRHPYFYAPELLYYANKYNGVFQECCQAEDKGACLLPKIETMREKVLASSARQRLRCASIQKFGERALKAWSVARLSQKFPKAEFVEVTKLVTDLTKVHKECCHGDLLECADDRADLAKYICDNQDTISSKLKECCDKPLLEKSHCIAEVEKDAIPENLPPLTADFAEDKDVCKNYQEAKDAFLGSFLYEYSRRHPEYAVSVLLRLAKEYEATLEECCAKDDPHACYSTVFDKLKHLVDEPQNLIKQNCDQFEKLGEYGFQNALIVRYTRKVPQVSTPTLVEVSRSLGKVGTRCCTKPESERMPCTEDYLSLILNRLCVLHEKTPVSEKVTKCCTESLVNRRPCFSALTPDETYVPKAFDEKLFTFHADICTLPDTEKQIKKQTALVELLKHKPKATEEQLKTVMENFVAFVDKCCAADDKEACFAVEGPKLVVSTQTALA",
+    "taxon_id": 9913,
+    "match_method": "full_source_exact_subsequence",
+    "source_to_reference_position_offset": 24,
+    "identity_scope": "candidate_hypothesis",
+    "sources": [
+      {
+        "kind": "uniprot_api",
+        "request_url": "https://rest.uniprot.org/uniprotkb/P02769.json",
+        "response_url": "https://rest.uniprot.org/uniprotkb/P02769.json",
+        "status": 200,
+        "path": "sources/P02769.json",
+        "sha256": "ed6e3dcfdada5565dd056a35fcf2230743352c359eccf18d9846ccb0e3be17e4"
+      },
+      {
+        "kind": "uniprot_api",
+        "request_url": "https://rest.uniprot.org/uniprotkb/P02769.fasta",
+        "response_url": "https://rest.uniprot.org/uniprotkb/P02769.fasta",
+        "status": 200,
+        "path": "sources/P02769.fasta",
+        "sha256": "a42fcd8e4290c9e2be37db7cd97ff45180c1643412834830a6216e65eb5a0db3"
+      }
+    ],
+    "sequence_projection_review": {
+      "kind": "sequence_projection_review",
+      "path": "sequence_projection_review.json",
+      "sha256": "892913b21726b735525d67e5592ed650f8a3258297bc595b67ba4980ab7aeef0"
+    }
+  }
+}

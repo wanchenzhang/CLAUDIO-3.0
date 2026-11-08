@@ -1,0 +1,13 @@
+{
+  "kind": "sequence_projection_review",
+  "source_fasta_id": "sp|P02769|ALBU_BOVIN",
+  "source_sequence_sha256": "b716bd10369cf2056d15dc45b0402e4c39a40f53bbafa8f9185a3f2f6a2cb731",
+  "reference_accession": "P02769",
+  "reference_sequence_sha256": "e640ebe3321e9fd4ded5679ec269f032171e766662e2a39adf8410c2e7526adb",
+  "reference_taxon_id": 9913,
+  "method": "full_source_exact_subsequence",
+  "source_to_reference_position_offset": 24,
+  "decision": "coordinate_projection_only",
+  "identity_acceptance_performed": false,
+  "fdr_acceptance_performed": false
+}
