@@ -1,0 +1,4 @@
+# Preserve downloaded payload bytes and recognize CRLF terminators.
+native.kojak.txt -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+search.fasta -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+unrelated.fasta -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

@@ -225,7 +225,7 @@ def _record_kind(fields):
 def read_kojak_csms(
     results_path, fasta_path, *, dataset_accession, decoy_prefix
 ):
-    """Import the validated Kojak 1.5.3 layout without selecting source rows."""
+    """Import validated Kojak 1.5.1 and 1.5.3 rows without selection."""
     if (
         not isinstance(dataset_accession, str)
         or not dataset_accession.strip()
@@ -264,7 +264,7 @@ def read_kojak_csms(
     if version is None:
         raise ValueError("Missing Kojak native version marker")
     native_version = version.group(1)
-    if native_version != "1.5.3":
+    if native_version not in {"1.5.1", "1.5.3"}:
         raise ValueError(
             "Kojak native version is not yet validated: " + native_version
         )

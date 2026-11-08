@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "kind": "kojak_native_151_regression_fixture",
+  "project_accession": "PXD015275",
+  "native_version": "1.5.1",
+  "decoy_prefix": "decoy_",
+  "source_records": 1769,
+  "paired_records": 362,
+  "coordinate_review_manifest_sha256": "2bd95fe91795cd73c057b087fd8f1c9bbabc7cd0c1f7ba8f5350356abdbdf280",
+  "source_sha256": {
+    "native.kojak.txt": "e27db804f21299b158332b224700eb500e79fbee7028d8239eb6e3c7ba4ad3cb",
+    "search.fasta": "6373694e8a2c6528dcd8dfa809e5bc81c4129a04ab74562454ee0a2cae8da02b",
+    "unrelated.fasta": "b98751ab2088626767694f7017700417310b6d062ad02a07685636c342dc8a6e"
+  },
+  "identity_acceptance_performed": false,
+  "fdr_acceptance_performed": false,
+  "input_exported": false,
+  "output_sha256": {
+    "native.kojak.txt": "e27db804f21299b158332b224700eb500e79fbee7028d8239eb6e3c7ba4ad3cb",
+    "search.fasta": "6373694e8a2c6528dcd8dfa809e5bc81c4129a04ab74562454ee0a2cae8da02b",
+    "unrelated.fasta": "b98751ab2088626767694f7017700417310b6d062ad02a07685636c342dc8a6e",
+    "expected.json": "361cd5255d8bb81f6d50c0860df6e337ee73a78ddc27b3f5f1ed1636478a0a3d",
+    ".gitattributes": "15b2a3ffeea2b16e59f35bb7935115209cc069d86aeed8e6ce0bc6f1edd11d25"
+  }
+}
