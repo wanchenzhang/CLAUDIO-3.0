@@ -12,6 +12,9 @@ import requests
 import zipfile
 from .inventory import inspect_catalog, summarize_inventories, inspect_content_plan
 from .proteomecentral import fetch_dataset_pages, write_discovery_outputs
+from .discovery_history import default_history_directory, initialize_discovery_history
+from .published_discovery import run_published_discovery
+from .discovery_seed import seed_legacy_discovery
 from .xifdr import (
     FDR_COLUMNS,
     read_xifdr_psms,
@@ -40,6 +43,102 @@ def main():
     """Manage the public dataset candidate catalog."""
 
 
+
+
+@main.command(name="seed-discovery-history")
+@click.option(
+    "--source-run",
+    type=click.Path(
+        exists=True, file_okay=False, path_type=Path
+    ),
+    required=True,
+    help="Complete original ProteomeCentral discovery snapshot to validate.",
+)
+@click.option(
+    "--history", "history_dir",
+    type=click.Path(file_okay=False, path_type=Path),
+    help="Previously initialized history directory. Defaults to the CLAUDIO user state directory.",
+)
+@click.option(
+    "--output", "output_dir",
+    type=click.Path(file_okay=False, path_type=Path),
+    required=True,
+    help="New directory for immutable legacy-seeding evidence and audit.",
+)
+@click.option(
+    "--publication-request-limit",
+    type=click.IntRange(min=1, max=10000),
+    default=1000,
+    show_default=True,
+    help="Maximum publication HTTP attempts, including retries.",
+)
+def seed_discovery_history(
+    source_run, history_dir, output_dir,
+    publication_request_limit,
+):
+    """Import only original candidates published by their old run date."""
+    if output_dir.exists():
+        raise click.BadParameter(
+            "Choose a new output directory.",
+            param_hint="--output",
+        )
+    try:
+        destination = seed_legacy_discovery(
+            source_run,
+            output_dir,
+            history_dir=history_dir,
+            publication_request_limit=publication_request_limit,
+            progress=click.echo,
+        )
+        report = json.loads(
+            (destination / "seed_report.json").read_text(
+                encoding="utf-8"
+            )
+        )
+    except (
+        requests.exceptions.RequestException,
+        ValueError,
+        OSError,
+        sqlite3.Error,
+    ) as error:
+        raise click.ClickException(str(error)) from error
+
+    click.echo(
+        f"Original source candidates: "
+        f"{report['source_candidates']}"
+    )
+    click.echo(
+        f"Seeded historical published datasets: "
+        f"{report['seeded_count']}"
+    )
+    click.echo(
+        f"Publication qualification date: "
+        f"{report['publication_as_of']} (calendar day)"
+    )
+    click.echo(
+        f"Report: "
+        f"{(destination / 'seed_report.json').resolve()}"
+    )
+    click.echo(f"Output: {destination.resolve()}")
+
+
+@main.command(name="init-discovery-history")
+@click.option(
+    "--history", "history_dir",
+    type=click.Path(file_okay=False, path_type=Path),
+    help="Fresh history directory. Defaults to the CLAUDIO user state directory.",
+)
+def init_discovery_history(history_dir):
+    """Explicitly initialize a new persistent discovery history."""
+    try:
+        directory = history_dir if history_dir is not None else default_history_directory()
+        initialized = initialize_discovery_history(directory)
+    except (ValueError, OSError, sqlite3.Error) as error:
+        raise click.ClickException(str(error)) from error
+    click.echo(f"Initialized history: {initialized['history_directory']}")
+    click.echo(f"History namespace: {initialized['namespace_id']}")
+
+
 @main.command()
 @click.option(
     "--search-term", "search_terms",
@@ -52,45 +151,48 @@ def main():
     "--output", "output_dir",
     type=click.Path(file_okay=False, path_type=Path),
     required=True,
-    help="New directory for the discovery snapshot.",
+    help="New directory for published candidates and their complete review audit.",
 )
 @click.option(
     "--page-size",
     type=click.IntRange(min=1),
     default=100,
     show_default=True,
-    help="Number of records requested per page.",
+    help="Number of records requested per search page.",
 )
-def discover(search_terms, output_dir, page_size):
-    """Discover candidate datasets and preserve their search provenance."""
+@click.option(
+    "--history", "history_dir",
+    type=click.Path(file_okay=False, path_type=Path),
+    help="Previously initialized history directory. Defaults to the CLAUDIO user state directory.",
+)
+@click.option(
+    "--publication-request-limit",
+    type=click.IntRange(min=1, max=10000),
+    default=1000,
+    show_default=True,
+    help="Maximum publication HTTP attempts, including retries. Unresolved records remain in the audit.",
+)
+def discover(search_terms, output_dir, page_size, history_dir, publication_request_limit):
+    """Discover unseen datasets with confirmed formally published articles."""
     search_terms = tuple(term.strip() for term in search_terms)
     if any(not term for term in search_terms):
-        raise click.BadParameter(
-            "Search terms must not be empty.", param_hint="--search-term"
-        )
+        raise click.BadParameter("Search terms must not be empty.", param_hint="--search-term")
     search_terms = tuple(dict.fromkeys(search_terms))
-
     if output_dir.exists():
-        raise click.BadParameter(
-            "Choose a new output directory.", param_hint="--output"
-        )
-
-    searches = {}
+        raise click.BadParameter("Choose a new output directory.", param_hint="--output")
     try:
-        for term in search_terms:
-            pages = fetch_dataset_pages(term, page_size=page_size)
-            searches[term] = pages
-            count = sum(len(page.data["datasets"]) for page in pages)
-            click.echo(f"{term}: {count} records")
-
-        destination = write_discovery_outputs(searches, output_dir)
-        manifest = json.loads(
-            (destination / "manifest.json").read_text(encoding="utf-8")
+        destination = run_published_discovery(
+            search_terms, output_dir, history_dir=history_dir, page_size=page_size,
+            publication_request_limit=publication_request_limit, progress=click.echo,
         )
-    except (requests.exceptions.RequestException, ValueError, OSError) as error:
+        manifest = json.loads((destination / "manifest.json").read_text(encoding="utf-8"))
+    except (requests.exceptions.RequestException, ValueError, OSError, sqlite3.Error) as error:
         raise click.ClickException(str(error)) from error
-
     click.echo(f"Candidate datasets: {manifest['candidate_count']}")
+    click.echo("Publication filter: confirmed published articles")
+    click.echo(f"Previously emitted datasets excluded: {manifest['discovery_decision_counts'].get('excluded_seen', 0)}")
+    click.echo(f"History namespace: {manifest['namespace_id']}")
+    click.echo(f"Audit: {(destination / 'candidate_audit.json').resolve()}")
     click.echo(f"Output: {destination.resolve()}")
 
 
@@ -617,6 +719,11 @@ def _detect_psm_format(results_path):
     default=None,
     help="Select an explicit mzIdentML source profile.",
 )
+@click.option(
+    "--dataset-metadata", "dataset_metadata_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Published discovery candidates.json or a packaged dataset_metadata.json; optional for input export.",
+)
 def standardize_command(
     results_path,
     fasta_path,
@@ -642,8 +749,18 @@ def standardize_command(
     maxlynx_parameters_path=None,
     kojak_linker_masses=(),
     mzidentml_profile=None,
+    dataset_metadata_path=None,
 ):
     """Standardize supported XL-MS results or preserve a full import audit."""
+    from .publication_metadata import bind_dataset_metadata, load_dataset_metadata
+
+    if dataset_metadata_path is not None:
+        if audit_only:
+            raise click.UsageError("--dataset-metadata requires an input export; omit --audit-only.")
+        try:
+            load_dataset_metadata(dataset_metadata_path, dataset_accession=dataset_accession)
+        except (ValueError, OSError, RuntimeError) as error:
+            raise click.BadParameter(str(error), param_hint="--dataset-metadata") from error
     if output_dir.exists():
         raise click.BadParameter("Output directory already exists; choose a new directory.", param_hint="--output")
     if fdr_cutoff is not None and not math.isfinite(fdr_cutoff):
@@ -730,7 +847,7 @@ def standardize_command(
                     reference_projection_path
                 )
                 destination = write_openms_candidates(
-                    bundle, reference_mapping, output_dir,
+                    bind_dataset_metadata(bundle, dataset_metadata_path, dataset_accession=dataset_accession), reference_mapping, output_dir,
                     allowed_residues=residues,
                     export_unverified_candidates=True,
                 )
@@ -861,7 +978,7 @@ def standardize_command(
                     reference_projection_path
                 )
                 destination = write_kojak_claudio_input(
-                    bundle,
+                    bind_dataset_metadata(bundle, dataset_metadata_path, dataset_accession=dataset_accession),
                     reference_mapping,
                     output_dir,
                     allowed_linker_masses=kojak_linker_masses,
@@ -979,7 +1096,7 @@ def standardize_command(
             else:
                 reference = _read_reference_projection(reference_projection_path)
                 destination = write_mzidentml_claudio_input(
-                    bundle, reference, output_dir,
+                    bind_dataset_metadata(bundle, dataset_metadata_path, dataset_accession=dataset_accession), reference, output_dir,
                     allowed_crosslinkers=crosslinkers,
                     allowed_residues=residues,
                     export_unverified_candidates=True,
@@ -1076,7 +1193,7 @@ def standardize_command(
             else:
                 reference = _read_reference_projection(reference_projection_path)
                 destination = write_maxlynx_claudio_input(
-                    bundle, reference, output_dir,
+                    bind_dataset_metadata(bundle, dataset_metadata_path, dataset_accession=dataset_accession), reference, output_dir,
                     allowed_crosslinkers=crosslinkers,
                     allowed_residues=residues,
                     export_unverified_candidates=True,
@@ -1187,7 +1304,7 @@ def standardize_command(
             else:
                 mappings = _read_protein_mapping(mapping_path)
                 destination = write_msannika_claudio_input(
-                    bundle,
+                    bind_dataset_metadata(bundle, dataset_metadata_path, dataset_accession=dataset_accession),
                     mappings,
                     output_dir,
                     author_filter_path=author_filter_path,
@@ -1334,7 +1451,7 @@ def standardize_command(
             else:
                 mappings = _read_protein_mapping(mapping_path)
                 destination = write_xlinkx_claudio_input(
-                    bundle,
+                    bind_dataset_metadata(bundle, dataset_metadata_path, dataset_accession=dataset_accession),
                     mappings,
                     output_dir,
                     allowed_crosslinkers=set(crosslinkers),
@@ -1478,7 +1595,7 @@ def standardize_command(
                     reference_projection_path
                 )
                 destination = write_scout_claudio_input(
-                    bundle,
+                    bind_dataset_metadata(bundle, dataset_metadata_path, dataset_accession=dataset_accession),
                     projection,
                     output_dir,
                     author_filter_path=author_filter_path,
@@ -1631,7 +1748,7 @@ def standardize_command(
                         reference_projection_path
                     )
                 destination = write_merox_claudio_input(
-                    bundle,
+                    bind_dataset_metadata(bundle, dataset_metadata_path, dataset_accession=dataset_accession),
                     reference_mapping,
                     output_dir,
                     allowed_crosslinkers=crosslinkers,
@@ -1784,7 +1901,7 @@ def standardize_command(
         mappings = _read_protein_mapping(mapping_path)
         projection = _read_reference_projection(reference_projection_path) if reference_projection_path is not None else None
         destination = write_claudio_input(
-            bundle, mappings, output_dir,
+            bind_dataset_metadata(bundle, dataset_metadata_path, dataset_accession=dataset_accession), mappings, output_dir,
             fdr_level=fdr_level, fdr_cutoff=fdr_cutoff,
             allowed_crosslinkers=crosslinkers, allowed_residues=residues,
             source_protein_ids=source_proteins or None,

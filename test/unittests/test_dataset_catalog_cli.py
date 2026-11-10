@@ -14,12 +14,12 @@ from claudio.dataset_catalog.cli import main
 
 def make_response(url, params, records):
     payload = {
-        "datasets": records,
+        "datasets": [list(row) + ['<a href="https://doi.org/10.1234/example">Article</a>'] for row in records],
         "facets": {},
         "query": dict(params),
         "result_set": {
             "datasets_title_list": [
-                "dataset identifier", "title", "repository", "species"
+                "dataset identifier", "title", "repository", "species", "publications"
             ],
             "n_available_pages": 1 if records else 0,
             "n_available_rows": len(records),
@@ -43,9 +43,31 @@ def make_response(url, params, records):
     return response
 
 
+
 class TestDatasetCatalogCLI(unittest.TestCase):
     def setUp(self):
         install_pridepy_fixture(self)
+        from claudio.dataset_catalog.discovery_history import initialize_discovery_history
+        from claudio.dataset_catalog.publication_lookup import PublicationLookup
+        from test_dataset_catalog_publication_lookup import Clock, Response, Session, crossref_body
+        import os
+
+        state = TemporaryDirectory()
+        self.addCleanup(state.cleanup)
+        initialize_discovery_history(Path(state.name) / "claudio/discovery")
+        environment = patch.dict(os.environ, {"XDG_STATE_HOME": state.name})
+        environment.start()
+        self.addCleanup(environment.stop)
+
+        def lookup(directory, **options):
+            clock = Clock()
+            return PublicationLookup(directory, session=Session(Response(crossref_body())),
+                                     clock=clock, sleeper=clock.sleep, **options)
+
+        publication_http = patch("claudio.dataset_catalog.published_discovery.PublicationLookup",
+                                 side_effect=lookup)
+        publication_http.start()
+        self.addCleanup(publication_http.stop)
 
     @patch("claudio.dataset_catalog.proteomecentral.requests.get")
     def test_discovers_multiple_terms_and_writes_merged_candidates(self, mock_get):

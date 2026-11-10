@@ -2,6 +2,7 @@
 import os
 import sys
 import pandas as pd
+from claudio.dataset_catalog.publication_fields import publication_output_columns
 
 
 def write_outputs(data: pd.DataFrame, filename: str, compute_scoring: bool, output_directory: str):
@@ -84,9 +85,9 @@ def write_outputs(data: pd.DataFrame, filename: str, compute_scoring: bool, outp
                 unip_arg = ((data.unip_id_a == unip_id.split('_')[0]) & (data.unip_id_b == unip_id.split('_')[1])) | \
                             ((data.unip_id_a == unip_id.split('_')[1]) & (data.unip_id_b == unip_id.split('_')[0]))
 
-            data[unip_arg][['pdb_id', 'chain_a', 'chain_b', 'pdb_pos_a',
+            data[unip_arg][publication_output_columns(data, ['pdb_id', 'chain_a', 'chain_b', 'pdb_pos_a',
                             'pdb_pos_b', 'pos_a', 'pos_b', 
-                            'swiss_model_homology', 'XL_type']]\
+                            'swiss_model_homology', 'XL_type'])]\
                 .to_csv(f"{output_subdirectory}/{unip_id}_{row.swiss_model_homology}.csv", index=False)
 
             # add uniprot id to list of already finished results

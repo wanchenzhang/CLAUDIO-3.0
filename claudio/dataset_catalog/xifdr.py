@@ -2235,6 +2235,9 @@ def write_claudio_input(bundle, mappings, output_dir, *, fdr_level=None, fdr_cut
 
 def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_policy=None):
     """Write source/audit snapshots and the eligible input table to a new directory."""
+    from .publication_metadata import prepare_publication_export
+
+    publication = prepare_publication_export(bundle)
     output_dir = Path(output_dir)
     _verify_msannika_sources(bundle)
     _verify_mzidentml_sources(bundle)
@@ -2268,6 +2271,16 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
                 for child in value.values():
                     copy_sources(child)
         copy_sources(projection)
+    if publication is not None:
+        reserved = set(publication["row_fields"])
+        if any(reserved.intersection(row) for row in prepared["rows"]):
+            raise ValueError("Reserved publication columns already exist in prepared rows")
+        collisions = set(publication["source_bodies"]).intersection(
+            set(source_bodies) | set(author_sources)
+        )
+        if collisions:
+            raise ValueError("Publication evidence would overwrite an existing source snapshot")
+        source_bodies.update(publication["source_bodies"])
     output_dir.mkdir(parents=True, exist_ok=False)
     if source_bodies:
         for name, raw in source_bodies.items():
@@ -2298,6 +2311,9 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
         columns = core_columns + extra
     else:
         columns = list(rows[0]) if rows else ["source_record_id", "unip_id_a", "unip_id_b", "pos_a", "pos_b"]
+    if publication is not None:
+        rows = [{**row, **publication["row_fields"]} for row in rows]
+        columns = [*columns, *publication["row_fields"]]
     with (output_dir / input_name).open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=columns)
         writer.writeheader()
@@ -2350,6 +2366,8 @@ def write_xifdr_outputs(bundle, mappings, prepared, output_dir, *, pipeline_poli
         manifest["author_filter_evidence_snapshot"] = prepared[
             "author_filter_evidence_snapshot"
         ]
+    if publication is not None:
+        manifest["dataset_metadata"] = deepcopy(publication["manifest_entry"])
     _write_json(output_dir / "manifest.json", manifest)
     return output_dir
 
