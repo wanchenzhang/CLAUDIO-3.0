@@ -241,7 +241,7 @@ class DiscoveryHistory:
                     continue
                 files[name] = _sha256(path)
                 if sync:
-                    with path.open("rb") as handle:
+                    with path.open("ab") as handle:
                         os.fsync(handle.fileno())
             else:
                 raise ValueError("Unsupported output evidence file")

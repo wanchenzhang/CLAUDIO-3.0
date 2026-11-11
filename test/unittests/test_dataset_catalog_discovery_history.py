@@ -12,6 +12,7 @@ import sqlite3
 import tempfile
 from threading import Barrier
 import unittest
+import contextlib
 from unittest.mock import patch
 
 
@@ -285,8 +286,9 @@ class TestDiscoveryHistory(unittest.TestCase):
     def test_deleted_seen_entry_is_detected_instead_of_reemitting(self):
         history = self.history()
         self.publish(history, [candidate()])
-        with sqlite3.connect(self.directory / "history.sqlite3") as connection:
+        with contextlib.closing(sqlite3.connect(self.directory / "history.sqlite3")) as connection:
             connection.execute("DELETE FROM seen_accessions")
+            connection.commit()
         with self.assertRaisesRegex(ValueError, "(?i)history|accession"):
             history.seen_accessions()
 

@@ -546,7 +546,7 @@ class TestKojakInputExport(unittest.TestCase):
         from claudio.dataset_catalog.cli import _read_reference_projection
 
         destination = self.export()
-        moved = self.root / "moved"
+        moved = (self.root / "moved").resolve()
         shutil.copytree(destination, moved)
         mapping = _read_reference_projection(moved / "reference_projection.json")
 
