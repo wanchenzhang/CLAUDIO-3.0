@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
-
+from urllib.parse import parse_qs, urlsplit
 import requests
 
 from . import _write_json
@@ -27,7 +27,64 @@ class CatalogPage:
     raw_body: bytes
     data: dict
 
+def validate_search_page(page, term, *, page_number=None, page_size=None):
+    """Validate the registry URL, page identity, and dataset rows."""
+    if not isinstance(page.request_url, str):
+        raise ValueError("Missing registry source URL")
 
+    uri = urlsplit(page.request_url)
+    if (
+        uri.scheme != "https"
+        or uri.hostname != "proteomecentral.proteomexchange.org"
+        or uri.port not in (None, 443)
+        or uri.username or uri.password or uri.fragment
+        or uri.path != "/api/proxi/v0.1/datasets"
+    ):
+        raise ValueError("Invalid registry source URL")
+
+    try:
+        data = page.data
+        result = data["result_set"]
+        number = result["page_number"]
+        size = result["page_size"]
+        if (
+            type(number) is not int or number < 1
+            or type(size) is not int or size < 1
+            or (page_number is not None and number != page_number)
+            or (page_size is not None and size != page_size)
+        ):
+            raise ValueError("Registry page identity mismatch")
+
+        query = parse_qs(uri.query)
+        expected = {
+            "search": term,
+            "resultType": "resultset",
+            "pageNumber": str(number),
+            "pageSize": str(size),
+        }
+        if any(query.get(key) != [value] for key, value in expected.items()):
+            raise ValueError("Registry source URL does not match the requested search")
+
+        if data["status"]["status"] != "OK":
+            raise ValueError("Registry search did not report success")
+
+        columns = result["datasets_title_list"]
+        rows = data["datasets"]
+        if (
+            not isinstance(columns, list)
+            or any(not isinstance(column, str) for column in columns)
+            or len(columns) != len(set(columns))
+            or "dataset identifier" not in columns
+            or not isinstance(rows, list)
+            or any(not isinstance(row, list) or len(row) != len(columns) for row in rows)
+        ):
+            raise ValueError("Malformed registry dataset rows")
+
+        returned = result["n_rows_returned"]
+        if type(returned) is not int or returned != len(rows):
+            raise ValueError("Registry row count mismatch")
+    except (KeyError, TypeError, AttributeError) as error:
+        raise ValueError("Invalid registry response structure") from error
 def fetch_dataset_pages(search_term: str, *, page_size: int = 100) -> List[CatalogPage]:
     """Fetch all matching pages, retaining their original response bodies."""
     pages = []
@@ -120,7 +177,25 @@ def merge_search_results(searches):
 
     return [candidates[accession] for accession in sorted(candidates)]
 
-
+def write_search_pages(output_dir, search_term, pages, search_number):
+    search = {
+        "search_term": search_term,
+        "reported_total": pages[0].data["result_set"]["n_available_rows"],
+        "downloaded_records": sum(len(page.data["datasets"]) for page in pages),
+        "pages": [],
+    }
+    for page_number, page in enumerate(pages, start=1):
+        filename = f"search_{search_number:03d}_page_{page_number:04d}.json"
+        relative_path = Path("raw") / filename
+        (output_dir / relative_path).write_bytes(page.raw_body)
+        search["pages"].append({
+            "path": relative_path.as_posix(),
+            "request_url": page.request_url,
+            "retrieved_at_utc": page.retrieved_at_utc,
+            "query": page.data["query"],
+            "sha256": hashlib.sha256(page.raw_body).hexdigest(),
+        })
+    return search
 def write_discovery_outputs(searches, output_dir):
     """Write a discovery snapshot into a new directory.
 
@@ -152,23 +227,9 @@ def write_discovery_outputs(searches, output_dir):
     }
 
     for search_number, (search_term, pages) in enumerate(searches.items(), start=1):
-        search = {
-            "search_term": search_term,
-            "reported_total": pages[0].data["result_set"]["n_available_rows"],
-            "downloaded_records": sum(len(page.data["datasets"]) for page in pages),
-            "pages": [],
-        }
-        for page_number, page in enumerate(pages, start=1):
-            relative_path = Path("raw") / f"search_{search_number:03d}_page_{page_number:04d}.json"
-            (output_dir / relative_path).write_bytes(page.raw_body)
-            search["pages"].append({
-                "path": relative_path.as_posix(),
-                "request_url": page.request_url,
-                "retrieved_at_utc": page.retrieved_at_utc,
-                "query": page.data["query"],
-                "sha256": hashlib.sha256(page.raw_body).hexdigest(),
-            })
-        manifest["searches"].append(search)
+        manifest["searches"].append(
+            write_search_pages(output_dir, search_term, pages, search_number)
+        )
 
     _write_json(output_dir / "candidates.json", candidates)
     with (output_dir / "candidates.csv").open("w", encoding="utf-8", newline="") as handle:
