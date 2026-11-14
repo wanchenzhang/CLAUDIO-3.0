@@ -254,6 +254,29 @@ class TestDiscoverySeeding(unittest.TestCase):
         ):
             self.seed(source)
         self.assertEqual(self.calls, [])
+    def test_legacy_search_with_missing_page_is_rejected(self):
+        source = self.legacy()
+        manifest = self.read(source, "manifest.json")
+        search = manifest["searches"][0]
+        entry = search["pages"][0]
+
+        page_path = source / entry["path"]
+        data = json.loads(page_path.read_bytes())
+        data["result_set"]["n_available_pages"] = 2
+        data["result_set"]["n_available_rows"] = 2
+        raw = json.dumps(data).encode("utf-8")
+        page_path.write_bytes(raw)
+
+        entry["sha256"] = hashlib.sha256(raw).hexdigest()
+        search["reported_total"] = 2
+        (source / "manifest.json").write_text(
+            json.dumps(manifest), encoding="utf-8"
+        )
+
+        with self.assertRaisesRegex(ValueError, "Incomplete registry search"):
+            self.seed(source)
+        self.assertEqual(self.calls, [])
+        self.assertEqual(self.seen(), set())
 
     def test_incomplete_original_manifest_is_rejected(self):
         source = self.legacy()

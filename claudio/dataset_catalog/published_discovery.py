@@ -9,11 +9,15 @@ import hashlib
 import json
 from pathlib import Path
 import tempfile
-from urllib.parse import parse_qs, urlsplit
-
 from . import _write_json
 from .discovery_history import DiscoveryHistory, default_history_directory
-from .proteomecentral import CSV_COLUMNS, DATASETS_URL, fetch_dataset_pages, merge_search_results
+from .proteomecentral import (
+    CSV_COLUMNS,
+    fetch_dataset_pages,
+    merge_search_results,
+    validate_search_page,
+    write_search_pages,
+)
 from .publications import extract_publication_links
 from .publication_lookup import PublicationLookup
 from .publication_verification import _as_of_date
@@ -132,56 +136,36 @@ def qualify_dataset_candidate(candidate, lookup, *, as_of):
 def _save_search(staging, term, pages, search_number, page_size):
     if not isinstance(pages, list) or not pages:
         raise ValueError("Each search must have complete response pages")
+
     expected_counts = None
     downloaded = 0
-    sources = []
     for number, page in enumerate(pages, 1):
         try:
             raw_data = json.loads(page.raw_body)
-            if raw_data != page.data:
-                raise ValueError("Parsed registry response differs from its raw body")
-            uri = urlsplit(page.request_url)
-            if (uri.scheme != "https" or uri.hostname != "proteomecentral.proteomexchange.org"
-                    or uri.port not in (None, 443) or uri.username or uri.password or uri.fragment
-                    or uri.path != "/api/proxi/v0.1/datasets"):
-                raise ValueError("Registry source URL is not the official dataset search")
-            query = parse_qs(uri.query)
-            expected_query = {"search": term, "resultType": "resultset",
-                              "pageNumber": str(number), "pageSize": str(page_size)}
-            if any(query.get(key) != [value] for key, value in expected_query.items()):
-                raise ValueError("Registry source URL does not match the requested search")
-            if raw_data["status"]["status"] != "OK":
-                raise ValueError("Registry search did not report success")
-            result_set = raw_data["result_set"]
-            counts = result_set["n_available_rows"], result_set["n_available_pages"]
-            if any(type(value) is not int or value < 0 for value in counts):
-                raise ValueError("Invalid registry result counts")
-            if expected_counts is None:
-                expected_counts = counts
-            elif counts != expected_counts:
-                raise ValueError("Registry result counts changed between pages")
-            rows = raw_data["datasets"]
-            columns = result_set["datasets_title_list"]
-            if (not isinstance(rows, list) or not isinstance(columns, list)
-                    or any(not isinstance(column, str) for column in columns)
-                    or len(columns) != len(set(columns)) or "dataset identifier" not in columns
-                    or any(not isinstance(row, list) or len(row) != len(columns) for row in rows)):
-                raise ValueError("Malformed registry dataset rows")
-            if (type(result_set["page_number"]) is not int or result_set["page_number"] != number
-                    or type(result_set["n_rows_returned"]) is not int or result_set["n_rows_returned"] != len(rows)):
-                raise ValueError("Registry page identity or row count mismatch")
-            downloaded += len(rows)
-        except (KeyError, TypeError, UnicodeError, AttributeError) as error:
-            raise ValueError("Invalid registry response structure") from error
-        name = f"raw/search_{search_number:03d}_page_{number:04d}.json"
-        (staging / name).write_bytes(page.raw_body)
-        sources.append({"path": name, "request_url": page.request_url,
-                        "retrieved_at_utc": page.retrieved_at_utc, "query": deepcopy(raw_data["query"]),
-                        "sha256": hashlib.sha256(page.raw_body).hexdigest()})
+        except (ValueError, TypeError) as error:
+            raise ValueError("Invalid registry response JSON") from error
+        if raw_data != page.data:
+            raise ValueError("Parsed registry response differs from its raw body")
+
+        validate_search_page(page, term, page_number=number, page_size=page_size)
+
+        result = raw_data["result_set"]
+        try:
+            counts = result["n_available_rows"], result["n_available_pages"]
+        except KeyError as error:
+            raise ValueError("Invalid registry result counts") from error
+        if any(type(value) is not int or value < 0 for value in counts):
+            raise ValueError("Invalid registry result counts")
+        if expected_counts is None:
+            expected_counts = counts
+        elif counts != expected_counts:
+            raise ValueError("Registry result counts changed between pages")
+        downloaded += len(raw_data["datasets"])
+
     if len(pages) != max(1, expected_counts[1]) or downloaded != expected_counts[0]:
         raise ValueError("Incomplete registry search page or record counts")
-    return {"search_term": term, "reported_total": expected_counts[0],
-            "downloaded_records": downloaded, "pages": sources}
+
+    return write_search_pages(staging, term, pages, search_number)
 
 
 def _write_candidate_csv(path, candidates):

@@ -6,9 +6,8 @@ import hashlib
 import json
 from pathlib import Path
 import re
-from urllib.parse import parse_qs, urlsplit
 
-from .proteomecentral import CatalogPage, merge_search_results
+from .proteomecentral import CatalogPage, merge_search_results, validate_search_page
 from .publications import extract_publication_links
 from .publication_lookup import replay_publication_lookup
 from .publication_verification import _as_of_date
@@ -145,59 +144,18 @@ def _discovery_policy(manifest, accession):
 
 
 def _page(raw, descriptor, term):
-    data = _json(raw)
-    _require(
-        isinstance(data, dict)
-        and isinstance(data.get("result_set"), dict),
-        "Invalid registry publication source",
+    page = CatalogPage(
+        descriptor.get("request_url"),
+        descriptor.get("retrieved_at_utc"),
+        raw,
+        _json(raw),
     )
-    columns = data["result_set"].get("datasets_title_list")
-    rows = data.get("datasets")
+    validate_search_page(page, term)
     _require(
-        isinstance(columns, list)
-        and all(isinstance(column, str) for column in columns)
-        and len(columns) == len(set(columns))
-        and "dataset identifier" in columns
-        and isinstance(rows, list)
-        and all(
-            isinstance(row, list) and len(row) == len(columns)
-            for row in rows
-        ),
-        "Invalid registry candidate source rows",
-    )
-    _require(
-        data.get("status", {}).get("status") == "OK"
-        and data["result_set"].get("n_rows_returned") == len(rows)
-        and descriptor.get("query") == data.get("query"),
+        descriptor.get("query") == page.data.get("query"),
         "Registry publication source receipt mismatch",
     )
-    url = descriptor.get("request_url")
-    _require(isinstance(url, str), "Missing registry source URL")
-    uri = urlsplit(url)
-    _require(
-        uri.scheme == "https"
-        and uri.hostname == "proteomecentral.proteomexchange.org"
-        and uri.port in (None, 443)
-        and not uri.username
-        and not uri.password
-        and not uri.fragment
-        and uri.path == "/api/proxi/v0.1/datasets",
-        "Invalid registry publication source URL",
-    )
-    query = parse_qs(uri.query)
-    _require(
-        query.get("search") == [term]
-        and query.get("resultType") == ["resultset"]
-        and query.get("pageNumber")
-        == [str(data["result_set"].get("page_number"))]
-        and query.get("pageSize")
-        == [str(data["result_set"].get("page_size"))],
-        "Registry source URL and page identity disagree",
-    )
-    return CatalogPage(
-        url, descriptor.get("retrieved_at_utc"), raw, data
-    )
-
+    return page
 
 def _candidate(searches, accession):
     matches = [
