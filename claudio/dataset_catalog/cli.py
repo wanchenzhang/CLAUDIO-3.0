@@ -5,7 +5,6 @@ import hashlib
 import json
 import math
 from collections import Counter
-from copy import copy
 from pathlib import Path
 import sqlite3
 import click
@@ -195,12 +194,6 @@ def discover(search_terms, output_dir, page_size, history_dir, publication_reque
     click.echo(f"History namespace: {manifest['namespace_id']}")
     click.echo(f"Audit: {(destination / 'candidate_audit.json').resolve()}")
     click.echo(f"Output: {destination.resolve()}")
-
-
-_legacy_discover = copy(discover)
-_legacy_discover.name = "discover"
-_legacy_discover.hidden = True
-main.add_command(_legacy_discover)
 
 
 def _inventory_progress(completed, total, result):

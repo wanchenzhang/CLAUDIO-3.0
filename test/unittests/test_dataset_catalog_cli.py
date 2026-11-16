@@ -89,7 +89,7 @@ class TestDatasetCatalogCLI(unittest.TestCase):
         with TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir) / "run"
             result = CliRunner().invoke(main, [
-                "discover",
+                "retrieval",
                 "--search-term", "XL-MS",
                 "--search-term", "crosslinking",
                 "--output", str(output_dir),
@@ -142,7 +142,7 @@ class TestDatasetCatalogCLI(unittest.TestCase):
         with TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir) / "run"
             result = CliRunner().invoke(main, [
-                "discover",
+                "retrieval",
                 "--search-term", " XL-MS ",
                 "--search-term", "XL-MS",
                 "--output", str(output_dir),
@@ -173,7 +173,7 @@ class TestDatasetCatalogCLI(unittest.TestCase):
                 with TemporaryDirectory() as temp_dir:
                     output_dir = Path(temp_dir) / "run"
                     result = CliRunner().invoke(main, [
-                        "discover", "--output", str(output_dir),
+                        "retrieval", "--output", str(output_dir),
                         *arguments,
                     ])
 
@@ -191,7 +191,7 @@ class TestDatasetCatalogCLI(unittest.TestCase):
             old_csv.write_text("previous results\n", encoding="utf-8")
 
             result = CliRunner().invoke(main, [
-                "discover",
+                "retrieval",
                 "--search-term", "XL-MS",
                 "--output", str(output_dir),
             ])
@@ -217,7 +217,7 @@ class TestDatasetCatalogCLI(unittest.TestCase):
         with TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir) / "run"
             result = CliRunner().invoke(main, [
-                "discover",
+                "retrieval",
                 "--search-term", "XL-MS",
                 "--search-term", "crosslinking",
                 "--output", str(output_dir),
@@ -243,7 +243,7 @@ class TestDatasetCatalogCLI(unittest.TestCase):
         with TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir) / "run"
             result = CliRunner().invoke(main, [
-                "discover",
+                "retrieval",
                 "--search-term", "XL-MS",
                 "--output", str(output_dir),
             ])
@@ -278,7 +278,7 @@ class TestDatasetCatalogCLI(unittest.TestCase):
         with TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir) / "run"
             result = CliRunner().invoke(main, [
-                "discover", "--output", str(output_dir),
+                "retrieval", "--output", str(output_dir),
             ])
 
             self.assertEqual(result.exit_code, 0, result.output)

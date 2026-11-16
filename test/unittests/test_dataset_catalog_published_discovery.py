@@ -370,13 +370,19 @@ class TestPublishedDiscoveryIntegration(unittest.TestCase):
         self.assertEqual(result["status"], "published")
         self.assertEqual(result["paper"]["doi"], DOI)
 
+    def test_cli_rejects_removed_discover_command(self):
+        from claudio.dataset_catalog.cli import main
+        result = CliRunner().invoke(main, ["discover", "--help"])
+        self.assertEqual(result.exit_code, 2, result.output)
+        self.assertIn("No such command", result.output)
+
     def test_cli_emits_papers_and_excludes_previously_emitted_candidates(self):
         api = self.api()
         from claudio.dataset_catalog.cli import main
-        for command, name in (("retrieval", "first"), ("discover", "second")):
+        for name in ("first", "second"):
             with patch.object(api, "fetch_dataset_pages", side_effect=self.fetcher([record()])), \
                  patch.object(api, "PublicationLookup", side_effect=self.factory()):
-                result = CliRunner().invoke(main, [command, "--search-term", "XL-MS",
+                result = CliRunner().invoke(main, ["retrieval", "--search-term", "XL-MS",
                                                   "--history", str(self.history), "--output", str(self.root / name)])
             self.assertEqual(result.exit_code, 0, f"{result.output}\n{result.exception}")
         self.assertEqual(len(self.read(self.root / "first", "candidates.json")), 1)
@@ -387,7 +393,7 @@ class TestPublishedDiscoveryIntegration(unittest.TestCase):
         api = self.api()
         from claudio.dataset_catalog.cli import main
         with patch.object(api, "fetch_dataset_pages", side_effect=AssertionError("Search must not start")):
-            result = CliRunner().invoke(main, ["discover", "--history", str(self.root / "missing"),
+            result = CliRunner().invoke(main, ["retrieval", "--history", str(self.root / "missing"),
                                               "--output", str(self.root / "run")])
         self.assertEqual(result.exit_code, 1, result.output)
         self.assertIn("initializ", result.output.lower())
@@ -405,7 +411,7 @@ class TestPublishedDiscoveryIntegration(unittest.TestCase):
 
     def test_cli_rejects_invalid_publication_budget_before_search(self):
         from claudio.dataset_catalog.cli import main
-        result = CliRunner().invoke(main, ["discover", "--history", str(self.history),
+        result = CliRunner().invoke(main, ["retrieval", "--history", str(self.history),
                                           "--publication-request-limit", "0", "--output", str(self.root / "run")])
         self.assertEqual(result.exit_code, 2, result.output)
         self.assertIn("--publication-request-limit", result.output)
