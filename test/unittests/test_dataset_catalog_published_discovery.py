@@ -373,10 +373,10 @@ class TestPublishedDiscoveryIntegration(unittest.TestCase):
     def test_cli_emits_papers_and_excludes_previously_emitted_candidates(self):
         api = self.api()
         from claudio.dataset_catalog.cli import main
-        for name in ("first", "second"):
+        for command, name in (("retrieval", "first"), ("discover", "second")):
             with patch.object(api, "fetch_dataset_pages", side_effect=self.fetcher([record()])), \
                  patch.object(api, "PublicationLookup", side_effect=self.factory()):
-                result = CliRunner().invoke(main, ["discover", "--search-term", "XL-MS",
+                result = CliRunner().invoke(main, [command, "--search-term", "XL-MS",
                                                   "--history", str(self.history), "--output", str(self.root / name)])
             self.assertEqual(result.exit_code, 0, f"{result.output}\n{result.exception}")
         self.assertEqual(len(self.read(self.root / "first", "candidates.json")), 1)

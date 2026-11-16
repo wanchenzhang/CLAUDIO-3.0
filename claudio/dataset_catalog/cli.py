@@ -5,6 +5,7 @@ import hashlib
 import json
 import math
 from collections import Counter
+from copy import copy
 from pathlib import Path
 import sqlite3
 import click
@@ -139,7 +140,7 @@ def init_discovery_history(history_dir):
     click.echo(f"History namespace: {initialized['namespace_id']}")
 
 
-@main.command()
+@main.command(name="retrieval")
 @click.option(
     "--search-term", "search_terms",
     multiple=True,
@@ -173,7 +174,7 @@ def init_discovery_history(history_dir):
     help="Maximum publication HTTP attempts, including retries. Unresolved records remain in the audit.",
 )
 def discover(search_terms, output_dir, page_size, history_dir, publication_request_limit):
-    """Discover unseen datasets with confirmed formally published articles."""
+    """Retrieve unseen datasets with confirmed formally published articles."""
     search_terms = tuple(term.strip() for term in search_terms)
     if any(not term for term in search_terms):
         raise click.BadParameter("Search terms must not be empty.", param_hint="--search-term")
@@ -194,6 +195,12 @@ def discover(search_terms, output_dir, page_size, history_dir, publication_reque
     click.echo(f"History namespace: {manifest['namespace_id']}")
     click.echo(f"Audit: {(destination / 'candidate_audit.json').resolve()}")
     click.echo(f"Output: {destination.resolve()}")
+
+
+_legacy_discover = copy(discover)
+_legacy_discover.name = "discover"
+_legacy_discover.hidden = True
+main.add_command(_legacy_discover)
 
 
 def _inventory_progress(completed, total, result):
