@@ -189,6 +189,7 @@ def discover(search_terms, output_dir, page_size, history_dir, publication_reque
     except (requests.exceptions.RequestException, ValueError, OSError, sqlite3.Error) as error:
         raise click.ClickException(str(error)) from error
     click.echo(f"Candidate datasets: {manifest['candidate_count']}")
+    click.echo(f"Search completed (UTC): {manifest['search_completed_at_utc']}")
     click.echo("Publication filter: confirmed published articles")
     click.echo(f"Previously emitted datasets excluded: {manifest['discovery_decision_counts'].get('excluded_seen', 0)}")
     click.echo(f"History namespace: {manifest['namespace_id']}")

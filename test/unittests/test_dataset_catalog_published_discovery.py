@@ -3,6 +3,7 @@
 
 import copy
 import csv
+from datetime import datetime, timedelta, timezone
 import hashlib
 import importlib
 import json
@@ -380,11 +381,20 @@ class TestPublishedDiscoveryIntegration(unittest.TestCase):
         api = self.api()
         from claudio.dataset_catalog.cli import main
         for name in ("first", "second"):
+            before_search = datetime.now(timezone.utc).replace(microsecond=0)
             with patch.object(api, "fetch_dataset_pages", side_effect=self.fetcher([record()])), \
                  patch.object(api, "PublicationLookup", side_effect=self.factory()):
                 result = CliRunner().invoke(main, ["retrieval", "--search-term", "XL-MS",
                                                   "--history", str(self.history), "--output", str(self.root / name)])
             self.assertEqual(result.exit_code, 0, f"{result.output}\n{result.exception}")
+            manifest = self.read(self.root / name, "manifest.json")
+            stamp = manifest.get("search_completed_at_utc")
+            self.assertIsNotNone(stamp, "Missing search completion timestamp")
+            completed = datetime.fromisoformat(stamp)
+            self.assertEqual(completed.utcoffset(), timedelta(0))
+            self.assertLessEqual(before_search, completed)
+            self.assertLessEqual(completed, datetime.now(timezone.utc))
+            self.assertIn(f"Search completed (UTC): {stamp}", result.output)
         self.assertEqual(len(self.read(self.root / "first", "candidates.json")), 1)
         self.assertEqual(self.read(self.root / "second", "candidates.json"), [])
         self.assertEqual(len(self.http_calls), 1)

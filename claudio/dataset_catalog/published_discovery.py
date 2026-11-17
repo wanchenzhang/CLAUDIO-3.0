@@ -233,6 +233,7 @@ def run_published_discovery(search_terms, output_dir, *, history_dir=None, page_
         if len({candidate["accession"] for candidate in originals}) != len(originals):
             raise ValueError("Registry candidates contain duplicate canonical accessions")
         _write_json(staging / "source_candidates.json", originals)
+        search_completed_at_utc = datetime.now(timezone.utc).isoformat(timespec="seconds")
         reviewed = []
         with PublicationLookup(staging / "publication_evidence", max_requests=publication_request_limit) as lookup:
             for index, candidate in enumerate(originals, 1):
@@ -267,6 +268,7 @@ def run_published_discovery(search_terms, output_dir, *, history_dir=None, page_
             _write_candidate_csv(destination / "candidates.csv", selected)
             return {
                 "source": "ProteomeCentral", "searches": sources, "source_candidate_count": len(originals),
+                "search_completed_at_utc": search_completed_at_utc,
                 "publication_as_of": as_of, "publication_transport": transport,
                 "association_scope": "explicit_registry_publication_references",
                 "publication_status_counts": dict(Counter(candidate["publication_status"] for candidate in audit)),
